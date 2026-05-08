@@ -185,7 +185,15 @@
     "errorEmailExists": "Bu elektron pochta bilan hisob allaqachon mavjud.",
     "errorWeakPassword": "Parol kamida 8 ta belgidan iborat bo'lishi kerak.",
     "errorPasswordMismatch": "Parollar mos kelmaydi.",
-    "errorGeneric": "Nimadir noto'g'ri ketdi. Qayta urinib ko'ring."
+    "errorGeneric": "Nimadir noto'g'ri ketdi. Qayta urinib ko'ring.",
+    "confirmEmailTitle": "Elektron pochtangizni tekshiring",
+    "confirmEmailSubtitle": "{{email}} manziliga tasdiqlash havolasi yuborildi",
+    "confirmEmailBody": "Hisobni faollashtirish uchun xatdagi havolani bosing. Xat kelmasa, spam papkasini tekshiring.",
+    "confirmEmailSignIn": "Pochtamni tasdiqladim — Kirish",
+    "resendEmail": "Xatni qayta yuborish",
+    "resendEmailLoading": "Yuborilmoqda…",
+    "resendEmailSent": "Xat yuborildi! Kiruvchi xatlarni tekshiring.",
+    "errorEmailNotConfirmed": "Avval elektron pochtangizni tasdiqlang. Kiruvchi xatlar yoki spam papkasini tekshiring."
   },
   "dashboard": {
     "greeting": "Xayrli tong",

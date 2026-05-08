@@ -5,7 +5,7 @@ import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { Eye, EyeOff } from 'lucide-react'
 import { useLanguage } from '@/lib/i18n/LanguageContext'
-import { signIn, signInWithGoogle } from '@/lib/services/auth'
+import { signIn, signInWithGoogle, resendConfirmation } from '@/lib/services/auth'
 
 export default function LoginPage() {
   const { t } = useLanguage()
@@ -15,10 +15,15 @@ export default function LoginPage() {
   const [showPassword, setShowPassword] = useState(false)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
+  const [emailNotConfirmed, setEmailNotConfirmed] = useState(false)
+  const [resendLoading, setResendLoading] = useState(false)
+  const [resendSuccess, setResendSuccess] = useState(false)
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
     setError('')
+    setEmailNotConfirmed(false)
+    setResendSuccess(false)
     setLoading(true)
 
     const { error: authError } = await signIn(email, password)
@@ -26,8 +31,11 @@ export default function LoginPage() {
     if (authError) {
       console.error('[login] signIn error:', authError)
       setLoading(false)
-      // Show real Supabase error — "Invalid login credentials" is the common one
-      setError(authError.message)
+      if (authError.message.toLowerCase().includes('email not confirmed')) {
+        setEmailNotConfirmed(true)
+      } else {
+        setError(authError.message)
+      }
       return
     }
 
@@ -37,6 +45,14 @@ export default function LoginPage() {
     router.refresh()
     router.replace('/dashboard')
     // Keep loading=true so button stays disabled during navigation
+  }
+
+  async function handleResend() {
+    setResendLoading(true)
+    setResendSuccess(false)
+    await resendConfirmation(email)
+    setResendLoading(false)
+    setResendSuccess(true)
   }
 
   async function handleGoogleSignIn() {
@@ -89,6 +105,24 @@ export default function LoginPage() {
           {error && (
             <div className="px-4 py-3 rounded-xl bg-red-50 dark:bg-red-500/10 border border-red-200 dark:border-red-500/20 text-sm text-red-600 dark:text-red-400">
               {error}
+            </div>
+          )}
+
+          {emailNotConfirmed && (
+            <div className="px-4 py-3 rounded-xl bg-amber-50 dark:bg-amber-500/10 border border-amber-200 dark:border-amber-500/20 text-sm text-amber-700 dark:text-amber-400 space-y-2">
+              <p>{t('auth.errorEmailNotConfirmed')}</p>
+              {resendSuccess ? (
+                <p className="text-green-600 dark:text-green-400">{t('auth.resendEmailSent')}</p>
+              ) : (
+                <button
+                  type="button"
+                  onClick={handleResend}
+                  disabled={resendLoading}
+                  className="font-medium underline hover:no-underline disabled:opacity-60"
+                >
+                  {resendLoading ? t('auth.resendEmailLoading') : t('auth.resendEmail')}
+                </button>
+              )}
             </div>
           )}
 

@@ -3,9 +3,9 @@
 import { useState } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
-import { Eye, EyeOff } from 'lucide-react'
+import { Eye, EyeOff, Mail } from 'lucide-react'
 import { useLanguage } from '@/lib/i18n/LanguageContext'
-import { signUp, signInWithGoogle } from '@/lib/services/auth'
+import { signUp, signInWithGoogle, resendConfirmation } from '@/lib/services/auth'
 
 export default function SignupPage() {
   const { t } = useLanguage()
@@ -17,6 +17,9 @@ export default function SignupPage() {
   const [showPassword, setShowPassword] = useState(false)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
+  const [emailSent, setEmailSent] = useState(false)
+  const [resendLoading, setResendLoading] = useState(false)
+  const [resendSuccess, setResendSuccess] = useState(false)
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
@@ -48,7 +51,61 @@ export default function SignupPage() {
 
     console.log('[signup] success, user:', data?.user?.id, 'session:', data?.session ? 'present' : 'null (email confirmation pending)')
 
-    router.push('/onboarding')
+    if (data?.session) {
+      // Email confirmation disabled — go straight to onboarding
+      router.push('/onboarding')
+    } else {
+      // Email confirmation required — show check-your-email screen
+      setEmailSent(true)
+    }
+  }
+
+  async function handleResend() {
+    setResendLoading(true)
+    setResendSuccess(false)
+    await resendConfirmation(email)
+    setResendLoading(false)
+    setResendSuccess(true)
+  }
+
+  if (emailSent) {
+    return (
+      <div className="w-full max-w-md">
+        <div className="bg-white dark:bg-gray-900/60 rounded-3xl border border-gray-100 dark:border-gray-800 p-8 shadow-xl shadow-black/5 dark:shadow-black/30 text-center">
+          <div className="flex items-center justify-center w-16 h-16 rounded-full bg-indigo-50 dark:bg-indigo-500/10 mx-auto mb-6">
+            <Mail className="w-8 h-8 text-indigo-500" />
+          </div>
+          <h1 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">
+            {t('auth.confirmEmailTitle')}
+          </h1>
+          <p className="text-sm text-gray-500 dark:text-gray-400 mb-2">
+            {t('auth.confirmEmailSubtitle', { email })}
+          </p>
+          <p className="text-sm text-gray-500 dark:text-gray-400 mb-8">
+            {t('auth.confirmEmailBody')}
+          </p>
+
+          <Link
+            href="/login"
+            className="block w-full py-3 rounded-xl text-sm font-semibold btn-primary text-white text-center mb-4"
+          >
+            {t('auth.confirmEmailSignIn')}
+          </Link>
+
+          {resendSuccess ? (
+            <p className="text-sm text-green-600 dark:text-green-400">{t('auth.resendEmailSent')}</p>
+          ) : (
+            <button
+              onClick={handleResend}
+              disabled={resendLoading}
+              className="text-sm text-indigo-600 dark:text-indigo-400 hover:underline disabled:opacity-60"
+            >
+              {resendLoading ? t('auth.resendEmailLoading') : t('auth.resendEmail')}
+            </button>
+          )}
+        </div>
+      </div>
+    )
   }
 
   return (

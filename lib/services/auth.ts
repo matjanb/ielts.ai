@@ -58,6 +58,12 @@ export async function getUser() {
   return { user, error }
 }
 
+export async function resendConfirmation(email: string) {
+  const supabase = createClient()
+  const { error } = await supabase.auth.resend({ type: 'signup', email })
+  return { error }
+}
+
 export async function resetPassword(email: string) {
   const supabase = createClient()
   const { error } = await supabase.auth.resetPasswordForEmail(email, {

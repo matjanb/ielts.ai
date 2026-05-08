@@ -185,7 +185,15 @@
     "errorEmailExists": "Аккаунт с таким email уже существует.",
     "errorWeakPassword": "Пароль должен содержать не менее 8 символов.",
     "errorPasswordMismatch": "Пароли не совпадают.",
-    "errorGeneric": "Что-то пошло не так. Попробуйте снова."
+    "errorGeneric": "Что-то пошло не так. Попробуйте снова.",
+    "confirmEmailTitle": "Проверьте почту",
+    "confirmEmailSubtitle": "Мы отправили ссылку для подтверждения на {{email}}",
+    "confirmEmailBody": "Перейдите по ссылке в письме, чтобы активировать аккаунт. Проверьте папку «Спам», если письмо не пришло.",
+    "confirmEmailSignIn": "Я подтвердил почту — Войти",
+    "resendEmail": "Отправить письмо повторно",
+    "resendEmailLoading": "Отправка…",
+    "resendEmailSent": "Письмо отправлено! Проверьте входящие.",
+    "errorEmailNotConfirmed": "Сначала подтвердите вашу почту. Проверьте входящие или папку «Спам»."
   },
   "onboarding": {
     "stepOf": "{{current}} из {{total}}",
