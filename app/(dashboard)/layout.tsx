@@ -17,6 +17,7 @@ import type { ReactNode } from 'react'
 const NAV_ITEMS = [
   { href: '/dashboard',             icon: LayoutDashboard, key: 'overview'  },
   { href: '/dashboard/writing',     icon: BookOpen,        key: 'writing'   },
+  { href: '/reading/a1000000-0000-0000-0000-000000000001', icon: BookOpen, key: 'reading' },
   { href: '/dashboard/speaking',    icon: Mic,             key: 'speaking'  },
   { href: '/mock-tests',             icon: FileText,        key: 'mockTests' },
   { href: '/dashboard/study-plan',  icon: BrainCircuit,    key: 'studyPlan' },

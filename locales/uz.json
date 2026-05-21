@@ -202,6 +202,7 @@
     "overview": "Umumiy ko'rinish",
     "practice": "Mashq",
     "writing": "Yozish",
+    "reading": "O'qish",
     "speaking": "Gapirish",
     "mockTests": "Mashq testlari",
     "studyPlan": "O'quv rejasi",
@@ -327,6 +328,20 @@
     "sectionLabel": "{{n}}-bo'lim",
     "timeUp": "Vaqt tugadi!",
     "autoSubmit": "Testingiz avtomatik ravishda yuborildi."
+  },
+  "reading": {
+    "startSubtitle": "40 savol · 60 daqiqa · 3 matn",
+    "startTest": "Testni boshlash",
+    "questions": "Savollar",
+    "passages": "Matnlar",
+    "passage": "Matn",
+    "question": "Savol",
+    "backToDashboard": "Bosh sahifaga",
+    "retakeTest": "Qayta topshirish",
+    "overallBand": "Umumiy ball",
+    "rawScore": "Xom ball",
+    "yourAnswer2": "Javobingiz",
+    "correctAnswer": "To'g'ri javob"
   },
   "diagnostic": {
     "stepOf": "{{current}} / {{total}}",

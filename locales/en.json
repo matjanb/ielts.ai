@@ -310,6 +310,7 @@
     "overview": "Overview",
     "practice": "Practice",
     "writing": "Writing",
+    "reading": "Reading",
     "speaking": "Speaking",
     "mockTests": "Mock Tests",
     "studyPlan": "Study Plan",
@@ -367,6 +368,20 @@
     "sectionLabel": "Section {{n}}",
     "timeUp": "Time is up!",
     "autoSubmit": "Your test was automatically submitted."
+  },
+  "reading": {
+    "startSubtitle": "40 questions · 60 minutes · 3 passages",
+    "startTest": "Start Test",
+    "questions": "Questions",
+    "passages": "Passages",
+    "passage": "Passage",
+    "question": "Question",
+    "backToDashboard": "Back to Dashboard",
+    "retakeTest": "Retake Test",
+    "overallBand": "Overall Band Score",
+    "rawScore": "Raw Score",
+    "yourAnswer2": "Your answer",
+    "correctAnswer": "Correct answer"
   },
   "diagnostic": {
     "stepOf": "{{current}} of {{total}}",

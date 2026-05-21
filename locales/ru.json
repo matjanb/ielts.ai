@@ -309,6 +309,7 @@
     "overview": "Обзор",
     "practice": "Практика",
     "writing": "Письмо",
+    "reading": "Чтение",
     "speaking": "Говорение",
     "mockTests": "Пробные тесты",
     "studyPlan": "Учебный план",
@@ -366,6 +367,20 @@
     "sectionLabel": "Раздел {{n}}",
     "timeUp": "Время вышло!",
     "autoSubmit": "Ваш тест был автоматически отправлен."
+  },
+  "reading": {
+    "startSubtitle": "40 вопросов · 60 минут · 3 текста",
+    "startTest": "Начать тест",
+    "questions": "Вопросы",
+    "passages": "Тексты",
+    "passage": "Текст",
+    "question": "Вопрос",
+    "backToDashboard": "На главную",
+    "retakeTest": "Пройти заново",
+    "overallBand": "Общий балл",
+    "rawScore": "Сырой балл",
+    "yourAnswer2": "Ваш ответ",
+    "correctAnswer": "Правильный ответ"
   },
   "diagnostic": {
     "stepOf": "{{current}} из {{total}}",
