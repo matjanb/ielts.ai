@@ -61,7 +61,7 @@ export function FloatingNav() {
           {t('nav.login')}
         </Link>
         <Link
-          href="/signup"
+          href="/diagnostic/start"
           className="px-4 py-2 rounded-xl text-sm font-semibold btn-primary text-white hidden sm:block"
         >
           {t('nav.getStarted')}

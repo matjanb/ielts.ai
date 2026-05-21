@@ -1,15 +1,17 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import Link from 'next/link'
-import { useRouter } from 'next/navigation'
+import { useRouter, useSearchParams } from 'next/navigation'
 import { Eye, EyeOff } from 'lucide-react'
 import { useLanguage } from '@/lib/i18n/LanguageContext'
 import { signIn, signInWithGoogle, resendConfirmation } from '@/lib/services/auth'
+import { createClient } from '@/lib/supabase/client'
 
 export default function LoginPage() {
   const { t } = useLanguage()
   const router = useRouter()
+  const searchParams = useSearchParams()
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [showPassword, setShowPassword] = useState(false)
@@ -18,6 +20,11 @@ export default function LoginPage() {
   const [emailNotConfirmed, setEmailNotConfirmed] = useState(false)
   const [resendLoading, setResendLoading] = useState(false)
   const [resendSuccess, setResendSuccess] = useState(false)
+
+  useEffect(() => {
+    const urlError = searchParams.get('error')
+    if (urlError) setError(decodeURIComponent(urlError))
+  }, [searchParams])
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
@@ -39,10 +46,25 @@ export default function LoginPage() {
       return
     }
 
-    // Session cookies are now set by the browser Supabase client.
-    // router.refresh() re-fetches server components with the new session,
-    // then router.replace navigates without adding a history entry.
+    // Check if diagnostic/onboarding was completed and redirect accordingly
     router.refresh()
+    try {
+      const supabase = createClient()
+      const { data: { user } } = await supabase.auth.getUser()
+      if (user) {
+        const { data: profile } = await (supabase as any)
+          .from('profiles')
+          .select('onboarding_completed')
+          .eq('id', user.id)
+          .single()
+        if (!profile?.onboarding_completed) {
+          router.replace('/diagnostic/start')
+          return
+        }
+      }
+    } catch {
+      // ignore profile check errors — fall through to dashboard
+    }
     router.replace('/dashboard')
     // Keep loading=true so button stays disabled during navigation
   }

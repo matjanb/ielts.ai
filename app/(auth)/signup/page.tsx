@@ -6,6 +6,8 @@ import { useRouter } from 'next/navigation'
 import { Eye, EyeOff, Mail } from 'lucide-react'
 import { useLanguage } from '@/lib/i18n/LanguageContext'
 import { signUp, signInWithGoogle, resendConfirmation } from '@/lib/services/auth'
+import { saveDiagnosticData } from '@/lib/services/diagnostic'
+import { createClient } from '@/lib/supabase/client'
 
 export default function SignupPage() {
   const { t } = useLanguage()
@@ -52,8 +54,17 @@ export default function SignupPage() {
     console.log('[signup] success, user:', data?.user?.id, 'session:', data?.session ? 'present' : 'null (email confirmation pending)')
 
     if (data?.session) {
-      // Email confirmation disabled — go straight to onboarding
-      router.push('/onboarding')
+      // Email confirmation disabled — save diagnostic data then go to dashboard
+      try {
+        const supabase = createClient()
+        const { data: { user } } = await supabase.auth.getUser()
+        if (user) {
+          await saveDiagnosticData(user.id)
+        }
+      } catch {
+        // non-fatal — proceed to dashboard anyway
+      }
+      router.push('/dashboard')
     } else {
       // Email confirmation required — show check-your-email screen
       setEmailSent(true)

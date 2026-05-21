@@ -37,12 +37,19 @@ export async function signIn(email: string, password: string) {
 
 export async function signInWithGoogle() {
   const supabase = createClient()
+
+  const origin =
+    typeof window !== 'undefined'
+      ? window.location.origin
+      : process.env.NEXT_PUBLIC_APP_URL
+
   const { data, error } = await supabase.auth.signInWithOAuth({
     provider: 'google',
     options: {
-      redirectTo: `${process.env.NEXT_PUBLIC_APP_URL}/auth/callback`,
+      redirectTo: `${origin}/auth/callback`,
     },
   })
+
   return { data, error }
 }
 

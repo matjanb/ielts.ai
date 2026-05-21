@@ -39,7 +39,7 @@ export function Hero() {
       {/* CTAs */}
       <div className="animate-fade-in-up delay-300 flex flex-col sm:flex-row items-center gap-3 mb-20">
         <Link
-          href="/signup"
+          href="/diagnostic/start"
           className="btn-primary text-white font-semibold px-7 py-3.5 rounded-2xl text-sm flex items-center gap-2"
         >
           {t('hero.cta')}

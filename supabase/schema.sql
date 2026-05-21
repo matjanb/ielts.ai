@@ -18,14 +18,6 @@ do $$ begin
 exception when duplicate_object then null; end $$;
 
 do $$ begin
-  create type test_status as enum ('in_progress', 'completed', 'abandoned');
-exception when duplicate_object then null; end $$;
-
-do $$ begin
-  create type question_type as enum ('multiple_choice', 'matching', 'fill_blank', 'true_false_ng', 'essay');
-exception when duplicate_object then null; end $$;
-
-do $$ begin
   create type study_goal as enum ('university', 'immigration', 'work', 'personal');
 exception when duplicate_object then null; end $$;
 
@@ -121,82 +113,6 @@ create table if not exists study_plans (
   updated_at      timestamptz not null default now()
 );
 
--- ── MOCK TESTS ────────────────────────────────────────────────────────────────
-
-create table if not exists mock_tests (
-  id                  uuid primary key default uuid_generate_v4(),
-  title               text not null,
-  description         text,
-  test_type           text not null default 'academic' check (test_type in ('academic', 'general')),
-  sections            skill_type[] not null default '{reading,listening,writing,speaking}',
-  time_limit_minutes  integer not null default 160,
-  is_active           boolean not null default true,
-  created_at          timestamptz not null default now()
-);
-
--- ── TEST QUESTIONS ────────────────────────────────────────────────────────────
-
-create table if not exists test_questions (
-  id              uuid primary key default uuid_generate_v4(),
-  test_id         uuid not null references mock_tests(id) on delete cascade,
-  section         skill_type not null,
-  question_type   question_type not null,
-  order_index     integer not null,
-  passage_text    text,
-  question_text   text not null,
-  options         jsonb,
-  correct_answer  jsonb,
-  explanation     text,
-  marks           integer not null default 1,
-  created_at      timestamptz not null default now(),
-  unique (test_id, order_index)
-);
-
--- ── TEST SESSIONS ─────────────────────────────────────────────────────────────
-
-create table if not exists test_sessions (
-  id                  uuid primary key default uuid_generate_v4(),
-  user_id             uuid not null references profiles(id) on delete cascade,
-  test_id             uuid not null references mock_tests(id),
-  status              test_status not null default 'in_progress',
-  current_section     skill_type,
-  current_question    integer not null default 0,
-  time_spent_seconds  integer not null default 0,
-  started_at          timestamptz not null default now(),
-  completed_at        timestamptz
-);
-
--- ── TEST ANSWERS ──────────────────────────────────────────────────────────────
-
-create table if not exists test_answers (
-  id             uuid primary key default uuid_generate_v4(),
-  session_id     uuid not null references test_sessions(id) on delete cascade,
-  question_id    uuid not null references test_questions(id),
-  user_answer    jsonb not null,
-  is_correct     boolean,
-  marks_awarded  integer not null default 0,
-  created_at     timestamptz not null default now(),
-  unique (session_id, question_id)
-);
-
--- ── TEST RESULTS ──────────────────────────────────────────────────────────────
-
-create table if not exists test_results (
-  id               uuid primary key default uuid_generate_v4(),
-  session_id       uuid not null unique references test_sessions(id) on delete cascade,
-  user_id          uuid not null references profiles(id) on delete cascade,
-  test_id          uuid not null references mock_tests(id),
-  overall_band     numeric(2,1) not null,
-  writing_band     numeric(2,1),
-  speaking_band    numeric(2,1),
-  reading_band     numeric(2,1),
-  listening_band   numeric(2,1),
-  total_marks      integer not null,
-  max_marks        integer not null,
-  ai_feedback      text,
-  created_at       timestamptz not null default now()
-);
-
 -- ── WRITING SUBMISSIONS ───────────────────────────────────────────────────────
 
 create table if not exists writing_submissions (
@@ -268,19 +184,14 @@ create table if not exists ai_usage (
 -- ── ROW LEVEL SECURITY ────────────────────────────────────────────────────────
 -- ALTER TABLE ... ENABLE ROW LEVEL SECURITY is idempotent (safe to re-run)
 
-alter table profiles             enable row level security;
-alter table onboarding_data      enable row level security;
-alter table study_plans          enable row level security;
-alter table test_sessions        enable row level security;
-alter table test_answers         enable row level security;
-alter table test_results         enable row level security;
-alter table writing_submissions  enable row level security;
-alter table speaking_submissions enable row level security;
-alter table band_score_history   enable row level security;
-alter table study_sessions       enable row level security;
-alter table mock_tests           enable row level security;
-alter table test_questions       enable row level security;
-alter table ai_usage             enable row level security;
+alter table profiles              enable row level security;
+alter table onboarding_data       enable row level security;
+alter table study_plans           enable row level security;
+alter table writing_submissions   enable row level security;
+alter table speaking_submissions  enable row level security;
+alter table band_score_history    enable row level security;
+alter table study_sessions        enable row level security;
+alter table ai_usage              enable row level security;
 
 -- ── RLS POLICIES ──────────────────────────────────────────────────────────────
 -- Pattern: DROP POLICY IF EXISTS then CREATE POLICY (only safe idempotent approach)
@@ -305,31 +216,6 @@ create policy "Users manage own onboarding"
 drop policy if exists "Users manage own study plans" on study_plans;
 create policy "Users manage own study plans"
   on study_plans for all using (auth.uid() = user_id);
-
--- test_sessions
-drop policy if exists "Users manage own sessions"        on test_sessions;
-drop policy if exists "Users can insert own sessions"    on test_sessions;
-create policy "Users manage own sessions"
-  on test_sessions for select using (auth.uid() = user_id);
-create policy "Users can insert own sessions"
-  on test_sessions for insert with check (auth.uid() = user_id);
-create policy "Users can update own sessions"
-  on test_sessions for update using (auth.uid() = user_id);
-
--- test_answers
-drop policy if exists "Users manage own answers" on test_answers;
-drop policy if exists "Users can update own sessions" on test_sessions;
-create policy "Users manage own answers"
-  on test_answers for all
-  using (session_id in (select id from test_sessions where user_id = auth.uid()));
-
--- test_results
-drop policy if exists "Users view own results"       on test_results;
-drop policy if exists "Users can insert own results" on test_results;
-create policy "Users view own results"
-  on test_results for select using (auth.uid() = user_id);
-create policy "Users can insert own results"
-  on test_results for insert with check (auth.uid() = user_id);
 
 -- writing_submissions
 drop policy if exists "Users manage own writing"      on writing_submissions;
@@ -367,14 +253,6 @@ create policy "Users manage own study sessions"
 create policy "Users can insert own study sessions"
   on study_sessions for insert with check (auth.uid() = user_id);
 
--- mock_tests and test_questions: all authenticated users can read
-drop policy if exists "Authenticated users can read tests"     on mock_tests;
-drop policy if exists "Authenticated users can read questions" on test_questions;
-create policy "Authenticated users can read tests"
-  on mock_tests for select using (auth.uid() is not null);
-create policy "Authenticated users can read questions"
-  on test_questions for select using (auth.uid() is not null);
-
 -- ai_usage: users read own, service role inserts (no insert policy for authenticated)
 drop policy if exists "Users can view own AI usage" on ai_usage;
 create policy "Users can view own AI usage"
@@ -382,10 +260,6 @@ create policy "Users can view own AI usage"
 
 -- ── INDEXES ───────────────────────────────────────────────────────────────────
 
-create index if not exists idx_test_sessions_user          on test_sessions(user_id);
-create index if not exists idx_test_sessions_test          on test_sessions(test_id);
-create index if not exists idx_test_answers_session        on test_answers(session_id);
-create index if not exists idx_test_results_user           on test_results(user_id);
 create index if not exists idx_writing_user                on writing_submissions(user_id);
 create index if not exists idx_speaking_user               on speaking_submissions(user_id);
 create index if not exists idx_band_score_user             on band_score_history(user_id, recorded_at desc);
