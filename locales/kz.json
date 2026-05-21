@@ -310,6 +310,7 @@
     "practice": "Жаттығу",
     "writing": "Жазу",
     "reading": "Оқу",
+    "listening": "Тыңдау",
     "speaking": "Сөйлеу",
     "mockTests": "Жаттығу тестілері",
     "studyPlan": "Оқу жоспары",
@@ -336,6 +337,10 @@
     "days": "күн"
   },
   "listening": {
+    "title": "Тыңдау тесттері",
+    "subtitle": "Cambridge үлгісіндегі толық тесттермен жаттығыңыз",
+    "noTests": "Тыңдау тесттері әзірге жоқ.",
+    "minutes": "мин",
     "startTitle": "IELTS тыңдау тесті",
     "startSubtitle": "40 сұрақ · 30 минут · 4 бөлім",
     "startTest": "Тестті бастау",

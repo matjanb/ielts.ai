@@ -311,6 +311,7 @@
     "practice": "Practice",
     "writing": "Writing",
     "reading": "Reading",
+    "listening": "Listening",
     "speaking": "Speaking",
     "mockTests": "Mock Tests",
     "studyPlan": "Study Plan",
@@ -337,6 +338,10 @@
     "days": "days"
   },
   "listening": {
+    "title": "Listening Tests",
+    "subtitle": "Practice with full Cambridge-style listening tests",
+    "noTests": "No listening tests available yet.",
+    "minutes": "min",
     "startTitle": "IELTS Listening Test",
     "startSubtitle": "40 questions · 30 minutes · 4 sections",
     "startTest": "Start Test",

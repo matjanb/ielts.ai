@@ -5,7 +5,7 @@ import Link from 'next/link'
 import { usePathname, useRouter } from 'next/navigation'
 import {
   LayoutDashboard, BookOpen, Mic, FileText, BrainCircuit,
-  TrendingUp, Settings, LogOut, Menu, X, CreditCard
+  TrendingUp, Settings, LogOut, Menu, X, CreditCard, Headphones
 } from 'lucide-react'
 import { ThemeProvider } from '@/components/providers/ThemeProvider'
 import { LanguageProvider, useLanguage } from '@/lib/i18n/LanguageContext'
@@ -18,8 +18,9 @@ const NAV_ITEMS = [
   { href: '/dashboard',             icon: LayoutDashboard, key: 'overview'  },
   { href: '/dashboard/writing',     icon: BookOpen,        key: 'writing'   },
   { href: '/reading/a1000000-0000-0000-0000-000000000001', icon: BookOpen, key: 'reading' },
+  { href: '/listening',             icon: Headphones,      key: 'listening' },
   { href: '/dashboard/speaking',    icon: Mic,             key: 'speaking'  },
-  { href: '/mock-tests',             icon: FileText,        key: 'mockTests' },
+  { href: '/mock-tests',            icon: FileText,        key: 'mockTests' },
   { href: '/dashboard/study-plan',  icon: BrainCircuit,    key: 'studyPlan' },
   { href: '/dashboard/progress',    icon: TrendingUp,      key: 'progress'  },
 ]

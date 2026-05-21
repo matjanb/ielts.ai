@@ -203,6 +203,7 @@
     "practice": "Mashq",
     "writing": "Yozish",
     "reading": "O'qish",
+    "listening": "Tinglash",
     "speaking": "Gapirish",
     "mockTests": "Mashq testlari",
     "studyPlan": "O'quv rejasi",
@@ -297,6 +298,10 @@
     "days": "kun"
   },
   "listening": {
+    "title": "Tinglash Testlari",
+    "subtitle": "Cambridge uslubidagi to'liq testlar bilan mashq qiling",
+    "noTests": "Hali tinglash testlari mavjud emas.",
+    "minutes": "daq",
     "startTitle": "IELTS Tinglash Testi",
     "startSubtitle": "40 savol · 30 daqiqa · 4 bo'lim",
     "startTest": "Testni boshlash",
