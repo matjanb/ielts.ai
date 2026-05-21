@@ -342,6 +342,142 @@ export interface Database {
         }
         Update: never
       }
+
+      tests: {
+        Row: {
+          id: string
+          title: string
+          type: 'listening' | 'reading' | 'writing' | 'speaking'
+          book_number: number | null
+          test_number: number | null
+          difficulty: 'easy' | 'medium' | 'hard' | null
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          title: string
+          type: 'listening' | 'reading' | 'writing' | 'speaking'
+          book_number?: number | null
+          test_number?: number | null
+          difficulty?: 'easy' | 'medium' | 'hard' | null
+          created_at?: string
+        }
+        Update: {
+          title?: string
+          difficulty?: 'easy' | 'medium' | 'hard' | null
+        }
+      }
+
+      test_sections: {
+        Row: {
+          id: string
+          test_id: string
+          section_number: number
+          title: string
+          instructions: string | null
+          audio_url: string | null
+          audio_duration: number | null
+        }
+        Insert: {
+          id?: string
+          test_id: string
+          section_number: number
+          title: string
+          instructions?: string | null
+          audio_url?: string | null
+          audio_duration?: number | null
+        }
+        Update: {
+          title?: string
+          instructions?: string | null
+          audio_url?: string | null
+          audio_duration?: number | null
+        }
+      }
+
+      questions: {
+        Row: {
+          id: string
+          section_id: string
+          question_number: number
+          question_type: 'multiple_choice' | 'fill_blank' | 'matching' | 'true_false'
+          question_text: string
+          image_url: string | null
+          options: Json | null
+          correct_answer: string
+          points: number
+        }
+        Insert: {
+          id?: string
+          section_id: string
+          question_number: number
+          question_type: 'multiple_choice' | 'fill_blank' | 'matching' | 'true_false'
+          question_text: string
+          image_url?: string | null
+          options?: Json | null
+          correct_answer: string
+          points?: number
+        }
+        Update: {
+          question_text?: string
+          options?: Json | null
+          correct_answer?: string
+          points?: number
+        }
+      }
+
+      user_attempts: {
+        Row: {
+          id: string
+          user_id: string
+          test_id: string
+          started_at: string
+          completed_at: string | null
+          total_score: number | null
+          band_score: number | null
+          section_scores: Json
+        }
+        Insert: {
+          id?: string
+          user_id: string
+          test_id: string
+          started_at?: string
+          completed_at?: string | null
+          total_score?: number | null
+          band_score?: number | null
+          section_scores?: Json
+        }
+        Update: {
+          completed_at?: string | null
+          total_score?: number | null
+          band_score?: number | null
+          section_scores?: Json
+        }
+      }
+
+      user_answers: {
+        Row: {
+          id: string
+          attempt_id: string
+          question_id: string
+          user_answer: string | null
+          is_correct: boolean | null
+          time_spent_seconds: number | null
+        }
+        Insert: {
+          id?: string
+          attempt_id: string
+          question_id: string
+          user_answer?: string | null
+          is_correct?: boolean | null
+          time_spent_seconds?: number | null
+        }
+        Update: {
+          user_answer?: string | null
+          is_correct?: boolean | null
+          time_spent_seconds?: number | null
+        }
+      }
     }
     Views: Record<string, never>
     Functions: Record<string, never>
@@ -359,3 +495,8 @@ export type SpeakingSubmission = Database['public']['Tables']['speaking_submissi
 export type BandScoreHistory = Database['public']['Tables']['band_score_history']['Row']
 export type StudySession = Database['public']['Tables']['study_sessions']['Row']
 export type AiUsage = Database['public']['Tables']['ai_usage']['Row']
+export type IeltsTest = Database['public']['Tables']['tests']['Row']
+export type TestSection = Database['public']['Tables']['test_sections']['Row']
+export type Question = Database['public']['Tables']['questions']['Row']
+export type UserAttempt = Database['public']['Tables']['user_attempts']['Row']
+export type UserAnswer = Database['public']['Tables']['user_answers']['Row']
