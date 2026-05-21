@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback, useRef } from 'react'
 import { useRouter, useParams } from 'next/navigation'
-import { Play, Pause, ChevronLeft, ChevronRight, Send, Clock, Volume2 } from 'lucide-react'
+import { Play, Pause, ChevronLeft, ChevronRight, Send, Clock, Volume2, AlertCircle, Loader2 } from 'lucide-react'
 import { useLanguage } from '@/lib/i18n/LanguageContext'
 import { TestTimer } from '@/components/test/TestTimer'
 import { createClient } from '@/lib/supabase/client'
@@ -24,6 +24,12 @@ function AudioPlayer({ audioUrl, t }: { audioUrl: string | null; t: (k: string) 
   const speedIdx = SPEEDS.indexOf(speed)
 
   useEffect(() => {
+    setPlaying(false)
+    setProgress(0)
+    setDuration(0)
+  }, [audioUrl])
+
+  useEffect(() => {
     const el = audioRef.current
     if (!el) return
     const onTime = () => setProgress(el.currentTime)
@@ -43,7 +49,7 @@ function AudioPlayer({ audioUrl, t }: { audioUrl: string | null; t: (k: string) 
     const el = audioRef.current
     if (!el) return
     if (playing) { el.pause(); setPlaying(false) }
-    else { el.play(); setPlaying(true) }
+    else { el.play().catch(() => {}); setPlaying(true) }
   }
 
   function seek(e: React.ChangeEvent<HTMLInputElement>) {
@@ -59,6 +65,7 @@ function AudioPlayer({ audioUrl, t }: { audioUrl: string | null; t: (k: string) 
   }
 
   function fmt(s: number) {
+    if (!isFinite(s)) return '0:00'
     const m = Math.floor(s / 60)
     const sec = Math.floor(s % 60)
     return `${m}:${String(sec).padStart(2, '0')}`
@@ -88,7 +95,7 @@ function AudioPlayer({ audioUrl, t }: { audioUrl: string | null; t: (k: string) 
           <input
             type="range"
             min={0}
-            max={duration || 0}
+            max={duration || 1}
             value={progress}
             onChange={seek}
             className="w-full h-1.5 accent-amber-500 cursor-pointer"
@@ -177,29 +184,37 @@ function ListeningQuestion({
 function StartScreen({
   test,
   sections,
+  questionCount,
+  starting,
   onStart,
   t,
 }: {
   test: IeltsTest
   sections: TestSection[]
+  questionCount: number
+  starting: boolean
   onStart: () => void
   t: (k: string) => string
 }) {
   return (
     <div className="max-w-lg mx-auto">
       <div className="bg-white dark:bg-gray-900/60 rounded-3xl border border-gray-100 dark:border-gray-800 p-10 text-center">
-        <div className="w-14 h-14 rounded-2xl bg-amber-50 dark:bg-amber-500/10 flex items-center justify-center mx-auto mb-6">
+        <div className="w-14 h-14 rounded-2xl bg-amber-50 dark:bg-amber-500/10 flex items-center justify-center mx-auto mb-5">
           <Clock size={24} strokeWidth={1.8} className="text-amber-500" />
         </div>
+        {/* Listening badge */}
+        <span className="inline-block text-[10px] font-bold uppercase tracking-widest text-amber-600 dark:text-amber-400 bg-amber-100 dark:bg-amber-500/15 px-3 py-1 rounded-full mb-3">
+          Listening
+        </span>
         <h1 className="text-xl font-bold text-gray-900 dark:text-white mb-2">{test.title}</h1>
         <p className="text-sm text-gray-400 dark:text-gray-500 mb-8 leading-relaxed">
           {t('listening.startSubtitle')}
         </p>
         <div className="grid grid-cols-3 gap-3 mb-8">
           {[
-            { value: '40', label: t('listening.questions') },
+            { value: String(questionCount || 40), label: t('listening.questions') },
             { value: '30', label: 'min' },
-            { value: String(sections.length), label: 'sections' },
+            { value: String(sections.length || 4), label: 'sections' },
           ].map(({ value, label }) => (
             <div key={label} className="bg-gray-50 dark:bg-gray-800/60 rounded-xl py-3">
               <div className="text-lg font-bold text-gray-900 dark:text-white">{value}</div>
@@ -209,9 +224,11 @@ function StartScreen({
         </div>
         <button
           onClick={onStart}
-          className="w-full py-3.5 rounded-2xl font-semibold text-sm bg-amber-500 hover:bg-amber-400 text-white transition-colors"
+          disabled={starting}
+          className="w-full py-3.5 rounded-2xl font-semibold text-sm bg-amber-500 hover:bg-amber-400 text-white transition-colors disabled:opacity-70 flex items-center justify-center gap-2"
         >
-          {t('listening.startTest')}
+          {starting && <Loader2 size={15} className="animate-spin" />}
+          {starting ? 'Starting…' : t('listening.startTest')}
         </button>
       </div>
     </div>
@@ -224,7 +241,7 @@ export default function ListeningTestPage() {
   const { t } = useLanguage()
   const router = useRouter()
   const params = useParams<{ testId: string }>()
-  const testId = params.testId
+  const testId = params?.testId ?? ''
 
   const [test, setTest] = useState<IeltsTest | null>(null)
   const [sections, setSections] = useState<TestSection[]>([])
@@ -232,43 +249,67 @@ export default function ListeningTestPage() {
   const [answers, setAnswers] = useState<Record<string, string>>({})
   const [current, setCurrent] = useState(0)
   const [started, setStarted] = useState(false)
+  const [starting, setStarting] = useState(false)
   const [submitting, setSubmitting] = useState(false)
   const [attemptId, setAttemptId] = useState<string | null>(null)
   const [loading, setLoading] = useState(true)
-  const [error, setError] = useState<string | null>(null)
+  const [loadError, setLoadError] = useState<string | null>(null)
 
-  // Load test data
+  // Load test data on mount
   useEffect(() => {
+    if (!testId) return
     async function load() {
+      setLoading(true)
+      setLoadError(null)
       try {
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const supabase = createClient() as any
-        const { data: testData } = await supabase.from('tests').select('*').eq('id', testId).single()
-        if (!testData) { setError('Test not found'); return }
-        setTest(testData)
 
-        const { data: sectionsData } = await supabase
+        const { data: testData, error: testErr } = await supabase
+          .from('tests').select('*').eq('id', testId).single()
+        if (testErr || !testData) {
+          setLoadError(`Test not found (${testErr?.message ?? 'no data'})`)
+          return
+        }
+        setTest(testData as IeltsTest)
+
+        const { data: sectionsData, error: secErr } = await supabase
           .from('test_sections').select('*').eq('test_id', testId).order('section_number')
+        if (secErr) {
+          setLoadError(`Could not load sections: ${secErr.message}`)
+          return
+        }
         const secs: TestSection[] = sectionsData ?? []
         setSections(secs)
 
-        const sectionIds = secs.map(s => s.id)
-        const { data: rawQuestionsData } = await supabase
-          .from('questions')
-          .select('*')
-          .in('section_id', sectionIds)
-          .order('question_number')
-        const questionsData = rawQuestionsData as Question[] | null
+        if (secs.length === 0) {
+          setLoadError('No sections found for this test. Please run the seed data.')
+          return
+        }
 
-        const sectionMap = new Map(secs.map(s => [s.id, s]))
-        const enriched: QuestionWithSection[] = (questionsData ?? []).map(q => ({
+        const sectionIds: string[] = secs.map((s: TestSection) => s.id)
+        const { data: rawQs, error: qErr } = await supabase
+          .from('questions').select('*').in('section_id', sectionIds).order('question_number')
+        if (qErr) {
+          setLoadError(`Could not load questions: ${qErr.message}`)
+          return
+        }
+        const questionsData = (rawQs ?? []) as Question[]
+
+        if (questionsData.length === 0) {
+          setLoadError('No questions found for this test. Please run the seed data.')
+          return
+        }
+
+        const sectionMap = new Map(secs.map((s: TestSection) => [s.id, s]))
+        const enriched: QuestionWithSection[] = questionsData.map(q => ({
           ...q,
-          sectionNumber: sectionMap.get(q.section_id)?.section_number ?? 0,
-          sectionTitle: sectionMap.get(q.section_id)?.title ?? '',
+          sectionNumber: (sectionMap.get(q.section_id) as TestSection | undefined)?.section_number ?? 0,
+          sectionTitle: (sectionMap.get(q.section_id) as TestSection | undefined)?.title ?? '',
         }))
         setQuestions(enriched)
-      } catch {
-        setError('Failed to load test')
+      } catch (e) {
+        setLoadError(`Unexpected error: ${e instanceof Error ? e.message : String(e)}`)
       } finally {
         setLoading(false)
       }
@@ -276,26 +317,27 @@ export default function ListeningTestPage() {
     load()
   }, [testId])
 
-  // Create attempt when test starts
+  // Create attempt and start test
   async function handleStart() {
+    setStarting(true)
     try {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const supabase = createClient() as any
       const { data: { user } } = await supabase.auth.getUser()
-      if (!user) { router.push('/login'); return }
-
-      const { data } = await supabase
-        .from('user_attempts')
-        .insert({ user_id: user.id, test_id: testId })
-        .select('id')
-        .single()
-
-      if (data) setAttemptId(data.id)
-    } catch { /* no-op: attempt id is optional for auto-save */ }
+      if (user) {
+        const { data } = await supabase
+          .from('user_attempts')
+          .insert({ user_id: user.id, test_id: testId })
+          .select('id')
+          .single()
+        if (data?.id) setAttemptId(data.id)
+      }
+    } catch { /* attempt creation is optional — test still works without it */ }
+    setStarting(false)
     setStarted(true)
   }
 
-  // Auto-save single answer
+  // Auto-save single answer to Supabase
   const saveAnswer = useCallback(async (questionId: string, value: string) => {
     if (!attemptId) return
     try {
@@ -314,7 +356,7 @@ export default function ListeningTestPage() {
     saveAnswer(questionId, value)
   }
 
-  const handleTimeExpire = useCallback(() => { handleSubmit() }, [answers]) // eslint-disable-line react-hooks/exhaustive-deps
+  const handleTimeExpire = useCallback(() => { handleSubmit() }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
   async function handleSubmit() {
     if (submitting) return
@@ -348,9 +390,7 @@ export default function ListeningTestPage() {
     }
 
     const band = listeningRawToBand(totalCorrect)
-    const sectionScores = Object.fromEntries(
-      Object.entries(sectionCorrect).map(([k, v]) => [k, v])
-    )
+    const sectionScores = Object.fromEntries(Object.entries(sectionCorrect))
 
     if (attemptId) {
       try {
@@ -363,7 +403,6 @@ export default function ListeningTestPage() {
           section_scores: sectionScores,
         }).eq('id', attemptId)
 
-        // Also record in band_score_history
         const { data: { user } } = await supabase.auth.getUser()
         if (user) {
           await supabase.from('band_score_history').insert({
@@ -383,39 +422,76 @@ export default function ListeningTestPage() {
     )
   }
 
+  // ── Render ──────────────────────────────────────────────────────────────────
+
   if (loading) {
     return (
       <div className="flex items-center justify-center h-64">
-        <div className="text-sm text-gray-400">{t('common.loading')}</div>
+        <Loader2 size={20} className="animate-spin text-amber-500" />
+        <span className="ml-2 text-sm text-gray-400">{t('common.loading')}</span>
       </div>
     )
   }
 
-  if (error || !test) {
+  if (loadError || !test) {
     return (
-      <div className="flex flex-col items-center justify-center h-64 gap-3">
-        <div className="text-sm text-red-500">{error ?? 'Test not found'}</div>
-        <button onClick={() => router.back()} className="text-sm text-indigo-500 hover:underline">
-          {t('common.back')}
-        </button>
+      <div className="max-w-lg mx-auto">
+        <div className="bg-white dark:bg-gray-900/60 rounded-3xl border border-red-200 dark:border-red-800/60 p-8 text-center">
+          <div className="w-12 h-12 rounded-2xl bg-red-50 dark:bg-red-500/10 flex items-center justify-center mx-auto mb-4">
+            <AlertCircle size={20} className="text-red-500" />
+          </div>
+          <p className="text-sm font-semibold text-red-600 dark:text-red-400 mb-2">Failed to load test</p>
+          <p className="text-xs text-gray-500 dark:text-gray-400 mb-6 font-mono break-all">
+            {loadError ?? 'Test not found'}
+          </p>
+          <button
+            onClick={() => router.back()}
+            className="text-sm text-indigo-500 hover:underline"
+          >
+            {t('common.back')}
+          </button>
+        </div>
       </div>
     )
   }
 
   if (!started) {
-    return <StartScreen test={test} sections={sections} onStart={handleStart} t={t} />
+    return (
+      <StartScreen
+        test={test}
+        sections={sections}
+        questionCount={questions.length}
+        starting={starting}
+        onStart={handleStart}
+        t={t}
+      />
+    )
   }
 
-  const question = questions[current]
-  if (!question) return null
+  // Safety: questions must be loaded to proceed
+  if (questions.length === 0) {
+    return (
+      <div className="max-w-lg mx-auto">
+        <div className="bg-white dark:bg-gray-900/60 rounded-3xl border border-amber-200 dark:border-amber-800/40 p-8 text-center">
+          <AlertCircle size={20} className="text-amber-500 mx-auto mb-4" />
+          <p className="text-sm text-gray-600 dark:text-gray-300 mb-4">
+            No questions found. The database migration and seed may not have been applied yet.
+          </p>
+          <button onClick={() => setStarted(false)} className="text-sm text-amber-500 hover:underline">
+            ← Back
+          </button>
+        </div>
+      </div>
+    )
+  }
 
+  const question = questions[Math.min(current, questions.length - 1)]
   const currentSection = sections.find(s => s.section_number === question.sectionNumber)
   const answeredCount = Object.keys(answers).length
 
-  // Group questions by section for the nav
   const sectionGroups = sections.map(sec => ({
     section: sec,
-    questions: questions.filter(q => q.sectionNumber === sec.section_number),
+    qs: questions.filter(q => q.sectionNumber === sec.section_number),
   }))
 
   return (
@@ -439,13 +515,13 @@ export default function ListeningTestPage() {
       <div className="grid grid-cols-1 lg:grid-cols-4 gap-4">
         {/* Question navigation */}
         <div className="lg:col-span-1 space-y-3">
-          {sectionGroups.map(({ section, questions: qs }) => (
+          {sectionGroups.map(({ section, qs }) => (
             <div key={section.id} className="bg-white dark:bg-gray-900/50 rounded-2xl border border-gray-100 dark:border-gray-800 p-4">
               <p className="text-[10px] font-bold uppercase tracking-widest text-amber-500 dark:text-amber-400 mb-2 px-1">
                 {t('listening.section')} {section.section_number}
               </p>
               <div className="flex flex-wrap gap-1.5">
-                {qs.map((q, i) => {
+                {qs.map(q => {
                   const globalIdx = questions.findIndex(gq => gq.id === q.id)
                   const answered = Boolean(answers[q.id])
                   const isCurrent = current === globalIdx
@@ -486,10 +562,8 @@ export default function ListeningTestPage() {
 
         {/* Main content */}
         <div className="lg:col-span-3 space-y-4">
-          {/* Audio player for current section */}
           <AudioPlayer audioUrl={currentSection?.audio_url ?? null} t={t} />
 
-          {/* Section info + question */}
           <div className="bg-white dark:bg-gray-900/50 rounded-2xl border border-gray-100 dark:border-gray-800 p-7">
             <div className="mb-5 pb-4 border-b border-gray-100 dark:border-gray-800">
               <p className="text-[10px] font-bold uppercase tracking-widest text-gray-400 dark:text-gray-500">
@@ -506,7 +580,7 @@ export default function ListeningTestPage() {
         </div>
       </div>
 
-      {/* Navigation buttons */}
+      {/* Navigation */}
       <div className="flex items-center justify-between pt-1">
         <button
           onClick={() => setCurrent(c => Math.max(0, c - 1))}
@@ -531,7 +605,10 @@ export default function ListeningTestPage() {
             disabled={submitting}
             className="flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-semibold bg-emerald-600 hover:bg-emerald-500 text-white transition-colors disabled:opacity-60"
           >
-            <Send size={13} strokeWidth={2} />
+            {submitting
+              ? <Loader2 size={13} className="animate-spin" />
+              : <Send size={13} strokeWidth={2} />
+            }
             {submitting ? t('listening.submitting') : t('listening.submitTest')}
           </button>
         )}
