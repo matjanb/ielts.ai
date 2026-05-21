@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { TrendingUp, Flame, Target, BookOpen, Mic, FileText, ChevronRight, Zap } from 'lucide-react'
+import { TrendingUp, Flame, Target, BookOpen, Mic, FileText, ChevronRight, Zap, Headphones } from 'lucide-react'
 import Link from 'next/link'
 import { useLanguage } from '@/lib/i18n/LanguageContext'
 import { createClient } from '@/lib/supabase/client'
@@ -170,10 +170,11 @@ export default function DashboardPage() {
       </div>
 
       {/* Quick actions */}
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+      <div className="grid grid-cols-2 sm:grid-cols-5 gap-3">
         {[
           { href: '/mock-tests',           icon: FileText,   label: t('dashboard.mockTests'), color: 'text-indigo-500 bg-indigo-50 dark:bg-indigo-500/10'   },
           { href: '/dashboard/writing',    icon: BookOpen,   label: t('dashboard.writing'),   color: 'text-violet-500 bg-violet-50 dark:bg-violet-500/10'   },
+          { href: '/listening',            icon: Headphones, label: t('dashboard.listening'), color: 'text-amber-500 bg-amber-50 dark:bg-amber-500/10'      },
           { href: '/dashboard/speaking',   icon: Mic,        label: t('dashboard.speaking'),  color: 'text-blue-500   bg-blue-50   dark:bg-blue-500/10'     },
           { href: '/dashboard/progress',   icon: TrendingUp, label: t('dashboard.progress'),  color: 'text-emerald-500 bg-emerald-50 dark:bg-emerald-500/10' },
         ].map(({ href, icon: Icon, label, color }) => (
