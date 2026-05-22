@@ -8,11 +8,11 @@ const geistSans = Geist({ variable: '--font-geist-sans', subsets: ['latin'] })
 const geistMono = Geist_Mono({ variable: '--font-geist-mono', subsets: ['latin'] })
 
 export const metadata: Metadata = {
-  title: 'ielts.ai — AI-Powered IELTS Preparation',
+  title: 'IELTS Camp — AI-Powered IELTS Preparation',
   description: 'Achieve your target IELTS band score with personalised AI feedback, adaptive mock tests, and intelligent study plans.',
   keywords: ['IELTS', 'AI', 'preparation', 'band score', 'mock test', 'writing', 'speaking'],
   openGraph: {
-    title: 'ielts.ai — Master IELTS with AI',
+    title: 'IELTS Camp — Master IELTS with AI',
     description: 'Personalised AI feedback, adaptive mock tests, and smart study plans for IELTS success.',
     type: 'website',
   },

@@ -43,7 +43,7 @@ function DashboardNav({ onClose }: { onClose?: () => void }) {
           <div className="w-6 h-6 rounded-lg bg-gradient-to-br from-indigo-500 to-violet-600 flex items-center justify-center">
             <span className="text-white text-[10px] font-bold">i</span>
           </div>
-          <span className="text-sm font-semibold text-gray-900 dark:text-white">ielts.ai</span>
+          <span className="text-sm font-semibold text-gray-900 dark:text-white">IELTS Camp</span>
         </Link>
         {onClose && (
           <button onClick={onClose} className="ml-auto text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors">
@@ -134,7 +134,7 @@ function DashboardLayoutInner({ children }: { children: ReactNode }) {
           >
             <Menu size={18} />
           </button>
-          <span className="text-sm font-semibold text-gray-900 dark:text-white lg:hidden">ielts.ai</span>
+          <span className="text-sm font-semibold text-gray-900 dark:text-white lg:hidden">IELTS Camp</span>
           <div className="ml-auto flex items-center gap-1">
             <LanguageSwitcher />
             <ThemeToggle />

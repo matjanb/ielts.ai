@@ -126,14 +126,14 @@
     "sectionBadge": "FAQ",
     "sectionTitle": "Frequently Asked Questions",
     "sectionSubtitle": "Everything you need to know before getting started.",
-    "q1": "What is ielts.ai and how does it work?",
-    "a1": "ielts.ai is an AI-powered IELTS preparation platform that provides personalised feedback on your writing and speaking, generates full mock tests, and creates study plans tailored to your target score and timeline.",
+    "q1": "What is IELTS Camp and how does it work?",
+    "a1": "IELTS Camp is an AI-powered IELTS preparation platform that provides personalised feedback on your writing and speaking, generates full mock tests, and creates study plans tailored to your target score and timeline.",
     "q2": "How accurate is the AI feedback?",
     "a2": "Our AI is trained on thousands of IELTS responses and official marking criteria. It evaluates your work on the same four dimensions as official IELTS examiners: Task Achievement, Coherence & Cohesion, Lexical Resource, and Grammatical Range & Accuracy.",
-    "q3": "Can I use ielts.ai on my phone?",
+    "q3": "Can I use IELTS Camp on my phone?",
     "a3": "Yes. Our platform is fully responsive and works on all modern devices — phone, tablet, or computer — so you can practice wherever you are.",
-    "q4": "How is ielts.ai different from other prep apps?",
-    "a4": "Unlike generic test prep apps, ielts.ai adapts to your individual performance. Our AI pinpoints your specific weaknesses and creates a dynamic study plan that evolves as you improve — not a one-size-fits-all curriculum.",
+    "q4": "How is IELTS Camp different from other prep apps?",
+    "a4": "Unlike generic test prep apps, IELTS Camp adapts to your individual performance. Our AI pinpoints your specific weaknesses and creates a dynamic study plan that evolves as you improve — not a one-size-fits-all curriculum.",
     "q5": "Do I need an account to start?",
     "a5": "You can explore a few sample exercises without an account. To take full mock tests, receive AI feedback, and track progress, a free account is required.",
     "q6": "Is there a free plan?",
@@ -156,7 +156,7 @@
     "contact": "Contact",
     "privacy": "Privacy Policy",
     "terms": "Terms of Service",
-    "copyright": "© 2025 ielts.ai. All rights reserved."
+    "copyright": "© 2025 IELTS Camp. All rights reserved."
   },
   "auth": {
     "loginTitle": "Welcome back",

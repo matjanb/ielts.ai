@@ -125,14 +125,14 @@
     "sectionBadge": "Ko'p so'raladigan savollar",
     "sectionTitle": "Ko'p so'raladigan savollar",
     "sectionSubtitle": "Boshlashdan oldin bilishingiz kerak bo'lgan hamma narsa.",
-    "q1": "ielts.ai nima va u qanday ishlaydi?",
-    "a1": "ielts.ai — yozish va gapirishga shaxsiylashtirilgan fikr-mulohaza beradigan, mashq testlarini yaratadigan va maqsadingizga moslashtirilgan o'quv rejalari tuziladigan SI asosida IELTS tayyorgarlik platformasi.",
+    "q1": "IELTS Camp nima va u qanday ishlaydi?",
+    "a1": "IELTS Camp — yozish va gapirishga shaxsiylashtirilgan fikr-mulohaza beradigan, mashq testlarini yaratadigan va maqsadingizga moslashtirilgan o'quv rejalari tuziladigan SI asosida IELTS tayyorgarlik platformasi.",
     "q2": "SI fikr-mulohazasi qanchalik aniq?",
     "a2": "Bizning SI minglab IELTS javoblari va rasmiy baholash mezonlarida o'qitilgan. U ishingizni rasmiy IELTS ekzaminatorlari kabi to'rtta parametr bo'yicha baholaydi.",
-    "q3": "ielts.ai-dan telefonda foydalanish mumkinmi?",
+    "q3": "IELTS Camp-dan telefonda foydalanish mumkinmi?",
     "a3": "Ha. Platforma to'liq moslanuvchan va barcha zamonaviy qurilmalarda — smartfon, planshet yoki kompyuterda ishlaydi.",
-    "q4": "ielts.ai boshqa ilovalardan qanday farq qiladi?",
-    "a4": "Umumiy test tayyorgarlik ilovalaridan farqli o'laroq, ielts.ai sizning shaxsiy natijalaringizga moslashadi. SI aniq zaif tomonlaringizni aniqlaydi va rivojlanishingiz bilan birga o'zgarib boradigan reja tuzadi.",
+    "q4": "IELTS Camp boshqa ilovalardan qanday farq qiladi?",
+    "a4": "Umumiy test tayyorgarlik ilovalaridan farqli o'laroq, IELTS Camp sizning shaxsiy natijalaringizga moslashadi. SI aniq zaif tomonlaringizni aniqlaydi va rivojlanishingiz bilan birga o'zgarib boradigan reja tuzadi.",
     "q5": "Boshlash uchun hisob kerakmi?",
     "a5": "Ba'zi namunaviy mashqlarni hisobsiz ko'rish mumkin. To'liq testlar, fikr-mulohaza va taraqqiyot kuzatuvi uchun bepul hisob zarur.",
     "q6": "Bepul reja bormi?",
@@ -155,7 +155,7 @@
     "contact": "Aloqa",
     "privacy": "Maxfiylik siyosati",
     "terms": "Foydalanish shartlari",
-    "copyright": "© 2025 ielts.ai. Barcha huquqlar himoyalangan."
+    "copyright": "© 2025 IELTS Camp. Barcha huquqlar himoyalangan."
   },
   "auth": {
     "loginTitle": "Xush kelibsiz",

@@ -16,7 +16,7 @@ export default function DiagnosticLayout({ children }: { children: ReactNode }) 
               <div className="w-7 h-7 rounded-lg bg-gradient-to-br from-indigo-500 to-violet-600 flex items-center justify-center">
                 <span className="text-white text-xs font-bold">i</span>
               </div>
-              <span className="text-sm font-semibold text-gray-900 dark:text-white">ielts.ai</span>
+              <span className="text-sm font-semibold text-gray-900 dark:text-white">IELTS Camp</span>
             </Link>
             <div className="flex items-center gap-1">
               <LanguageSwitcher />

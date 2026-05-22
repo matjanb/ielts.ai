@@ -92,7 +92,7 @@ function OnboardingContent() {
           <div className="w-6 h-6 rounded-lg bg-gradient-to-br from-indigo-500 to-violet-600 flex items-center justify-center">
             <span className="text-white text-[10px] font-bold">i</span>
           </div>
-          <span className="text-sm font-semibold text-gray-900 dark:text-white">ielts.ai</span>
+          <span className="text-sm font-semibold text-gray-900 dark:text-white">IELTS Camp</span>
         </Link>
         <div className="flex items-center gap-1">
           <LanguageSwitcher />

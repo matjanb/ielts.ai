@@ -27,7 +27,7 @@ export function DashboardMockup() {
         <div className="w-2.5 h-2.5 rounded-full bg-amber-400/80" />
         <div className="w-2.5 h-2.5 rounded-full bg-green-400/80" />
         <div className="flex-1 mx-4 h-5 rounded-md bg-gray-200/80 dark:bg-gray-800 flex items-center px-3">
-          <span className="text-[11px] text-gray-400 font-medium">ielts.ai/dashboard</span>
+          <span className="text-[11px] text-gray-400 font-medium">ielts.camp/dashboard</span>
         </div>
       </div>
 
@@ -40,7 +40,7 @@ export function DashboardMockup() {
             <div className="w-5 h-5 rounded-md bg-gradient-to-br from-indigo-500 to-violet-600 flex items-center justify-center shrink-0">
               <span className="text-white text-[9px] font-bold">i</span>
             </div>
-            <span className="text-xs font-semibold text-gray-900 dark:text-white">ielts.ai</span>
+            <span className="text-xs font-semibold text-gray-900 dark:text-white">IELTS Camp</span>
           </div>
           {[
             { icon: BarChart3,    label: t('dashboard.overview'),  active: true  },
