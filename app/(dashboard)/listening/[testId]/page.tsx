@@ -197,16 +197,127 @@ function FillBlankQuestion({
   )
 }
 
+// ── Form-style detection ──────────────────────────────────────────────────────
+// A fill_blank question is "form-style" when it has a colon before the blank
+// (label: value pattern) AND does NOT end with sentence punctuation.
+// This covers Personal Details Form, Notes Completion tables, etc. — without
+// any hardcoded question numbers or section numbers.
+function isFormStyle(q: QuestionWithSection): boolean {
+  if (q.question_type !== 'fill_blank') return false
+  const text = q.question_text.trim()
+  const blankIdx = text.indexOf('___')
+  if (blankIdx < 0) return false
+  const beforeBlank = text.slice(0, blankIdx)
+  return beforeBlank.includes(':') && !/[.!?]\s*$/.test(text)
+}
+
+// Split a form question_text into { label, prefill, after } for form rendering.
+// e.g. "Complete the Personal Details Form. Name: Mary ___"
+//   → { label: "Name:", prefill: "Mary", after: "" }
+// e.g. "Address: Flat 2, number ___, ___ Road, Canterbury"
+//   → { label: "Address:", prefill: "Flat 2, number", after: ", ___ Road, Canterbury" }
+function parseFormField(question_text: string) {
+  // Strip any "Complete the X. " preamble
+  const dotIdx = question_text.indexOf('. ')
+  const fieldText = dotIdx >= 0 ? question_text.slice(dotIdx + 2) : question_text
+
+  const colonIdx = fieldText.indexOf(':')
+  if (colonIdx < 0) return { label: fieldText, prefill: '', after: '' }
+
+  const label = fieldText.slice(0, colonIdx + 1)
+  const rest = fieldText.slice(colonIdx + 1)
+
+  const blankIdx = rest.indexOf('___')
+  if (blankIdx < 0) return { label, prefill: rest.trim(), after: '' }
+
+  return {
+    label,
+    prefill: rest.slice(0, blankIdx).trim(),
+    after: rest.slice(blankIdx + 3),
+  }
+}
+
+// Extract a form title from the first question's text, if it names a form.
+// Returns null for small groups or questions without a named form.
+function extractFormTitle(questions: QuestionWithSection[]): string | null {
+  const firstText = questions[0]?.question_text ?? ''
+  const dotIdx = firstText.indexOf('. ')
+  if (dotIdx <= 0) return null
+  const prefix = firstText.slice(0, dotIdx)
+  const m = prefix.match(/complete the (.+)/i)
+  return m ? m[1].toUpperCase() : prefix.toUpperCase()
+}
+
+// ── Form Card (paper-form style for label-blank groups) ───────────────────────
+
+function FormCard({
+  questions,
+  answers,
+  onAnswer,
+}: {
+  questions: QuestionWithSection[]
+  answers: Record<string, string>
+  onAnswer: (id: string, v: string) => void
+}) {
+  const title = extractFormTitle(questions)
+
+  return (
+    <div className="border-2 border-gray-700 dark:border-gray-400 bg-white dark:bg-gray-950 rounded-sm">
+      {title && (
+        <div className="px-6 py-3 border-b-2 border-gray-700 dark:border-gray-400 text-center">
+          <span className="text-xs font-black uppercase tracking-widest text-gray-800 dark:text-gray-200">
+            {title}
+          </span>
+        </div>
+      )}
+      <div className="px-6 py-5 space-y-4">
+        {questions.map(q => {
+          const { label, prefill, after } = parseFormField(q.question_text)
+          return (
+            <div key={q.id} className="flex items-start gap-3 sm:gap-5">
+              {/* Label column */}
+              <div className="flex items-center gap-1.5 min-w-[140px] sm:min-w-[180px] shrink-0">
+                <span className="shrink-0 w-5 h-5 rounded-full bg-teal-500/15 dark:bg-teal-500/20 text-teal-600 dark:text-teal-400 text-[9px] font-bold flex items-center justify-center border border-teal-400/25 dark:border-teal-500/30">
+                  {q.question_number}
+                </span>
+                <span className="text-sm font-bold text-gray-800 dark:text-gray-200 leading-snug">
+                  {label}
+                </span>
+              </div>
+              {/* Value column */}
+              <div className="flex-1 flex items-baseline flex-wrap gap-x-1 text-sm text-gray-800 dark:text-gray-200 leading-7">
+                {prefill && <span>{prefill}</span>}
+                <input
+                  type="text"
+                  value={answers[q.id] ?? ''}
+                  onChange={e => onAnswer(q.id, e.target.value)}
+                  className="w-28 border-b-2 border-gray-700 dark:border-gray-400 bg-transparent focus:outline-none focus:border-amber-500 dark:focus:border-amber-400 text-sm text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-600 text-center transition-colors pb-0.5"
+                  placeholder="..."
+                />
+                {after && <span className="text-gray-600 dark:text-gray-400">{after}</span>}
+              </div>
+            </div>
+          )
+        })}
+      </div>
+    </div>
+  )
+}
+
 // Helper: group consecutive questions by type so fill-in blocks render together
 function groupByType(qs: QuestionWithSection[]) {
-  type Group = { mc: boolean; items: QuestionWithSection[] }
+  type GroupKind = 'mc' | 'form' | 'inline'
+  type Group = { kind: GroupKind; items: QuestionWithSection[] }
   const groups: Group[] = []
   for (const q of qs) {
-    const mc = q.question_type === 'multiple_choice'
-    if (groups.length && groups[groups.length - 1].mc === mc) {
+    const kind: GroupKind =
+      q.question_type === 'multiple_choice' ? 'mc'
+      : isFormStyle(q) ? 'form'
+      : 'inline'
+    if (groups.length && groups[groups.length - 1].kind === kind) {
       groups[groups.length - 1].items.push(q)
     } else {
-      groups.push({ mc, items: [q] })
+      groups.push({ kind, items: [q] })
     }
   }
   return groups
@@ -569,9 +680,9 @@ export default function ListeningTestPage() {
             )}
           </div>
 
-          {/* Questions: multiple-choice rendered individually, fill-blank grouped in a card */}
+          {/* Questions grouped by kind: mc → radio, form → paper form card, inline → teal-circle fill-blank */}
           {groups.map((group, gi) =>
-            group.mc ? (
+            group.kind === 'mc' ? (
               <div key={gi} className="space-y-8">
                 {group.items.map(q => (
                   <RadioQuestion
@@ -582,6 +693,13 @@ export default function ListeningTestPage() {
                   />
                 ))}
               </div>
+            ) : group.kind === 'form' ? (
+              <FormCard
+                key={gi}
+                questions={group.items}
+                answers={answers}
+                onAnswer={setAnswer}
+              />
             ) : (
               <div
                 key={gi}
