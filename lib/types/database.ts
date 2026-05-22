@@ -424,6 +424,7 @@ export interface Database {
         }
         Update: {
           question_text?: string
+          image_url?: string | null
           options?: Json | null
           correct_answer?: string
           points?: number

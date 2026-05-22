@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback, useRef } from 'react'
 import { useRouter, useParams } from 'next/navigation'
 import { Play, Pause, Send, Volume2, AlertCircle, Loader2, Clock } from 'lucide-react'
+import Image from 'next/image'
 import { useLanguage } from '@/lib/i18n/LanguageContext'
 import { TestTimer } from '@/components/test/TestTimer'
 import { createClient } from '@/lib/supabase/client'
@@ -113,6 +114,18 @@ function AudioPlayer({ audioUrl }: { audioUrl: string | null }) {
 
 // ── Multiple Choice Question ──────────────────────────────────────────────────
 
+// Parse image_url: JSON array string → per-option images; plain URL → single image above options.
+function parseImageUrl(raw: string | null): { singleImage: string | null; optionImages: string[] } {
+  if (!raw) return { singleImage: null, optionImages: [] }
+  if (raw.startsWith('[')) {
+    try {
+      const arr = JSON.parse(raw)
+      if (Array.isArray(arr)) return { singleImage: null, optionImages: arr as string[] }
+    } catch { /* fall through */ }
+  }
+  return { singleImage: raw, optionImages: [] }
+}
+
 function RadioQuestion({
   question,
   answer,
@@ -123,6 +136,7 @@ function RadioQuestion({
   onChange: (v: string) => void
 }) {
   const options: string[] = Array.isArray(question.options) ? (question.options as string[]) : []
+  const { singleImage, optionImages } = parseImageUrl(question.image_url)
 
   return (
     <div className="space-y-3">
@@ -130,33 +144,93 @@ function RadioQuestion({
         <span className="font-bold text-gray-500 dark:text-gray-400 mr-2">{question.question_number}.</span>
         {question.question_text}
       </p>
-      <div className="space-y-2 ml-5">
-        {options.map((opt) => {
-          const selected = answer === opt
-          return (
-            <button
-              key={opt}
-              onClick={() => onChange(opt)}
-              className="flex items-start gap-3 w-full text-left group"
-            >
-              <div className={`shrink-0 mt-0.5 w-[18px] h-[18px] rounded-full border-2 flex items-center justify-center transition-all duration-150 ${
-                selected
-                  ? 'border-amber-500 bg-amber-500'
-                  : 'border-gray-300 dark:border-gray-600 group-hover:border-amber-400'
-              }`}>
-                {selected && <div className="w-[7px] h-[7px] rounded-full bg-white" />}
-              </div>
-              <span className={`text-sm leading-relaxed transition-colors ${
-                selected
-                  ? 'text-amber-900 dark:text-amber-200 font-medium'
-                  : 'text-gray-700 dark:text-gray-300 group-hover:text-gray-900 dark:group-hover:text-white'
-              }`}>
-                {opt}
-              </span>
-            </button>
-          )
-        })}
-      </div>
+
+      {singleImage && (
+        <div className="relative w-full overflow-hidden rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900">
+          <Image
+            src={singleImage}
+            alt="Question image"
+            width={600}
+            height={300}
+            className="w-full h-auto object-contain max-h-64"
+          />
+        </div>
+      )}
+
+      {optionImages.length > 0 ? (
+        <div className="grid grid-cols-2 gap-3 mt-3">
+          {options.map((opt, idx) => {
+            const selected = answer === opt
+            const imgUrl = optionImages[idx] ?? null
+            const letter = opt.match(/^([A-D])\./)?.[1] ?? String.fromCharCode(65 + idx)
+            return (
+              <button
+                key={opt}
+                onClick={() => onChange(opt)}
+                className={`flex flex-col rounded-xl overflow-hidden border-2 transition-all duration-150 text-left ${
+                  selected
+                    ? 'border-amber-500 shadow-lg shadow-amber-100/50 dark:shadow-amber-900/30'
+                    : 'border-gray-200 dark:border-gray-700 hover:border-amber-300 dark:hover:border-amber-600'
+                }`}
+              >
+                <div className="relative w-full aspect-[4/3] bg-gray-100 dark:bg-gray-800">
+                  {imgUrl && (
+                    <Image
+                      src={imgUrl}
+                      alt={`Option ${letter}`}
+                      fill
+                      className="object-cover"
+                    />
+                  )}
+                  {selected && <div className="absolute inset-0 bg-amber-500/10" />}
+                </div>
+                <div className={`flex items-center gap-2 px-3 py-2 ${
+                  selected ? 'bg-amber-50 dark:bg-amber-500/10' : 'bg-white dark:bg-gray-900/60'
+                }`}>
+                  <div className={`shrink-0 w-[18px] h-[18px] rounded-full border-2 flex items-center justify-center transition-all ${
+                    selected ? 'border-amber-500 bg-amber-500' : 'border-gray-300 dark:border-gray-600'
+                  }`}>
+                    {selected && <div className="w-[7px] h-[7px] rounded-full bg-white" />}
+                  </div>
+                  <span className={`text-sm font-bold ${
+                    selected ? 'text-amber-700 dark:text-amber-300' : 'text-gray-500 dark:text-gray-400'
+                  }`}>
+                    {letter}
+                  </span>
+                </div>
+              </button>
+            )
+          })}
+        </div>
+      ) : (
+        <div className="space-y-2 ml-5">
+          {options.map((opt) => {
+            const selected = answer === opt
+            return (
+              <button
+                key={opt}
+                onClick={() => onChange(opt)}
+                className="flex items-start gap-3 w-full text-left group"
+              >
+                <div className={`shrink-0 mt-0.5 w-[18px] h-[18px] rounded-full border-2 flex items-center justify-center transition-all duration-150 ${
+                  selected
+                    ? 'border-amber-500 bg-amber-500'
+                    : 'border-gray-300 dark:border-gray-600 group-hover:border-amber-400'
+                }`}>
+                  {selected && <div className="w-[7px] h-[7px] rounded-full bg-white" />}
+                </div>
+                <span className={`text-sm leading-relaxed transition-colors ${
+                  selected
+                    ? 'text-amber-900 dark:text-amber-200 font-medium'
+                    : 'text-gray-700 dark:text-gray-300 group-hover:text-gray-900 dark:group-hover:text-white'
+                }`}>
+                  {opt}
+                </span>
+              </button>
+            )
+          })}
+        </div>
+      )}
     </div>
   )
 }
