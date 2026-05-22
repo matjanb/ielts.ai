@@ -725,11 +725,10 @@ export default function ListeningTestPage() {
     try {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const supabase = createClient() as any
-      await supabase.from('user_answers').upsert({
-        attempt_id: attemptId,
-        question_id: questionId,
-        user_answer: value,
-      })
+      await supabase.from('user_answers').upsert(
+        { attempt_id: attemptId, question_id: questionId, user_answer: value },
+        { onConflict: 'attempt_id,question_id' }
+      )
     } catch { /* silent */ }
   }, [attemptId])
 
@@ -759,12 +758,10 @@ export default function ListeningTestPage() {
         try {
           // eslint-disable-next-line @typescript-eslint/no-explicit-any
           const supabase = createClient() as any
-          await supabase.from('user_answers').upsert({
-            attempt_id: attemptId,
-            question_id: q.id,
-            user_answer: answers[q.id] ?? null,
-            is_correct: correct,
-          })
+          await supabase.from('user_answers').upsert(
+            { attempt_id: attemptId, question_id: q.id, user_answer: answers[q.id] ?? null, is_correct: correct },
+            { onConflict: 'attempt_id,question_id' }
+          )
         } catch { /* silent */ }
       }
     }
