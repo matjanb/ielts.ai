@@ -304,6 +304,51 @@ function FormCard({
   )
 }
 
+// ── Passage Block (flowing paragraph with inline answer blanks) ───────────────
+// Used when questions have passage_text set. Groups with the same passage_group
+// render as one continuous paragraph; each {{Q}} becomes a numbered inline input.
+
+function PassageBlock({
+  questions,
+  answers,
+  onAnswer,
+}: {
+  questions: QuestionWithSection[]
+  answers: Record<string, string>
+  onAnswer: (id: string, v: string) => void
+}) {
+  return (
+    <div className="bg-white dark:bg-gray-900/50 rounded-xl border border-gray-200 dark:border-gray-700 p-5">
+      <p className="text-sm leading-9 text-gray-800 dark:text-gray-200">
+        {questions.map(q => {
+          const passageText = q.passage_text ?? ''
+          const parts = passageText.split('{{Q}}')
+          const before = parts[0] ?? ''
+          const after = parts[1] ?? ''
+          return (
+            <span key={q.id}>
+              {before}
+              <span className="inline-flex items-baseline gap-0.5 mx-0.5">
+                <sup className="text-[9px] font-bold text-teal-600 dark:text-teal-400 leading-none">
+                  ({q.question_number})
+                </sup>
+                <input
+                  type="text"
+                  value={answers[q.id] ?? ''}
+                  onChange={e => onAnswer(q.id, e.target.value)}
+                  className="w-28 px-1 pb-0.5 border-b-2 border-amber-400 dark:border-amber-500/70 bg-transparent focus:outline-none focus:border-amber-600 dark:focus:border-amber-400 text-sm text-gray-900 dark:text-white placeholder-gray-300 dark:placeholder-gray-600 text-center transition-colors"
+                  placeholder="..."
+                />
+              </span>
+              {after}
+            </span>
+          )
+        })}
+      </p>
+    </div>
+  )
+}
+
 // ── Notepad Card (notes-completion style for inline fill-blank groups) ────────
 
 function NotepadCard({
@@ -476,16 +521,24 @@ function MultiSelectBlock({
 
 // Helper: group consecutive questions by type so fill-in blocks render together
 function groupByType(qs: QuestionWithSection[]) {
-  type GroupKind = 'mc' | 'multiselect' | 'form' | 'inline'
+  type GroupKind = 'mc' | 'multiselect' | 'form' | 'inline' | 'passage'
   type Group = { kind: GroupKind; items: QuestionWithSection[] }
   const groups: Group[] = []
   for (const q of qs) {
     const kind: GroupKind =
-      q.question_type === 'multiple_choice' ? 'mc'
+      q.passage_text ? 'passage'
+      : q.question_type === 'multiple_choice' ? 'mc'
       : isFormStyle(q) ? 'form'
       : 'inline'
-    if (groups.length && groups[groups.length - 1].kind === kind) {
-      groups[groups.length - 1].items.push(q)
+    const last = groups[groups.length - 1]
+    // Passage questions only merge if they share the same passage_group number.
+    const sameGroup =
+      last &&
+      last.kind === kind &&
+      (kind !== 'passage' ||
+        last.items[last.items.length - 1].passage_group === q.passage_group)
+    if (sameGroup) {
+      last.items.push(q)
     } else {
       groups.push({ kind, items: [q] })
     }
@@ -893,6 +946,12 @@ export default function ListeningTestPage() {
                   />
                 ) : group.kind === 'form' ? (
                   <FormCard
+                    questions={group.items}
+                    answers={answers}
+                    onAnswer={setAnswer}
+                  />
+                ) : group.kind === 'passage' ? (
+                  <PassageBlock
                     questions={group.items}
                     answers={answers}
                     onAnswer={setAnswer}

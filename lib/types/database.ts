@@ -406,6 +406,8 @@ export interface Database {
           options: Json | null
           correct_answer: string
           points: number
+          passage_text: string | null
+          passage_group: number | null
         }
         Insert: {
           id?: string
@@ -417,12 +419,16 @@ export interface Database {
           options?: Json | null
           correct_answer: string
           points?: number
+          passage_text?: string | null
+          passage_group?: number | null
         }
         Update: {
           question_text?: string
           options?: Json | null
           correct_answer?: string
           points?: number
+          passage_text?: string | null
+          passage_group?: number | null
         }
       }
 
