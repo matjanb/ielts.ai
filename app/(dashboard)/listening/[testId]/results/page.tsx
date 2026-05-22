@@ -6,6 +6,7 @@ import { CheckCircle2, XCircle, RotateCcw, LayoutDashboard, Loader2 } from 'luci
 import { useLanguage } from '@/lib/i18n/LanguageContext'
 import { createClient } from '@/lib/supabase/client'
 import type { Question, TestSection } from '@/lib/types/database'
+import { isAnswerCorrect } from '@/lib/utils/answerChecking'
 
 type QuestionWithSection = Question & { sectionNumber: number; sectionTitle: string }
 
@@ -118,7 +119,7 @@ export default function ListeningResultsPage() {
         <div className="text-center">
           <p className="text-sm text-gray-400 dark:text-gray-500 mb-1">{t('listening.rawScore')}</p>
           <p className="text-3xl font-black text-gray-900 dark:text-white tabular-nums">
-            {rawScore} <span className="text-base font-normal text-gray-400">/ 40</span>
+            {rawScore} <span className="text-base font-normal text-gray-400">/ 41</span>
           </p>
         </div>
 
@@ -171,7 +172,7 @@ export default function ListeningResultsPage() {
                 <div className="divide-y divide-gray-100 dark:divide-gray-800">
                   {qs.map(q => {
                     const userAns = userAnswers[q.id] ?? ''
-                    const isCorrect = userAns.trim().toLowerCase() === q.correct_answer.trim().toLowerCase()
+                    const isCorrect = isAnswerCorrect(userAns, q.correct_answer)
                     return (
                       <div key={q.id} className="px-6 py-4">
                         <div className="flex items-start gap-3">

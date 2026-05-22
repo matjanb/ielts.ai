@@ -7,6 +7,7 @@ import { useLanguage } from '@/lib/i18n/LanguageContext'
 import { TestTimer } from '@/components/test/TestTimer'
 import { createClient } from '@/lib/supabase/client'
 import { listeningRawToBand } from '@/lib/utils/bandScore'
+import { isAnswerCorrect } from '@/lib/utils/answerChecking'
 import type { IeltsTest, TestSection, Question } from '@/lib/types/database'
 
 type QuestionWithSection = Question & { sectionNumber: number; sectionTitle: string }
@@ -370,9 +371,7 @@ export default function ListeningTestPage() {
       if (!sectionCorrect[n]) sectionCorrect[n] = { correct: 0, total: 0 }
       sectionCorrect[n].total++
 
-      const userAns = (answers[q.id] ?? '').trim().toLowerCase()
-      const correctAns = q.correct_answer.trim().toLowerCase()
-      const isCorrect = userAns === correctAns
+      const isCorrect = isAnswerCorrect(answers[q.id] ?? '', q.correct_answer)
       if (isCorrect) { totalCorrect++; sectionCorrect[n].correct++ }
 
       if (attemptId) {
