@@ -304,9 +304,179 @@ function FormCard({
   )
 }
 
+// ── Notepad Card (notes-completion style for inline fill-blank groups) ────────
+
+function NotepadCard({
+  questions,
+  answers,
+  onAnswer,
+}: {
+  questions: QuestionWithSection[]
+  answers: Record<string, string>
+  onAnswer: (id: string, v: string) => void
+}) {
+  return (
+    <div className="rounded-xl overflow-hidden border border-gray-300 dark:border-gray-600 shadow-sm">
+      {/* Spiral binding row — repeating holes */}
+      <div
+        className="h-5 bg-gray-300 dark:bg-gray-700"
+        style={{
+          backgroundImage:
+            'radial-gradient(circle, white 4px, transparent 4px), radial-gradient(circle, #6b7280 5px, transparent 5px)',
+          backgroundSize: '22px 20px',
+          backgroundPosition: '11px center',
+        }}
+      />
+      {/* Notepad lines */}
+      <div
+        className="px-5 py-4 space-y-3 bg-[#fffef5] dark:bg-[#1a1a10]"
+        style={{
+          backgroundImage:
+            'repeating-linear-gradient(transparent, transparent 27px, #d1d5db 27px, #d1d5db 28px)',
+          backgroundPositionY: '12px',
+        }}
+      >
+        {questions.map(q => {
+          const text = q.question_text
+          const blankIdx = text.indexOf('___')
+          const before = blankIdx >= 0 ? text.slice(0, blankIdx) : text
+          const after = blankIdx >= 0 ? text.slice(blankIdx + 3) : ''
+          return (
+            <div
+              key={q.id}
+              className="flex items-baseline flex-wrap gap-x-1 text-sm text-gray-800 dark:text-gray-200 leading-7"
+            >
+              <span className="font-bold text-gray-600 dark:text-gray-400 shrink-0 mr-0.5">
+                ({q.question_number})
+              </span>
+              {before && <span>{before}</span>}
+              <input
+                type="text"
+                value={answers[q.id] ?? ''}
+                onChange={e => onAnswer(q.id, e.target.value)}
+                className="inline-block w-32 px-1 pb-0.5 border-b-2 border-gray-500 dark:border-gray-400 bg-transparent focus:outline-none focus:border-amber-500 dark:focus:border-amber-400 text-sm text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-600 text-center transition-colors"
+                placeholder="..."
+              />
+              {after && <span>{after}</span>}
+            </div>
+          )
+        })}
+      </div>
+    </div>
+  )
+}
+
+// ── Multi-Select Block (checkbox list for questions that share identical options) ─
+
+function MultiSelectBlock({
+  questions,
+  answers,
+  onAnswer,
+}: {
+  questions: QuestionWithSection[]
+  answers: Record<string, string>
+  onAnswer: (id: string, v: string) => void
+}) {
+  const maxSelect = questions.length
+  const options: string[] = Array.isArray(questions[0]?.options)
+    ? (questions[0].options as string[])
+    : []
+
+  const selected = questions.map(q => answers[q.id] ?? '').filter(Boolean)
+  const selectedCount = selected.length
+
+  // Strip the "(Q11 — first item)" suffix to get the shared instruction text
+  const instruction = (questions[0]?.question_text ?? '')
+    .replace(/\s*\(Q\d+[^)]*\)\s*$/i, '')
+    .trim()
+
+  function handleToggle(opt: string) {
+    const current = questions.map(q => answers[q.id] ?? '').filter(Boolean)
+    let next: string[]
+    if (current.includes(opt)) {
+      next = current.filter(s => s !== opt)
+    } else {
+      if (current.length >= maxSelect) return
+      next = [...current, opt]
+    }
+    // Sort by position in options array so Q11 always gets the alphabetically-first
+    // answer — makes scoring correct regardless of selection order
+    next.sort((a, b) => options.indexOf(a) - options.indexOf(b))
+    questions.forEach((q, i) => onAnswer(q.id, next[i] ?? ''))
+  }
+
+  return (
+    <div className="border-2 border-gray-300 dark:border-gray-600 rounded-xl overflow-hidden">
+      {/* Instruction bar */}
+      <div className="px-4 py-2.5 bg-gray-50 dark:bg-gray-800/60 border-b border-gray-200 dark:border-gray-700 flex items-start justify-between gap-3">
+        <p className="text-xs text-gray-600 dark:text-gray-400 leading-relaxed">{instruction}</p>
+        <span className={`shrink-0 text-xs font-bold tabular-nums px-2 py-0.5 rounded-full ${
+          selectedCount === maxSelect
+            ? 'bg-emerald-100 dark:bg-emerald-500/20 text-emerald-700 dark:text-emerald-400'
+            : 'bg-amber-100 dark:bg-amber-500/20 text-amber-700 dark:text-amber-400'
+        }`}>
+          {selectedCount}/{maxSelect}
+        </span>
+      </div>
+      {/* Option rows */}
+      <div className="divide-y divide-gray-100 dark:divide-gray-800">
+        {options.map(opt => {
+          const isSelected = selected.includes(opt)
+          const isDisabled = !isSelected && selectedCount >= maxSelect
+          // Parse "A. Description text" format
+          const m = opt.match(/^([A-Z])\.\s*(.+)$/)
+          const letter = m ? m[1] : ''
+          const text = m ? m[2] : opt
+          return (
+            <button
+              key={opt}
+              onClick={() => !isDisabled && handleToggle(opt)}
+              disabled={isDisabled}
+              className={`w-full flex items-center gap-3 px-4 py-2.5 text-left transition-all duration-150 ${
+                isSelected
+                  ? 'bg-amber-50 dark:bg-amber-500/10'
+                  : isDisabled
+                  ? 'opacity-40 cursor-not-allowed'
+                  : 'hover:bg-gray-50 dark:hover:bg-gray-800/40'
+              }`}
+            >
+              {/* Checkbox */}
+              <div className={`shrink-0 w-4 h-4 rounded border-2 flex items-center justify-center transition-all ${
+                isSelected
+                  ? 'bg-amber-500 border-amber-500'
+                  : 'border-gray-400 dark:border-gray-500'
+              }`}>
+                {isSelected && (
+                  <svg viewBox="0 0 10 8" className="w-2.5 h-2">
+                    <path d="M1 4l3 3 5-6" stroke="white" strokeWidth="1.8" fill="none" strokeLinecap="round" strokeLinejoin="round" />
+                  </svg>
+                )}
+              </div>
+              {/* Letter badge */}
+              <span className={`shrink-0 w-5 text-xs font-black text-center ${
+                isSelected ? 'text-amber-700 dark:text-amber-300' : 'text-gray-400 dark:text-gray-500'
+              }`}>
+                {letter}
+              </span>
+              {/* Description */}
+              <span className={`text-sm ${
+                isSelected
+                  ? 'text-amber-900 dark:text-amber-100 font-medium'
+                  : 'text-gray-700 dark:text-gray-300'
+              }`}>
+                {text}
+              </span>
+            </button>
+          )
+        })}
+      </div>
+    </div>
+  )
+}
+
 // Helper: group consecutive questions by type so fill-in blocks render together
 function groupByType(qs: QuestionWithSection[]) {
-  type GroupKind = 'mc' | 'form' | 'inline'
+  type GroupKind = 'mc' | 'multiselect' | 'form' | 'inline'
   type Group = { kind: GroupKind; items: QuestionWithSection[] }
   const groups: Group[] = []
   for (const q of qs) {
@@ -320,7 +490,16 @@ function groupByType(qs: QuestionWithSection[]) {
       groups.push({ kind, items: [q] })
     }
   }
-  return groups
+  // Upgrade MC groups to 'multiselect' when all questions share identical options.
+  // Sorting is handled in MultiSelectBlock so scoring is order-independent.
+  return groups.map(g => {
+    if (g.kind !== 'mc' || g.items.length < 2) return g
+    const ref = JSON.stringify(g.items[0].options)
+    if (g.items.every(q => JSON.stringify(q.options) === ref)) {
+      return { kind: 'multiselect' as GroupKind, items: g.items }
+    }
+    return g
+  })
 }
 
 // ── Start Screen ──────────────────────────────────────────────────────────────
@@ -706,6 +885,12 @@ export default function ListeningTestPage() {
                       />
                     ))}
                   </div>
+                ) : group.kind === 'multiselect' ? (
+                  <MultiSelectBlock
+                    questions={group.items}
+                    answers={answers}
+                    onAnswer={setAnswer}
+                  />
                 ) : group.kind === 'form' ? (
                   <FormCard
                     questions={group.items}
@@ -713,16 +898,11 @@ export default function ListeningTestPage() {
                     onAnswer={setAnswer}
                   />
                 ) : (
-                  <div className="bg-gray-50/80 dark:bg-gray-800/30 rounded-2xl border border-gray-100 dark:border-gray-700/50 p-6 space-y-5">
-                    {group.items.map(q => (
-                      <FillBlankQuestion
-                        key={q.id}
-                        question={q}
-                        answer={answers[q.id] ?? ''}
-                        onChange={v => setAnswer(q.id, v)}
-                      />
-                    ))}
-                  </div>
+                  <NotepadCard
+                    questions={group.items}
+                    answers={answers}
+                    onAnswer={setAnswer}
+                  />
                 )}
               </div>
             )
