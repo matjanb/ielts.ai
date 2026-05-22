@@ -681,41 +681,52 @@ export default function ListeningTestPage() {
           </div>
 
           {/* Questions grouped by kind: mc → radio, form → paper form card, inline → teal-circle fill-blank */}
-          {groups.map((group, gi) =>
-            group.kind === 'mc' ? (
-              <div key={gi} className="space-y-8">
-                {group.items.map(q => (
-                  <RadioQuestion
-                    key={q.id}
-                    question={q}
-                    answer={answers[q.id] ?? ''}
-                    onChange={v => setAnswer(q.id, v)}
+          {groups.map((group, gi) => {
+            const first = group.items[0].question_number
+            const last = group.items[group.items.length - 1].question_number
+            const rangeLabel = first === last ? `Question ${first}` : `Questions ${first}–${last}`
+            return (
+              <div key={gi} className="space-y-4">
+                {/* Group range header — Cambridge IELTS style */}
+                <div>
+                  <p className="text-lg font-bold italic text-gray-800 dark:text-gray-200 mb-2">
+                    {rangeLabel}
+                  </p>
+                  <div className="border-t border-gray-300 dark:border-gray-700" />
+                </div>
+
+                {group.kind === 'mc' ? (
+                  <div className="space-y-8">
+                    {group.items.map(q => (
+                      <RadioQuestion
+                        key={q.id}
+                        question={q}
+                        answer={answers[q.id] ?? ''}
+                        onChange={v => setAnswer(q.id, v)}
+                      />
+                    ))}
+                  </div>
+                ) : group.kind === 'form' ? (
+                  <FormCard
+                    questions={group.items}
+                    answers={answers}
+                    onAnswer={setAnswer}
                   />
-                ))}
-              </div>
-            ) : group.kind === 'form' ? (
-              <FormCard
-                key={gi}
-                questions={group.items}
-                answers={answers}
-                onAnswer={setAnswer}
-              />
-            ) : (
-              <div
-                key={gi}
-                className="bg-gray-50/80 dark:bg-gray-800/30 rounded-2xl border border-gray-100 dark:border-gray-700/50 p-6 space-y-5"
-              >
-                {group.items.map(q => (
-                  <FillBlankQuestion
-                    key={q.id}
-                    question={q}
-                    answer={answers[q.id] ?? ''}
-                    onChange={v => setAnswer(q.id, v)}
-                  />
-                ))}
+                ) : (
+                  <div className="bg-gray-50/80 dark:bg-gray-800/30 rounded-2xl border border-gray-100 dark:border-gray-700/50 p-6 space-y-5">
+                    {group.items.map(q => (
+                      <FillBlankQuestion
+                        key={q.id}
+                        question={q}
+                        answer={answers[q.id] ?? ''}
+                        onChange={v => setAnswer(q.id, v)}
+                      />
+                    ))}
+                  </div>
+                )}
               </div>
             )
-          )}
+          })}
         </div>
       </div>
 
