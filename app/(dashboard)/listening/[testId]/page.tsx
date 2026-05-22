@@ -212,7 +212,7 @@ function StartScreen({
         </p>
         <div className="grid grid-cols-3 gap-3 mb-8">
           {[
-            { value: String(questionCount || 40), label: t('listening.questions') },
+            { value: String(questionCount), label: t('listening.questions') },
             { value: '30', label: 'min' },
             { value: String(sections.length || 4), label: 'sections' },
           ].map(({ value, label }) => (

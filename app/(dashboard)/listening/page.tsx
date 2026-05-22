@@ -9,9 +9,9 @@ import { createClient } from '@/lib/supabase/client'
 interface ListeningTest {
   id: string
   title: string
-  description: string | null
-  duration_minutes: number
-  total_questions: number
+  book_number: number | null
+  test_number: number | null
+  difficulty: string | null
 }
 
 export default function ListeningIndexPage() {
@@ -22,11 +22,12 @@ export default function ListeningIndexPage() {
   useEffect(() => {
     async function load() {
       const supabase = createClient() as any
-      const { data } = await supabase
+      const { data, error } = await supabase
         .from('tests')
-        .select('id, title, description, duration_minutes, total_questions')
+        .select('id, title, book_number, test_number, difficulty')
         .eq('type', 'listening')
         .order('created_at', { ascending: true })
+      console.log('Listening tests:', data, error)
       setTests(data ?? [])
       setLoading(false)
     }
@@ -76,19 +77,21 @@ export default function ListeningIndexPage() {
                 <p className="text-sm font-medium text-gray-900 dark:text-white truncate">
                   {test.title}
                 </p>
-                {test.description && (
+                {(test.book_number != null || test.test_number != null) && (
                   <p className="text-xs text-gray-400 dark:text-gray-500 mt-0.5 truncate">
-                    {test.description}
+                    {test.book_number != null ? `Book ${test.book_number}` : ''}
+                    {test.book_number != null && test.test_number != null ? ' · ' : ''}
+                    {test.test_number != null ? `Test ${test.test_number}` : ''}
                   </p>
                 )}
                 <div className="flex items-center gap-3 mt-1.5">
                   <span className="flex items-center gap-1 text-xs text-gray-400 dark:text-gray-500">
                     <HelpCircle size={11} strokeWidth={2} />
-                    {test.total_questions} {t('listening.questions')}
+                    40 {t('listening.questions')}
                   </span>
                   <span className="flex items-center gap-1 text-xs text-gray-400 dark:text-gray-500">
                     <Clock size={11} strokeWidth={2} />
-                    {test.duration_minutes} {t('listening.minutes')}
+                    30 {t('listening.minutes')}
                   </span>
                 </div>
               </div>
