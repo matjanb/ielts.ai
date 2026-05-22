@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback, useRef } from 'react'
 import { useRouter, useParams } from 'next/navigation'
-import { Play, Pause, ChevronLeft, ChevronRight, Send, Clock, Volume2, AlertCircle, Loader2 } from 'lucide-react'
+import { Play, Pause, Send, Volume2, AlertCircle, Loader2, Clock } from 'lucide-react'
 import { useLanguage } from '@/lib/i18n/LanguageContext'
 import { TestTimer } from '@/components/test/TestTimer'
 import { createClient } from '@/lib/supabase/client'
@@ -16,13 +16,12 @@ const SPEEDS = [0.75, 1, 1.25, 1.5]
 
 // ── Audio Player ──────────────────────────────────────────────────────────────
 
-function AudioPlayer({ audioUrl, t }: { audioUrl: string | null; t: (k: string) => string }) {
+function AudioPlayer({ audioUrl }: { audioUrl: string | null }) {
   const audioRef = useRef<HTMLAudioElement | null>(null)
   const [playing, setPlaying] = useState(false)
   const [progress, setProgress] = useState(0)
   const [duration, setDuration] = useState(0)
   const [speed, setSpeed] = useState(1)
-  const speedIdx = SPEEDS.indexOf(speed)
 
   useEffect(() => {
     setPlaying(false)
@@ -60,124 +59,157 @@ function AudioPlayer({ audioUrl, t }: { audioUrl: string | null; t: (k: string) 
   }
 
   function cycleSpeed() {
-    const next = SPEEDS[(speedIdx + 1) % SPEEDS.length]
+    const idx = SPEEDS.indexOf(speed)
+    const next = SPEEDS[(idx + 1) % SPEEDS.length]
     setSpeed(next)
     if (audioRef.current) audioRef.current.playbackRate = next
   }
 
   function fmt(s: number) {
     if (!isFinite(s)) return '0:00'
-    const m = Math.floor(s / 60)
-    const sec = Math.floor(s % 60)
-    return `${m}:${String(sec).padStart(2, '0')}`
+    return `${Math.floor(s / 60)}:${String(Math.floor(s % 60)).padStart(2, '0')}`
   }
 
   if (!audioUrl) {
     return (
-      <div className="flex items-center gap-2 px-4 py-3 rounded-xl bg-gray-100 dark:bg-gray-800/60 text-sm text-gray-400">
-        <Volume2 size={14} />
-        {t('listening.noAudio')}
+      <div className="flex items-center gap-2 text-xs text-gray-400">
+        <Volume2 size={13} />
+        No audio
       </div>
     )
   }
 
   return (
-    <div className="bg-amber-50 dark:bg-amber-500/8 border border-amber-200/60 dark:border-amber-500/20 rounded-xl p-4">
+    <div className="flex items-center gap-3 flex-1 min-w-0">
       {/* eslint-disable-next-line jsx-a11y/media-has-caption */}
       <audio ref={audioRef} src={audioUrl} preload="metadata" />
-      <div className="flex items-center gap-3">
-        <button
-          onClick={togglePlay}
-          className="w-9 h-9 rounded-xl bg-amber-500 hover:bg-amber-400 text-white flex items-center justify-center shrink-0 transition-colors"
-        >
-          {playing ? <Pause size={14} strokeWidth={2} /> : <Play size={14} strokeWidth={2} />}
-        </button>
-        <div className="flex-1 space-y-1">
-          <input
-            type="range"
-            min={0}
-            max={duration || 1}
-            value={progress}
-            onChange={seek}
-            className="w-full h-1.5 accent-amber-500 cursor-pointer"
-          />
-          <div className="flex justify-between text-[10px] text-amber-600/70 dark:text-amber-400/60 tabular-nums">
-            <span>{fmt(progress)}</span>
-            <span>{fmt(duration)}</span>
-          </div>
-        </div>
-        <button
-          onClick={cycleSpeed}
-          className="text-xs font-bold text-amber-600 dark:text-amber-400 bg-amber-100 dark:bg-amber-500/15 px-2 py-1 rounded-lg hover:bg-amber-200 dark:hover:bg-amber-500/25 transition-colors tabular-nums"
-        >
-          {speed}x
-        </button>
+      <button
+        onClick={togglePlay}
+        className="shrink-0 w-8 h-8 rounded-xl bg-amber-500 hover:bg-amber-400 text-white flex items-center justify-center transition-colors"
+      >
+        {playing ? <Pause size={13} strokeWidth={2} /> : <Play size={13} strokeWidth={2} />}
+      </button>
+      <div className="flex-1 min-w-0 flex items-center gap-2">
+        <span className="text-[10px] text-gray-400 tabular-nums shrink-0 w-8 text-right">{fmt(progress)}</span>
+        <input
+          type="range"
+          min={0}
+          max={duration || 1}
+          value={progress}
+          onChange={seek}
+          className="flex-1 h-1 accent-amber-500 cursor-pointer min-w-0"
+        />
+        <span className="text-[10px] text-gray-400 tabular-nums shrink-0 w-8">{fmt(duration)}</span>
+      </div>
+      <button
+        onClick={cycleSpeed}
+        className="shrink-0 text-xs font-bold text-amber-600 dark:text-amber-400 bg-amber-50 dark:bg-amber-500/10 px-2 py-1 rounded-lg hover:bg-amber-100 dark:hover:bg-amber-500/20 transition-colors tabular-nums"
+      >
+        {speed}x
+      </button>
+    </div>
+  )
+}
+
+// ── Multiple Choice Question ──────────────────────────────────────────────────
+
+function RadioQuestion({
+  question,
+  answer,
+  onChange,
+}: {
+  question: QuestionWithSection
+  answer: string
+  onChange: (v: string) => void
+}) {
+  const options: string[] = Array.isArray(question.options) ? (question.options as string[]) : []
+
+  return (
+    <div className="space-y-3">
+      <p className="text-sm font-medium text-gray-900 dark:text-white leading-relaxed">
+        <span className="font-bold text-gray-500 dark:text-gray-400 mr-2">{question.question_number}.</span>
+        {question.question_text}
+      </p>
+      <div className="space-y-2 ml-5">
+        {options.map((opt) => {
+          const selected = answer === opt
+          return (
+            <button
+              key={opt}
+              onClick={() => onChange(opt)}
+              className="flex items-start gap-3 w-full text-left group"
+            >
+              <div className={`shrink-0 mt-0.5 w-[18px] h-[18px] rounded-full border-2 flex items-center justify-center transition-all duration-150 ${
+                selected
+                  ? 'border-amber-500 bg-amber-500'
+                  : 'border-gray-300 dark:border-gray-600 group-hover:border-amber-400'
+              }`}>
+                {selected && <div className="w-[7px] h-[7px] rounded-full bg-white" />}
+              </div>
+              <span className={`text-sm leading-relaxed transition-colors ${
+                selected
+                  ? 'text-amber-900 dark:text-amber-200 font-medium'
+                  : 'text-gray-700 dark:text-gray-300 group-hover:text-gray-900 dark:group-hover:text-white'
+              }`}>
+                {opt}
+              </span>
+            </button>
+          )
+        })}
       </div>
     </div>
   )
 }
 
-// ── Question Renderer ─────────────────────────────────────────────────────────
+// ── Fill-in-the-blank Question ────────────────────────────────────────────────
 
-function ListeningQuestion({
+function FillBlankQuestion({
   question,
   answer,
   onChange,
-  t,
 }: {
   question: QuestionWithSection
   answer: string
   onChange: (v: string) => void
-  t: (k: string) => string
 }) {
-  const options: string[] = Array.isArray(question.options)
-    ? (question.options as string[])
-    : []
+  const text = question.question_text
+  const blankIdx = text.indexOf('___')
+  const before = blankIdx >= 0 ? text.slice(0, blankIdx) : text
+  const after = blankIdx >= 0 ? text.slice(blankIdx + 3) : ''
 
   return (
-    <div className="space-y-5">
-      <p className="text-base font-medium text-gray-900 dark:text-white leading-relaxed">
-        {question.question_text}
-      </p>
-
-      {question.question_type === 'multiple_choice' && options.length > 0 && (
-        <div className="space-y-2">
-          {options.map((opt, i) => {
-            const selected = answer === opt
-            const letter = String.fromCharCode(65 + i)
-            return (
-              <button
-                key={opt}
-                onClick={() => onChange(opt)}
-                className={`w-full text-left flex items-start gap-3.5 px-5 py-3.5 rounded-xl border text-sm transition-all duration-150 ${
-                  selected
-                    ? 'border-amber-500 bg-amber-50 dark:bg-amber-500/10 text-amber-800 dark:text-amber-300'
-                    : 'border-gray-200 dark:border-gray-700/60 bg-gray-50/50 dark:bg-gray-800/30 text-gray-700 dark:text-gray-300 hover:border-amber-300 dark:hover:border-amber-500/40 hover:bg-white dark:hover:bg-gray-800/60'
-                }`}
-              >
-                <span className={`shrink-0 w-5 h-5 rounded-md flex items-center justify-center text-[10px] font-bold mt-0.5 transition-all ${
-                  selected ? 'bg-amber-500 text-white' : 'bg-gray-200 dark:bg-gray-700 text-gray-500 dark:text-gray-400'
-                }`}>
-                  {letter}
-                </span>
-                {opt}
-              </button>
-            )
-          })}
-        </div>
-      )}
-
-      {question.question_type === 'fill_blank' && (
+    <div className="flex items-start gap-3">
+      <span className="shrink-0 mt-0.5 w-6 h-6 rounded-full bg-teal-500/12 dark:bg-teal-500/20 text-teal-600 dark:text-teal-400 text-[10px] font-bold flex items-center justify-center border border-teal-400/25 dark:border-teal-500/30">
+        {question.question_number}
+      </span>
+      <div className="flex-1 text-sm text-gray-800 dark:text-gray-200 leading-7 flex items-baseline flex-wrap gap-x-1">
+        {before && <span>{before}</span>}
         <input
           type="text"
           value={answer}
           onChange={e => onChange(e.target.value)}
-          placeholder={t('listening.yourAnswer')}
-          className="w-full px-4 py-3.5 rounded-xl border border-gray-200 dark:border-gray-700/60 bg-white dark:bg-gray-800/50 text-sm text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-600 focus:outline-none focus:ring-2 focus:ring-amber-500/30 focus:border-amber-500 transition-all"
+          className="inline-block w-36 px-2 py-0.5 border-b-2 border-amber-400 dark:border-amber-500/70 bg-transparent focus:outline-none focus:border-amber-600 dark:focus:border-amber-400 text-sm text-gray-900 dark:text-white placeholder-gray-300 dark:placeholder-gray-600 transition-colors text-center"
+          placeholder="..."
         />
-      )}
+        {after && <span>{after}</span>}
+      </div>
     </div>
   )
+}
+
+// Helper: group consecutive questions by type so fill-in blocks render together
+function groupByType(qs: QuestionWithSection[]) {
+  type Group = { mc: boolean; items: QuestionWithSection[] }
+  const groups: Group[] = []
+  for (const q of qs) {
+    const mc = q.question_type === 'multiple_choice'
+    if (groups.length && groups[groups.length - 1].mc === mc) {
+      groups[groups.length - 1].items.push(q)
+    } else {
+      groups.push({ mc, items: [q] })
+    }
+  }
+  return groups
 }
 
 // ── Start Screen ──────────────────────────────────────────────────────────────
@@ -203,7 +235,6 @@ function StartScreen({
         <div className="w-14 h-14 rounded-2xl bg-amber-50 dark:bg-amber-500/10 flex items-center justify-center mx-auto mb-5">
           <Clock size={24} strokeWidth={1.8} className="text-amber-500" />
         </div>
-        {/* Listening badge */}
         <span className="inline-block text-[10px] font-bold uppercase tracking-widest text-amber-600 dark:text-amber-400 bg-amber-100 dark:bg-amber-500/15 px-3 py-1 rounded-full mb-3">
           Listening
         </span>
@@ -248,7 +279,7 @@ export default function ListeningTestPage() {
   const [sections, setSections] = useState<TestSection[]>([])
   const [questions, setQuestions] = useState<QuestionWithSection[]>([])
   const [answers, setAnswers] = useState<Record<string, string>>({})
-  const [current, setCurrent] = useState(0)
+  const [currentSectionIdx, setCurrentSectionIdx] = useState(0)
   const [started, setStarted] = useState(false)
   const [starting, setStarting] = useState(false)
   const [submitting, setSubmitting] = useState(false)
@@ -318,6 +349,13 @@ export default function ListeningTestPage() {
     load()
   }, [testId])
 
+  // Scroll to top of main scroll container when section changes
+  useEffect(() => {
+    if (!started) return
+    const main = document.querySelector('main')
+    main?.scrollTo({ top: 0, behavior: 'smooth' })
+  }, [currentSectionIdx, started])
+
   // Create attempt and start test
   async function handleStart() {
     setStarting(true)
@@ -333,12 +371,12 @@ export default function ListeningTestPage() {
           .single()
         if (data?.id) setAttemptId(data.id)
       }
-    } catch { /* attempt creation is optional — test still works without it */ }
+    } catch { /* attempt creation is optional */ }
     setStarting(false)
     setStarted(true)
   }
 
-  // Auto-save single answer to Supabase
+  // Auto-save single answer
   const saveAnswer = useCallback(async (questionId: string, value: string) => {
     if (!attemptId) return
     try {
@@ -371,8 +409,8 @@ export default function ListeningTestPage() {
       if (!sectionCorrect[n]) sectionCorrect[n] = { correct: 0, total: 0 }
       sectionCorrect[n].total++
 
-      const isCorrect = isAnswerCorrect(answers[q.id] ?? '', q.correct_answer)
-      if (isCorrect) { totalCorrect++; sectionCorrect[n].correct++ }
+      const correct = isAnswerCorrect(answers[q.id] ?? '', q.correct_answer)
+      if (correct) { totalCorrect++; sectionCorrect[n].correct++ }
 
       if (attemptId) {
         try {
@@ -382,7 +420,7 @@ export default function ListeningTestPage() {
             attempt_id: attemptId,
             question_id: q.id,
             user_answer: answers[q.id] ?? null,
-            is_correct: isCorrect,
+            is_correct: correct,
           })
         } catch { /* silent */ }
       }
@@ -443,10 +481,7 @@ export default function ListeningTestPage() {
           <p className="text-xs text-gray-500 dark:text-gray-400 mb-6 font-mono break-all">
             {loadError ?? 'Test not found'}
           </p>
-          <button
-            onClick={() => router.back()}
-            className="text-sm text-indigo-500 hover:underline"
-          >
+          <button onClick={() => router.back()} className="text-sm text-indigo-500 hover:underline">
             {t('common.back')}
           </button>
         </div>
@@ -467,7 +502,6 @@ export default function ListeningTestPage() {
     )
   }
 
-  // Safety: questions must be loaded to proceed
   if (questions.length === 0) {
     return (
       <div className="max-w-lg mx-auto">
@@ -484,133 +518,125 @@ export default function ListeningTestPage() {
     )
   }
 
-  const question = questions[Math.min(current, questions.length - 1)]
-  const currentSection = sections.find(s => s.section_number === question.sectionNumber)
-  const answeredCount = Object.keys(answers).length
-
-  const sectionGroups = sections.map(sec => ({
-    section: sec,
-    qs: questions.filter(q => q.sectionNumber === sec.section_number),
-  }))
+  const currentSection = sections[currentSectionIdx] ?? sections[0]
+  const sectionQuestions = questions.filter(q => q.sectionNumber === currentSection?.section_number)
+  const groups = groupByType(sectionQuestions)
+  const answeredCount = Object.values(answers).filter(Boolean).length
 
   return (
-    <div className="max-w-5xl mx-auto space-y-4">
-      {/* Top bar */}
-      <div className="flex items-center justify-between py-1">
-        <div className="flex items-center gap-2.5">
-          <span className="text-xs font-semibold px-2.5 py-1 rounded-lg bg-amber-50 dark:bg-amber-500/10 text-amber-600 dark:text-amber-400">
-            {t('listening.section')} {question.sectionNumber}
+    // Bleed to edges of the dashboard main padding so top/bottom bars span full width
+    <div className="-mx-6 -mt-6 -mb-6 lg:-mx-8 lg:-mt-8 lg:-mb-8">
+
+      {/* ── Sticky top bar: audio + timer + submit ── */}
+      <div className="sticky top-0 z-40 bg-white/95 dark:bg-[#08080f]/95 backdrop-blur-sm border-b border-gray-100 dark:border-gray-800 px-4 lg:px-6 py-3 flex items-center gap-4">
+        <AudioPlayer audioUrl={currentSection?.audio_url ?? null} />
+        <div className="shrink-0 flex items-center gap-3">
+          <span className="hidden sm:flex items-center gap-1 text-xs text-gray-400 tabular-nums">
+            <span className="text-gray-600 dark:text-gray-300 font-medium">{answeredCount}</span>
+            <span>/</span>
+            <span>{questions.length}</span>
           </span>
-          <span className="text-sm text-gray-400 dark:text-gray-500">
-            {current + 1} {t('listening.of')} {questions.length}
-          </span>
-          <span className="text-xs text-gray-300 dark:text-gray-600">
-            · {answeredCount} {t('listening.answered')}
-          </span>
-        </div>
-        <TestTimer totalSeconds={1800} onExpire={handleTimeExpire} />
-      </div>
-
-      <div className="grid grid-cols-1 lg:grid-cols-4 gap-4">
-        {/* Question navigation */}
-        <div className="lg:col-span-1 space-y-3">
-          {sectionGroups.map(({ section, qs }) => (
-            <div key={section.id} className="bg-white dark:bg-gray-900/50 rounded-2xl border border-gray-100 dark:border-gray-800 p-4">
-              <p className="text-[10px] font-bold uppercase tracking-widest text-amber-500 dark:text-amber-400 mb-2 px-1">
-                {t('listening.section')} {section.section_number}
-              </p>
-              <div className="flex flex-wrap gap-1.5">
-                {qs.map(q => {
-                  const globalIdx = questions.findIndex(gq => gq.id === q.id)
-                  const answered = Boolean(answers[q.id])
-                  const isCurrent = current === globalIdx
-                  return (
-                    <button
-                      key={q.id}
-                      onClick={() => setCurrent(globalIdx)}
-                      className={`w-8 h-8 rounded-lg text-xs font-semibold transition-all duration-150 ${
-                        isCurrent
-                          ? 'bg-amber-500 text-white shadow-sm shadow-amber-500/25'
-                          : answered
-                          ? 'bg-emerald-100 dark:bg-emerald-500/15 text-emerald-700 dark:text-emerald-400'
-                          : 'bg-gray-100 dark:bg-gray-800 text-gray-500 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-700'
-                      }`}
-                    >
-                      {q.question_number}
-                    </button>
-                  )
-                })}
-              </div>
-            </div>
-          ))}
-
-          {/* Legend */}
-          <div className="bg-white dark:bg-gray-900/50 rounded-2xl border border-gray-100 dark:border-gray-800 p-4 space-y-1.5">
-            {[
-              { color: 'bg-amber-500', label: 'Current' },
-              { color: 'bg-emerald-100 dark:bg-emerald-500/15', label: 'Answered' },
-              { color: 'bg-gray-100 dark:bg-gray-800', label: 'Not answered' },
-            ].map(({ color, label }) => (
-              <div key={label} className="flex items-center gap-2">
-                <div className={`w-3 h-3 rounded-sm ${color}`} />
-                <span className="text-[10px] text-gray-400 dark:text-gray-500">{label}</span>
-              </div>
-            ))}
-          </div>
-        </div>
-
-        {/* Main content */}
-        <div className="lg:col-span-3 space-y-4">
-          <AudioPlayer audioUrl={currentSection?.audio_url ?? null} t={t} />
-
-          <div className="bg-white dark:bg-gray-900/50 rounded-2xl border border-gray-100 dark:border-gray-800 p-7">
-            <div className="mb-5 pb-4 border-b border-gray-100 dark:border-gray-800">
-              <p className="text-[10px] font-bold uppercase tracking-widest text-gray-400 dark:text-gray-500">
-                {question.sectionTitle}
-              </p>
-            </div>
-            <ListeningQuestion
-              question={question}
-              answer={answers[question.id] ?? ''}
-              onChange={v => setAnswer(question.id, v)}
-              t={t}
-            />
-          </div>
-        </div>
-      </div>
-
-      {/* Navigation */}
-      <div className="flex items-center justify-between pt-1">
-        <button
-          onClick={() => setCurrent(c => Math.max(0, c - 1))}
-          disabled={current === 0}
-          className="flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-medium text-gray-500 dark:text-gray-400 disabled:opacity-30 hover:text-gray-700 dark:hover:text-gray-300 hover:bg-gray-100 dark:hover:bg-white/5 transition-all"
-        >
-          <ChevronLeft size={15} strokeWidth={2} />
-          {t('listening.prevQuestion')}
-        </button>
-
-        {current < questions.length - 1 ? (
-          <button
-            onClick={() => setCurrent(c => c + 1)}
-            className="flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-semibold bg-amber-500 hover:bg-amber-400 text-white transition-colors"
-          >
-            {t('listening.nextQuestion')}
-            <ChevronRight size={15} strokeWidth={2.5} />
-          </button>
-        ) : (
+          <TestTimer totalSeconds={1800} onExpire={handleTimeExpire} />
           <button
             onClick={handleSubmit}
             disabled={submitting}
-            className="flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-semibold bg-emerald-600 hover:bg-emerald-500 text-white transition-colors disabled:opacity-60"
+            className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-semibold bg-emerald-600 hover:bg-emerald-500 text-white transition-colors disabled:opacity-60 shrink-0"
           >
-            {submitting
-              ? <Loader2 size={13} className="animate-spin" />
-              : <Send size={13} strokeWidth={2} />
-            }
-            {submitting ? t('listening.submitting') : t('listening.submitTest')}
+            {submitting ? <Loader2 size={12} className="animate-spin" /> : <Send size={12} strokeWidth={2} />}
+            <span className="hidden sm:inline">{submitting ? t('listening.submitting') : t('listening.submitTest')}</span>
           </button>
-        )}
+        </div>
+      </div>
+
+      {/* ── Main scrollable content ── */}
+      <div className="px-4 sm:px-8 lg:px-12 py-8 pb-24">
+        <div className="max-w-2xl mx-auto space-y-8">
+
+          {/* Section header */}
+          <div>
+            <div className="flex items-center gap-2 mb-2">
+              <span className="text-[10px] font-bold uppercase tracking-widest text-amber-500 bg-amber-50 dark:bg-amber-500/10 px-2.5 py-1 rounded-full">
+                Part {currentSection?.section_number}
+              </span>
+            </div>
+            <h2 className="text-lg font-semibold text-gray-900 dark:text-white">
+              {currentSection?.title}
+            </h2>
+            {currentSection?.instructions && (
+              <p className="text-sm text-gray-500 dark:text-gray-400 mt-2 leading-relaxed">
+                {currentSection.instructions}
+              </p>
+            )}
+          </div>
+
+          {/* Questions: multiple-choice rendered individually, fill-blank grouped in a card */}
+          {groups.map((group, gi) =>
+            group.mc ? (
+              <div key={gi} className="space-y-8">
+                {group.items.map(q => (
+                  <RadioQuestion
+                    key={q.id}
+                    question={q}
+                    answer={answers[q.id] ?? ''}
+                    onChange={v => setAnswer(q.id, v)}
+                  />
+                ))}
+              </div>
+            ) : (
+              <div
+                key={gi}
+                className="bg-gray-50/80 dark:bg-gray-800/30 rounded-2xl border border-gray-100 dark:border-gray-700/50 p-6 space-y-5"
+              >
+                {group.items.map(q => (
+                  <FillBlankQuestion
+                    key={q.id}
+                    question={q}
+                    answer={answers[q.id] ?? ''}
+                    onChange={v => setAnswer(q.id, v)}
+                  />
+                ))}
+              </div>
+            )
+          )}
+        </div>
+      </div>
+
+      {/* ── Fixed bottom section tabs ── */}
+      <div className="fixed bottom-0 left-0 right-0 lg:left-[216px] z-40 bg-white/95 dark:bg-[#08080f]/95 backdrop-blur-sm border-t border-gray-100 dark:border-gray-800">
+        <div className="flex">
+          {sections.map((s, i) => {
+            const sqs = questions.filter(q => q.sectionNumber === s.section_number)
+            const done = sqs.filter(q => answers[q.id]).length
+            const allDone = done === sqs.length && sqs.length > 0
+            const active = i === currentSectionIdx
+            return (
+              <button
+                key={s.id}
+                onClick={() => setCurrentSectionIdx(i)}
+                className={`flex-1 flex flex-col items-center py-3 px-2 border-t-2 transition-all duration-150 ${
+                  active
+                    ? 'border-amber-500 bg-amber-50/50 dark:bg-amber-500/8'
+                    : 'border-transparent hover:bg-gray-50 dark:hover:bg-white/4'
+                }`}
+              >
+                <span className={`text-xs font-bold ${
+                  active ? 'text-amber-600 dark:text-amber-400' : 'text-gray-600 dark:text-gray-400'
+                }`}>
+                  Part {s.section_number}
+                </span>
+                <span className={`text-[10px] mt-0.5 tabular-nums ${
+                  allDone
+                    ? 'text-emerald-500 dark:text-emerald-400'
+                    : active
+                    ? 'text-amber-500/70'
+                    : 'text-gray-400 dark:text-gray-600'
+                }`}>
+                  {done}/{sqs.length}
+                </span>
+              </button>
+            )
+          })}
+        </div>
       </div>
     </div>
   )
