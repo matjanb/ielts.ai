@@ -262,42 +262,6 @@ function RadioQuestion({
   )
 }
 
-// ── Fill-in-the-blank Question ────────────────────────────────────────────────
-
-function FillBlankQuestion({
-  question,
-  answer,
-  onChange,
-}: {
-  question: QuestionWithSection
-  answer: string
-  onChange: (v: string) => void
-}) {
-  const text = question.question_text
-  const blankIdx = text.indexOf('___')
-  const before = blankIdx >= 0 ? text.slice(0, blankIdx) : text
-  const after = blankIdx >= 0 ? text.slice(blankIdx + 3) : ''
-
-  return (
-    <div className="flex items-start gap-3">
-      <span className="shrink-0 mt-0.5 w-6 h-6 rounded-full bg-teal-500/12 dark:bg-teal-500/20 text-teal-600 dark:text-teal-400 text-[10px] font-bold flex items-center justify-center border border-teal-400/25 dark:border-teal-500/30">
-        {question.question_number}
-      </span>
-      <div className="flex-1 text-sm text-gray-800 dark:text-gray-200 leading-7 flex items-baseline flex-wrap gap-x-1">
-        {before && <span>{before}</span>}
-        <input
-          type="text"
-          value={answer}
-          onChange={e => onChange(e.target.value)}
-          className="inline-block w-36 px-2 py-0.5 border-b-2 border-amber-400 dark:border-amber-500/70 bg-transparent focus:outline-none focus:border-amber-600 dark:focus:border-amber-400 text-sm text-gray-900 dark:text-white placeholder-gray-300 dark:placeholder-gray-600 transition-colors text-center"
-          placeholder="..."
-        />
-        {after && <span>{after}</span>}
-      </div>
-    </div>
-  )
-}
-
 // ── Form-style detection ──────────────────────────────────────────────────────
 // A fill_blank question is "form-style" when it has a colon before the blank
 // (label: value pattern) AND does NOT end with sentence punctuation.
