@@ -98,6 +98,42 @@ body {
   border: 1px solid rgba(0, 0, 0, 0.06);
 }
 
+/* ── Overview design tokens (--ov-* prefix) ─────────── */
+:root {
+  --ov-bg:        #f8f9fc;
+  --ov-bg-soft:   #f1f4fa;
+  --ov-card:      #ffffff;
+  --ov-card-2:    #f4f6fc;
+  --ov-line:      #e5e8f0;
+  --ov-line-2:    #d0d5e8;
+  --ov-track:     #eef1f8;
+  --ov-ink:       #0d1526;
+  --ov-ink-soft:  #2d3a55;
+  --ov-muted:     #7480a0;
+  --ov-accent:    #8b5cf6;
+  --ov-accent-2:  #6366f1;
+  --ov-accent-fg: #7c3aed;
+  --ov-good:      #059669;
+  --ov-warn:      #d97706;
+}
+.dark {
+  --ov-bg:        #0b0f1a;
+  --ov-bg-soft:   #0e1320;
+  --ov-card:      #141a2a;
+  --ov-card-2:    #1a2236;
+  --ov-line:      #222b40;
+  --ov-line-2:    #2d3853;
+  --ov-track:     #1b2336;
+  --ov-ink:       #f4f6fb;
+  --ov-ink-soft:  #d5dae8;
+  --ov-muted:     #8990a8;
+  --ov-accent:    #8b5cf6;
+  --ov-accent-2:  #6366f1;
+  --ov-accent-fg: #a78bfa;
+  --ov-good:      #34d399;
+  --ov-warn:      #fbbf24;
+}
+
 /* ── Primary button ──────────────────────────── */
 .btn-primary {
   background: linear-gradient(135deg, #6366f1, #8b5cf6);
