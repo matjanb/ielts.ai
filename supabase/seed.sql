@@ -21,7 +21,7 @@ values (
   'https://vqyyoxfsitsdmmxecqka.supabase.co/storage/v1/object/public/test-audio/test-1.mp3'
 ) on conflict (id) do nothing;
  
-insert into questions (id, section_id, question_number, question_type, question_text, options, correct_answer, points)
+insert into questions (id, section_id, question_number, question_type, question_text, options, correct_answer, image_url, points)
 values
   (
     '33333333-0001-0001-0001-000000000001',
@@ -29,7 +29,9 @@ values
     'multiple_choice',
     'What does her briefcase look like?',
     '["A. Soft leather with buckles at front", "B. Hard box-type with combination lock", "C. Soft leather with zip closure", "D. Hard case with handle on top"]',
-    'A. Soft leather with buckles at front', 1
+    'A. Soft leather with buckles at front',
+    'https://vqyyoxfsitsdmmxecqka.supabase.co/storage/v1/object/public/question-images/q1_briefcases.jpeg',
+    1
   ),
   (
     '33333333-0001-0001-0001-000000000002',
@@ -37,7 +39,9 @@ values
     'multiple_choice',
     'Which picture shows the distinguishing features?',
     '["A. Brand name on back, scratch above", "B. Brand name on front, no scratch", "C. Brand name on back, scratch below", "D. Brand name on side, scratch on front"]',
-    'C. Brand name on back, scratch below', 1
+    'C. Brand name on back, scratch below',
+    'https://vqyyoxfsitsdmmxecqka.supabase.co/storage/v1/object/public/question-images/q2_sagi.png',
+    1
   ),
   (
     '33333333-0001-0001-0001-000000000003',
@@ -45,7 +49,9 @@ values
     'multiple_choice',
     'What did she have inside her briefcase?',
     '["A. wallet, pens and novel", "B. papers and wallet", "C. pens and novel", "D. papers, pens and novel"]',
-    'D. papers, pens and novel', 1
+    'D. papers, pens and novel',
+    null,
+    1
   ),
   (
     '33333333-0001-0001-0001-000000000004',
@@ -53,7 +59,9 @@ values
     'multiple_choice',
     'Where was she standing when she lost her briefcase?',
     '["A. On the platform, holding it", "B. On the platform, bag on floor beside her", "C. At the ticket office", "D. On a bench in the waiting room"]',
-    'D. On a bench in the waiting room', 1
+    'D. On a bench in the waiting room',
+    'https://vqyyoxfsitsdmmxecqka.supabase.co/storage/v1/object/public/question-images/q3_woman_train.png',
+    1
   ),
   (
     '33333333-0001-0001-0001-000000000005',
@@ -61,7 +69,9 @@ values
     'multiple_choice',
     'What time was it when she lost her briefcase?',
     '["A. About 5:20", "B. About 5:25", "C. About 5:30", "D. About 5:35"]',
-    'C. About 5:30', 1
+    'C. About 5:30',
+    'https://vqyyoxfsitsdmmxecqka.supabase.co/storage/v1/object/public/question-images/q4_clocks.png',
+    1
   ),
   (
     '33333333-0001-0001-0001-000000000006',

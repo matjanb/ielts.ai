@@ -146,13 +146,12 @@ function RadioQuestion({
       </p>
 
       {singleImage && (
-        <div className="relative w-full overflow-hidden rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900">
-          <Image
+        <div className="w-full overflow-hidden rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900">
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
             src={singleImage}
             alt="Question image"
-            width={600}
-            height={300}
-            className="w-full h-auto object-contain max-h-64"
+            className="w-full h-auto object-contain"
           />
         </div>
       )}
