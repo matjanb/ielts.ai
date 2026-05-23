@@ -15,7 +15,6 @@ type TabKey = 'overview' | 'writing' | 'mocks'
 
 interface SkillRow {
   key: string
-  label: string
   band: number
   target: number
   delta: number
@@ -62,12 +61,7 @@ interface PageData {
   mockAttempts: MockAttempt[]
 }
 
-const SKILL_META = [
-  { key: 'writing',   label: 'Writing'   },
-  { key: 'speaking',  label: 'Speaking'  },
-  { key: 'reading',   label: 'Reading'   },
-  { key: 'listening', label: 'Listening' },
-]
+const SKILL_KEYS_LIST = ['writing', 'speaking', 'reading', 'listening'] as const
 
 /* ================================================================
    Shared UI atoms
@@ -168,12 +162,12 @@ export default function ProgressPage() {
       const prevScore = (sk: string) => bySkill[sk]?.at(-2) ?? latestScore(sk)
       const sparkline = (sk: string) => (bySkill[sk] ?? []).slice(-7)
 
-      const skillRows: SkillRow[] = SKILL_META.map(m => ({
-        ...m,
-        band:  latestScore(m.key),
+      const skillRows: SkillRow[] = SKILL_KEYS_LIST.map(key => ({
+        key,
+        band:  latestScore(key),
         target: targetBand,
-        delta: +(latestScore(m.key) - prevScore(m.key)).toFixed(1),
-        sparkline: sparkline(m.key),
+        delta: +(latestScore(key) - prevScore(key)).toFixed(1),
+        sparkline: sparkline(key),
       }))
 
       const overallBand = skillRows.some(s => s.band > 0)
@@ -258,9 +252,9 @@ export default function ProgressPage() {
   }
 
   const TABS: { key: TabKey; label: string }[] = [
-    { key: 'overview', label: 'Overview' },
-    { key: 'writing',  label: 'Writing'  },
-    { key: 'mocks',    label: 'Mock Tests' },
+    { key: 'overview', label: t('dashboard.progressPage.tabOverview') },
+    { key: 'writing',  label: t('dashboard.progressPage.tabWriting')  },
+    { key: 'mocks',    label: t('dashboard.progressPage.tabMocks')    },
   ]
 
   return (
@@ -280,8 +274,8 @@ export default function ProgressPage() {
       </div>
 
       {tab === 'overview' && <OverviewScreen data={data} t={t} />}
-      {tab === 'writing'  && <WritingScreen  data={data} />}
-      {tab === 'mocks'    && <MockScreen     data={data} />}
+      {tab === 'writing'  && <WritingScreen  data={data} t={t} />}
+      {tab === 'mocks'    && <MockScreen     data={data} t={t} />}
     </div>
   )
 }
@@ -289,8 +283,8 @@ export default function ProgressPage() {
 /* ================================================================
    Overview
    ================================================================ */
-function OverviewScreen({ data, t }: { data: PageData | null; t: (k: string) => string }) {
-  if (!data) return <EmptyState />
+function OverviewScreen({ data, t }: { data: PageData | null; t: TFn }) {
+  if (!data) return <EmptyState t={t} />
 
   const { overallBand, targetBand, streak, hoursThisWeek, vsLastPct,
           skillRows, weeklyBars, mockLine, heatmap } = data
@@ -313,13 +307,13 @@ function OverviewScreen({ data, t }: { data: PageData | null; t: (k: string) => 
           <h1 className="text-[32px] font-bold leading-[1.1] tracking-[-0.02em] text-gray-900 dark:text-white">
             {overallBand > 0
               ? overallBand >= targetBand
-                ? `You've hit your target band.`
-                : `You're on track for band ${targetBand.toFixed(1)}.`
-              : 'Start a test to see your progress.'}
+                ? t('dashboard.progressPage.headerHitTarget')
+                : t('dashboard.progressPage.headerOnTrack', { target: targetBand.toFixed(1) })
+              : t('dashboard.progressPage.headerStart')}
           </h1>
         </div>
         <button className="shrink-0 px-4 py-2.5 rounded-[10px] bg-gray-900 dark:bg-white text-white dark:text-gray-900 text-[13px] font-semibold hover:opacity-80 transition-opacity">
-          Start today's session →
+          {t('dashboard.progressPage.startSession')}
         </button>
       </div>
 
@@ -330,10 +324,10 @@ function OverviewScreen({ data, t }: { data: PageData | null; t: (k: string) => 
         <Card className="p-7 flex flex-col items-center justify-center gap-4">
           <BandRing band={overallBand} target={targetBand} />
           <div className="flex gap-5 font-mono">
-            <MiniStat label="streak"    value={`${streak}d`} />
-            <MiniStat label="this week" value={hoursThisWeek} />
+            <MiniStat label={t('dashboard.progressPage.streak')}   value={`${streak}d`} />
+            <MiniStat label={t('dashboard.progressPage.thisWeek')} value={hoursThisWeek} />
             {vsLastPct !== 0 && (
-              <MiniStat label="vs last"
+              <MiniStat label={t('dashboard.progressPage.vsLast')}
                 value={`${vsLastPct > 0 ? '+' : ''}${vsLastPct}%`}
                 tone={vsLastPct > 0 ? 'up' : 'neutral'} />
             )}
@@ -342,13 +336,13 @@ function OverviewScreen({ data, t }: { data: PageData | null; t: (k: string) => 
 
         {/* Skills table */}
         <Card className="p-6">
-          <CardTitle action={<Pill tone="accent">live</Pill>}>Skills</CardTitle>
+          <CardTitle action={<Pill tone="accent">{t('dashboard.progressPage.live')}</Pill>}>{t('dashboard.progressPage.skills')}</CardTitle>
           <div className="space-y-[18px]">
             {skillRows.map(s => (
               <div key={s.key}
                 className="grid items-center gap-4"
                 style={{ gridTemplateColumns: '120px 1fr 56px 60px 64px' }}>
-                <span className="text-[14px] font-medium text-gray-900 dark:text-white">{s.label}</span>
+                <span className="text-[14px] font-medium text-gray-900 dark:text-white">{t(`dashboard.${s.key}`)}</span>
                 <BandBar value={s.band} target={s.target} />
                 <span className="text-[16px] font-semibold tabular-nums text-gray-900 dark:text-white text-right">
                   {s.band > 0 ? s.band.toFixed(1) : '—'}
@@ -374,13 +368,13 @@ function OverviewScreen({ data, t }: { data: PageData | null; t: (k: string) => 
         <Card className="p-6">
           <CardTitle action={
             <div className="flex items-center gap-3 text-[11px] text-gray-400 font-mono">
-              <LegendDot color="#6366f1" label="writing" />
-              <LegendDot color="#818cf8" label="speaking" />
-              <LegendDot color="#a5b4fc" label="reading" />
-              <LegendDot color="#c7d2fe" label="listening" />
+              <LegendDot color="#6366f1" label={t('dashboard.progressPage.legendWriting')} />
+              <LegendDot color="#818cf8" label={t('dashboard.progressPage.legendSpeaking')} />
+              <LegendDot color="#a5b4fc" label={t('dashboard.progressPage.legendReading')} />
+              <LegendDot color="#c7d2fe" label={t('dashboard.progressPage.legendListening')} />
             </div>
           }>
-            This week · {hoursThisWeek || '0m'}
+            {t('dashboard.progressPage.weekTitle', { hours: hoursThisWeek || '0m' })}
           </CardTitle>
           <StackBars days={weeklyBars} />
         </Card>
@@ -388,14 +382,14 @@ function OverviewScreen({ data, t }: { data: PageData | null; t: (k: string) => 
         <Card className="p-6">
           <CardTitle action={
             mockLine.length >= 2
-              ? <Pill tone="up">+{(mockLine.at(-1)!.value - mockLine[0].value).toFixed(1)} since first</Pill>
+              ? <Pill tone="up">{t('dashboard.progressPage.sinceFirst', { delta: (mockLine.at(-1)!.value - mockLine[0].value).toFixed(1) })}</Pill>
               : null
           }>
-            Mock test band progression
+            {t('dashboard.progressPage.mockProgression')}
           </CardTitle>
           {mockLine.length >= 2
             ? <LineChart data={mockLine} target={targetBand} />
-            : <EmptyChart message="Complete a mock test to see progression" />}
+            : <EmptyChart message={t('dashboard.progressPage.completeMock')} />}
         </Card>
       </div>
 
@@ -404,8 +398,8 @@ function OverviewScreen({ data, t }: { data: PageData | null; t: (k: string) => 
 
         {/* Where to push */}
         <Card className="p-6">
-          <CardTitle action={<Pill tone="warn">coach's focus</Pill>}>
-            Where to push
+          <CardTitle action={<Pill tone="warn">{t('dashboard.progressPage.coachFocus')}</Pill>}>
+            {t('dashboard.progressPage.whereToPush')}
           </CardTitle>
           {focusSkills.length > 0 ? (
             <div className="space-y-4">
@@ -413,33 +407,33 @@ function OverviewScreen({ data, t }: { data: PageData | null; t: (k: string) => 
                 <div key={s.key}
                   className={`${i < focusSkills.length - 1 ? 'pb-4 border-b border-gray-100 dark:border-gray-800' : ''}`}>
                   <div className="flex justify-between items-baseline mb-1.5">
-                    <span className="text-[13px] font-semibold text-gray-900 dark:text-white">{s.label}</span>
+                    <span className="text-[13px] font-semibold text-gray-900 dark:text-white">{t(`dashboard.${s.key}`)}</span>
                     <span className="text-[12px] font-mono text-gray-400 dark:text-gray-500">
                       <span className="text-gray-900 dark:text-white">{s.band.toFixed(1)}</span> → {s.target.toFixed(1)}
                     </span>
                   </div>
                   <BandBar value={s.band} target={s.target} />
                   <p className="text-[12.5px] text-gray-400 dark:text-gray-500 mt-2 leading-relaxed">
-                    {gapNote(s.key, s.band, s.target)}
+                    {gapNote(s.key, s.band, s.target, t)}
                   </p>
                 </div>
               ))}
             </div>
           ) : (
-            <p className="text-[13px] text-gray-400 dark:text-gray-500">Complete tests to get focus recommendations.</p>
+            <p className="text-[13px] text-gray-400 dark:text-gray-500">{t('dashboard.progressPage.noFocus')}</p>
           )}
         </Card>
 
         {/* Heatmap */}
         <Card className="p-6">
-          <CardTitle action={<Pill>last 12 weeks</Pill>}>
-            Study consistency
+          <CardTitle action={<Pill>{t('dashboard.progressPage.last12weeks')}</Pill>}>
+            {t('dashboard.progressPage.studyConsistency')}
           </CardTitle>
           <div className="flex justify-center py-2">
             <StreakHeatmap data={heatmap} />
           </div>
           <div className="flex items-center justify-between mt-3.5 text-[11px] text-gray-400 font-mono">
-            <span>less</span>
+            <span>{t('dashboard.progressPage.less')}</span>
             <div className="flex gap-1">
               {[0, 0.3, 0.55, 0.8, 1].map((op, i) => (
                 <span key={i} className="w-3 h-3 rounded-sm block"
@@ -448,16 +442,16 @@ function OverviewScreen({ data, t }: { data: PageData | null; t: (k: string) => 
                     : { background: `rgba(99,102,241,${op})` }} />
               ))}
             </div>
-            <span>more</span>
+            <span>{t('dashboard.progressPage.more')}</span>
           </div>
         </Card>
 
-        {/* Latest AI feedback (writing submissions) */}
+        {/* Latest activity */}
         <Card className="p-6">
           <CardTitle action={
-            <span className="text-[12px] text-indigo-500 font-semibold cursor-pointer">view all →</span>
+            <span className="text-[12px] text-indigo-500 font-semibold cursor-pointer">{t('dashboard.progressPage.viewAll')}</span>
           }>
-            Latest activity
+            {t('dashboard.progressPage.latestActivity')}
           </CardTitle>
           {data.writingHistory.length > 0 ? (
             <div className="space-y-3.5">
@@ -465,13 +459,13 @@ function OverviewScreen({ data, t }: { data: PageData | null; t: (k: string) => 
                 <div key={w.id}
                   className={`${i < 2 ? 'pb-3.5 border-b border-gray-100 dark:border-gray-800' : ''}`}>
                   <div className="flex justify-between items-center mb-1">
-                    <span className="text-[12px] font-semibold text-gray-400 uppercase tracking-[0.06em]">Writing</span>
+                    <span className="text-[12px] font-semibold text-gray-400 uppercase tracking-[0.06em]">{t('dashboard.progressPage.writingLabel')}</span>
                     <span className="text-[11px] font-mono text-gray-400">
                       {new Date(w.created_at).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}
                     </span>
                   </div>
                   <div className="flex justify-between items-center">
-                    <span className="text-[13px] font-medium text-gray-900 dark:text-white">Task {w.task_type}</span>
+                    <span className="text-[13px] font-medium text-gray-900 dark:text-white">{t('dashboard.progressPage.taskType', { type: w.task_type })}</span>
                     {w.band_score != null && <Pill tone="accent">{w.band_score.toFixed(1)}</Pill>}
                   </div>
                 </div>
@@ -483,14 +477,14 @@ function OverviewScreen({ data, t }: { data: PageData | null; t: (k: string) => 
                 <div key={m.id}
                   className={`${i < 2 ? 'pb-3.5 border-b border-gray-100 dark:border-gray-800' : ''}`}>
                   <div className="flex justify-between items-center mb-1">
-                    <span className="text-[12px] font-semibold text-gray-400 uppercase tracking-[0.06em]">Mock Test</span>
+                    <span className="text-[12px] font-semibold text-gray-400 uppercase tracking-[0.06em]">{t('dashboard.progressPage.mockLabel')}</span>
                     <span className="text-[11px] font-mono text-gray-400">
                       {new Date(m.completed_at).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}
                     </span>
                   </div>
                   <div className="flex justify-between items-center">
                     <span className="text-[13px] font-medium text-gray-900 dark:text-white">
-                      Score {m.total_score ?? '—'} / 40
+                      {t('dashboard.progressPage.scoreOf', { score: String(m.total_score ?? '—') })}
                     </span>
                     {m.band_score != null && <Pill tone="accent">{m.band_score.toFixed(1)}</Pill>}
                   </div>
@@ -498,7 +492,7 @@ function OverviewScreen({ data, t }: { data: PageData | null; t: (k: string) => 
               ))}
             </div>
           ) : (
-            <p className="text-[13px] text-gray-400 dark:text-gray-500">No activity yet. Start a test to see results here.</p>
+            <p className="text-[13px] text-gray-400 dark:text-gray-500">{t('dashboard.progressPage.noActivity')}</p>
           )}
         </Card>
       </div>
@@ -509,38 +503,43 @@ function OverviewScreen({ data, t }: { data: PageData | null; t: (k: string) => 
 /* ================================================================
    Writing
    ================================================================ */
-function WritingScreen({ data }: { data: PageData | null }) {
-  if (!data) return <EmptyState />
+type TFn = (k: string, p?: Record<string, string>) => string
+
+function WritingScreen({ data, t }: { data: PageData | null; t: TFn }) {
+  if (!data) return <EmptyState t={t} />
 
   const crit = data.writingCriteria
   const wBand = data.skillRows.find(s => s.key === 'writing')?.band ?? 0
   const { targetBand, writingHistory } = data
 
   const CRITERIA = crit ? [
-    { key: 'TR',  label: 'Task Response',        value: crit.task      },
-    { key: 'CC',  label: 'Coherence & Cohesion', value: crit.coherence },
-    { key: 'LR',  label: 'Lexical Resource',     value: crit.lexical   },
-    { key: 'GRA', label: 'Grammar & Accuracy',   value: crit.grammar   },
+    { key: 'TR',  label: t('dashboard.writingPage.criteriaTA'), value: crit.task      },
+    { key: 'CC',  label: t('dashboard.writingPage.criteriaCC'), value: crit.coherence },
+    { key: 'LR',  label: t('dashboard.writingPage.criteriaLR'), value: crit.lexical   },
+    { key: 'GRA', label: t('dashboard.writingPage.criteriaGA'), value: crit.grammar   },
   ] : []
 
   return (
     <div className="space-y-5">
       <div>
-        <p className="text-[12px] font-mono text-gray-400 dark:text-gray-500 mb-1.5">OVERVIEW · WRITING</p>
+        <p className="text-[12px] font-mono text-gray-400 dark:text-gray-500 mb-1.5">
+          {t('dashboard.progressPage.tabOverview')} · {t('dashboard.progressPage.tabWriting')}
+        </p>
         <h1 className="text-[28px] font-bold tracking-[-0.02em] text-gray-900 dark:text-white">
-          Writing{wBand > 0 ? ` — band ${wBand.toFixed(1)}` : ''}
-          {wBand > 0 && wBand < targetBand && ', climbing'}
+          {t('dashboard.progressPage.tabWriting')}
+          {wBand > 0 ? t('dashboard.progressPage.writingTitleBand', { band: wBand.toFixed(1) }) : ''}
+          {wBand > 0 && wBand < targetBand ? t('dashboard.progressPage.writingTitleClimbing') : ''}
         </h1>
       </div>
 
       {/* Row A: ring + radar + criteria bars */}
       <div className="grid gap-5" style={{ gridTemplateColumns: '300px 1fr 1fr' }}>
         <Card className="p-7 flex flex-col items-center justify-center">
-          <BandRing band={wBand} target={targetBand} label="Writing" />
+          <BandRing band={wBand} target={targetBand} label={t('dashboard.progressPage.tabWriting')} />
         </Card>
 
         <Card className="p-6">
-          <CardTitle>Criteria breakdown</CardTitle>
+          <CardTitle>{t('dashboard.progressPage.criteriaBreakdown')}</CardTitle>
           {crit ? (
             <div className="flex justify-center">
               <CriteriaRadar
@@ -548,11 +547,13 @@ function WritingScreen({ data }: { data: PageData | null }) {
                 labels={['TR', 'CC', 'LR', 'GRA']}
               />
             </div>
-          ) : <EmptyChart message="Submit a writing task for AI feedback" />}
+          ) : <EmptyChart message={t('dashboard.progressPage.submitWriting')} />}
         </Card>
 
         <Card className="p-6">
-          <CardTitle action={<Pill tone="up">latest</Pill>}>Per criterion</CardTitle>
+          <CardTitle action={<Pill tone="up">{t('dashboard.progressPage.latest')}</Pill>}>
+            {t('dashboard.progressPage.perCriterion')}
+          </CardTitle>
           {CRITERIA.length > 0 ? (
             <div className="space-y-4">
               {CRITERIA.map(c => (
@@ -569,7 +570,7 @@ function WritingScreen({ data }: { data: PageData | null }) {
             </div>
           ) : (
             <p className="text-[13px] text-gray-400 dark:text-gray-500">
-              No criteria data yet. Submit writing with AI feedback enabled.
+              {t('dashboard.progressPage.noCriteriaData')}
             </p>
           )}
         </Card>
@@ -578,15 +579,22 @@ function WritingScreen({ data }: { data: PageData | null }) {
       {/* Row B: submissions table */}
       <Card className="p-6">
         <CardTitle action={
-          <span className="text-[12px] text-indigo-500 font-semibold cursor-pointer">open all →</span>
+          <span className="text-[12px] text-indigo-500 font-semibold cursor-pointer">
+            {t('dashboard.progressPage.openAll')}
+          </span>
         }>
-          Recent submissions
+          {t('dashboard.progressPage.recentSubmissions')}
         </CardTitle>
         {writingHistory.length > 0 ? (
           <table className="w-full text-[13px]" style={{ borderCollapse: 'collapse', fontFeatureSettings: '"tnum"' }}>
             <thead>
               <tr>
-                {['Date', 'Task', 'TR', 'CC', 'LR', 'GRA', 'Band'].map(h => (
+                {[
+                  t('dashboard.progressPage.thDate'),
+                  t('dashboard.progressPage.thTask'),
+                  'TR', 'CC', 'LR', 'GRA',
+                  t('dashboard.progressPage.thBand'),
+                ].map(h => (
                   <th key={h} className="text-left text-[11px] font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-[0.08em] pb-3 px-3 first:pl-0">
                     {h}
                   </th>
@@ -600,7 +608,7 @@ function WritingScreen({ data }: { data: PageData | null }) {
                     {new Date(w.created_at).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}
                   </td>
                   <td className="py-3.5 px-3">
-                    <Pill>Task {w.task_type}</Pill>
+                    <Pill>{t('dashboard.progressPage.taskType', { type: w.task_type })}</Pill>
                   </td>
                   {[w.task_achievement, w.coherence_cohesion, w.lexical_resource, w.grammatical_accuracy].map((v, i) => (
                     <td key={i} className="py-3.5 px-3 tabular-nums text-gray-500 dark:text-gray-400">
@@ -618,16 +626,18 @@ function WritingScreen({ data }: { data: PageData | null }) {
           </table>
         ) : (
           <p className="text-[13px] text-gray-400 dark:text-gray-500 py-4">
-            No writing submissions yet. Submit a task to start tracking your progress.
+            {t('dashboard.progressPage.noSubmissions')}
           </p>
         )}
       </Card>
 
-      {/* Row C: grammar accuracy */}
+      {/* Row C: criteria summary + score trend */}
       {CRITERIA.length > 0 && (
         <div className="grid grid-cols-2 gap-5">
           <Card className="p-6">
-            <CardTitle action={<Pill tone="accent">latest essay</Pill>}>Criteria summary</CardTitle>
+            <CardTitle action={<Pill tone="accent">{t('dashboard.progressPage.latestEssay')}</Pill>}>
+              {t('dashboard.progressPage.criteriaSummary')}
+            </CardTitle>
             <div className="grid grid-cols-2 gap-4">
               {CRITERIA.map(c => (
                 <div key={c.key} className="p-4 rounded-[12px] border border-gray-100 dark:border-gray-800">
@@ -637,7 +647,9 @@ function WritingScreen({ data }: { data: PageData | null }) {
                   </p>
                   <div className="mt-2.5">
                     <Pill tone={c.value >= targetBand ? 'up' : c.value >= targetBand - 1 ? 'accent' : 'neutral'}>
-                      {c.value >= targetBand ? 'on target' : `${(targetBand - c.value).toFixed(1)} to go`}
+                      {c.value >= targetBand
+                        ? t('dashboard.progressPage.onTarget')
+                        : t('dashboard.progressPage.toGo', { n: (targetBand - c.value).toFixed(1) })}
                     </Pill>
                   </div>
                 </div>
@@ -646,10 +658,10 @@ function WritingScreen({ data }: { data: PageData | null }) {
           </Card>
 
           <Card className="p-6">
-            <CardTitle>Score trend</CardTitle>
+            <CardTitle>{t('dashboard.progressPage.scoreTrend')}</CardTitle>
             {data.mockLine.length >= 2
               ? <LineChart data={data.mockLine} target={targetBand} height={200} />
-              : <EmptyChart message="Complete more tests to see your trend" />}
+              : <EmptyChart message={t('dashboard.progressPage.completeTrend')} />}
           </Card>
         </div>
       )}
@@ -660,8 +672,8 @@ function WritingScreen({ data }: { data: PageData | null }) {
 /* ================================================================
    Mock Tests
    ================================================================ */
-function MockScreen({ data }: { data: PageData | null }) {
-  if (!data) return <EmptyState />
+function MockScreen({ data, t }: { data: PageData | null; t: TFn }) {
+  if (!data) return <EmptyState t={t} />
 
   const { mockAttempts, mockLine, targetBand } = data
   const last = mockAttempts.at(-1)
@@ -671,60 +683,72 @@ function MockScreen({ data }: { data: PageData | null }) {
   return (
     <div className="space-y-5">
       <div>
-        <p className="text-[12px] font-mono text-gray-400 dark:text-gray-500 mb-1.5">OVERVIEW · MOCK TESTS</p>
+        <p className="text-[12px] font-mono text-gray-400 dark:text-gray-500 mb-1.5">
+          {t('dashboard.progressPage.tabOverview')} · {t('dashboard.progressPage.tabMocks')}
+        </p>
         <h1 className="text-[28px] font-bold tracking-[-0.02em] text-gray-900 dark:text-white">
-          {mockAttempts.length} full mock{mockAttempts.length !== 1 ? 's' : ''}
-          {last?.band_score != null ? ` · last band ${last.band_score.toFixed(1)}` : ''}
+          {t('dashboard.progressPage.mockCount', { n: String(mockAttempts.length) })}
+          {last?.band_score != null ? t('dashboard.progressPage.lastBandSuffix', { band: last.band_score.toFixed(1) }) : ''}
         </h1>
       </div>
 
       {/* Row A: KPIs */}
       <div className="grid grid-cols-4 gap-4">
-        <KPICard label="Latest band"
+        <KPICard label={t('dashboard.progressPage.latestBandLabel')}
           value={last?.band_score?.toFixed(1) ?? '—'}
-          sub={last ? new Date(last.completed_at).toLocaleDateString(undefined, { month: 'short', day: 'numeric' }) + ' · full test' : 'No attempts yet'}
+          sub={last
+            ? new Date(last.completed_at).toLocaleDateString(undefined, { month: 'short', day: 'numeric' }) + ' · ' + t('dashboard.progressPage.fullTest')
+            : t('dashboard.progressPage.noAttempts')}
           accent />
-        <KPICard label="Best band"
+        <KPICard label={t('dashboard.progressPage.bestBand')}
           value={best?.band_score?.toFixed(1) ?? '—'}
-          sub={best ? 'personal best' : 'No attempts yet'} />
-        <KPICard label="Total attempts"
+          sub={best ? t('dashboard.progressPage.personalBest') : t('dashboard.progressPage.noAttempts')} />
+        <KPICard label={t('dashboard.progressPage.totalAttempts')}
           value={String(mockAttempts.length)}
-          sub={mockAttempts.length > 0 ? 'listening tests' : 'Start a test'} />
-        <KPICard label="Avg band"
+          sub={mockAttempts.length > 0 ? t('dashboard.progressPage.listeningTests') : t('dashboard.progressPage.startTest')} />
+        <KPICard label={t('dashboard.progressPage.avgBand')}
           value={mockAttempts.filter(m => m.band_score != null).length > 0
             ? (mockAttempts.filter(m => m.band_score != null)
                 .reduce((s, m) => s + m.band_score!, 0) /
                mockAttempts.filter(m => m.band_score != null).length).toFixed(1)
             : '—'}
-          sub="across all mocks" />
+          sub={t('dashboard.progressPage.acrossMocks')} />
       </div>
 
       {/* Row B: line chart */}
       <Card className="p-6">
         <CardTitle action={
           mockLine.length >= 2
-            ? <Pill tone="up">+{(mockLine.at(-1)!.value - mockLine[0].value).toFixed(1)} since first</Pill>
+            ? <Pill tone="up">{t('dashboard.progressPage.sinceFirst', { delta: (mockLine.at(-1)!.value - mockLine[0].value).toFixed(1) })}</Pill>
             : null
         }>
-          Band progression
+          {t('dashboard.progressPage.bandProgression')}
         </CardTitle>
         {mockLine.length >= 2
           ? <LineChart data={mockLine} target={targetBand} height={260} />
-          : <EmptyChart message="Complete two or more mock tests to see your progression" />}
+          : <EmptyChart message={t('dashboard.progressPage.completeTwoMocks')} />}
       </Card>
 
       {/* Row C: table */}
       <Card className="p-6">
         <CardTitle action={
-          <span className="text-[12px] text-indigo-500 font-semibold cursor-pointer">review →</span>
+          <span className="text-[12px] text-indigo-500 font-semibold cursor-pointer">
+            {t('dashboard.progressPage.review')}
+          </span>
         }>
-          All mock tests
+          {t('dashboard.progressPage.allMocks')}
         </CardTitle>
         {mockAttempts.length > 0 ? (
           <table className="w-full text-[13px]" style={{ borderCollapse: 'collapse', fontFeatureSettings: '"tnum"' }}>
             <thead>
               <tr>
-                {['Date', 'Type', 'Score', 'Band', ''].map((h, i) => (
+                {[
+                  t('dashboard.progressPage.thDate'),
+                  t('dashboard.progressPage.thType'),
+                  t('dashboard.progressPage.thScore'),
+                  t('dashboard.progressPage.thBand'),
+                  '',
+                ].map((h, i) => (
                   <th key={i}
                     className={`text-[11px] font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-[0.08em] pb-3 px-3 ${i === 0 ? 'pl-0 text-left' : i < 4 ? 'text-right' : 'text-right'}`}>
                     {h}
@@ -738,7 +762,7 @@ function MockScreen({ data }: { data: PageData | null }) {
                   <td className="py-3.5 px-3 pl-0 font-mono text-gray-400 dark:text-gray-500">
                     {new Date(m.completed_at).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' })}
                   </td>
-                  <td className="py-3.5 px-3"><Pill>Listening</Pill></td>
+                  <td className="py-3.5 px-3"><Pill>{t('dashboard.progressPage.listeningType')}</Pill></td>
                   <td className="py-3.5 px-3 text-right tabular-nums text-gray-500 dark:text-gray-400">
                     {m.total_score != null ? `${m.total_score} / 40` : '—'}
                   </td>
@@ -750,7 +774,7 @@ function MockScreen({ data }: { data: PageData | null }) {
                   <td className="py-3.5 px-3 text-right">
                     <a href={`/listening/${m.id}/results`}
                       className="text-[12px] text-indigo-500 font-semibold hover:underline">
-                      review →
+                      {t('dashboard.progressPage.review')}
                     </a>
                   </td>
                 </tr>
@@ -759,7 +783,7 @@ function MockScreen({ data }: { data: PageData | null }) {
           </table>
         ) : (
           <p className="text-[13px] text-gray-400 dark:text-gray-500 py-4">
-            No mock tests yet. Head to Listening to start your first test.
+            {t('dashboard.progressPage.noMocks')}
           </p>
         )}
       </Card>
@@ -814,22 +838,22 @@ function EmptyChart({ message }: { message: string }) {
   )
 }
 
-function EmptyState() {
+function EmptyState({ t }: { t: TFn }) {
   return (
     <div className="flex items-center justify-center py-20">
-      <p className="text-sm text-gray-400 dark:text-gray-500">Sign in to view your progress.</p>
+      <p className="text-sm text-gray-400 dark:text-gray-500">{t('dashboard.progressPage.signIn')}</p>
     </div>
   )
 }
 
-function gapNote(skill: string, band: number, target: number): string {
-  const gap = +(target - band).toFixed(1)
-  if (gap <= 0) return 'On target — keep it up.'
-  const notes: Record<string, string> = {
-    writing:   `Need +${gap} — focus on coherence and task response in Task 2.`,
-    speaking:  `Need +${gap} — expand vocabulary range and reduce filler words.`,
-    reading:   `Need +${gap} — drill True/False/NG and matching headings questions.`,
-    listening: `Need +${gap} — practise section 3 & 4 multiple-choice under timed conditions.`,
+function gapNote(skill: string, band: number, target: number, t: TFn): string {
+  const gap = (target - band).toFixed(1)
+  if (+(target - band) <= 0) return t('dashboard.progressPage.gapOnTarget')
+  const keyMap: Record<string, string> = {
+    writing:   'dashboard.progressPage.gapWriting',
+    speaking:  'dashboard.progressPage.gapSpeaking',
+    reading:   'dashboard.progressPage.gapReading',
+    listening: 'dashboard.progressPage.gapListening',
   }
-  return notes[skill] ?? `Need +${gap} to hit target.`
+  return t(keyMap[skill] ?? 'dashboard.progressPage.gapGeneric', { gap })
 }

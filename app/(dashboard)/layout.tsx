@@ -15,7 +15,7 @@ import { signOut } from '@/lib/services/auth'
 import type { ReactNode } from 'react'
 
 const NAV_ITEMS = [
-  { href: '/dashboard',             icon: LayoutDashboard, key: 'overview'  },
+  { href: '/dashboard',             icon: LayoutDashboard, key: 'overviewLabel'  },
   { href: '/dashboard/writing',     icon: BookOpen,        key: 'writing'   },
   { href: '/reading/a1000000-0000-0000-0000-000000000001', icon: BookOpen, key: 'reading' },
   { href: '/listening',             icon: Headphones,      key: 'listening' },

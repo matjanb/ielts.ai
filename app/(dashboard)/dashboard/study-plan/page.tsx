@@ -79,7 +79,9 @@ export default function StudyPlanPage() {
         <div>
           <h1 className="text-2xl font-bold text-gray-900 dark:text-white mb-1">{t('dashboard.studyPlan')}</h1>
           <p className="text-sm text-gray-500 dark:text-gray-400">
-            {plan ? `${plan.weeks_duration}-week plan targeting Band ${plan.target_band}.` : 'Generate a personalised study plan based on your onboarding goals.'}
+            {plan
+              ? t('dashboard.studyPlanPage.subtitlePlan', { n: String(plan.weeks_duration), target: String(plan.target_band) })
+              : t('dashboard.studyPlanPage.subtitleEmpty')}
           </p>
         </div>
         <button
@@ -88,10 +90,10 @@ export default function StudyPlanPage() {
           className="flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold btn-primary text-white disabled:opacity-60"
         >
           {generating
-            ? <><Loader2 size={14} className="animate-spin" /> Generating…</>
+            ? <><Loader2 size={14} className="animate-spin" />{t('dashboard.studyPlanPage.generating')}</>
             : plan
-            ? <><RefreshCw size={14} /> Regenerate</>
-            : <><BrainCircuit size={14} /> Generate Plan</>
+            ? <><RefreshCw size={14} />{t('dashboard.studyPlanPage.regenerate')}</>
+            : <><BrainCircuit size={14} />{t('dashboard.studyPlanPage.generate')}</>
           }
         </button>
       </div>
@@ -106,10 +108,10 @@ export default function StudyPlanPage() {
       {plan && (
         <div className="flex flex-wrap gap-3">
           {[
-            { label: 'Duration', value: `${plan.weeks_duration} weeks` },
-            { label: 'Target Band', value: plan.target_band },
-            { label: 'Daily Study', value: `${plan.daily_minutes} min` },
-            { label: 'Focus', value: plan.focus_skills.join(', ') || 'All skills' },
+            { label: t('dashboard.studyPlanPage.duration'),    value: t('dashboard.studyPlanPage.weeksVal', { n: String(plan.weeks_duration) }) },
+            { label: t('dashboard.studyPlanPage.targetBand'),  value: plan.target_band },
+            { label: t('dashboard.studyPlanPage.dailyStudy'),  value: t('dashboard.studyPlanPage.minVal', { n: String(plan.daily_minutes) }) },
+            { label: t('dashboard.studyPlanPage.focus'),       value: plan.focus_skills.join(', ') || t('dashboard.studyPlanPage.allSkills') },
           ].map(({ label, value }) => (
             <div key={label} className="px-4 py-2.5 rounded-xl bg-white dark:bg-gray-900/60 border border-gray-100 dark:border-gray-800">
               <div className="text-xs text-gray-500 dark:text-gray-400">{label}</div>
@@ -132,7 +134,7 @@ export default function StudyPlanPage() {
                     {week.week}
                   </div>
                   <div>
-                    <div className="text-sm font-semibold text-gray-900 dark:text-white">Week {week.week}</div>
+                    <div className="text-sm font-semibold text-gray-900 dark:text-white">{t('dashboard.studyPlanPage.weekLabel', { n: String(week.week) })}</div>
                     {week.theme && <div className="text-xs text-gray-500 dark:text-gray-400">{week.theme}</div>}
                   </div>
                 </div>
@@ -159,16 +161,16 @@ export default function StudyPlanPage() {
           <div className="w-14 h-14 rounded-2xl bg-indigo-50 dark:bg-indigo-500/10 flex items-center justify-center mx-auto mb-4">
             <BrainCircuit size={24} className="text-indigo-500" strokeWidth={1.5} />
           </div>
-          <h3 className="text-sm font-semibold text-gray-900 dark:text-white mb-1">No study plan yet</h3>
+          <h3 className="text-sm font-semibold text-gray-900 dark:text-white mb-1">{t('dashboard.studyPlanPage.noPlan')}</h3>
           <p className="text-sm text-gray-400 dark:text-gray-500 mb-5 max-w-xs mx-auto">
-            Complete your onboarding first, then generate a personalised plan.
+            {t('dashboard.studyPlanPage.noPlanDesc')}
           </p>
           <button
             onClick={handleGenerate}
             disabled={generating}
             className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-semibold btn-primary text-white disabled:opacity-60"
           >
-            {generating ? <><Loader2 size={14} className="animate-spin" /> Generating…</> : <><BrainCircuit size={14} /> Generate My Plan</>}
+            {generating ? <><Loader2 size={14} className="animate-spin" />{t('dashboard.studyPlanPage.generating')}</> : <><BrainCircuit size={14} />{t('dashboard.studyPlanPage.generateMine')}</>}
           </button>
         </div>
       ) : null}

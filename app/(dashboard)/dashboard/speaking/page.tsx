@@ -79,13 +79,13 @@ export default function SpeakingPage() {
     <div className="max-w-3xl mx-auto space-y-6">
       <div>
         <h1 className="text-2xl font-bold text-gray-900 dark:text-white mb-1">{t('dashboard.speaking')}</h1>
-        <p className="text-sm text-gray-500 dark:text-gray-400">Paste your spoken response transcript and receive AI feedback on fluency, vocabulary, grammar, and pronunciation.</p>
+        <p className="text-sm text-gray-500 dark:text-gray-400">{t('dashboard.speakingPage.subtitle')}</p>
       </div>
 
       <form onSubmit={handleSubmit} className="space-y-5">
         {/* Part selector */}
         <div>
-          <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1.5">Speaking Part</label>
+          <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1.5">{t('dashboard.speakingPage.partLabel')}</label>
           <div className="flex gap-2">
             {([1, 2, 3] as const).map(p => (
               <button
@@ -98,7 +98,7 @@ export default function SpeakingPage() {
                     : 'bg-white dark:bg-gray-900/60 border border-gray-200 dark:border-gray-700 text-gray-600 dark:text-gray-400 hover:border-indigo-300 dark:hover:border-indigo-500/50'
                 }`}
               >
-                Part {p}
+                {t('dashboard.speakingPage.partN', { n: String(p) })}
               </button>
             ))}
           </div>
@@ -106,7 +106,7 @@ export default function SpeakingPage() {
 
         {/* Topic */}
         <div>
-          <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1.5">Topic / Question</label>
+          <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1.5">{t('dashboard.speakingPage.topicLabel')}</label>
           <select
             value={topic}
             onChange={e => { setTopic(e.target.value); setResult(null) }}
@@ -122,9 +122,9 @@ export default function SpeakingPage() {
         {/* Transcript */}
         <div>
           <div className="flex items-center justify-between mb-1.5">
-            <label className="text-xs font-medium text-gray-700 dark:text-gray-300">Your Response (transcript)</label>
+            <label className="text-xs font-medium text-gray-700 dark:text-gray-300">{t('dashboard.speakingPage.responseLabel')}</label>
             <span className={`text-xs tabular-nums ${wordCount >= 20 ? 'text-emerald-500' : 'text-gray-400'}`}>
-              {wordCount} words
+              {t('dashboard.speakingPage.wordCount', { count: String(wordCount) })}
             </span>
           </div>
           <textarea
@@ -132,7 +132,7 @@ export default function SpeakingPage() {
             onChange={e => setTranscript(e.target.value)}
             rows={10}
             required
-            placeholder="Type or paste your spoken response here. Minimum 20 words…"
+            placeholder={t('dashboard.speakingPage.placeholder')}
             className="w-full px-4 py-3 rounded-xl text-sm border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 text-gray-900 dark:text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-500/40 focus:border-indigo-500 transition-all resize-none leading-7"
           />
         </div>
@@ -149,7 +149,7 @@ export default function SpeakingPage() {
           disabled={loading || wordCount < 20}
           className="flex items-center gap-2 px-6 py-3 rounded-xl text-sm font-semibold btn-primary text-white disabled:opacity-60 transition-all"
         >
-          {loading ? <><Loader2 size={15} className="animate-spin" /> Analysing…</> : <><Mic size={15} /> Get AI Feedback</>}
+          {loading ? <><Loader2 size={15} className="animate-spin" />{t('dashboard.speakingPage.analysing')}</> : <><Mic size={15} />{t('dashboard.speakingPage.getFeedback')}</>}
         </button>
       </form>
 
@@ -159,13 +159,13 @@ export default function SpeakingPage() {
           <div className="flex items-center gap-4 p-6 rounded-2xl bg-blue-50 dark:bg-blue-500/10 border border-blue-100 dark:border-blue-500/20">
             <div className="text-center shrink-0">
               <div className="text-4xl font-bold text-blue-600 dark:text-blue-400 tabular-nums">{result.band_score.toFixed(1)}</div>
-              <div className="text-xs text-blue-500/70 dark:text-blue-400/60 mt-0.5">Band Score</div>
+              <div className="text-xs text-blue-500/70 dark:text-blue-400/60 mt-0.5">{t('dashboard.speakingPage.bandScore')}</div>
             </div>
             <div className="flex-1 grid grid-cols-1 gap-2.5">
               {[
-                { label: 'Fluency & Coherence', score: result.fluency_score },
-                { label: 'Lexical Resource', score: result.lexical_score },
-                { label: 'Grammatical Range', score: result.grammar_score },
+                { label: t('dashboard.speakingPage.criteriaFC'), score: result.fluency_score },
+                { label: t('dashboard.speakingPage.criteriaLR'), score: result.lexical_score },
+                { label: t('dashboard.speakingPage.criteriaGR'), score: result.grammar_score },
               ].map(({ label, score }) => (
                 <div key={label} className="flex items-center justify-between">
                   <span className="text-xs text-gray-500 dark:text-gray-400">{label}</span>
@@ -180,7 +180,7 @@ export default function SpeakingPage() {
 
             {result.pronunciation_notes && (
               <div className="px-4 py-3 rounded-xl bg-blue-50 dark:bg-blue-500/8 border border-blue-100 dark:border-blue-500/20">
-                <p className="text-xs font-semibold text-blue-700 dark:text-blue-300 mb-1 uppercase tracking-wider">Pronunciation Notes</p>
+                <p className="text-xs font-semibold text-blue-700 dark:text-blue-300 mb-1 uppercase tracking-wider">{t('dashboard.speakingPage.pronunciation')}</p>
                 <p className="text-sm text-gray-600 dark:text-gray-400">{result.pronunciation_notes}</p>
               </div>
             )}
@@ -188,7 +188,7 @@ export default function SpeakingPage() {
             <div>
               <div className="flex items-center gap-1.5 mb-2">
                 <CheckCircle size={13} className="text-emerald-500" />
-                <h3 className="text-xs font-semibold text-gray-900 dark:text-white uppercase tracking-wider">Strengths</h3>
+                <h3 className="text-xs font-semibold text-gray-900 dark:text-white uppercase tracking-wider">{t('dashboard.speakingPage.strengths')}</h3>
               </div>
               <ul className="space-y-1.5">
                 {result.feedback.strengths.map((s, i) => (
@@ -200,7 +200,7 @@ export default function SpeakingPage() {
             <div>
               <div className="flex items-center gap-1.5 mb-2">
                 <AlertCircle size={13} className="text-amber-500" />
-                <h3 className="text-xs font-semibold text-gray-900 dark:text-white uppercase tracking-wider">Improvements</h3>
+                <h3 className="text-xs font-semibold text-gray-900 dark:text-white uppercase tracking-wider">{t('dashboard.speakingPage.improvements')}</h3>
               </div>
               <ul className="space-y-1.5">
                 {result.feedback.improvements.map((imp, i) => (

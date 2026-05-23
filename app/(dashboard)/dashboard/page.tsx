@@ -69,11 +69,13 @@ const SKILL_ICONS = {
   speaking:  Mic,
 } as const
 
-function daysAgo(dateStr: string): string {
-  const diff = Math.floor((Date.now() - new Date(dateStr).getTime()) / 86400000)
-  if (diff === 0) return 'сегодня'
-  if (diff === 1) return 'вчера'
-  return `${diff} дн. назад`
+function makeDaysAgo(t: (k: string, p?: Record<string, string>) => string) {
+  return function daysAgo(dateStr: string): string {
+    const diff = Math.floor((Date.now() - new Date(dateStr).getTime()) / 86400000)
+    if (diff === 0) return t('dashboard.overview.daysAgoToday')
+    if (diff === 1) return t('dashboard.overview.daysAgoYesterday')
+    return t('dashboard.overview.daysAgoN', { n: String(diff) })
+  }
 }
 
 /* ── Shared UI atoms ────────────────────────────────────── */
@@ -178,13 +180,16 @@ function IconChip({
 }
 
 /* ── Main page ──────────────────────────────────────────── */
+const LOCALE_MAP: Record<string, string> = { en: 'en-GB', ru: 'ru-RU', kz: 'kk-KZ', uz: 'uz-UZ' }
+
 export default function DashboardPage() {
-  const { t } = useLanguage()
+  const { t, language } = useLanguage()
   const [data, setData]       = useState<PageData | null>(null)
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
     let cancelled = false
+    const daysAgo = makeDaysAgo(t)
 
     async function load() {
       const supabase = createClient() as any
@@ -244,14 +249,14 @@ export default function DashboardPage() {
       if ((writingSubs ?? []).length > 0) {
         const w = writingSubs![0]
         const row = skills.find(s => s.key === 'writing')!
-        row.lastLabel = `Задание ${w.task_type === '1' ? '1' : '2'}`
+        row.lastLabel = t('dashboard.overview.writingTaskN', { n: w.task_type === '1' ? '1' : '2' })
         row.lastBand  = w.band_score
         row.lastWhen  = daysAgo(w.created_at)
       }
       if ((speakingSubs ?? []).length > 0) {
         const s = speakingSubs![0]
         const row = skills.find(r => r.key === 'speaking')!
-        row.lastLabel = `Часть ${s.part}`
+        row.lastLabel = t('dashboard.overview.speakingPartN', { n: String(s.part) })
         row.lastBand  = s.band_score
         row.lastWhen  = daysAgo(s.created_at)
       }
@@ -266,7 +271,7 @@ export default function DashboardPage() {
         d.setDate(d.getDate() - (6 - i))
         d.setHours(0, 0, 0, 0)
         const dayStr = d.toDateString()
-        const dayName = d.toLocaleDateString('ru', { weekday: 'short' })
+        const dayName = d.toLocaleDateString(LOCALE_MAP[language] ?? undefined, { weekday: 'short' })
         const day = (sessions ?? []).filter((s: any) =>
           new Date(s.created_at).toDateString() === dayStr
         )
@@ -305,7 +310,7 @@ export default function DashboardPage() {
         .slice(0, 6)
         .reverse()
         .map((a: any) => ({
-          label: new Date(a.completed_at).toLocaleDateString('ru', { day: '2-digit', month: '2-digit' }).replace(/\.$/, ''),
+          label: new Date(a.completed_at).toLocaleDateString(LOCALE_MAP[language] ?? undefined, { day: '2-digit', month: '2-digit' }).replace(/\.$/, ''),
           value: a.band_score as number,
         }))
 
@@ -332,7 +337,7 @@ export default function DashboardPage() {
         ...(writingSubs ?? []).slice(0, 2).map((w: any) => ({
           skill: 'writing',
           icon:  FileText,
-          label: `Письмо · Задание ${w.task_type === '1' ? '1' : '2'}`,
+          label: t('dashboard.overview.writingTaskN', { n: w.task_type === '1' ? '1' : '2' }),
           meta:  '',
           band:  w.band_score as number | null,
           when:  daysAgo(w.created_at),
@@ -340,7 +345,7 @@ export default function DashboardPage() {
         ...(speakingSubs ?? []).slice(0, 2).map((s: any) => ({
           skill: 'speaking',
           icon:  Mic,
-          label: `Говорение · Часть ${s.part}`,
+          label: t('dashboard.overview.speakingPartN', { n: String(s.part) }),
           meta:  '',
           band:  s.band_score as number | null,
           when:  daysAgo(s.created_at),
@@ -365,7 +370,8 @@ export default function DashboardPage() {
 
     load()
     return () => { cancelled = true }
-  }, [])
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [language])
 
   if (loading) {
     return (
@@ -386,21 +392,23 @@ export default function DashboardPage() {
   const target    = profile?.target_band_score ?? 7.5
   const delta     = Math.max(0, target - overallBand).toFixed(1)
 
+  const h = Math.floor(totalMinsThisWeek / 60)
+  const m = totalMinsThisWeek % 60
+  const hA = t('dashboard.overview.hourAbbr')
+  const mA = t('dashboard.overview.minAbbr')
   const hoursStr = totalMinsThisWeek >= 60
-    ? `${Math.floor(totalMinsThisWeek / 60)}ч ${totalMinsThisWeek % 60}м`
-    : `${totalMinsThisWeek}м`
+    ? (m > 0 ? `${h}${hA} ${m}${mA}` : `${h}${hA}`)
+    : `${totalMinsThisWeek}${mA}`
 
-  /* ─ TODO: today's tasks — connect to study plan API ─ */
   const todayTasks = [
-    { skill: t('dashboard.overview.writingLabel'),   color: '#60A5FA', icon: FileText,  title: 'Задание 2 — связность абзацев', mins: 30, why: 'Слабая зона: 6.0 → 7.5',  href: '/dashboard/writing'  },
-    { skill: t('dashboard.overview.listeningLabel'), color: '#FBBF24', icon: Headphones, title: 'Раздел 3 — академическая дискуссия', mins: 20, why: 'Поддержать темп', href: '/listening' },
-    { skill: t('dashboard.overview.speakingLabel'),  color: '#8B5CF6', icon: Mic,       title: 'Часть 3 — гибкая лексика', mins: 15, why: 'Меньше «really» и «a lot»', href: '/dashboard/speaking' },
+    { skill: t('dashboard.overview.writingLabel'),   color: '#60A5FA', icon: FileText,   title: t('dashboard.overview.todayTask1Title'), mins: 30, why: t('dashboard.overview.todayTask1Why'), href: '/dashboard/writing'  },
+    { skill: t('dashboard.overview.listeningLabel'), color: '#FBBF24', icon: Headphones, title: t('dashboard.overview.todayTask2Title'), mins: 20, why: t('dashboard.overview.todayTask2Why'), href: '/listening' },
+    { skill: t('dashboard.overview.speakingLabel'),  color: '#8B5CF6', icon: Mic,        title: t('dashboard.overview.todayTask3Title'), mins: 15, why: t('dashboard.overview.todayTask3Why'), href: '/dashboard/speaking' },
   ]
 
-  /* ─ TODO: AI insights — connect to AI analysis API ─ */
   const insights = [
-    { skill: `${t('dashboard.overview.writingLabel')} · связность`, color: '#60A5FA', quote: 'В Задании 2 переходы между абзацами остаются неровными. Добавь явные связки в тематических предложениях — это снимет потолок 6.0.', delta: '6.0 → 7.5' },
-    { skill: `${t('dashboard.overview.speakingLabel')} · диапазон`,  color: '#8B5CF6', quote: 'Опирается на «really» и «a lot». 3 синонима в день закроют этот пробел за две недели.', delta: '6.5 → 7.5' },
+    { skill: t('dashboard.overview.insightTitle1'), color: '#60A5FA', quote: t('dashboard.overview.insightQuote1'), delta: t('dashboard.overview.insightDelta1') },
+    { skill: t('dashboard.overview.insightTitle2'), color: '#8B5CF6', quote: t('dashboard.overview.insightQuote2'), delta: t('dashboard.overview.insightDelta2') },
   ]
 
   return (

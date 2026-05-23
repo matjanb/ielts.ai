@@ -43,7 +43,7 @@ export function DashboardMockup() {
             <span className="text-xs font-semibold text-gray-900 dark:text-white">IELTS Camp</span>
           </div>
           {[
-            { icon: BarChart3,    label: t('dashboard.overview'),  active: true  },
+            { icon: BarChart3,    label: t('dashboard.overviewLabel'),  active: true  },
             { icon: BookOpen,     label: t('dashboard.writing'),   active: false },
             { icon: Mic,          label: t('dashboard.speaking'),  active: false },
             { icon: FileText,     label: t('dashboard.mockTests'), active: false },

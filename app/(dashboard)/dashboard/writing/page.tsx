@@ -76,7 +76,7 @@ export default function WritingPage() {
     <div className="max-w-3xl mx-auto space-y-6">
       <div>
         <h1 className="text-2xl font-bold text-gray-900 dark:text-white mb-1">{t('dashboard.writing')}</h1>
-        <p className="text-sm text-gray-500 dark:text-gray-400">Submit your response and get AI feedback on all four IELTS writing criteria.</p>
+        <p className="text-sm text-gray-500 dark:text-gray-400">{t('dashboard.writingPage.subtitle')}</p>
       </div>
 
       <form onSubmit={handleSubmit} className="space-y-5">
@@ -93,14 +93,14 @@ export default function WritingPage() {
                   : 'bg-white dark:bg-gray-900/60 border border-gray-200 dark:border-gray-700 text-gray-600 dark:text-gray-400 hover:border-indigo-300 dark:hover:border-indigo-500/50'
               }`}
             >
-              Task {type}
+              {t('dashboard.writingPage.task', { n: type })}
             </button>
           ))}
         </div>
 
         {/* Prompt selector */}
         <div>
-          <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1.5">Task Prompt</label>
+          <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1.5">{t('dashboard.writingPage.promptLabel')}</label>
           <div className="relative">
             <select
               value={prompt}
@@ -108,9 +108,9 @@ export default function WritingPage() {
               className="w-full appearance-none px-4 py-3 pr-10 rounded-xl text-sm border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-indigo-500/40 focus:border-indigo-500 transition-all"
             >
               {SAMPLE_PROMPTS[taskType].map((p, i) => (
-                <option key={i} value={p}>Sample prompt {i + 1}</option>
+                <option key={i} value={p}>{t('dashboard.writingPage.samplePrompt', { n: String(i + 1) })}</option>
               ))}
-              <option value={prompt} disabled={SAMPLE_PROMPTS[taskType].includes(prompt)}>Custom prompt</option>
+              <option value={prompt} disabled={SAMPLE_PROMPTS[taskType].includes(prompt)}>{t('dashboard.writingPage.customPrompt')}</option>
             </select>
             <ChevronDown size={14} className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
           </div>
@@ -120,9 +120,9 @@ export default function WritingPage() {
         {/* Response textarea */}
         <div>
           <div className="flex items-center justify-between mb-1.5">
-            <label className="text-xs font-medium text-gray-700 dark:text-gray-300">Your Response</label>
+            <label className="text-xs font-medium text-gray-700 dark:text-gray-300">{t('dashboard.writingPage.responseLabel')}</label>
             <span className={`text-xs tabular-nums ${wordCount >= minWords ? 'text-emerald-500' : 'text-gray-400'}`}>
-              {wordCount} / {minWords} words
+              {t('dashboard.writingPage.wordCount', { count: String(wordCount), min: String(minWords) })}
             </span>
           </div>
           <textarea
@@ -130,7 +130,7 @@ export default function WritingPage() {
             onChange={e => setContent(e.target.value)}
             rows={14}
             required
-            placeholder={`Write your Task ${taskType} response here…`}
+            placeholder={t('dashboard.writingPage.placeholder', { type: taskType })}
             className="w-full px-4 py-3 rounded-xl text-sm border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 text-gray-900 dark:text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-500/40 focus:border-indigo-500 transition-all resize-none leading-7"
           />
         </div>
@@ -147,7 +147,7 @@ export default function WritingPage() {
           disabled={loading || wordCount < 50}
           className="flex items-center gap-2 px-6 py-3 rounded-xl text-sm font-semibold btn-primary text-white disabled:opacity-60 transition-all"
         >
-          {loading ? <><Loader2 size={15} className="animate-spin" /> Analysing…</> : <><BookOpen size={15} /> Get AI Feedback</>}
+          {loading ? <><Loader2 size={15} className="animate-spin" />{t('dashboard.writingPage.analysing')}</> : <><BookOpen size={15} />{t('dashboard.writingPage.getFeedback')}</>}
         </button>
       </form>
 
@@ -158,14 +158,14 @@ export default function WritingPage() {
           <div className="flex items-center gap-4 p-6 rounded-2xl bg-indigo-50 dark:bg-indigo-500/10 border border-indigo-100 dark:border-indigo-500/20">
             <div className="text-center shrink-0">
               <div className="text-4xl font-bold text-indigo-600 dark:text-indigo-400 tabular-nums">{result.band_score.toFixed(1)}</div>
-              <div className="text-xs text-indigo-500/70 dark:text-indigo-400/60 mt-0.5">Band Score</div>
+              <div className="text-xs text-indigo-500/70 dark:text-indigo-400/60 mt-0.5">{t('dashboard.writingPage.bandScore')}</div>
             </div>
             <div className="flex-1 grid grid-cols-2 gap-3">
               {[
-                { label: 'Task Achievement', score: result.task_achievement },
-                { label: 'Coherence & Cohesion', score: result.coherence_cohesion },
-                { label: 'Lexical Resource', score: result.lexical_resource },
-                { label: 'Grammatical Accuracy', score: result.grammatical_accuracy },
+                { label: t('dashboard.writingPage.criteriaTA'), score: result.task_achievement },
+                { label: t('dashboard.writingPage.criteriaCC'), score: result.coherence_cohesion },
+                { label: t('dashboard.writingPage.criteriaLR'), score: result.lexical_resource },
+                { label: t('dashboard.writingPage.criteriaGA'), score: result.grammatical_accuracy },
               ].map(({ label, score }) => (
                 <div key={label} className="flex items-center justify-between">
                   <span className="text-xs text-gray-500 dark:text-gray-400">{label}</span>
@@ -182,7 +182,7 @@ export default function WritingPage() {
             <div>
               <div className="flex items-center gap-1.5 mb-2">
                 <CheckCircle size={13} className="text-emerald-500" />
-                <h3 className="text-xs font-semibold text-gray-900 dark:text-white uppercase tracking-wider">Strengths</h3>
+                <h3 className="text-xs font-semibold text-gray-900 dark:text-white uppercase tracking-wider">{t('dashboard.writingPage.strengths')}</h3>
               </div>
               <ul className="space-y-1.5">
                 {result.feedback.strengths.map((s, i) => (
@@ -194,7 +194,7 @@ export default function WritingPage() {
             <div>
               <div className="flex items-center gap-1.5 mb-2">
                 <AlertCircle size={13} className="text-amber-500" />
-                <h3 className="text-xs font-semibold text-gray-900 dark:text-white uppercase tracking-wider">Improvements</h3>
+                <h3 className="text-xs font-semibold text-gray-900 dark:text-white uppercase tracking-wider">{t('dashboard.writingPage.improvements')}</h3>
               </div>
               <ul className="space-y-1.5">
                 {result.feedback.improvements.map((imp, i) => (
@@ -205,7 +205,7 @@ export default function WritingPage() {
 
             {result.feedback.rewritten_paragraph && (
               <div>
-                <h3 className="text-xs font-semibold text-gray-900 dark:text-white uppercase tracking-wider mb-2">Improved Opening</h3>
+                <h3 className="text-xs font-semibold text-gray-900 dark:text-white uppercase tracking-wider mb-2">{t('dashboard.writingPage.improvedOpening')}</h3>
                 <p className="text-sm text-gray-700 dark:text-gray-300 leading-relaxed bg-gray-50 dark:bg-gray-800/60 rounded-xl px-4 py-3 italic">
                   {result.feedback.rewritten_paragraph}
                 </p>
