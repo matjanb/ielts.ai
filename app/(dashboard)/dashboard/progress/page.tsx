@@ -1,26 +1,32 @@
 'use client'
 
-import { useEffect, useState } from 'react'
-import { TrendingUp, BookOpen, FileText, Calendar, Clock } from 'lucide-react'
+import { useEffect, useState, type ReactNode } from 'react'
 import { useLanguage } from '@/lib/i18n/LanguageContext'
 import { createClient } from '@/lib/supabase/client'
 import {
-  BandRing,
-  LineChart,
-  StackBars,
-  CriteriaRadar,
-  StreakHeatmap,
+  BandRing, BandBar, Sparkline,
+  LineChart, StackBars, CriteriaRadar, StreakHeatmap,
 } from '@/components/charts/progress-charts'
 
-/* ------------------------------------------------------------------ */
+/* ================================================================
+   Types
+   ================================================================ */
 type TabKey = 'overview' | 'writing' | 'mocks'
 
-interface SkillScore {
+interface SkillRow {
   key: string
   label: string
-  color: string
-  score: number
+  band: number
   target: number
+  delta: number
+  sparkline: number[]
+}
+
+interface WCrit {
+  task: number
+  coherence: number
+  lexical: number
+  grammar: number
 }
 
 interface WritingSubmission {
@@ -42,32 +48,75 @@ interface MockAttempt {
 }
 
 interface PageData {
-  skillScores: SkillScore[]
-  mockLinePoints: { label: string; value: number }[]
-  writingCriteria: { task: number; coherence: number; lexical: number; grammar: number } | null
+  overallBand: number
+  targetBand: number
+  streak: number
+  hoursThisWeek: string
+  vsLastPct: number
+  skillRows: SkillRow[]
+  weeklyBars: { label: string; w: number; s: number; r: number; l: number }[]
+  mockLine: { label: string; value: number }[]
+  heatmap: number[]
+  writingCriteria: WCrit | null
   writingHistory: WritingSubmission[]
   mockAttempts: MockAttempt[]
-  heatmapCells: number[]
-  weeklyBars: { label: string; writing: number; speaking: number; reading: number; listening: number }[]
-  targetBand: number
 }
 
 const SKILL_META = [
-  { key: 'writing',   label: 'Writing',   color: '#8b5cf6' },
-  { key: 'speaking',  label: 'Speaking',  color: '#3b82f6' },
-  { key: 'reading',   label: 'Reading',   color: '#10b981' },
-  { key: 'listening', label: 'Listening', color: '#fb7185' },
+  { key: 'writing',   label: 'Writing'   },
+  { key: 'speaking',  label: 'Speaking'  },
+  { key: 'reading',   label: 'Reading'   },
+  { key: 'listening', label: 'Listening' },
 ]
 
-/* ------------------------------------------------------------------ */
+/* ================================================================
+   Shared UI atoms
+   ================================================================ */
+function Card({ children, className = '' }: { children: ReactNode; className?: string }) {
+  return (
+    <div className={`bg-white dark:bg-gray-900/60 border border-gray-100 dark:border-gray-800 rounded-[18px] ${className}`}>
+      {children}
+    </div>
+  )
+}
+
+function CardTitle({ children, action }: { children: ReactNode; action?: ReactNode }) {
+  return (
+    <div className="flex items-center justify-between mb-[18px]">
+      <div className="text-[14px] font-semibold text-gray-900 dark:text-white tracking-[-0.005em]">{children}</div>
+      {action}
+    </div>
+  )
+}
+
+type PillTone = 'neutral' | 'up' | 'accent' | 'warn'
+
+function Pill({ children, tone = 'neutral' }: { children: ReactNode; tone?: PillTone }) {
+  const cls: Record<PillTone, string> = {
+    neutral: 'bg-gray-100 dark:bg-gray-800 text-gray-500 dark:text-gray-400',
+    up:      'bg-emerald-50 dark:bg-emerald-500/15 text-emerald-700 dark:text-emerald-400',
+    accent:  'bg-indigo-50 dark:bg-indigo-500/15 text-indigo-600 dark:text-indigo-400',
+    warn:    'bg-amber-50 dark:bg-amber-500/15 text-amber-700 dark:text-amber-400',
+  }
+  return (
+    <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-semibold font-mono whitespace-nowrap ${cls[tone]}`}>
+      {children}
+    </span>
+  )
+}
+
+/* ================================================================
+   Data loading
+   ================================================================ */
 export default function ProgressPage() {
   const { t } = useLanguage()
-  const [activeTab, setActiveTab] = useState<TabKey>('overview')
+  const [tab, setTab] = useState<TabKey>('overview')
   const [data, setData] = useState<PageData | null>(null)
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
     async function load() {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const supabase = createClient() as any
       const { data: { user } } = await supabase.auth.getUser()
       if (!user) { setLoading(false); return }
@@ -83,7 +132,7 @@ export default function ProgressPage() {
           .select('skill, score, source, recorded_at')
           .eq('user_id', user.id)
           .order('recorded_at', { ascending: true })
-          .limit(200),
+          .limit(400),
         supabase.from('writing_submissions')
           .select('id, task_type, band_score, task_achievement, coherence_cohesion, lexical_resource, grammatical_accuracy, created_at')
           .eq('user_id', user.id)
@@ -106,85 +155,94 @@ export default function ProgressPage() {
       ])
 
       const targetBand: number = profile?.target_band_score ?? 7.5
-      const history: any[] = bandHistory ?? []
-      const sessions: any[] = studySessions ?? []
+      const history: { skill: string; score: number; source: string; recorded_at: string }[] = bandHistory ?? []
+      const sessions: { skill: string; duration_minutes: number; created_at: string }[] = studySessions ?? []
 
-      // Latest band score per skill (iterate from newest → oldest)
-      const latestScores: Record<string, number> = {}
-      for (const row of [...history].reverse()) {
-        if (!latestScores[row.skill]) latestScores[row.skill] = row.score
+      // Latest & previous per skill, sparkline (last 7)
+      const bySkill: Record<string, number[]> = {}
+      for (const row of history) {
+        if (!bySkill[row.skill]) bySkill[row.skill] = []
+        bySkill[row.skill].push(row.score)
       }
+      const latestScore = (sk: string) => bySkill[sk]?.at(-1) ?? 0
+      const prevScore = (sk: string) => bySkill[sk]?.at(-2) ?? latestScore(sk)
+      const sparkline = (sk: string) => (bySkill[sk] ?? []).slice(-7)
 
-      const skillScores: SkillScore[] = SKILL_META.map(m => ({
+      const skillRows: SkillRow[] = SKILL_META.map(m => ({
         ...m,
-        score: latestScores[m.key] ?? 0,
+        band:  latestScore(m.key),
         target: targetBand,
+        delta: +(latestScore(m.key) - prevScore(m.key)).toFixed(1),
+        sparkline: sparkline(m.key),
       }))
 
-      // Mock test score progression (overall skill, source = mock_test)
-      const mockLinePoints = history
-        .filter(r => r.source === 'mock_test' && r.skill === 'overall')
+      const overallBand = skillRows.some(s => s.band > 0)
+        ? +(skillRows.reduce((s, r) => s + r.band, 0) / skillRows.filter(r => r.band > 0).length).toFixed(1)
+        : 0
+
+      // Mock progression line
+      const mockLine = history
+        .filter(r => r.source === 'mock_test' && r.skill === 'listening')
         .map(r => ({
           label: new Date(r.recorded_at).toLocaleDateString(undefined, { month: 'short', day: 'numeric' }),
           value: r.score,
         }))
 
-      // Latest writing criteria
-      const latestW: WritingSubmission | undefined = (writingSubs ?? []).find(
-        (w: WritingSubmission) => w.task_achievement != null
-      )
-      const writingCriteria = latestW
-        ? {
-            task:      latestW.task_achievement  ?? 0,
-            coherence: latestW.coherence_cohesion ?? 0,
-            lexical:   latestW.lexical_resource   ?? 0,
-            grammar:   latestW.grammatical_accuracy ?? 0,
-          }
-        : null
-
-      // Heatmap: 84 days (12 weeks × 7 days)
-      const now = new Date()
-      now.setHours(0, 0, 0, 0)
-      const heatmapCells = Array(84).fill(0) as number[]
+      // Heatmap: 84 days, indexed 0=oldest 83=today
+      const today = new Date()
+      today.setHours(0, 0, 0, 0)
+      const heatmap = Array(84).fill(0) as number[]
       for (const s of sessions) {
         const d = new Date(s.created_at)
         d.setHours(0, 0, 0, 0)
-        const diffDays = Math.round((now.getTime() - d.getTime()) / 86400000)
-        if (diffDays >= 0 && diffDays < 84) {
-          heatmapCells[83 - diffDays] = (heatmapCells[83 - diffDays] ?? 0) + (s.duration_minutes ?? 0)
-        }
+        const diff = Math.round((today.getTime() - d.getTime()) / 86400000)
+        if (diff >= 0 && diff < 84) heatmap[83 - diff] += s.duration_minutes ?? 0
       }
 
-      // Weekly bars: last 7 days, minutes per skill per day
-      type SkillKey = 'writing' | 'speaking' | 'reading' | 'listening'
-      const SKILLS: SkillKey[] = ['writing', 'speaking', 'reading', 'listening']
-      const DAY_SHORT = ['S', 'M', 'T', 'W', 'T', 'F', 'S']
+      // Streak: consecutive non-zero days from today backwards
+      let streak = 0
+      for (let i = 83; i >= 0; i--) {
+        if (heatmap[i] > 0) streak++
+        else break
+      }
+
+      // Weekly bars: last 7 days
+      type SK = 'writing' | 'speaking' | 'reading' | 'listening'
+      const SKS: SK[] = ['writing', 'speaking', 'reading', 'listening']
+      const DAY = ['S', 'M', 'T', 'W', 'T', 'F', 'S']
       const weeklyBars = Array.from({ length: 7 }, (_, i) => {
-        const d = new Date(now)
+        const d = new Date(today)
         d.setDate(d.getDate() - 6 + i)
-        const dayStr = d.toDateString()
-        const daySess = sessions.filter(s => new Date(s.created_at).toDateString() === dayStr)
-        const entry: { label: string } & Record<SkillKey, number> = {
-          label: DAY_SHORT[d.getDay()],
-          writing: 0, speaking: 0, reading: 0, listening: 0,
+        const ds = d.toDateString()
+        const ds2 = sessions.filter(s => new Date(s.created_at).toDateString() === ds)
+        const mins: Record<SK, number> = { writing: 0, speaking: 0, reading: 0, listening: 0 }
+        for (const sk of SKS) {
+          mins[sk] = ds2.filter(s => s.skill === sk).reduce((sum, s) => sum + (s.duration_minutes ?? 0), 0)
         }
-        for (const sk of SKILLS) {
-          entry[sk] = daySess
-            .filter(s => s.skill === sk)
-            .reduce((sum: number, s: any) => sum + (s.duration_minutes ?? 0), 0)
-        }
-        return entry
+        return { label: DAY[d.getDay()], w: mins.writing, s: mins.speaking, r: mins.reading, l: mins.listening }
       })
 
+      const thisWeekMins = weeklyBars.reduce((s, d) => s + d.w + d.s + d.r + d.l, 0)
+      const lastWeekMins = heatmap.slice(83 - 14, 83 - 7).reduce((s, v) => s + v, 0)
+      const vsLastPct = lastWeekMins > 0 ? Math.round(((thisWeekMins - lastWeekMins) / lastWeekMins) * 100) : 0
+      const hrs = Math.floor(thisWeekMins / 60)
+      const mins = thisWeekMins % 60
+      const hoursThisWeek = thisWeekMins > 0 ? (mins > 0 ? `${hrs}h ${mins}m` : `${hrs}h`) : '0m'
+
+      // Writing criteria (latest with criterion data)
+      const latestW = (writingSubs ?? []).find((w: WritingSubmission) => w.task_achievement != null)
+      const writingCriteria: WCrit | null = latestW ? {
+        task:      latestW.task_achievement ?? 0,
+        coherence: latestW.coherence_cohesion ?? 0,
+        lexical:   latestW.lexical_resource ?? 0,
+        grammar:   latestW.grammatical_accuracy ?? 0,
+      } : null
+
       setData({
-        skillScores,
-        mockLinePoints,
-        writingCriteria,
-        writingHistory: writingSubs ?? [],
+        overallBand, targetBand, streak, hoursThisWeek, vsLastPct,
+        skillRows, weeklyBars, mockLine, heatmap,
+        writingCriteria, writingHistory: writingSubs ?? [],
         mockAttempts: mockAttempts ?? [],
-        heatmapCells,
-        weeklyBars,
-        targetBand,
       })
       setLoading(false)
     }
@@ -206,334 +264,572 @@ export default function ProgressPage() {
   ]
 
   return (
-    <div className="max-w-3xl mx-auto space-y-6">
-      {/* Header */}
-      <div>
-        <h1 className="text-2xl font-bold text-gray-900 dark:text-white mb-1">
-          {t('dashboard.progress')}
-        </h1>
-        <p className="text-sm text-gray-500 dark:text-gray-400">
-          Track your band scores and study activity across all four IELTS skills.
-        </p>
-      </div>
-
+    <div className="space-y-5">
       {/* Tab bar */}
       <div className="flex gap-1 p-1 bg-gray-100 dark:bg-gray-800/60 rounded-xl w-fit">
-        {TABS.map(tab => (
-          <button
-            key={tab.key}
-            onClick={() => setActiveTab(tab.key)}
+        {TABS.map(tb => (
+          <button key={tb.key} onClick={() => setTab(tb.key)}
             className={`px-4 py-1.5 rounded-lg text-sm font-medium transition-all ${
-              activeTab === tab.key
+              tab === tb.key
                 ? 'bg-white dark:bg-gray-700 text-gray-900 dark:text-white shadow-sm'
                 : 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300'
-            }`}
-          >
-            {tab.label}
+            }`}>
+            {tb.label}
           </button>
         ))}
       </div>
 
-      {/* Panels */}
-      {activeTab === 'overview' && <OverviewTab data={data} />}
-      {activeTab === 'writing'  && <WritingTab  data={data} />}
-      {activeTab === 'mocks'    && <MocksTab    data={data} />}
+      {tab === 'overview' && <OverviewScreen data={data} t={t} />}
+      {tab === 'writing'  && <WritingScreen  data={data} />}
+      {tab === 'mocks'    && <MockScreen     data={data} />}
     </div>
   )
 }
 
-/* ------------------------------------------------------------------ */
-/* Overview Tab                                                         */
-/* ------------------------------------------------------------------ */
-function OverviewTab({ data }: { data: PageData | null }) {
+/* ================================================================
+   Overview
+   ================================================================ */
+function OverviewScreen({ data, t }: { data: PageData | null; t: (k: string) => string }) {
   if (!data) return <EmptyState />
 
-  const hasScores = data.skillScores.some(s => s.score > 0)
+  const { overallBand, targetBand, streak, hoursThisWeek, vsLastPct,
+          skillRows, weeklyBars, mockLine, heatmap } = data
+
+  const focusSkills = [...skillRows]
+    .filter(s => s.band > 0)
+    .sort((a, b) => (a.target - a.band) - (b.target - b.band))
+    .reverse()
+    .slice(0, 3)
 
   return (
-    <div className="space-y-6">
-      {/* Band rings */}
-      <div className="bg-white dark:bg-gray-900/60 rounded-2xl border border-gray-100 dark:border-gray-800 p-6">
-        <h2 className="text-sm font-semibold text-gray-900 dark:text-white mb-5">
-          Current Band Scores
-          <span className="ml-2 text-xs font-normal text-gray-400">
-            target {data.targetBand.toFixed(1)}
-          </span>
-        </h2>
-        {hasScores ? (
-          <div className="grid grid-cols-4 gap-4">
-            {data.skillScores.map(s => (
-              <BandRing
-                key={s.key}
-                score={s.score}
-                target={s.target}
-                color={s.color}
-                label={s.label}
-              />
-            ))}
-          </div>
-        ) : (
-          <p className="text-sm text-gray-400 dark:text-gray-500 py-4 text-center">
-            Complete a mock test to see your band scores.
+    <div className="space-y-5">
+
+      {/* ── Row A: header ─────────────────────────────────────── */}
+      <div className="flex items-end justify-between gap-5">
+        <div>
+          <p className="text-[13px] text-gray-400 dark:text-gray-500 font-mono mb-2">
+            {t('dashboard.progress')}
           </p>
-        )}
+          <h1 className="text-[32px] font-bold leading-[1.1] tracking-[-0.02em] text-gray-900 dark:text-white">
+            {overallBand > 0
+              ? overallBand >= targetBand
+                ? `You've hit your target band.`
+                : `You're on track for band ${targetBand.toFixed(1)}.`
+              : 'Start a test to see your progress.'}
+          </h1>
+        </div>
+        <button className="shrink-0 px-4 py-2.5 rounded-[10px] bg-gray-900 dark:bg-white text-white dark:text-gray-900 text-[13px] font-semibold hover:opacity-80 transition-opacity">
+          Start today's session →
+        </button>
       </div>
 
-      {/* Activity heatmap */}
-      <div className="bg-white dark:bg-gray-900/60 rounded-2xl border border-gray-100 dark:border-gray-800 p-5">
-        <div className="flex items-center justify-between mb-4">
-          <h2 className="text-sm font-semibold text-gray-900 dark:text-white">Study Activity</h2>
-          <span className="text-xs text-gray-400 dark:text-gray-500 flex items-center gap-1">
-            <Calendar size={11} />
-            Last 12 weeks
-          </span>
-        </div>
-        <StreakHeatmap cells={data.heatmapCells} />
-        <div className="flex items-center gap-1.5 mt-3 justify-end">
-          <span className="text-[10px] text-gray-400">Less</span>
-          {[0, 0.3, 0.55, 0.8, 1].map((op, i) => (
-            <div key={i}
-              className={`w-3 h-3 rounded-sm ${op === 0 ? 'bg-gray-100 dark:bg-gray-800' : ''}`}
-              style={op > 0 ? { background: `rgba(99,102,241,${op})` } : undefined}
-            />
-          ))}
-          <span className="text-[10px] text-gray-400">More</span>
-        </div>
-      </div>
+      {/* ── Row B: ring + skills ───────────────────────────────── */}
+      <div className="grid gap-5" style={{ gridTemplateColumns: 'minmax(260px,320px) 1fr' }}>
 
-      {/* Weekly study + score trend */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-        {/* Weekly bars */}
-        <div className="bg-white dark:bg-gray-900/60 rounded-2xl border border-gray-100 dark:border-gray-800 p-5">
-          <div className="flex items-center justify-between mb-3">
-            <h2 className="text-sm font-semibold text-gray-900 dark:text-white">This Week</h2>
-            <span className="text-xs text-gray-400 flex items-center gap-1">
-              <Clock size={10} /> minutes
-            </span>
+        {/* Band ring */}
+        <Card className="p-7 flex flex-col items-center justify-center gap-4">
+          <BandRing band={overallBand} target={targetBand} />
+          <div className="flex gap-5 font-mono">
+            <MiniStat label="streak"    value={`${streak}d`} />
+            <MiniStat label="this week" value={hoursThisWeek} />
+            {vsLastPct !== 0 && (
+              <MiniStat label="vs last"
+                value={`${vsLastPct > 0 ? '+' : ''}${vsLastPct}%`}
+                tone={vsLastPct > 0 ? 'up' : 'neutral'} />
+            )}
           </div>
-          <StackBars days={data.weeklyBars} />
-          {/* Legend */}
-          <div className="flex flex-wrap gap-3 mt-3">
-            {[
-              { label: 'Writing',   color: '#8b5cf6' },
-              { label: 'Speaking',  color: '#3b82f6' },
-              { label: 'Reading',   color: '#10b981' },
-              { label: 'Listening', color: '#fb7185' },
-            ].map(({ label, color }) => (
-              <div key={label} className="flex items-center gap-1">
-                <div className="w-2 h-2 rounded-full" style={{ background: color }} />
-                <span className="text-[10px] text-gray-400 dark:text-gray-500">{label}</span>
+        </Card>
+
+        {/* Skills table */}
+        <Card className="p-6">
+          <CardTitle action={<Pill tone="accent">live</Pill>}>Skills</CardTitle>
+          <div className="space-y-[18px]">
+            {skillRows.map(s => (
+              <div key={s.key}
+                className="grid items-center gap-4"
+                style={{ gridTemplateColumns: '120px 1fr 56px 60px 64px' }}>
+                <span className="text-[14px] font-medium text-gray-900 dark:text-white">{s.label}</span>
+                <BandBar value={s.band} target={s.target} />
+                <span className="text-[16px] font-semibold tabular-nums text-gray-900 dark:text-white text-right">
+                  {s.band > 0 ? s.band.toFixed(1) : '—'}
+                </span>
+                <div className="flex justify-end">
+                  {s.delta !== 0 ? (
+                    <Pill tone={s.delta > 0 ? 'up' : 'neutral'}>
+                      {s.delta > 0 ? '↑' : '↓'} {Math.abs(s.delta).toFixed(1)}
+                    </Pill>
+                  ) : <span />}
+                </div>
+                <div className="flex justify-end">
+                  {s.sparkline.length >= 2 ? <Sparkline data={s.sparkline} /> : <span />}
+                </div>
               </div>
             ))}
           </div>
-        </div>
-
-        {/* Score trend */}
-        <div className="bg-white dark:bg-gray-900/60 rounded-2xl border border-gray-100 dark:border-gray-800 p-5">
-          <h2 className="text-sm font-semibold text-gray-900 dark:text-white mb-3">Score Trend</h2>
-          <LineChart
-            points={data.mockLinePoints}
-            targetBand={data.targetBand}
-            height={100}
-          />
-        </div>
+        </Card>
       </div>
-    </div>
-  )
-}
 
-/* ------------------------------------------------------------------ */
-/* Writing Tab                                                          */
-/* ------------------------------------------------------------------ */
-function WritingTab({ data }: { data: PageData | null }) {
-  if (!data) return <EmptyState />
-
-  const crit = data.writingCriteria
-  const history = data.writingHistory
-
-  const CRITERIA = crit
-    ? [
-        { label: 'Task Achievement',      value: crit.task,      color: '#8b5cf6' },
-        { label: 'Coherence & Cohesion',  value: crit.coherence, color: '#6366f1' },
-        { label: 'Lexical Resource',      value: crit.lexical,   color: '#3b82f6' },
-        { label: 'Grammatical Accuracy',  value: crit.grammar,   color: '#10b981' },
-      ]
-    : []
-
-  return (
-    <div className="space-y-6">
-      {/* Criteria breakdown */}
-      {crit ? (
-        <div className="bg-white dark:bg-gray-900/60 rounded-2xl border border-gray-100 dark:border-gray-800 p-5">
-          <h2 className="text-sm font-semibold text-gray-900 dark:text-white mb-5">
-            Criteria Breakdown
-            <span className="ml-2 text-xs font-normal text-gray-400">latest submission</span>
-          </h2>
-          <div className="flex flex-col sm:flex-row gap-6 items-center">
-            <div className="shrink-0">
-              <CriteriaRadar
-                task={crit.task}
-                coherence={crit.coherence}
-                lexical={crit.lexical}
-                grammar={crit.grammar}
-              />
+      {/* ── Row C: weekly + mock progression ──────────────────── */}
+      <div className="grid grid-cols-2 gap-5">
+        <Card className="p-6">
+          <CardTitle action={
+            <div className="flex items-center gap-3 text-[11px] text-gray-400 font-mono">
+              <LegendDot color="#6366f1" label="writing" />
+              <LegendDot color="#818cf8" label="speaking" />
+              <LegendDot color="#a5b4fc" label="reading" />
+              <LegendDot color="#c7d2fe" label="listening" />
             </div>
-            <div className="flex-1 w-full space-y-3">
-              {CRITERIA.map(({ label, value, color }) => (
-                <div key={label}>
-                  <div className="flex items-center justify-between mb-1">
-                    <span className="text-xs text-gray-500 dark:text-gray-400">{label}</span>
-                    <span className="text-xs font-bold tabular-nums" style={{ color }}>{value.toFixed(1)}</span>
+          }>
+            This week · {hoursThisWeek || '0m'}
+          </CardTitle>
+          <StackBars days={weeklyBars} />
+        </Card>
+
+        <Card className="p-6">
+          <CardTitle action={
+            mockLine.length >= 2
+              ? <Pill tone="up">+{(mockLine.at(-1)!.value - mockLine[0].value).toFixed(1)} since first</Pill>
+              : null
+          }>
+            Mock test band progression
+          </CardTitle>
+          {mockLine.length >= 2
+            ? <LineChart data={mockLine} target={targetBand} />
+            : <EmptyChart message="Complete a mock test to see progression" />}
+        </Card>
+      </div>
+
+      {/* ── Row D: focus + heatmap + feedback ─────────────────── */}
+      <div className="grid gap-5" style={{ gridTemplateColumns: '1.2fr 1fr 1.3fr' }}>
+
+        {/* Where to push */}
+        <Card className="p-6">
+          <CardTitle action={<Pill tone="warn">coach's focus</Pill>}>
+            Where to push
+          </CardTitle>
+          {focusSkills.length > 0 ? (
+            <div className="space-y-4">
+              {focusSkills.map((s, i) => (
+                <div key={s.key}
+                  className={`${i < focusSkills.length - 1 ? 'pb-4 border-b border-gray-100 dark:border-gray-800' : ''}`}>
+                  <div className="flex justify-between items-baseline mb-1.5">
+                    <span className="text-[13px] font-semibold text-gray-900 dark:text-white">{s.label}</span>
+                    <span className="text-[12px] font-mono text-gray-400 dark:text-gray-500">
+                      <span className="text-gray-900 dark:text-white">{s.band.toFixed(1)}</span> → {s.target.toFixed(1)}
+                    </span>
                   </div>
-                  <div className="h-1.5 rounded-full bg-gray-100 dark:bg-gray-800">
-                    <div
-                      className="h-1.5 rounded-full transition-all duration-700"
-                      style={{ width: `${(value / 9) * 100}%`, background: color }}
-                    />
+                  <BandBar value={s.band} target={s.target} />
+                  <p className="text-[12.5px] text-gray-400 dark:text-gray-500 mt-2 leading-relaxed">
+                    {gapNote(s.key, s.band, s.target)}
+                  </p>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <p className="text-[13px] text-gray-400 dark:text-gray-500">Complete tests to get focus recommendations.</p>
+          )}
+        </Card>
+
+        {/* Heatmap */}
+        <Card className="p-6">
+          <CardTitle action={<Pill>last 12 weeks</Pill>}>
+            Study consistency
+          </CardTitle>
+          <div className="flex justify-center py-2">
+            <StreakHeatmap data={heatmap} />
+          </div>
+          <div className="flex items-center justify-between mt-3.5 text-[11px] text-gray-400 font-mono">
+            <span>less</span>
+            <div className="flex gap-1">
+              {[0, 0.3, 0.55, 0.8, 1].map((op, i) => (
+                <span key={i} className="w-3 h-3 rounded-sm block"
+                  style={op === 0
+                    ? { background: 'var(--color-gray-100, #f3f4f6)' }
+                    : { background: `rgba(99,102,241,${op})` }} />
+              ))}
+            </div>
+            <span>more</span>
+          </div>
+        </Card>
+
+        {/* Latest AI feedback (writing submissions) */}
+        <Card className="p-6">
+          <CardTitle action={
+            <span className="text-[12px] text-indigo-500 font-semibold cursor-pointer">view all →</span>
+          }>
+            Latest activity
+          </CardTitle>
+          {data.writingHistory.length > 0 ? (
+            <div className="space-y-3.5">
+              {data.writingHistory.slice(0, 3).map((w, i) => (
+                <div key={w.id}
+                  className={`${i < 2 ? 'pb-3.5 border-b border-gray-100 dark:border-gray-800' : ''}`}>
+                  <div className="flex justify-between items-center mb-1">
+                    <span className="text-[12px] font-semibold text-gray-400 uppercase tracking-[0.06em]">Writing</span>
+                    <span className="text-[11px] font-mono text-gray-400">
+                      {new Date(w.created_at).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}
+                    </span>
+                  </div>
+                  <div className="flex justify-between items-center">
+                    <span className="text-[13px] font-medium text-gray-900 dark:text-white">Task {w.task_type}</span>
+                    {w.band_score != null && <Pill tone="accent">{w.band_score.toFixed(1)}</Pill>}
                   </div>
                 </div>
               ))}
             </div>
-          </div>
-        </div>
-      ) : (
-        <div className="bg-white dark:bg-gray-900/60 rounded-2xl border border-gray-100 dark:border-gray-800 p-8 text-center">
-          <div className="w-12 h-12 rounded-2xl bg-violet-50 dark:bg-violet-500/10 flex items-center justify-center mx-auto mb-3">
-            <BookOpen size={20} className="text-violet-500" strokeWidth={1.5} />
-          </div>
-          <p className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">No criteria data yet</p>
-          <p className="text-xs text-gray-400 dark:text-gray-500">
-            Submit a writing task with AI feedback to see your criteria breakdown.
-          </p>
-        </div>
-      )}
-
-      {/* Recent submissions */}
-      {history.length > 0 && (
-        <div className="bg-white dark:bg-gray-900/60 rounded-2xl border border-gray-100 dark:border-gray-800 p-5">
-          <h2 className="text-sm font-semibold text-gray-900 dark:text-white mb-4">Recent Submissions</h2>
-          <div className="space-y-2">
-            {history.slice(0, 8).map(sub => (
-              <div key={sub.id}
-                className="flex items-center gap-4 px-3 py-2.5 rounded-xl hover:bg-gray-50 dark:hover:bg-white/3 transition-colors">
-                <div className="w-8 h-8 rounded-xl bg-violet-50 dark:bg-violet-500/10 flex items-center justify-center shrink-0">
-                  <BookOpen size={13} className="text-violet-500" strokeWidth={1.8} />
-                </div>
-                <div className="flex-1 min-w-0">
-                  <div className="text-sm font-medium text-gray-700 dark:text-gray-300">
-                    Task {sub.task_type}
+          ) : data.mockAttempts.length > 0 ? (
+            <div className="space-y-3.5">
+              {data.mockAttempts.slice(-3).reverse().map((m, i) => (
+                <div key={m.id}
+                  className={`${i < 2 ? 'pb-3.5 border-b border-gray-100 dark:border-gray-800' : ''}`}>
+                  <div className="flex justify-between items-center mb-1">
+                    <span className="text-[12px] font-semibold text-gray-400 uppercase tracking-[0.06em]">Mock Test</span>
+                    <span className="text-[11px] font-mono text-gray-400">
+                      {new Date(m.completed_at).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}
+                    </span>
                   </div>
-                  <div className="text-xs text-gray-400 dark:text-gray-500">
-                    {new Date(sub.created_at).toLocaleDateString(undefined, {
-                      month: 'short', day: 'numeric', year: 'numeric',
-                    })}
+                  <div className="flex justify-between items-center">
+                    <span className="text-[13px] font-medium text-gray-900 dark:text-white">
+                      Score {m.total_score ?? '—'} / 40
+                    </span>
+                    {m.band_score != null && <Pill tone="accent">{m.band_score.toFixed(1)}</Pill>}
                   </div>
                 </div>
-                {sub.band_score != null && (
-                  <span className="text-sm font-bold text-violet-600 dark:text-violet-400 tabular-nums">
-                    {sub.band_score.toFixed(1)}
-                  </span>
-                )}
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
+              ))}
+            </div>
+          ) : (
+            <p className="text-[13px] text-gray-400 dark:text-gray-500">No activity yet. Start a test to see results here.</p>
+          )}
+        </Card>
+      </div>
     </div>
   )
 }
 
-/* ------------------------------------------------------------------ */
-/* Mock Tests Tab                                                       */
-/* ------------------------------------------------------------------ */
-function MocksTab({ data }: { data: PageData | null }) {
+/* ================================================================
+   Writing
+   ================================================================ */
+function WritingScreen({ data }: { data: PageData | null }) {
   if (!data) return <EmptyState />
 
-  const mocks = data.mockAttempts
-  const linePoints = mocks
-    .filter(m => m.band_score != null)
-    .map(m => ({
-      label: new Date(m.completed_at).toLocaleDateString(undefined, { month: 'short', day: 'numeric' }),
-      value: m.band_score!,
-    }))
+  const crit = data.writingCriteria
+  const wBand = data.skillRows.find(s => s.key === 'writing')?.band ?? 0
+  const { targetBand, writingHistory } = data
+
+  const CRITERIA = crit ? [
+    { key: 'TR',  label: 'Task Response',        value: crit.task      },
+    { key: 'CC',  label: 'Coherence & Cohesion', value: crit.coherence },
+    { key: 'LR',  label: 'Lexical Resource',     value: crit.lexical   },
+    { key: 'GRA', label: 'Grammar & Accuracy',   value: crit.grammar   },
+  ] : []
 
   return (
-    <div className="space-y-6">
-      {/* Score progression */}
-      <div className="bg-white dark:bg-gray-900/60 rounded-2xl border border-gray-100 dark:border-gray-800 p-5">
-        <div className="flex items-center justify-between mb-4">
-          <h2 className="text-sm font-semibold text-gray-900 dark:text-white">Score Progression</h2>
-          {data.targetBand > 0 && (
-            <span className="text-xs text-gray-400">target {data.targetBand.toFixed(1)}</span>
-          )}
-        </div>
-        <LineChart
-          points={linePoints}
-          targetBand={data.targetBand}
-          height={120}
-        />
+    <div className="space-y-5">
+      <div>
+        <p className="text-[12px] font-mono text-gray-400 dark:text-gray-500 mb-1.5">OVERVIEW · WRITING</p>
+        <h1 className="text-[28px] font-bold tracking-[-0.02em] text-gray-900 dark:text-white">
+          Writing{wBand > 0 ? ` — band ${wBand.toFixed(1)}` : ''}
+          {wBand > 0 && wBand < targetBand && ', climbing'}
+        </h1>
       </div>
 
-      {/* Mock attempts list */}
-      {mocks.length > 0 ? (
-        <div className="bg-white dark:bg-gray-900/60 rounded-2xl border border-gray-100 dark:border-gray-800 p-5">
-          <h2 className="text-sm font-semibold text-gray-900 dark:text-white mb-4">
-            All Attempts
-          </h2>
-          <div className="space-y-2">
-            {[...mocks].reverse().map((m, i) => (
-              <div key={m.id}
-                className="flex items-center gap-4 px-3 py-2.5 rounded-xl hover:bg-gray-50 dark:hover:bg-white/3 transition-colors">
-                <div className="w-8 h-8 rounded-xl bg-indigo-50 dark:bg-indigo-500/10 flex items-center justify-center shrink-0 text-indigo-500">
-                  <FileText size={13} strokeWidth={1.8} />
-                </div>
-                <div className="flex-1 min-w-0">
-                  <div className="text-sm font-medium text-gray-700 dark:text-gray-300">
-                    Mock Test #{mocks.length - i}
+      {/* Row A: ring + radar + criteria bars */}
+      <div className="grid gap-5" style={{ gridTemplateColumns: '300px 1fr 1fr' }}>
+        <Card className="p-7 flex flex-col items-center justify-center">
+          <BandRing band={wBand} target={targetBand} label="Writing" />
+        </Card>
+
+        <Card className="p-6">
+          <CardTitle>Criteria breakdown</CardTitle>
+          {crit ? (
+            <div className="flex justify-center">
+              <CriteriaRadar
+                values={[crit.task, crit.coherence, crit.lexical, crit.grammar]}
+                labels={['TR', 'CC', 'LR', 'GRA']}
+              />
+            </div>
+          ) : <EmptyChart message="Submit a writing task for AI feedback" />}
+        </Card>
+
+        <Card className="p-6">
+          <CardTitle action={<Pill tone="up">latest</Pill>}>Per criterion</CardTitle>
+          {CRITERIA.length > 0 ? (
+            <div className="space-y-4">
+              {CRITERIA.map(c => (
+                <div key={c.key}>
+                  <div className="flex justify-between mb-1.5 text-[12.5px]">
+                    <span className="font-medium text-gray-900 dark:text-white">{c.label}</span>
+                    <span className="font-mono text-gray-400">
+                      <span className="text-gray-900 dark:text-white">{c.value.toFixed(1)}</span> / {targetBand.toFixed(1)}
+                    </span>
                   </div>
-                  <div className="text-xs text-gray-400 dark:text-gray-500">
-                    {new Date(m.completed_at).toLocaleDateString(undefined, {
-                      month: 'short', day: 'numeric', year: 'numeric',
-                    })}
-                    {m.total_score != null && ` · ${m.total_score} / 40`}
-                  </div>
+                  <BandBar value={c.value} target={targetBand} />
                 </div>
-                {m.band_score != null ? (
-                  <span className="text-sm font-bold text-indigo-600 dark:text-indigo-400 tabular-nums">
-                    {m.band_score.toFixed(1)}
-                  </span>
-                ) : (
-                  <span className="text-xs text-gray-400">—</span>
-                )}
-              </div>
-            ))}
-          </div>
-        </div>
-      ) : (
-        <div className="bg-white dark:bg-gray-900/60 rounded-2xl border border-gray-100 dark:border-gray-800 p-8 text-center">
-          <div className="w-12 h-12 rounded-2xl bg-indigo-50 dark:bg-indigo-500/10 flex items-center justify-center mx-auto mb-3">
-            <FileText size={20} className="text-indigo-500" strokeWidth={1.5} />
-          </div>
-          <p className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">No mock tests yet</p>
-          <p className="text-xs text-gray-400 dark:text-gray-500">
-            Complete a mock test to track your score progression over time.
+              ))}
+            </div>
+          ) : (
+            <p className="text-[13px] text-gray-400 dark:text-gray-500">
+              No criteria data yet. Submit writing with AI feedback enabled.
+            </p>
+          )}
+        </Card>
+      </div>
+
+      {/* Row B: submissions table */}
+      <Card className="p-6">
+        <CardTitle action={
+          <span className="text-[12px] text-indigo-500 font-semibold cursor-pointer">open all →</span>
+        }>
+          Recent submissions
+        </CardTitle>
+        {writingHistory.length > 0 ? (
+          <table className="w-full text-[13px]" style={{ borderCollapse: 'collapse', fontFeatureSettings: '"tnum"' }}>
+            <thead>
+              <tr>
+                {['Date', 'Task', 'TR', 'CC', 'LR', 'GRA', 'Band'].map(h => (
+                  <th key={h} className="text-left text-[11px] font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-[0.08em] pb-3 px-3 first:pl-0">
+                    {h}
+                  </th>
+                ))}
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-gray-100 dark:divide-gray-800">
+              {writingHistory.map(w => (
+                <tr key={w.id}>
+                  <td className="py-3.5 px-3 pl-0 font-mono text-gray-400 dark:text-gray-500 whitespace-nowrap">
+                    {new Date(w.created_at).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}
+                  </td>
+                  <td className="py-3.5 px-3">
+                    <Pill>Task {w.task_type}</Pill>
+                  </td>
+                  {[w.task_achievement, w.coherence_cohesion, w.lexical_resource, w.grammatical_accuracy].map((v, i) => (
+                    <td key={i} className="py-3.5 px-3 tabular-nums text-gray-500 dark:text-gray-400">
+                      {v != null ? v.toFixed(1) : '—'}
+                    </td>
+                  ))}
+                  <td className="py-3.5 px-3">
+                    {w.band_score != null ? (
+                      <Pill tone="accent">{w.band_score.toFixed(1)}</Pill>
+                    ) : <span className="text-gray-300 dark:text-gray-600">—</span>}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        ) : (
+          <p className="text-[13px] text-gray-400 dark:text-gray-500 py-4">
+            No writing submissions yet. Submit a task to start tracking your progress.
           </p>
+        )}
+      </Card>
+
+      {/* Row C: grammar accuracy */}
+      {CRITERIA.length > 0 && (
+        <div className="grid grid-cols-2 gap-5">
+          <Card className="p-6">
+            <CardTitle action={<Pill tone="accent">latest essay</Pill>}>Criteria summary</CardTitle>
+            <div className="grid grid-cols-2 gap-4">
+              {CRITERIA.map(c => (
+                <div key={c.key} className="p-4 rounded-[12px] border border-gray-100 dark:border-gray-800">
+                  <p className="text-[11px] text-gray-400 uppercase tracking-[0.06em] mb-1.5">{c.label}</p>
+                  <p className="text-[22px] font-bold tabular-nums text-gray-900 dark:text-white leading-none">
+                    {c.value.toFixed(1)}
+                  </p>
+                  <div className="mt-2.5">
+                    <Pill tone={c.value >= targetBand ? 'up' : c.value >= targetBand - 1 ? 'accent' : 'neutral'}>
+                      {c.value >= targetBand ? 'on target' : `${(targetBand - c.value).toFixed(1)} to go`}
+                    </Pill>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </Card>
+
+          <Card className="p-6">
+            <CardTitle>Score trend</CardTitle>
+            {data.mockLine.length >= 2
+              ? <LineChart data={data.mockLine} target={targetBand} height={200} />
+              : <EmptyChart message="Complete more tests to see your trend" />}
+          </Card>
         </div>
       )}
     </div>
   )
 }
 
-/* ------------------------------------------------------------------ */
+/* ================================================================
+   Mock Tests
+   ================================================================ */
+function MockScreen({ data }: { data: PageData | null }) {
+  if (!data) return <EmptyState />
+
+  const { mockAttempts, mockLine, targetBand } = data
+  const last = mockAttempts.at(-1)
+  const best = mockAttempts.reduce<MockAttempt | null>((b, m) =>
+    m.band_score != null && (b == null || m.band_score > (b.band_score ?? 0)) ? m : b, null)
+
+  return (
+    <div className="space-y-5">
+      <div>
+        <p className="text-[12px] font-mono text-gray-400 dark:text-gray-500 mb-1.5">OVERVIEW · MOCK TESTS</p>
+        <h1 className="text-[28px] font-bold tracking-[-0.02em] text-gray-900 dark:text-white">
+          {mockAttempts.length} full mock{mockAttempts.length !== 1 ? 's' : ''}
+          {last?.band_score != null ? ` · last band ${last.band_score.toFixed(1)}` : ''}
+        </h1>
+      </div>
+
+      {/* Row A: KPIs */}
+      <div className="grid grid-cols-4 gap-4">
+        <KPICard label="Latest band"
+          value={last?.band_score?.toFixed(1) ?? '—'}
+          sub={last ? new Date(last.completed_at).toLocaleDateString(undefined, { month: 'short', day: 'numeric' }) + ' · full test' : 'No attempts yet'}
+          accent />
+        <KPICard label="Best band"
+          value={best?.band_score?.toFixed(1) ?? '—'}
+          sub={best ? 'personal best' : 'No attempts yet'} />
+        <KPICard label="Total attempts"
+          value={String(mockAttempts.length)}
+          sub={mockAttempts.length > 0 ? 'listening tests' : 'Start a test'} />
+        <KPICard label="Avg band"
+          value={mockAttempts.filter(m => m.band_score != null).length > 0
+            ? (mockAttempts.filter(m => m.band_score != null)
+                .reduce((s, m) => s + m.band_score!, 0) /
+               mockAttempts.filter(m => m.band_score != null).length).toFixed(1)
+            : '—'}
+          sub="across all mocks" />
+      </div>
+
+      {/* Row B: line chart */}
+      <Card className="p-6">
+        <CardTitle action={
+          mockLine.length >= 2
+            ? <Pill tone="up">+{(mockLine.at(-1)!.value - mockLine[0].value).toFixed(1)} since first</Pill>
+            : null
+        }>
+          Band progression
+        </CardTitle>
+        {mockLine.length >= 2
+          ? <LineChart data={mockLine} target={targetBand} height={260} />
+          : <EmptyChart message="Complete two or more mock tests to see your progression" />}
+      </Card>
+
+      {/* Row C: table */}
+      <Card className="p-6">
+        <CardTitle action={
+          <span className="text-[12px] text-indigo-500 font-semibold cursor-pointer">review →</span>
+        }>
+          All mock tests
+        </CardTitle>
+        {mockAttempts.length > 0 ? (
+          <table className="w-full text-[13px]" style={{ borderCollapse: 'collapse', fontFeatureSettings: '"tnum"' }}>
+            <thead>
+              <tr>
+                {['Date', 'Type', 'Score', 'Band', ''].map((h, i) => (
+                  <th key={i}
+                    className={`text-[11px] font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-[0.08em] pb-3 px-3 ${i === 0 ? 'pl-0 text-left' : i < 4 ? 'text-right' : 'text-right'}`}>
+                    {h}
+                  </th>
+                ))}
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-gray-100 dark:divide-gray-800">
+              {[...mockAttempts].reverse().map((m) => (
+                <tr key={m.id}>
+                  <td className="py-3.5 px-3 pl-0 font-mono text-gray-400 dark:text-gray-500">
+                    {new Date(m.completed_at).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' })}
+                  </td>
+                  <td className="py-3.5 px-3"><Pill>Listening</Pill></td>
+                  <td className="py-3.5 px-3 text-right tabular-nums text-gray-500 dark:text-gray-400">
+                    {m.total_score != null ? `${m.total_score} / 40` : '—'}
+                  </td>
+                  <td className="py-3.5 px-3 text-right">
+                    {m.band_score != null
+                      ? <Pill tone={m.band_score >= 7 ? 'up' : 'neutral'}>{m.band_score.toFixed(1)}</Pill>
+                      : <span className="text-gray-300 dark:text-gray-600">—</span>}
+                  </td>
+                  <td className="py-3.5 px-3 text-right">
+                    <a href={`/listening/${m.id}/results`}
+                      className="text-[12px] text-indigo-500 font-semibold hover:underline">
+                      review →
+                    </a>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        ) : (
+          <p className="text-[13px] text-gray-400 dark:text-gray-500 py-4">
+            No mock tests yet. Head to Listening to start your first test.
+          </p>
+        )}
+      </Card>
+    </div>
+  )
+}
+
+/* ================================================================
+   Small helpers
+   ================================================================ */
+function MiniStat({ label, value, tone = 'neutral' }: {
+  label: string; value: string; tone?: 'neutral' | 'up'
+}) {
+  return (
+    <div className="text-center">
+      <div className="text-[10px] text-gray-400 uppercase tracking-[0.08em]">{label}</div>
+      <div className={`text-[16px] font-semibold mt-1 tabular-nums ${tone === 'up' ? 'text-emerald-600 dark:text-emerald-400' : 'text-gray-900 dark:text-white'}`}>
+        {value}
+      </div>
+    </div>
+  )
+}
+
+function LegendDot({ color, label }: { color: string; label: string }) {
+  return (
+    <span className="flex items-center gap-1">
+      <span className="w-2 h-2 rounded-sm inline-block" style={{ background: color }} />
+      {label}
+    </span>
+  )
+}
+
+function KPICard({ label, value, sub, accent = false }: {
+  label: string; value: string; sub: string; accent?: boolean
+}) {
+  return (
+    <Card className="p-5">
+      <p className="text-[11px] text-gray-400 uppercase tracking-[0.08em]">{label}</p>
+      <p className={`text-[36px] font-bold tracking-[-0.02em] tabular-nums leading-none mt-3 ${accent ? 'text-indigo-500' : 'text-gray-900 dark:text-white'}`}>
+        {value}
+      </p>
+      <p className="text-[12px] text-gray-400 dark:text-gray-500 mt-2.5">{sub}</p>
+    </Card>
+  )
+}
+
+function EmptyChart({ message }: { message: string }) {
+  return (
+    <div className="flex items-center justify-center h-24 text-[13px] text-gray-400 dark:text-gray-500">
+      {message}
+    </div>
+  )
+}
+
 function EmptyState() {
   return (
     <div className="flex items-center justify-center py-20">
-      <div className="text-center">
-        <div className="w-14 h-14 rounded-2xl bg-indigo-50 dark:bg-indigo-500/10 flex items-center justify-center mx-auto mb-4">
-          <TrendingUp size={24} className="text-indigo-500" strokeWidth={1.5} />
-        </div>
-        <p className="text-sm text-gray-400 dark:text-gray-500">Sign in to view your progress.</p>
-      </div>
+      <p className="text-sm text-gray-400 dark:text-gray-500">Sign in to view your progress.</p>
     </div>
   )
+}
+
+function gapNote(skill: string, band: number, target: number): string {
+  const gap = +(target - band).toFixed(1)
+  if (gap <= 0) return 'On target — keep it up.'
+  const notes: Record<string, string> = {
+    writing:   `Need +${gap} — focus on coherence and task response in Task 2.`,
+    speaking:  `Need +${gap} — expand vocabulary range and reduce filler words.`,
+    reading:   `Need +${gap} — drill True/False/NG and matching headings questions.`,
+    listening: `Need +${gap} — practise section 3 & 4 multiple-choice under timed conditions.`,
+  }
+  return notes[skill] ?? `Need +${gap} to hit target.`
 }
