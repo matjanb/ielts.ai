@@ -693,3 +693,297 @@ VALUES (s4_id, 41, 'fill_blank',
 '{"box":true,"diagram":true,"diagram_position":"right"}', 1);
 
 END $$;
+
+-- ============================================================
+-- LISTENING TEST 3
+-- ============================================================
+
+DO $$
+DECLARE
+  t3_id uuid;
+  s1_id uuid;
+  s2_id uuid;
+  s3_id uuid;
+  s4_id uuid;
+BEGIN
+
+INSERT INTO tests (title, type, book_number, test_number, difficulty)
+VALUES ('Listening Test 3', 'listening', 1, 3, 'medium')
+RETURNING id INTO t3_id;
+
+INSERT INTO test_sections (test_id, section_number, title, instructions, audio_url)
+VALUES (t3_id, 1, 'Section 1 — Questions 1-12',
+'Questions 1-4: Circle the appropriate letter. Questions 5-10: Complete the application form using NO MORE THAN THREE WORDS. Questions 11-12: Answer the questions.',
+'https://vqyyoxfsitsdmmxecqka.supabase.co/storage/v1/object/public/test-audio/test-3.mp3')
+RETURNING id INTO s1_id;
+
+INSERT INTO test_sections (test_id, section_number, title, instructions, audio_url)
+VALUES (t3_id, 2, 'Section 2 — Questions 13-23',
+'Complete the notes below using NO MORE THAN THREE WORDS for each answer.',
+'https://vqyyoxfsitsdmmxecqka.supabase.co/storage/v1/object/public/test-audio/test-3.mp3')
+RETURNING id INTO s2_id;
+
+INSERT INTO test_sections (test_id, section_number, title, instructions, audio_url)
+VALUES (t3_id, 3, 'Section 3 — Questions 24-32',
+'Questions 24-27: Circle the correct answer. Questions 28-32: Complete the notes using NO MORE THAN THREE WORDS for each answer.',
+'https://vqyyoxfsitsdmmxecqka.supabase.co/storage/v1/object/public/test-audio/test-3.mp3')
+RETURNING id INTO s3_id;
+
+INSERT INTO test_sections (test_id, section_number, title, instructions, audio_url)
+VALUES (t3_id, 4, 'Section 4 — Questions 33-42',
+'Questions 33-37: Complete the table using NO MORE THAN THREE WORDS. Questions 38-42: Label the diagram using NO MORE THAN THREE WORDS for each answer.',
+'https://vqyyoxfsitsdmmxecqka.supabase.co/storage/v1/object/public/test-audio/test-3.mp3')
+RETURNING id INTO s4_id;
+
+-- ============================================================
+-- SECTION 1 — Q1-4 (multiple choice)
+-- ============================================================
+
+INSERT INTO questions (section_id, question_number, question_type, question_text, correct_answer, options, points)
+VALUES (s1_id, 1, 'multiple_choice',
+'What are the parking regulations on campus?',
+'B',
+'{"A":"undergraduate parking allowed","B":"postgraduate parking allowed","C":"staff parking only allowed","D":"no student parking allowed"}', 1);
+
+INSERT INTO questions (section_id, question_number, question_type, question_text, correct_answer, options, points)
+VALUES (s1_id, 2, 'multiple_choice',
+'The administration office is in',
+'D',
+'{"A":"Block B.","B":"Block D.","C":"Block E.","D":"Block G."}', 1);
+
+INSERT INTO questions (section_id, question_number, question_type, question_text, correct_answer, options, points)
+VALUES (s1_id, 3, 'multiple_choice',
+'If you do not have a parking sticker, the following action will be taken:',
+'C',
+'{"A":"wheel clamp your car.","B":"fine only.","C":"tow away your car and fine.","D":"tow away your car only."}', 1);
+
+INSERT INTO questions (section_id, question_number, question_type, question_text, correct_answer, options, points, image_url)
+VALUES (s1_id, 4, 'multiple_choice',
+'Which picture shows the correct location of the Administration office?',
+'A',
+'{"A":"A","B":"B","C":"C","D":"D","image_options":true}',
+1, 'https://vqyyoxfsitsdmmxecqka.supabase.co/storage/v1/object/public/question-images/lt3-q4.png');
+
+-- ============================================================
+-- SECTION 1 — Q5-10 (application form fill_blank)
+-- ============================================================
+
+INSERT INTO questions (section_id, question_number, question_type, question_text, correct_answer, options, points)
+VALUES (s1_id, 5, 'fill_blank', 'Name', 'Richard Lee',
+'{"form":true,"label":"Name","form_title":"Application for parking sticker"}', 1);
+
+INSERT INTO questions (section_id, question_number, question_type, question_text, correct_answer, options, points)
+VALUES (s1_id, 6, 'fill_blank', 'Address', '30 Enmore Road',
+'{"form":true,"label":"Address","prefill":"Flat 13"}', 1);
+
+INSERT INTO questions (section_id, question_number, question_type, question_text, correct_answer, options, points)
+VALUES (s1_id, 7, 'fill_blank', 'Suburb', 'Newport',
+'{"form":true,"label":"Suburb"}', 1);
+
+INSERT INTO questions (section_id, question_number, question_type, question_text, correct_answer, options, points)
+VALUES (s1_id, 8, 'fill_blank', 'Faculty', 'Architecture',
+'{"form":true,"label":"Faculty"}', 1);
+
+INSERT INTO questions (section_id, question_number, question_type, question_text, correct_answer, options, points)
+VALUES (s1_id, 9, 'fill_blank', 'Registration number', 'LJX 058K',
+'{"form":true,"label":"Registration number"}', 1);
+
+INSERT INTO questions (section_id, question_number, question_type, question_text, correct_answer, options, points)
+VALUES (s1_id, 10, 'fill_blank', 'Make of car', 'Ford',
+'{"form":true,"label":"Make of car"}', 1);
+
+-- ============================================================
+-- SECTION 1 — Q11-12
+-- ============================================================
+
+INSERT INTO questions (section_id, question_number, question_type, question_text, correct_answer, options, points)
+VALUES (s1_id, 11, 'multiple_choice',
+'Cashier''s office opens at',
+'C',
+'{"A":"12.15","B":"2.00","C":"2.15","D":"4.30"}', 1);
+
+INSERT INTO questions (section_id, question_number, question_type, question_text, correct_answer, options, points)
+VALUES (s1_id, 12, 'fill_blank',
+'Where must the sticker be displayed?',
+'(on the) (front) window/windscreen',
+'{}', 1);
+
+-- ============================================================
+-- SECTION 2 — Q13-23 (museum notes two-column form)
+-- ============================================================
+
+INSERT INTO questions (section_id, question_number, question_type, question_text, correct_answer, options, points)
+VALUES (s2_id, 13, 'fill_blank', 'Date the museum was opened', 'November 1991',
+'{"form":true,"label":"Date the museum was opened","form_title":"Museum Notes"}', 1);
+
+INSERT INTO questions (section_id, question_number, question_type, question_text, correct_answer, options, points)
+VALUES (s2_id, 14, 'fill_blank', 'The museum consists of a building and', '(historic) ships',
+'{"form":true,"label":"The museum consists of a building and"}', 1);
+
+INSERT INTO questions (section_id, question_number, question_type, question_text, correct_answer, options, points)
+VALUES (s2_id, 15, 'fill_blank', 'The Education Centre is signposted by', 'green arrows',
+'{"form":true,"label":"The Education Centre is signposted by"}', 1);
+
+INSERT INTO questions (section_id, question_number, question_type, question_text, correct_answer, options, points)
+VALUES (s2_id, 16, 'fill_blank', 'If you lose your friends, meet at the', 'information desk',
+'{"form":true,"label":"If you lose your friends, meet at the"}', 1);
+
+INSERT INTO questions (section_id, question_number, question_type, question_text, correct_answer, options, points)
+VALUES (s2_id, 17, 'fill_blank', 'Warning about The Vampire', 'stairs to climb/lots of stairs',
+'{"form":true,"label":"Warning about The Vampire"}', 1);
+
+INSERT INTO questions (section_id, question_number, question_type, question_text, correct_answer, options, points)
+VALUES (s2_id, 18, 'fill_blank', 'How often are the tours of The Vampire?', 'every hour',
+'{"form":true,"label":"How often are the tours of The Vampire?"}', 1);
+
+INSERT INTO questions (section_id, question_number, question_type, question_text, correct_answer, options, points)
+VALUES (s2_id, 19, 'fill_blank', 'Person featured in today''s video', 'Captain Cook',
+'{"form":true,"label":"Person featured in today''s video"}', 1);
+
+INSERT INTO questions (section_id, question_number, question_type, question_text, correct_answer, options, points)
+VALUES (s2_id, 20, 'fill_blank', 'The Leisure Gallery shows how Australian culture is influenced by', 'the sea',
+'{"form":true,"label":"The Leisure Gallery shows how Australian culture is influenced by"}', 1);
+
+INSERT INTO questions (section_id, question_number, question_type, question_text, correct_answer, options, points)
+VALUES (s2_id, 21, 'fill_blank', 'The Picture Gallery contains pictures by', 'Australian artists/painters',
+'{"form":true,"label":"The Picture Gallery contains pictures by"}', 1);
+
+INSERT INTO questions (section_id, question_number, question_type, question_text, correct_answer, options, points)
+VALUES (s2_id, 22, 'fill_blank', 'Cost of family membership of the museum', '$70',
+'{"form":true,"label":"Cost of family membership of the museum"}', 1);
+
+INSERT INTO questions (section_id, question_number, question_type, question_text, correct_answer, options, points)
+VALUES (s2_id, 23, 'fill_blank', '"Passengers and the Sea" includes a collection of', 'souvenirs',
+'{"form":true,"label":"\"Passengers and the Sea\" includes a collection of"}', 1);
+
+-- ============================================================
+-- SECTION 3 — Q24-27 (multiple choice)
+-- ============================================================
+
+INSERT INTO questions (section_id, question_number, question_type, question_text, correct_answer, options, points)
+VALUES (s3_id, 24, 'multiple_choice',
+'Mark is going to talk briefly about',
+'B',
+'{"A":"marketing new products.","B":"pricing strategies.","C":"managing large companies.","D":"setting sales targets."}', 1);
+
+INSERT INTO questions (section_id, question_number, question_type, question_text, correct_answer, options, points)
+VALUES (s3_id, 25, 'multiple_choice',
+'According to Susan, air fares are lowest when they',
+'C',
+'{"A":"include weekend travel.","B":"are booked well in advance.","C":"are non-refundable.","D":"are for business travel only."}', 1);
+
+INSERT INTO questions (section_id, question_number, question_type, question_text, correct_answer, options, points)
+VALUES (s3_id, 26, 'multiple_choice',
+'Mark thinks revenue management is',
+'D',
+'{"A":"interesting.","B":"complicated.","C":"time-consuming.","D":"reasonable."}', 1);
+
+INSERT INTO questions (section_id, question_number, question_type, question_text, correct_answer, options, points)
+VALUES (s3_id, 27, 'multiple_choice',
+'The airline companies want to',
+'A',
+'{"A":"increase profits.","B":"benefit the passenger.","C":"sell cheap seats.","D":"improve the service."}', 1);
+
+-- ============================================================
+-- SECTION 3 — Q28-32 (bordered notes box)
+-- ============================================================
+
+INSERT INTO questions (section_id, question_number, question_type, question_text, correct_answer, options, points)
+VALUES (s3_id, 28, 'fill_blank',
+'Two reasons for the new approach to pricing — first reason: (28) ___',
+'law has changed/law changes',
+'{"box":true,"box_title":"New approach to pricing"}', 1);
+
+INSERT INTO questions (section_id, question_number, question_type, question_text, correct_answer, options, points)
+VALUES (s3_id, 29, 'fill_blank',
+'Two reasons for the new approach to pricing — second reason: (29) ___',
+'(powerful) computer programs',
+'{"box":true}', 1);
+
+INSERT INTO questions (section_id, question_number, question_type, question_text, correct_answer, options, points)
+VALUES (s3_id, 30, 'fill_blank',
+'In future people will be able to book airline tickets (30) ___.',
+'from home (computer)',
+'{"box":true}', 1);
+
+INSERT INTO questions (section_id, question_number, question_type, question_text, correct_answer, options, points)
+VALUES (s3_id, 31, 'fill_blank',
+'Also being marketed in this way are (31) ___ and (32) ___.',
+'hotels/hotel beds/rooms',
+'{"box":true}', 1);
+
+INSERT INTO questions (section_id, question_number, question_type, question_text, correct_answer, options, points)
+VALUES (s3_id, 32, 'fill_blank',
+'Also being marketed in this way — (32) ___.',
+'hire cars',
+'{"box":true}', 1);
+
+-- ============================================================
+-- SECTION 4 — Q33-37 (SPACE MANAGEMENT table)
+-- ============================================================
+
+INSERT INTO questions (section_id, question_number, question_type, question_text, correct_answer, options, points)
+VALUES (s4_id, 33, 'fill_blank',
+'Questionnaires — what customers think about (33) ___',
+'displays/products/displays and products',
+'{"table":true,"table_title":"SPACE MANAGEMENT","col_left":"RESEARCH METHOD","col_right":"INFORMATION PROVIDED","row_left":"Questionnaires","row_right_prefix":"what customers think about"}', 1);
+
+INSERT INTO questions (section_id, question_number, question_type, question_text, correct_answer, options, points)
+VALUES (s4_id, 34, 'fill_blank',
+'(34) ___ — how customers move around supermarket aisles',
+'(hidden) TV cameras',
+'{"table":true,"row_right":"how customers move around supermarket aisles"}', 1);
+
+INSERT INTO questions (section_id, question_number, question_type, question_text, correct_answer, options, points)
+VALUES (s4_id, 35, 'fill_blank',
+'Eye movement (35) ___ — the most eye-catching areas of the shop',
+'recorder/recording',
+'{"table":true,"row_left_prefix":"Eye movement","row_right":"the most eye-catching areas of the shop"}', 1);
+
+INSERT INTO questions (section_id, question_number, question_type, question_text, correct_answer, options, points)
+VALUES (s4_id, 36, 'fill_blank',
+'Computer programs e.g. (36) ___',
+'"Spaceman"',
+'{"table":true,"row_left_prefix":"Computer programs e.g."}', 1);
+
+INSERT INTO questions (section_id, question_number, question_type, question_text, correct_answer, options, points)
+VALUES (s4_id, 37, 'fill_blank',
+'Computer programs — the best (37) ___ for an article in the shop',
+'position/shelf/spot/place',
+'{"table":true,"row_right_prefix":"the best","row_right_suffix":"for an article in the shop"}', 1);
+
+-- ============================================================
+-- SECTION 4 — Q38-42 (SUPERMARKET AISLE diagram table)
+-- ============================================================
+
+INSERT INTO questions (section_id, question_number, question_type, question_text, correct_answer, options, points)
+VALUES (s4_id, 38, 'fill_blank',
+'ENTRANCE — First shelves: customers usually (38) ___ these.',
+'walk (straight/right) past/ignore/pass',
+'{"diagram_table":true,"diagram_title":"A SUPERMARKET AISLE","zone":"ENTRANCE","zone_position":"left"}', 1);
+
+INSERT INTO questions (section_id, question_number, question_type, question_text, correct_answer, options, points)
+VALUES (s4_id, 39, 'fill_blank',
+'AISLE — Products placed here sell well particularly if they are placed (39) ___',
+'at eye level/near customers'' eyes',
+'{"diagram_table":true,"zone":"AISLE","zone_position":"center"}', 1);
+
+INSERT INTO questions (section_id, question_number, question_type, question_text, correct_answer, options, points)
+VALUES (s4_id, 40, 'fill_blank',
+'AISLE — These areas are known as (40) ___',
+'hotspots',
+'{"diagram_table":true,"zone":"AISLE","zone_position":"center"}', 1);
+
+INSERT INTO questions (section_id, question_number, question_type, question_text, correct_answer, options, points)
+VALUES (s4_id, 41, 'fill_blank',
+'EXIT — Gondola end: often find (41) ___ displayed here.',
+'special offers',
+'{"diagram_table":true,"zone":"EXIT","zone_position":"right"}', 1);
+
+INSERT INTO questions (section_id, question_number, question_type, question_text, correct_answer, options, points)
+VALUES (s4_id, 42, 'fill_blank',
+'EXIT — Checkout: often used to sell (42) ___',
+'chocolates',
+'{"diagram_table":true,"zone":"EXIT","zone_position":"right"}', 1);
+
+END $$;

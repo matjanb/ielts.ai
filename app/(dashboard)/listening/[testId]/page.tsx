@@ -515,7 +515,10 @@ function NotepadCard({
   )
 }
 
-// ── Two-Column Form Card (Section 1 style: person header + label | input table) ──
+// ── Two-Column Form Card ───────────────────────────────────────────────────────
+// Two variants:
+//   Person-grouped (Test 2 KATE/LUKI): person header row, static interleaved rows
+//   Form-title (Test 3 parking/museum): single title header, optional prefill in right cell
 
 function TwoColFormCard({
   questions,
@@ -526,71 +529,122 @@ function TwoColFormCard({
   answers: Record<string, string>
   onAnswer: (id: string, v: string) => void
 }) {
-  // Group questions by person, preserving insertion order
-  const personOrder: string[] = []
-  const byPerson = new Map<string, QuestionWithSection[]>()
-  for (const q of questions) {
-    const opts = getOptionsObj(q)
-    const person = (opts?.person as string) ?? 'UNKNOWN'
-    if (!byPerson.has(person)) { byPerson.set(person, []); personOrder.push(person) }
-    byPerson.get(person)!.push(q)
+  const hasPersons = questions.some(q => getOptionsObj(q)?.person)
+
+  if (hasPersons) {
+    // Person-grouped layout (KATE / LUKI style)
+    const personOrder: string[] = []
+    const byPerson = new Map<string, QuestionWithSection[]>()
+    for (const q of questions) {
+      const opts = getOptionsObj(q)
+      const person = (opts?.person as string) ?? 'UNKNOWN'
+      if (!byPerson.has(person)) { byPerson.set(person, []); personOrder.push(person) }
+      byPerson.get(person)!.push(q)
+    }
+
+    return (
+      <div className="border-2 border-gray-400 dark:border-gray-500 rounded-sm overflow-hidden divide-y-2 divide-gray-300 dark:divide-gray-600">
+        {personOrder.map(person => {
+          const qs = byPerson.get(person)!
+          const staticRows = FORM_STATIC_ROWS[person] ?? []
+          type Row =
+            | { type: 'question'; q: QuestionWithSection }
+            | { type: 'static'; label: string; value: string }
+          const rows: Row[] = []
+          for (const q of qs) {
+            rows.push({ type: 'question', q })
+            for (const s of staticRows.filter(r => r.afterQNum === q.question_number))
+              rows.push({ type: 'static', label: s.label, value: s.value })
+          }
+          return (
+            <div key={person}>
+              <div className="bg-gray-200 dark:bg-gray-700 px-4 py-2 border-b border-gray-300 dark:border-gray-600">
+                <span className="text-xs font-black uppercase tracking-widest text-gray-800 dark:text-gray-200">
+                  {person}
+                </span>
+              </div>
+              <div className="divide-y divide-gray-200 dark:divide-gray-700">
+                {rows.map((row, i) =>
+                  row.type === 'static' ? (
+                    <div key={`s-${i}`} className="grid grid-cols-2 divide-x divide-gray-200 dark:divide-gray-700">
+                      <div className="px-4 py-2.5 text-sm text-gray-600 dark:text-gray-400">{row.label}</div>
+                      <div className="px-4 py-2.5 text-sm italic text-gray-500 dark:text-gray-400">{row.value}</div>
+                    </div>
+                  ) : (
+                    <div key={row.q.id} className="grid grid-cols-2 divide-x divide-gray-200 dark:divide-gray-700">
+                      <div className="px-4 py-2.5 text-sm text-gray-700 dark:text-gray-300">
+                        {(getOptionsObj(row.q)?.label as string) ?? row.q.question_text}
+                      </div>
+                      <div className="px-4 py-2.5 flex items-center gap-1.5 flex-wrap">
+                        <sup className="text-[10px] font-bold text-teal-600 dark:text-teal-400 shrink-0">
+                          ({row.q.question_number})
+                        </sup>
+                        {(getOptionsObj(row.q)?.prefill as string | undefined) && (
+                          <span className="text-sm font-semibold text-gray-700 dark:text-gray-300">
+                            {getOptionsObj(row.q)?.prefill as string}
+                          </span>
+                        )}
+                        <input
+                          type="text"
+                          value={answers[row.q.id] ?? ''}
+                          onChange={e => onAnswer(row.q.id, e.target.value)}
+                          className="flex-1 min-w-0 border-b-2 border-gray-400 dark:border-gray-500 bg-transparent focus:outline-none focus:border-amber-500 dark:focus:border-amber-400 text-sm text-gray-900 dark:text-white placeholder-gray-400 text-center transition-colors pb-0.5"
+                          placeholder="..."
+                        />
+                      </div>
+                    </div>
+                  )
+                )}
+              </div>
+            </div>
+          )
+        })}
+      </div>
+    )
   }
 
+  // Form-title layout (parking sticker / museum notes style)
+  const firstWithTitle = questions.find(q => getOptionsObj(q)?.form_title)
+  const formTitle = firstWithTitle
+    ? (getOptionsObj(firstWithTitle)?.form_title as string | undefined)
+    : undefined
+
   return (
-    <div className="border-2 border-gray-400 dark:border-gray-500 rounded-sm overflow-hidden divide-y-2 divide-gray-300 dark:divide-gray-600">
-      {personOrder.map(person => {
-        const qs = byPerson.get(person)!
-        const staticRows = FORM_STATIC_ROWS[person] ?? []
-
-        // Interleave question rows with static rows
-        type Row =
-          | { type: 'question'; q: QuestionWithSection }
-          | { type: 'static'; label: string; value: string }
-        const rows: Row[] = []
-        for (const q of qs) {
-          rows.push({ type: 'question', q })
-          for (const s of staticRows.filter(r => r.afterQNum === q.question_number))
-            rows.push({ type: 'static', label: s.label, value: s.value })
-        }
-
-        return (
-          <div key={person}>
-            <div className="bg-gray-200 dark:bg-gray-700 px-4 py-2 border-b border-gray-300 dark:border-gray-600">
-              <span className="text-xs font-black uppercase tracking-widest text-gray-800 dark:text-gray-200">
-                {person}
-              </span>
+    <div className="border-2 border-gray-400 dark:border-gray-500 rounded-sm overflow-hidden">
+      {formTitle && (
+        <div className="bg-gray-200 dark:bg-gray-700 px-4 py-2 border-b border-gray-300 dark:border-gray-600">
+          <span className="text-xs font-black uppercase tracking-widest text-gray-800 dark:text-gray-200">
+            {formTitle}
+          </span>
+        </div>
+      )}
+      <div className="divide-y divide-gray-200 dark:divide-gray-700">
+        {questions.map(q => {
+          const opts = (getOptionsObj(q) ?? {}) as Record<string, unknown>
+          const label = (opts.label as string) ?? q.question_text
+          const prefill = opts.prefill as string | undefined
+          return (
+            <div key={q.id} className="grid grid-cols-2 divide-x divide-gray-200 dark:divide-gray-700">
+              <div className="px-4 py-2.5 text-sm text-gray-700 dark:text-gray-300">{label}</div>
+              <div className="px-4 py-2.5 flex items-center gap-1.5 flex-wrap">
+                <sup className="text-[10px] font-bold text-teal-600 dark:text-teal-400 shrink-0">
+                  ({q.question_number})
+                </sup>
+                {prefill && (
+                  <span className="text-sm font-semibold text-gray-700 dark:text-gray-300">{prefill}</span>
+                )}
+                <input
+                  type="text"
+                  value={answers[q.id] ?? ''}
+                  onChange={e => onAnswer(q.id, e.target.value)}
+                  className="flex-1 min-w-0 border-b-2 border-gray-400 dark:border-gray-500 bg-transparent focus:outline-none focus:border-amber-500 dark:focus:border-amber-400 text-sm text-gray-900 dark:text-white placeholder-gray-400 text-center transition-colors pb-0.5"
+                  placeholder="..."
+                />
+              </div>
             </div>
-            <div className="divide-y divide-gray-200 dark:divide-gray-700">
-              {rows.map((row, i) =>
-                row.type === 'static' ? (
-                  <div key={`s-${i}`} className="grid grid-cols-2 divide-x divide-gray-200 dark:divide-gray-700">
-                    <div className="px-4 py-2.5 text-sm text-gray-600 dark:text-gray-400">{row.label}</div>
-                    <div className="px-4 py-2.5 text-sm italic text-gray-500 dark:text-gray-400">{row.value}</div>
-                  </div>
-                ) : (
-                  <div key={row.q.id} className="grid grid-cols-2 divide-x divide-gray-200 dark:divide-gray-700">
-                    <div className="px-4 py-2.5 text-sm text-gray-700 dark:text-gray-300">
-                      {(getOptionsObj(row.q)?.label as string) ?? row.q.question_text}
-                    </div>
-                    <div className="px-4 py-2.5 flex items-center gap-1.5">
-                      <sup className="text-[10px] font-bold text-teal-600 dark:text-teal-400 shrink-0">
-                        ({row.q.question_number})
-                      </sup>
-                      <input
-                        type="text"
-                        value={answers[row.q.id] ?? ''}
-                        onChange={e => onAnswer(row.q.id, e.target.value)}
-                        className="flex-1 min-w-0 border-b-2 border-gray-400 dark:border-gray-500 bg-transparent focus:outline-none focus:border-amber-500 dark:focus:border-amber-400 text-sm text-gray-900 dark:text-white placeholder-gray-400 text-center transition-colors pb-0.5"
-                        placeholder="..."
-                      />
-                    </div>
-                  </div>
-                )
-              )}
-            </div>
-          </div>
-        )
-      })}
+          )
+        })}
+      </div>
     </div>
   )
 }
@@ -656,6 +710,199 @@ function BoxCard({
             />
           </div>
         )}
+      </div>
+    </div>
+  )
+}
+
+// ── Table Card (Q33-37 style: two-column research data table) ────────────────
+
+function TableCard({
+  questions,
+  answers,
+  onAnswer,
+}: {
+  questions: QuestionWithSection[]
+  answers: Record<string, string>
+  onAnswer: (id: string, v: string) => void
+}) {
+  const firstOpts = (getOptionsObj(questions[0]) ?? {}) as Record<string, unknown>
+  const tableTitle = firstOpts.table_title as string | undefined
+  const colLeft = firstOpts.col_left as string | undefined
+  const colRight = firstOpts.col_right as string | undefined
+
+  type CellContent =
+    | { type: 'static'; text: string }
+    | { type: 'input'; q: QuestionWithSection; prefix?: string; suffix?: string }
+  type TableRow = { left: CellContent; right: CellContent | null }
+
+  const rows: TableRow[] = []
+
+  for (const q of questions) {
+    const opts = (getOptionsObj(q) ?? {}) as Record<string, unknown>
+    const rowLeft = opts.row_left as string | undefined
+    const rowLeftPrefix = opts.row_left_prefix as string | undefined
+    const rowRight = opts.row_right as string | undefined
+    const rowRightPrefix = opts.row_right_prefix as string | undefined
+    const rowRightSuffix = opts.row_right_suffix as string | undefined
+
+    // Right-filler: has right-side content but no left anchor — pairs with the prev row
+    const isRightFiller = !rowLeft && !rowLeftPrefix && !rowRight
+      && (rowRightPrefix !== undefined || rowRightSuffix !== undefined)
+
+    if (isRightFiller && rows.length > 0 && rows[rows.length - 1].right === null) {
+      rows[rows.length - 1].right = {
+        type: 'input', q, prefix: rowRightPrefix, suffix: rowRightSuffix,
+      }
+      continue
+    }
+
+    const left: CellContent = rowLeft
+      ? { type: 'static', text: rowLeft }
+      : rowLeftPrefix !== undefined
+        ? { type: 'input', q, prefix: rowLeftPrefix }
+        : { type: 'input', q }
+
+    const right: CellContent | null = rowRight
+      ? { type: 'static', text: rowRight }
+      : (rowLeft && (rowRightPrefix !== undefined || rowRightSuffix !== undefined))
+        ? { type: 'input', q, prefix: rowRightPrefix, suffix: rowRightSuffix }
+        : null
+
+    rows.push({ left, right })
+  }
+
+  function renderCell(cell: CellContent | null) {
+    if (!cell) return <div className="px-4 py-3" />
+    if (cell.type === 'static') {
+      return (
+        <div className="px-4 py-3 text-sm text-gray-700 dark:text-gray-300">{cell.text}</div>
+      )
+    }
+    const { q, prefix, suffix } = cell
+    return (
+      <div className="px-4 py-3 flex items-baseline flex-wrap gap-x-1 text-sm text-gray-800 dark:text-gray-200 leading-7">
+        <sup className="text-[10px] font-bold text-teal-600 dark:text-teal-400 shrink-0">
+          ({q.question_number})
+        </sup>
+        {prefix && <span>{prefix}</span>}
+        <input
+          type="text"
+          value={answers[q.id] ?? ''}
+          onChange={e => onAnswer(q.id, e.target.value)}
+          className="w-28 border-b-2 border-gray-500 dark:border-gray-400 bg-transparent focus:outline-none focus:border-amber-500 dark:focus:border-amber-400 text-sm text-gray-900 dark:text-white placeholder-gray-400 text-center transition-colors pb-0.5"
+          placeholder="..."
+        />
+        {suffix && <span>{suffix}</span>}
+      </div>
+    )
+  }
+
+  return (
+    <div className="border-2 border-gray-400 dark:border-gray-500 rounded-sm overflow-hidden">
+      {tableTitle && (
+        <div className="px-5 py-3 border-b-2 border-gray-400 dark:border-gray-500 text-center">
+          <span className="text-xs font-black uppercase tracking-widest text-gray-800 dark:text-gray-200">
+            {tableTitle}
+          </span>
+        </div>
+      )}
+      {(colLeft || colRight) && (
+        <div className="grid grid-cols-2 divide-x divide-gray-400 dark:divide-gray-500 bg-gray-100 dark:bg-gray-800/60 border-b border-gray-400 dark:border-gray-500">
+          <div className="px-4 py-2 text-[10px] font-black uppercase tracking-widest text-gray-600 dark:text-gray-400">
+            {colLeft}
+          </div>
+          <div className="px-4 py-2 text-[10px] font-black uppercase tracking-widest text-gray-600 dark:text-gray-400">
+            {colRight}
+          </div>
+        </div>
+      )}
+      <div className="divide-y divide-gray-200 dark:divide-gray-700">
+        {rows.map((row, i) => (
+          <div key={i} className="grid grid-cols-2 divide-x divide-gray-200 dark:divide-gray-700">
+            {renderCell(row.left)}
+            {renderCell(row.right)}
+          </div>
+        ))}
+      </div>
+    </div>
+  )
+}
+
+// ── Diagram Table Card (Q38-42 style: 3-zone supermarket aisle layout) ─────────
+
+function DiagramTableCard({
+  questions,
+  answers,
+  onAnswer,
+}: {
+  questions: QuestionWithSection[]
+  answers: Record<string, string>
+  onAnswer: (id: string, v: string) => void
+}) {
+  const firstOpts = (getOptionsObj(questions[0]) ?? {}) as Record<string, unknown>
+  const diagramTitle = firstOpts.diagram_title as string | undefined
+
+  const zoneOf = (q: QuestionWithSection) => (getOptionsObj(q)?.zone as string | undefined)
+  const entrance = questions.filter(q => zoneOf(q) === 'ENTRANCE')
+  const aisle = questions.filter(q => zoneOf(q) === 'AISLE')
+  const exit = questions.filter(q => zoneOf(q) === 'EXIT')
+
+  function ZoneQuestions({ qs }: { qs: QuestionWithSection[] }) {
+    return (
+      <div className="px-3 py-3 space-y-4">
+        {qs.map(q => {
+          const raw = q.question_text.replace(/^(ENTRANCE|AISLE|EXIT)\s*[—\-]\s*/i, '')
+          const blankIdx = raw.indexOf('___')
+          const before = blankIdx >= 0 ? raw.slice(0, blankIdx) : raw
+          const after = blankIdx >= 0 ? raw.slice(blankIdx + 3) : ''
+          return (
+            <div key={q.id} className="space-y-1">
+              <div className="text-[10px] font-bold text-teal-600 dark:text-teal-400">({q.question_number})</div>
+              {before && <p className="text-xs text-gray-600 dark:text-gray-400 leading-snug">{before}</p>}
+              <input
+                type="text"
+                value={answers[q.id] ?? ''}
+                onChange={e => onAnswer(q.id, e.target.value)}
+                className="w-full border-b-2 border-gray-500 dark:border-gray-400 bg-transparent focus:outline-none focus:border-amber-500 dark:focus:border-amber-400 text-sm text-gray-900 dark:text-white placeholder-gray-400 text-center transition-colors pb-0.5"
+                placeholder="..."
+              />
+              {after && <p className="text-xs text-gray-600 dark:text-gray-400 leading-snug">{after}</p>}
+            </div>
+          )
+        })}
+      </div>
+    )
+  }
+
+  return (
+    <div className="border-2 border-gray-400 dark:border-gray-500 rounded-sm overflow-hidden">
+      {diagramTitle && (
+        <div className="px-5 py-3 border-b-2 border-gray-400 dark:border-gray-500 text-center">
+          <span className="text-sm font-bold italic text-gray-800 dark:text-gray-200">{diagramTitle}</span>
+        </div>
+      )}
+      <div className="grid grid-cols-3 divide-x divide-gray-300 dark:divide-gray-600">
+        <div className="bg-gray-200 dark:bg-gray-800/80">
+          <div className="px-3 py-2 border-b border-gray-300 dark:border-gray-600 text-center">
+            <span className="text-[10px] font-black uppercase tracking-widest text-gray-700 dark:text-gray-300">ENTRANCE</span>
+          </div>
+          <ZoneQuestions qs={entrance} />
+        </div>
+        <div className="bg-gray-50 dark:bg-gray-900/50">
+          <div className="px-3 py-2 border-b border-gray-300 dark:border-gray-600 flex items-center justify-between">
+            <span className="text-gray-400 dark:text-gray-600 text-sm">←</span>
+            <span className="text-[10px] font-black uppercase tracking-widest text-gray-700 dark:text-gray-300">AISLE</span>
+            <span className="text-gray-400 dark:text-gray-600 text-sm">→</span>
+          </div>
+          <ZoneQuestions qs={aisle} />
+        </div>
+        <div className="bg-white dark:bg-gray-950">
+          <div className="px-3 py-2 border-b border-gray-300 dark:border-gray-600 text-center">
+            <span className="text-[10px] font-black uppercase tracking-widest text-gray-700 dark:text-gray-300">EXIT</span>
+          </div>
+          <ZoneQuestions qs={exit} />
+        </div>
       </div>
     </div>
   )
@@ -931,7 +1178,7 @@ function MultiSelectBlock({
 function groupByType(qs: QuestionWithSection[]) {
   type GroupKind =
     | 'mc' | 'multiselect' | 'form' | 'inline' | 'passage'
-    | 'twoColForm' | 'box' | 'diagram' | 'multiBox'
+    | 'twoColForm' | 'box' | 'diagram' | 'multiBox' | 'table' | 'diagramTable'
   type Group = { kind: GroupKind; items: QuestionWithSection[] }
   const groups: Group[] = []
 
@@ -948,6 +1195,10 @@ function groupByType(qs: QuestionWithSection[]) {
       kind = 'box'
     } else if (opts?.multi) {
       kind = 'multiBox'
+    } else if (opts?.table) {
+      kind = 'table'
+    } else if (opts?.diagram_table) {
+      kind = 'diagramTable'
     } else if (q.passage_text) {
       kind = 'passage'
     } else if (q.question_type === 'multiple_choice') {
@@ -1411,6 +1662,18 @@ export default function ListeningTestPage() {
                   />
                 ) : group.kind === 'diagram' ? (
                   <DiagramCard
+                    questions={group.items}
+                    answers={answers}
+                    onAnswer={setAnswer}
+                  />
+                ) : group.kind === 'table' ? (
+                  <TableCard
+                    questions={group.items}
+                    answers={answers}
+                    onAnswer={setAnswer}
+                  />
+                ) : group.kind === 'diagramTable' ? (
+                  <DiagramTableCard
                     questions={group.items}
                     answers={answers}
                     onAnswer={setAnswer}
