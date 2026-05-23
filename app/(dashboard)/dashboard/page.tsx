@@ -412,7 +412,7 @@ export default function DashboardPage() {
   ]
 
   return (
-    <div className="space-y-5 pb-10" style={{ maxWidth: 1200 }}>
+    <div className="w-full min-w-0 space-y-5 pb-10">
 
       {/* ── Row 1: Hero + Exam/Stats ─────────────────────── */}
       <div className="grid gap-5" style={{ gridTemplateColumns: 'minmax(0,1.4fr) minmax(0,1fr)' }}>
