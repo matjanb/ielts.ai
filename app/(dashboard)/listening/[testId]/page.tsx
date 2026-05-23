@@ -147,11 +147,13 @@ function RadioQuestion({
 
       {singleImage && (
         <div className="w-full overflow-hidden rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900">
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img
+          <Image
             src={singleImage}
             alt="Question image"
+            width={800}
+            height={200}
             className="w-full h-auto object-contain"
+            unoptimized
           />
         </div>
       )}
@@ -197,6 +199,32 @@ function RadioQuestion({
                     {letter}
                   </span>
                 </div>
+              </button>
+            )
+          })}
+        </div>
+      ) : singleImage ? (
+        // Image strip question — show only letter buttons, the image carries the visual context
+        <div className="flex gap-3 mt-1">
+          {options.map((opt, idx) => {
+            const selected = answer === opt
+            const letter = opt.match(/^([A-D])\./)?.[1] ?? String.fromCharCode(65 + idx)
+            return (
+              <button
+                key={opt}
+                onClick={() => onChange(opt)}
+                className={`flex items-center gap-2 px-4 py-2 rounded-xl border-2 font-bold text-sm transition-all duration-150 ${
+                  selected
+                    ? 'border-amber-500 bg-amber-50 dark:bg-amber-500/10 text-amber-700 dark:text-amber-300'
+                    : 'border-gray-200 dark:border-gray-700 text-gray-500 dark:text-gray-400 hover:border-amber-300 dark:hover:border-amber-600'
+                }`}
+              >
+                <div className={`shrink-0 w-[16px] h-[16px] rounded-full border-2 flex items-center justify-center transition-all ${
+                  selected ? 'border-amber-500 bg-amber-500' : 'border-gray-300 dark:border-gray-600'
+                }`}>
+                  {selected && <div className="w-[6px] h-[6px] rounded-full bg-white" />}
+                </div>
+                {letter}
               </button>
             )
           })}
