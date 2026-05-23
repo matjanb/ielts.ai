@@ -1,11 +1,11 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import Link from 'next/link'
 import { usePathname, useRouter } from 'next/navigation'
 import {
   LayoutDashboard, BookOpen, Mic, FileText, BrainCircuit,
-  TrendingUp, Settings, LogOut, Menu, X, CreditCard, Headphones
+  TrendingUp, Settings, LogOut, Menu, X, CreditCard, Headphones, Pin,
 } from 'lucide-react'
 import { ThemeProvider } from '@/components/providers/ThemeProvider'
 import { LanguageProvider, useLanguage } from '@/lib/i18n/LanguageContext'
@@ -13,6 +13,8 @@ import { ThemeToggle } from '@/components/ui/ThemeToggle'
 import { LanguageSwitcher } from '@/components/ui/LanguageSwitcher'
 import { signOut } from '@/lib/services/auth'
 import type { ReactNode } from 'react'
+
+const SIDEBAR_W = 216
 
 const NAV_ITEMS = [
   { href: '/dashboard',             icon: LayoutDashboard, key: 'overviewLabel'  },
@@ -105,27 +107,109 @@ function DashboardNav({ onClose }: { onClose?: () => void }) {
 }
 
 function DashboardLayoutInner({ children }: { children: ReactNode }) {
-  const [mobileOpen, setMobileOpen] = useState(false)
+  const [mobileOpen, setMobileOpen]   = useState(false)
+  const [isPinned, setIsPinned]       = useState(false)
+  const [isHovered, setIsHovered]     = useState(false)
+  const [mounted, setMounted]         = useState(false)
+  const hideTimeout = useRef<ReturnType<typeof setTimeout> | null>(null)
+
+  useEffect(() => {
+    setMounted(true)
+    const saved = localStorage.getItem('sidebar-pinned')
+    if (saved === 'true') setIsPinned(true)
+  }, [])
+
+  function togglePin() {
+    setIsPinned(prev => {
+      const next = !prev
+      localStorage.setItem('sidebar-pinned', String(next))
+      if (next) {
+        if (hideTimeout.current) clearTimeout(hideTimeout.current)
+        setIsHovered(false)
+      }
+      return next
+    })
+  }
+
+  function handleHoverZoneEnter() {
+    if (hideTimeout.current) clearTimeout(hideTimeout.current)
+    setIsHovered(true)
+  }
+
+  function handleSidebarEnter() {
+    if (isPinned) return
+    if (hideTimeout.current) clearTimeout(hideTimeout.current)
+    setIsHovered(true)
+  }
+
+  function handleSidebarLeave() {
+    if (isPinned) return
+    hideTimeout.current = setTimeout(() => setIsHovered(false), 150)
+  }
+
+  const isVisible = isPinned || isHovered
 
   return (
-    <div className="min-h-screen bg-gray-50/60 dark:bg-[#06060f] flex">
-      {/* Desktop sidebar */}
-      <aside className="hidden lg:flex flex-col w-54 border-r border-gray-100 dark:border-gray-800/80 bg-white dark:bg-[#08080f] shrink-0" style={{ width: '216px' }}>
+    <div className="min-h-screen bg-gray-50/60 dark:bg-[#06060f]">
+
+      {/* ── Desktop: invisible 8px hover zone (only when not pinned) ── */}
+      {mounted && !isPinned && (
+        <div
+          className="hidden lg:block fixed left-0 top-0 w-2 h-screen z-40 cursor-default"
+          onMouseEnter={handleHoverZoneEnter}
+        />
+      )}
+
+      {/* ── Desktop sidebar ── */}
+      <aside
+        className={[
+          'hidden lg:flex flex-col fixed left-0 top-0 h-screen z-50',
+          'bg-white dark:bg-[#08080f]',
+          'border-r border-gray-100 dark:border-gray-800/80',
+          mounted ? 'transition-transform duration-300 ease-out' : '',
+          mounted && isVisible ? 'translate-x-0' : '-translate-x-full',
+          !isPinned ? 'shadow-[4px_0_24px_rgba(0,0,0,0.10)]' : '',
+        ].join(' ')}
+        style={{ width: `${SIDEBAR_W}px` }}
+        onMouseEnter={handleSidebarEnter}
+        onMouseLeave={handleSidebarLeave}
+      >
+        {/* Pin button */}
+        <button
+          onClick={togglePin}
+          className="absolute top-[18px] right-3 p-1.5 rounded-md hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
+          aria-label={isPinned ? 'Unpin sidebar' : 'Pin sidebar'}
+        >
+          <Pin
+            size={15}
+            className={`transition-transform duration-200 ${isPinned ? 'rotate-45 text-indigo-500' : 'text-gray-400 dark:text-gray-500'}`}
+          />
+        </button>
+
         <DashboardNav />
       </aside>
 
-      {/* Mobile sidebar overlay */}
+      {/* ── Mobile sidebar overlay ── */}
       {mobileOpen && (
         <div className="fixed inset-0 z-40 lg:hidden">
           <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" onClick={() => setMobileOpen(false)} />
-          <aside className="absolute left-0 top-0 bottom-0 w-60 bg-white dark:bg-[#08080f] border-r border-gray-100 dark:border-gray-800/80 z-50">
+          <aside
+            className="absolute left-0 top-0 bottom-0 flex flex-col bg-white dark:bg-[#08080f] border-r border-gray-100 dark:border-gray-800/80 z-50"
+            style={{ width: `${SIDEBAR_W}px` }}
+          >
             <DashboardNav onClose={() => setMobileOpen(false)} />
           </aside>
         </div>
       )}
 
-      {/* Main area */}
-      <div className="flex-1 flex flex-col min-w-0">
+      {/* ── Main area ── */}
+      <div
+        className="flex flex-col min-h-screen"
+        style={{
+          marginLeft: mounted && isPinned ? `${SIDEBAR_W}px` : 0,
+          transition: mounted ? 'margin-left 300ms ease-out' : 'none',
+        }}
+      >
         {/* Header */}
         <header className="flex items-center gap-3 px-5 py-3.5 border-b border-gray-100 dark:border-gray-800/80 bg-white dark:bg-[#08080f]">
           <button
