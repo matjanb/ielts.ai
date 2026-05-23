@@ -107,6 +107,7 @@ function DashboardNav({ onClose }: { onClose?: () => void }) {
 }
 
 function DashboardLayoutInner({ children }: { children: ReactNode }) {
+  const pathname = usePathname()
   const [mobileOpen, setMobileOpen]   = useState(false)
   const [isPinned, setIsPinned]       = useState(false)
   const [isHovered, setIsHovered]     = useState(false)
@@ -148,6 +149,9 @@ function DashboardLayoutInner({ children }: { children: ReactNode }) {
   }
 
   const isVisible = isPinned || isHovered
+  const mainMarginLeft = mounted && isPinned
+    ? (pathname === '/dashboard' ? '260px' : `${SIDEBAR_W}px`)
+    : 0
 
   return (
     <div className="min-h-screen bg-gray-50/60 dark:bg-[#06060f]">
@@ -166,7 +170,7 @@ function DashboardLayoutInner({ children }: { children: ReactNode }) {
           'hidden lg:flex flex-col fixed left-0 top-0 h-screen z-50',
           'bg-white dark:bg-[#08080f]',
           'border-r border-gray-100 dark:border-gray-800/80',
-          mounted ? 'transition-transform duration-300 ease-out' : '',
+          mounted ? 'transition-transform duration-75 ease-linear' : '',
           mounted && isVisible ? 'translate-x-0' : '-translate-x-full',
           !isPinned ? 'shadow-[4px_0_24px_rgba(0,0,0,0.10)]' : '',
         ].join(' ')}
@@ -206,8 +210,8 @@ function DashboardLayoutInner({ children }: { children: ReactNode }) {
       <div
         className="flex flex-col min-h-screen"
         style={{
-          marginLeft: mounted && isPinned ? `${SIDEBAR_W}px` : 0,
-          transition: mounted ? 'margin-left 300ms ease-out' : 'none',
+          marginLeft: mainMarginLeft,
+          transition: mounted ? 'margin-left 75ms linear' : 'none',
         }}
       >
         {/* Header */}
