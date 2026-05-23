@@ -6,7 +6,7 @@
 insert into tests (id, title, type, book_number, test_number, difficulty)
 values (
   '11111111-0001-0001-0001-000000000001',
-  'Cambridge IELTS 1 — Practice Test 1 Listening',
+  'Listening Test 1',
   'listening', 1, 1, 'medium'
 ) on conflict (id) do nothing;
  
@@ -437,28 +437,32 @@ BEGIN
 
 -- Test
 INSERT INTO tests (title, type, book_number, test_number, difficulty)
-VALUES ('Practice Test 2 — Listening', 'listening', 1, 2, 'medium')
+VALUES ('Listening Test 2', 'listening', 1, 2, 'medium')
 RETURNING id INTO t2_id;
 
 -- Sections
-INSERT INTO test_sections (test_id, section_number, title, instructions)
+INSERT INTO test_sections (test_id, section_number, title, instructions, audio_url)
 VALUES (t2_id, 1, 'Section 1 — Questions 1-10',
-'Complete the notes. Use NO MORE THAN THREE WORDS for each answer.')
+'Complete the notes. Use NO MORE THAN THREE WORDS for each answer.',
+'https://vqyyoxfsitsdmmxecqka.supabase.co/storage/v1/object/public/test-audio/test-2.mp3')
 RETURNING id INTO s1_id;
 
-INSERT INTO test_sections (test_id, section_number, title, instructions)
+INSERT INTO test_sections (test_id, section_number, title, instructions, audio_url)
 VALUES (t2_id, 2, 'Section 2 — Questions 11-20',
-'Complete the notes below. Use NO MORE THAN THREE WORDS for each answer.')
+'Complete the notes below. Use NO MORE THAN THREE WORDS for each answer.',
+'https://vqyyoxfsitsdmmxecqka.supabase.co/storage/v1/object/public/test-audio/test-2.mp3')
 RETURNING id INTO s2_id;
 
-INSERT INTO test_sections (test_id, section_number, title, instructions)
+INSERT INTO test_sections (test_id, section_number, title, instructions, audio_url)
 VALUES (t2_id, 3, 'Section 3 — Questions 21-32',
-'Questions 21-24: Circle the correct answer. Questions 25-30: Complete the notes using NO MORE THAN THREE WORDS. Questions 31-32: Circle the TWO correct boxes.')
+'Questions 21-24: Circle the correct answer. Questions 25-30: Complete the notes using NO MORE THAN THREE WORDS. Questions 31-32: Circle the TWO correct boxes.',
+'https://vqyyoxfsitsdmmxecqka.supabase.co/storage/v1/object/public/test-audio/test-2.mp3')
 RETURNING id INTO s3_id;
 
-INSERT INTO test_sections (test_id, section_number, title, instructions)
+INSERT INTO test_sections (test_id, section_number, title, instructions, audio_url)
 VALUES (t2_id, 4, 'Section 4 — Questions 33-41',
-'Questions 33-35: Circle the correct answer. Questions 36-39: Complete the notes using NO MORE THAN THREE WORDS. Questions 40-41: Complete the diagram.')
+'Questions 33-35: Circle the correct answer. Questions 36-39: Complete the notes using NO MORE THAN THREE WORDS. Questions 40-41: Complete the diagram.',
+'https://vqyyoxfsitsdmmxecqka.supabase.co/storage/v1/object/public/test-audio/test-2.mp3')
 RETURNING id INTO s4_id;
 
 -- ============================================================
