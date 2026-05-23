@@ -421,3 +421,271 @@ UPDATE questions SET passage_text = 'Focus on {{Q}} subjects.', passage_group = 
 UPDATE questions SET passage_text = 'The subjects taken in the first semester in this course are psychology, sociology, {{Q}} and', passage_group = 8 WHERE id = '33333333-0001-0001-0001-000000000034';
 UPDATE questions SET passage_text = '. Students may have problems with {{Q}} and', passage_group = 8 WHERE id = '33333333-0001-0001-0001-000000000035';
 UPDATE questions SET passage_text = '{{Q}} .', passage_group = 8 WHERE id = '33333333-0001-0001-0001-000000000036';
+
+-- ============================================================
+-- PRACTICE TEST 2 — LISTENING
+-- ============================================================
+
+DO $$
+DECLARE
+  t2_id uuid;
+  s1_id uuid;
+  s2_id uuid;
+  s3_id uuid;
+  s4_id uuid;
+BEGIN
+
+-- Test
+INSERT INTO tests (title, type, book_number, test_number, difficulty)
+VALUES ('Practice Test 2 — Listening', 'listening', 1, 2, 'medium')
+RETURNING id INTO t2_id;
+
+-- Sections
+INSERT INTO test_sections (test_id, section_number, title, instructions)
+VALUES (t2_id, 1, 'Section 1 — Questions 1-10',
+'Complete the notes. Use NO MORE THAN THREE WORDS for each answer.')
+RETURNING id INTO s1_id;
+
+INSERT INTO test_sections (test_id, section_number, title, instructions)
+VALUES (t2_id, 2, 'Section 2 — Questions 11-20',
+'Complete the notes below. Use NO MORE THAN THREE WORDS for each answer.')
+RETURNING id INTO s2_id;
+
+INSERT INTO test_sections (test_id, section_number, title, instructions)
+VALUES (t2_id, 3, 'Section 3 — Questions 21-32',
+'Questions 21-24: Circle the correct answer. Questions 25-30: Complete the notes using NO MORE THAN THREE WORDS. Questions 31-32: Circle the TWO correct boxes.')
+RETURNING id INTO s3_id;
+
+INSERT INTO test_sections (test_id, section_number, title, instructions)
+VALUES (t2_id, 4, 'Section 4 — Questions 33-41',
+'Questions 33-35: Circle the correct answer. Questions 36-39: Complete the notes using NO MORE THAN THREE WORDS. Questions 40-41: Complete the diagram.')
+RETURNING id INTO s4_id;
+
+-- ============================================================
+-- SECTION 1 — Q1-10 (two-column form table: KATE and LUKI)
+-- ============================================================
+
+INSERT INTO questions (section_id, question_number, question_type, question_text, correct_answer, options, points)
+VALUES (s1_id, 1, 'fill_blank', 'KATE — Type of accommodation', 'student accommodation/hostel',
+'{"form":true,"person":"KATE","label":"Type of accommodation"}', 1);
+
+INSERT INTO questions (section_id, question_number, question_type, question_text, correct_answer, options, points)
+VALUES (s1_id, 2, 'fill_blank', 'KATE — Her feelings about the accommodation', 'awful food',
+'{"form":true,"person":"KATE","label":"Her feelings about the accommodation"}', 1);
+
+INSERT INTO questions (section_id, question_number, question_type, question_text, correct_answer, options, points)
+VALUES (s1_id, 3, 'fill_blank', 'KATE — Her feelings about the other students', 'not friendly',
+'{"form":true,"person":"KATE","label":"Her feelings about the other students"}', 1);
+
+INSERT INTO questions (section_id, question_number, question_type, question_text, correct_answer, options, points)
+VALUES (s1_id, 4, 'fill_blank', 'KATE — Difficulties experienced on the course', 'lecturers (too) busy',
+'{"form":true,"person":"KATE","label":"Difficulties experienced on the course"}', 1);
+
+INSERT INTO questions (section_id, question_number, question_type, question_text, correct_answer, options, points)
+VALUES (s1_id, 5, 'fill_blank', 'KATE — Suggestions for improving the course', 'regular meetings',
+'{"form":true,"person":"KATE","label":"Suggestions for improving the course"}', 1);
+
+INSERT INTO questions (section_id, question_number, question_type, question_text, correct_answer, options, points)
+VALUES (s1_id, 6, 'fill_blank', 'LUKI — First type of accommodation', 'family/homestay',
+'{"form":true,"person":"LUKI","label":"First type of accommodation"}', 1);
+
+INSERT INTO questions (section_id, question_number, question_type, question_text, correct_answer, options, points)
+VALUES (s1_id, 7, 'fill_blank', 'LUKI — Problem with the first accommodation', 'lot of noise',
+'{"form":true,"person":"LUKI","label":"Problem with the first accommodation"}', 1);
+
+INSERT INTO questions (section_id, question_number, question_type, question_text, correct_answer, options, points)
+VALUES (s1_id, 8, 'fill_blank', 'LUKI — Second type of accommodation', 'student house',
+'{"form":true,"person":"LUKI","label":"Second type of accommodation"}', 1);
+
+INSERT INTO questions (section_id, question_number, question_type, question_text, correct_answer, options, points)
+VALUES (s1_id, 9, 'fill_blank', 'LUKI — Name of course', '(Bachelor of) Computing',
+'{"form":true,"person":"LUKI","label":"Name of course"}', 1);
+
+INSERT INTO questions (section_id, question_number, question_type, question_text, correct_answer, options, points)
+VALUES (s1_id, 10, 'fill_blank', 'LUKI — Suggestions for improving the course', 'reserve computer time',
+'{"form":true,"person":"LUKI","label":"Suggestions for improving the course"}', 1);
+
+-- ============================================================
+-- SECTION 2 — Q11-20 (bordered notes box with bicycle image)
+-- ============================================================
+
+INSERT INTO questions (section_id, question_number, question_type, question_text, correct_answer, options, points, image_url)
+VALUES (s2_id, 11, 'fill_blank',
+'There are many kinds of bicycles available: racing, touring, (11) ___, ordinary',
+'mountain',
+'{"box":true,"box_title":"Bicycles","image_position":"right"}',
+1, 'https://vqyyoxfsitsdmmxecqka.supabase.co/storage/v1/object/public/question-images/lt2 bike q11-20.png');
+
+INSERT INTO questions (section_id, question_number, question_type, question_text, correct_answer, options, points)
+VALUES (s2_id, 12, 'fill_blank', 'They vary in price and (12) ___.', 'quality', '{"box":true}', 1);
+
+INSERT INTO questions (section_id, question_number, question_type, question_text, correct_answer, options, points)
+VALUES (s2_id, 13, 'fill_blank', 'Prices range from $50.00 to (13) ___.', '$2,000', '{"box":true}', 1);
+
+INSERT INTO questions (section_id, question_number, question_type, question_text, correct_answer, options, points)
+VALUES (s2_id, 14, 'fill_blank', 'Single speed cycles are suitable for (14) ___.', 'short/casual rides', '{"box":true}', 1);
+
+INSERT INTO questions (section_id, question_number, question_type, question_text, correct_answer, options, points)
+VALUES (s2_id, 15, 'fill_blank', 'Three speed cycles are suitable for (15) ___.', 'town riding/shopping', '{"box":true}', 1);
+
+INSERT INTO questions (section_id, question_number, question_type, question_text, correct_answer, options, points)
+VALUES (s2_id, 16, 'fill_blank', 'Five and ten speed cycles are suitable for longer distances, hills and (16) ___.', 'serious touring', '{"box":true}', 1);
+
+INSERT INTO questions (section_id, question_number, question_type, question_text, correct_answer, options, points)
+VALUES (s2_id, 17, 'fill_blank', 'Ten speed bikes are better because they are (17) ___ in price but (18) ___.', 'similar/almost the same', '{"box":true}', 1);
+
+INSERT INTO questions (section_id, question_number, question_type, question_text, correct_answer, options, points)
+VALUES (s2_id, 18, 'fill_blank', 'Ten speed bikes are better — (18) ___.', 'better quality (components)', '{"box":true}', 1);
+
+INSERT INTO questions (section_id, question_number, question_type, question_text, correct_answer, options, points)
+VALUES (s2_id, 19, 'fill_blank', 'Buying a cycle is like (19) ___.', 'buying clothes', '{"box":true}', 1);
+
+INSERT INTO questions (section_id, question_number, question_type, question_text, correct_answer, options, points)
+VALUES (s2_id, 20, 'fill_blank', 'The size of the bicycle is determined by the size of the (20) ___.', 'frame', '{"box":true}', 1);
+
+-- ============================================================
+-- SECTION 3 — Q21-24 (multiple choice)
+-- ============================================================
+
+INSERT INTO questions (section_id, question_number, question_type, question_text, correct_answer, options, points)
+VALUES (s3_id, 21, 'multiple_choice',
+'At first Fiona thinks that Martin''s tutorial topic is',
+'B',
+'{"A":"inappropriate.","B":"dull.","C":"interesting.","D":"fascinating."}', 1);
+
+INSERT INTO questions (section_id, question_number, question_type, question_text, correct_answer, options, points)
+VALUES (s3_id, 22, 'multiple_choice',
+'According to Martin, the banana',
+'C',
+'{"A":"has only recently been cultivated.","B":"is economical to grow.","C":"is good for your health.","D":"is his favourite food."}', 1);
+
+INSERT INTO questions (section_id, question_number, question_type, question_text, correct_answer, options, points)
+VALUES (s3_id, 23, 'multiple_choice',
+'Fiona listens to Martin because she',
+'D',
+'{"A":"wants to know more about bananas.","B":"has nothing else to do today.","C":"is interested in the economy of Australia.","D":"wants to help Martin."}', 1);
+
+INSERT INTO questions (section_id, question_number, question_type, question_text, correct_answer, options, points)
+VALUES (s3_id, 24, 'multiple_choice',
+'According to Martin, bananas were introduced into Australia from',
+'B',
+'{"A":"India.","B":"England.","C":"China.","D":"Africa."}', 1);
+
+-- ============================================================
+-- SECTION 3 — Q25-30 (bordered notes box with banana tree image)
+-- ============================================================
+
+INSERT INTO questions (section_id, question_number, question_type, question_text, correct_answer, options, points, image_url)
+VALUES (s3_id, 25, 'fill_blank',
+'Each banana tree produces (25) ___ of bananas.',
+'one bunch',
+'{"box":true,"box_title":"Commercially grown banana plant","image_position":"right"}',
+1, 'https://vqyyoxfsitsdmmxecqka.supabase.co/storage/v1/object/public/question-images/lt2 bananatree q25-30.png');
+
+INSERT INTO questions (section_id, question_number, question_type, question_text, correct_answer, options, points)
+VALUES (s3_id, 26, 'fill_blank',
+'On modern plantations in tropical conditions a tree can bear fruit after (26) ___.',
+'15 months', '{"box":true}', 1);
+
+INSERT INTO questions (section_id, question_number, question_type, question_text, correct_answer, options, points)
+VALUES (s3_id, 27, 'fill_blank',
+'Banana trees prefer to grow (27) ___ and they require rich soil and (28) ___.',
+'uphill/on hillsides', '{"box":true}', 1);
+
+INSERT INTO questions (section_id, question_number, question_type, question_text, correct_answer, options, points)
+VALUES (s3_id, 28, 'fill_blank',
+'Banana trees — rich soil and (28) ___.',
+'lots of/plenty of water', '{"box":true}', 1);
+
+INSERT INTO questions (section_id, question_number, question_type, question_text, correct_answer, options, points)
+VALUES (s3_id, 29, 'fill_blank',
+'The fruit is often protected by (29) ___.',
+'plastic bags', '{"box":true}', 1);
+
+INSERT INTO questions (section_id, question_number, question_type, question_text, correct_answer, options, points)
+VALUES (s3_id, 30, 'fill_blank',
+'Ripe bananas emit a gas which helps other (30) ___.',
+'bananas/ones (to) ripen', '{"box":true}', 1);
+
+-- ============================================================
+-- SECTION 3 — Q31-32 (multi-select, pick TWO, with Australia map image)
+-- ============================================================
+
+INSERT INTO questions (section_id, question_number, question_type, question_text, correct_answer, options, points, image_url)
+VALUES (s3_id, 31, 'multiple_choice',
+'Consumption of Australian bananas — Circle the TWO correct boxes.',
+'C',
+'{"A":"Europe","B":"Asia","C":"New Zealand","D":"Australia","E":"Other","multi":true,"select_count":2,"linked_pair":32}',
+1, 'https://vqyyoxfsitsdmmxecqka.supabase.co/storage/v1/object/public/question-images/lt2 australia q31-32.png');
+
+INSERT INTO questions (section_id, question_number, question_type, question_text, correct_answer, options, points)
+VALUES (s3_id, 32, 'multiple_choice',
+'Consumption of Australian bananas — second answer',
+'D',
+'{"multi":true,"select_count":2,"linked_pair":31,"hidden_label":true}', 1);
+
+-- ============================================================
+-- SECTION 4 — Q33-35 (multiple choice)
+-- ============================================================
+
+INSERT INTO questions (section_id, question_number, question_type, question_text, correct_answer, options, points)
+VALUES (s4_id, 33, 'multiple_choice',
+'According to the first speaker, the focus of the lecture series is on',
+'B',
+'{"A":"organising work and study.","B":"maintaining a healthy lifestyle.","C":"coping with homesickness.","D":"settling in at university."}', 1);
+
+INSERT INTO questions (section_id, question_number, question_type, question_text, correct_answer, options, points)
+VALUES (s4_id, 34, 'multiple_choice',
+'The lecture will be given by',
+'D',
+'{"A":"the president of the Union.","B":"the campus doctor.","C":"a sports celebrity.","D":"a health expert."}', 1);
+
+INSERT INTO questions (section_id, question_number, question_type, question_text, correct_answer, options, points)
+VALUES (s4_id, 35, 'multiple_choice',
+'According to the second speaker, this week''s lecture is on',
+'C',
+'{"A":"campus food.","B":"dieting.","C":"sensible eating.","D":"saving money."}', 1);
+
+-- ============================================================
+-- SECTION 4 — Q36-39 (bordered notes box "A balanced diet")
+-- ============================================================
+
+INSERT INTO questions (section_id, question_number, question_type, question_text, correct_answer, options, points)
+VALUES (s4_id, 36, 'fill_blank',
+'Vitamins in food can be lost through (36) ___.',
+'cooking',
+'{"box":true,"box_title":"A balanced diet"}', 1);
+
+INSERT INTO questions (section_id, question_number, question_type, question_text, correct_answer, options, points)
+VALUES (s4_id, 37, 'fill_blank',
+'Water soluble vitamins — not stored, so you need a (37) ___.',
+'(regular) daily intake', '{"box":true}', 1);
+
+INSERT INTO questions (section_id, question_number, question_type, question_text, correct_answer, options, points)
+VALUES (s4_id, 38, 'fill_blank',
+'Eat (38) ___ of foods.',
+'(a) variety', '{"box":true}', 1);
+
+INSERT INTO questions (section_id, question_number, question_type, question_text, correct_answer, options, points)
+VALUES (s4_id, 39, 'fill_blank',
+'Buy plenty of vegetables and store them in (39) ___.',
+'the dark/the fridge/a cool place', '{"box":true}', 1);
+
+-- ============================================================
+-- SECTION 4 — Q40-41 (food pyramid diagram)
+-- ============================================================
+
+INSERT INTO questions (section_id, question_number, question_type, question_text, correct_answer, options, points, image_url)
+VALUES (s4_id, 40, 'fill_blank',
+'Food pyramid — middle level (milk, lean meat, fish, nuts, eggs): (40) ___',
+'eat in moderation/not too much',
+'{"box":true,"diagram":true,"diagram_position":"left","box_title":"Food pyramid"}',
+1, 'https://vqyyoxfsitsdmmxecqka.supabase.co/storage/v1/object/public/question-images/lt2 triangle q40-41.jpg');
+
+INSERT INTO questions (section_id, question_number, question_type, question_text, correct_answer, options, points)
+VALUES (s4_id, 41, 'fill_blank',
+'Food pyramid — bottom level (bread, vegetables and fruit): (41) ___',
+'eat lots/eat most',
+'{"box":true,"diagram":true,"diagram_position":"right"}', 1);
+
+END $$;
