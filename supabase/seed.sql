@@ -1292,3 +1292,301 @@ VALUES (s4_id, 42, 'fill_blank',
 
 END $$;
 
+-- ============================================================
+-- LISTENING TEST 5 (Cambridge IELTS Academic format)
+-- ============================================================
+
+DO $$
+DECLARE
+  t5_id uuid;
+  s1_id uuid;
+  s2_id uuid;
+  s3_id uuid;
+  s4_id uuid;
+BEGIN
+
+INSERT INTO tests (title, type, book_number, test_number, difficulty)
+VALUES ('Listening Test 5', 'listening', 2, 1, 'medium')
+RETURNING id INTO t5_id;
+
+INSERT INTO test_sections (test_id, section_number, title, instructions, audio_url)
+VALUES (t5_id, 1, 'Part 1 — Questions 1-10',
+'Complete the notes below. Write ONE WORD AND/OR A NUMBER for each answer.',
+'https://vqyyoxfsitsdmmxecqka.supabase.co/storage/v1/object/public/test-audio/test-5.mp3')
+RETURNING id INTO s1_id;
+
+INSERT INTO test_sections (test_id, section_number, title, instructions, audio_url)
+VALUES (t5_id, 2, 'Part 2 — Questions 11-20',
+'Questions 11-15: Choose the correct letter, A, B or C. Questions 16-20: Label the map. Write the correct letter, A-H, next to Questions 16-20.',
+'https://vqyyoxfsitsdmmxecqka.supabase.co/storage/v1/object/public/test-audio/test-5.mp3')
+RETURNING id INTO s2_id;
+
+INSERT INTO test_sections (test_id, section_number, title, instructions, audio_url)
+VALUES (t5_id, 3, 'Part 3 — Questions 21-30',
+'Questions 21-22: Choose TWO letters, A-E. Questions 23-24: Choose TWO letters, A-E. Questions 25-30: Choose SIX answers from the box and write the correct letter, A-H, next to Questions 25-30.',
+'https://vqyyoxfsitsdmmxecqka.supabase.co/storage/v1/object/public/test-audio/test-5.mp3')
+RETURNING id INTO s3_id;
+
+INSERT INTO test_sections (test_id, section_number, title, instructions, audio_url)
+VALUES (t5_id, 4, 'Part 4 — Questions 31-40',
+'Complete the notes below. Write ONE WORD ONLY for each answer.',
+'https://vqyyoxfsitsdmmxecqka.supabase.co/storage/v1/object/public/test-audio/test-5.mp3')
+RETURNING id INTO s4_id;
+
+-- PART 1 — Q1-10 (Hinchingbrooke Country Park notes box)
+
+INSERT INTO questions (section_id, question_number, question_type, question_text, correct_answer, options, points)
+VALUES (s1_id, 1, 'fill_blank',
+'Area: (1) ___ hectares',
+'69',
+'{"box":true,"box_title":"Hinchingbrooke Country Park","box_subtitle":"The park"}', 1);
+
+INSERT INTO questions (section_id, question_number, question_type, question_text, correct_answer, options, points)
+VALUES (s1_id, 2, 'fill_blank',
+'Wetland: lakes, ponds and a (2) ___',
+'stream',
+'{"box":true}', 1);
+
+INSERT INTO questions (section_id, question_number, question_type, question_text, correct_answer, options, points)
+VALUES (s1_id, 3, 'fill_blank',
+'Science: Children look at (3) ___ about plants, etc.',
+'data',
+'{"box":true,"box_subtitle":"Subjects studied in educational visits include"}', 1);
+
+INSERT INTO questions (section_id, question_number, question_type, question_text, correct_answer, options, points)
+VALUES (s1_id, 4, 'fill_blank',
+'Geography: includes learning to use a (4) ___ and compass',
+'map',
+'{"box":true}', 1);
+
+INSERT INTO questions (section_id, question_number, question_type, question_text, correct_answer, options, points)
+VALUES (s1_id, 5, 'fill_blank',
+'Leisure and tourism: mostly concentrates on the park''s (5) ___',
+'visitors',
+'{"box":true}', 1);
+
+INSERT INTO questions (section_id, question_number, question_type, question_text, correct_answer, options, points)
+VALUES (s1_id, 6, 'fill_blank',
+'Music: Children make (6) ___ with natural materials, and experiment with rhythm and speed.',
+'sounds',
+'{"box":true}', 1);
+
+INSERT INTO questions (section_id, question_number, question_type, question_text, correct_answer, options, points)
+VALUES (s1_id, 7, 'fill_blank',
+'Benefits: They give children a feeling of (7) ___ that they may not have elsewhere.',
+'freedom',
+'{"box":true,"box_subtitle":"Benefits of outdoor educational visits"}', 1);
+
+INSERT INTO questions (section_id, question_number, question_type, question_text, correct_answer, options, points)
+VALUES (s1_id, 8, 'fill_blank',
+'Children learn new (8) ___ and gain self-confidence.',
+'skills',
+'{"box":true}', 1);
+
+INSERT INTO questions (section_id, question_number, question_type, question_text, correct_answer, options, points)
+VALUES (s1_id, 9, 'fill_blank',
+'Cost per child: (9) £ ___',
+'4.95',
+'{"box":true,"box_subtitle":"Practical issues"}', 1);
+
+INSERT INTO questions (section_id, question_number, question_type, question_text, correct_answer, options, points)
+VALUES (s1_id, 10, 'fill_blank',
+'Adults, such as (10) ___, free',
+'leaders',
+'{"box":true}', 1);
+
+-- PART 2 — Q11-15 (Stanthorpe Twinning Association — MC A/B/C)
+
+INSERT INTO questions (section_id, question_number, question_type, question_text, correct_answer, options, points)
+VALUES (s2_id, 11, 'multiple_choice',
+'During the visit to Malatte, in France, members especially enjoyed',
+'B',
+'{"A":"going to a theme park.","B":"experiencing a river trip.","C":"visiting a cheese factory."}', 1);
+
+INSERT INTO questions (section_id, question_number, question_type, question_text, correct_answer, options, points)
+VALUES (s2_id, 12, 'multiple_choice',
+'What will happen in Stanthorpe to mark the 25th anniversary of the Twinning Association?',
+'A',
+'{"A":"A tree will be planted.","B":"A garden seat will be bought.","C":"A footbridge will be built."}', 1);
+
+INSERT INTO questions (section_id, question_number, question_type, question_text, correct_answer, options, points)
+VALUES (s2_id, 13, 'multiple_choice',
+'Which event raised most funds this year?',
+'B',
+'{"A":"the film show","B":"the pancake evening","C":"the cookery demonstration"}', 1);
+
+INSERT INTO questions (section_id, question_number, question_type, question_text, correct_answer, options, points)
+VALUES (s2_id, 14, 'multiple_choice',
+'For the first evening with the French visitors host families are advised to',
+'C',
+'{"A":"take them for a walk round the town.","B":"go to a local restaurant.","C":"have a meal at home."}', 1);
+
+INSERT INTO questions (section_id, question_number, question_type, question_text, correct_answer, options, points)
+VALUES (s2_id, 15, 'multiple_choice',
+'On Saturday evening there will be the chance to',
+'A',
+'{"A":"listen to a concert.","B":"watch a match.","C":"take part in a competition."}', 1);
+
+-- PART 2 — Q16-20 (Farley House map matching A-H)
+
+INSERT INTO questions (section_id, question_number, question_type, question_text, correct_answer, options, points, image_url)
+VALUES (s2_id, 16, 'fill_blank',
+'Farm shop',
+'G',
+'{"map_matching":true,"map_title":"Farley House","letters":"A,B,C,D,E,F,G,H","hint":"Write the correct letter A-H"}',
+1, 'https://vqyyoxfsitsdmmxecqka.supabase.co/storage/v1/object/public/question-images/lt5 q16-20.png');
+
+INSERT INTO questions (section_id, question_number, question_type, question_text, correct_answer, options, points)
+VALUES (s2_id, 17, 'fill_blank',
+'Disabled entry',
+'C',
+'{"map_matching":true}', 1);
+
+INSERT INTO questions (section_id, question_number, question_type, question_text, correct_answer, options, points)
+VALUES (s2_id, 18, 'fill_blank',
+'Adventure playground',
+'B',
+'{"map_matching":true}', 1);
+
+INSERT INTO questions (section_id, question_number, question_type, question_text, correct_answer, options, points)
+VALUES (s2_id, 19, 'fill_blank',
+'Kitchen gardens',
+'D',
+'{"map_matching":true}', 1);
+
+INSERT INTO questions (section_id, question_number, question_type, question_text, correct_answer, options, points)
+VALUES (s2_id, 20, 'fill_blank',
+'The Temple of the Four Winds',
+'A',
+'{"map_matching":true}', 1);
+
+-- PART 3 — Q21-22 (Choose TWO from A-E)
+
+INSERT INTO questions (section_id, question_number, question_type, question_text, correct_answer, options, points)
+VALUES (s3_id, 21, 'multiple_choice',
+'Which TWO things did Colin find most satisfying about his bread reuse project?',
+'B',
+'{"A":"receiving support from local restaurants","B":"finding a good way to prevent waste","C":"overcoming problems in a basic process","D":"experimenting with designs and colours","E":"learning how to apply 3-D printing","multi":true,"select_count":2,"linked_pair":22}', 1);
+
+INSERT INTO questions (section_id, question_number, question_type, question_text, correct_answer, options, points)
+VALUES (s3_id, 22, 'multiple_choice',
+'Which TWO things — second answer',
+'D',
+'{"multi":true,"select_count":2,"linked_pair":21,"hidden_label":true}', 1);
+
+-- PART 3 — Q23-24 (Choose TWO from A-E)
+
+INSERT INTO questions (section_id, question_number, question_type, question_text, correct_answer, options, points)
+VALUES (s3_id, 23, 'multiple_choice',
+'Which TWO ways do the students agree that touch-sensitive sensors for food labels could be developed in future?',
+'A',
+'{"A":"for use on medical products","B":"to show that food is no longer fit to eat","C":"for use with drinks as well as foods","D":"to provide applications for blind people","E":"to indicate the weight of certain foods","multi":true,"select_count":2,"linked_pair":24}', 1);
+
+INSERT INTO questions (section_id, question_number, question_type, question_text, correct_answer, options, points)
+VALUES (s3_id, 24, 'multiple_choice',
+'Which TWO ways — second answer',
+'E',
+'{"multi":true,"select_count":2,"linked_pair":23,"hidden_label":true}', 1);
+
+-- PART 3 — Q25-30 (matching pool: 6 questions → 8 opinions A-H)
+
+INSERT INTO questions (section_id, question_number, question_type, question_text, correct_answer, options, points)
+VALUES (s3_id, 25, 'multiple_choice',
+'Use of local products',
+'D',
+'{"matching_pool":true,"pool_title":"Opinions","pool":{"A":"This is only relevant to young people.","B":"This may have disappointing results.","C":"This already seems to be widespread.","D":"Retailers should do more to encourage this.","E":"More financial support is needed for this.","F":"Most people know little about this.","G":"There should be stricter regulations about this.","H":"This could be dangerous."},"pool_instruction":"Choose SIX answers from the box and write the correct letter, A-H"}', 1);
+
+INSERT INTO questions (section_id, question_number, question_type, question_text, correct_answer, options, points)
+VALUES (s3_id, 26, 'multiple_choice',
+'Reduction in unnecessary packaging',
+'G',
+'{"matching_pool":true}', 1);
+
+INSERT INTO questions (section_id, question_number, question_type, question_text, correct_answer, options, points)
+VALUES (s3_id, 27, 'multiple_choice',
+'Gluten-free and lactose-free food',
+'C',
+'{"matching_pool":true}', 1);
+
+INSERT INTO questions (section_id, question_number, question_type, question_text, correct_answer, options, points)
+VALUES (s3_id, 28, 'multiple_choice',
+'Use of branded products related to celebrity chefs',
+'B',
+'{"matching_pool":true}', 1);
+
+INSERT INTO questions (section_id, question_number, question_type, question_text, correct_answer, options, points)
+VALUES (s3_id, 29, 'multiple_choice',
+'Development of ''ghost kitchens'' for takeaway food',
+'F',
+'{"matching_pool":true}', 1);
+
+INSERT INTO questions (section_id, question_number, question_type, question_text, correct_answer, options, points)
+VALUES (s3_id, 30, 'multiple_choice',
+'Use of mushrooms for common health concerns',
+'H',
+'{"matching_pool":true}', 1);
+
+-- PART 4 — Q31-40 (Céide Fields notes box, ONE WORD ONLY)
+
+INSERT INTO questions (section_id, question_number, question_type, question_text, correct_answer, options, points)
+VALUES (s4_id, 31, 'fill_blank',
+'In the 1930s, stones beneath the bog surface were once (31) ___',
+'walls',
+'{"box":true,"box_title":"Céide Fields","box_subtitle":"Discovery"}', 1);
+
+INSERT INTO questions (section_id, question_number, question_type, question_text, correct_answer, options, points)
+VALUES (s4_id, 32, 'fill_blank',
+'His (32) ___ became an archaeologist and undertook an investigation of the site',
+'son',
+'{"box":true}', 1);
+
+INSERT INTO questions (section_id, question_number, question_type, question_text, correct_answer, options, points)
+VALUES (s4_id, 33, 'fill_blank',
+'A traditional method used by local people to dig for (33) ___ was used to identify where stones were located',
+'fuel',
+'{"box":true}', 1);
+
+INSERT INTO questions (section_id, question_number, question_type, question_text, correct_answer, options, points)
+VALUES (s4_id, 34, 'fill_blank',
+'Items are well preserved in the bog because of a lack of (34) ___',
+'oxygen',
+'{"box":true}', 1);
+
+INSERT INTO questions (section_id, question_number, question_type, question_text, correct_answer, options, points)
+VALUES (s4_id, 35, 'fill_blank',
+'Houses were (35) ___ in shape and had a hole in the roof',
+'rectangular',
+'{"box":true,"box_subtitle":"Neolithic farmers"}', 1);
+
+INSERT INTO questions (section_id, question_number, question_type, question_text, correct_answer, options, points)
+VALUES (s4_id, 36, 'fill_blank',
+'Pots used for storage and to make (36) ___',
+'lamps',
+'{"box":true}', 1);
+
+INSERT INTO questions (section_id, question_number, question_type, question_text, correct_answer, options, points)
+VALUES (s4_id, 37, 'fill_blank',
+'Each field at Céide was large enough to support a big (37) ___',
+'family',
+'{"box":true}', 1);
+
+INSERT INTO questions (section_id, question_number, question_type, question_text, correct_answer, options, points)
+VALUES (s4_id, 38, 'fill_blank',
+'No evidence of structures to house animals during (38) ___',
+'winter',
+'{"box":true}', 1);
+
+INSERT INTO questions (section_id, question_number, question_type, question_text, correct_answer, options, points)
+VALUES (s4_id, 39, 'fill_blank',
+'A decline in (39) ___ quality',
+'soil',
+'{"box":true,"box_subtitle":"Reasons for the decline in farming"}', 1);
+
+INSERT INTO questions (section_id, question_number, question_type, question_text, correct_answer, options, points)
+VALUES (s4_id, 40, 'fill_blank',
+'An increase in (40) ___',
+'rain',
+'{"box":true}', 1);
+
+END $$;
+

@@ -676,24 +676,33 @@ function BoxCard({
       <div className={`flex gap-4 p-5 ${imageRight ? 'flex-row' : 'flex-col'}`}>
         <div className="flex-1 space-y-3">
           {questions.map(q => {
+            const qOpts = (getOptionsObj(q) ?? {}) as Record<string, unknown>
+            const subtitle = qOpts.box_subtitle as string | undefined
             const raw = q.question_text.replace(/\(\d+\)\s*/g, '')
             const blankIdx = raw.indexOf('___')
             const before = blankIdx >= 0 ? raw.slice(0, blankIdx) : raw
             const after = blankIdx >= 0 ? raw.slice(blankIdx + 3) : ''
             return (
-              <div key={q.id} className="flex items-baseline flex-wrap gap-x-1 text-sm text-gray-800 dark:text-gray-200 leading-7">
-                <span className="shrink-0 text-[10px] font-bold text-teal-600 dark:text-teal-400 mr-0.5">
-                  ({q.question_number})
-                </span>
-                {before && <span>{before}</span>}
-                <input
-                  type="text"
-                  value={answers[q.id] ?? ''}
-                  onChange={e => onAnswer(q.id, e.target.value)}
-                  className="w-28 border-b-2 border-gray-500 dark:border-gray-400 bg-transparent focus:outline-none focus:border-amber-500 dark:focus:border-amber-400 text-sm text-gray-900 dark:text-white placeholder-gray-400 text-center transition-colors pb-0.5"
-                  placeholder="..."
-                />
-                {after && <span>{after}</span>}
+              <div key={q.id}>
+                {subtitle && (
+                  <p className="text-[10px] font-black uppercase tracking-widest text-gray-500 dark:text-gray-400 mt-3 mb-1 pb-1 border-b border-gray-200 dark:border-gray-700">
+                    {subtitle}
+                  </p>
+                )}
+                <div className="flex items-baseline flex-wrap gap-x-1 text-sm text-gray-800 dark:text-gray-200 leading-7">
+                  <span className="shrink-0 text-[10px] font-bold text-teal-600 dark:text-teal-400 mr-0.5">
+                    ({q.question_number})
+                  </span>
+                  {before && <span>{before}</span>}
+                  <input
+                    type="text"
+                    value={answers[q.id] ?? ''}
+                    onChange={e => onAnswer(q.id, e.target.value)}
+                    className="w-28 border-b-2 border-gray-500 dark:border-gray-400 bg-transparent focus:outline-none focus:border-amber-500 dark:focus:border-amber-400 text-sm text-gray-900 dark:text-white placeholder-gray-400 text-center transition-colors pb-0.5"
+                    placeholder="..."
+                  />
+                  {after && <span>{after}</span>}
+                </div>
               </div>
             )
           })}
@@ -1249,11 +1258,123 @@ function MultiSelectBlock({
   )
 }
 
+// ── Map Matching Card (Q16-20 style: full-width image + labelled list below) ───
+
+function MapMatchingCard({
+  questions,
+  answers,
+  onAnswer,
+}: {
+  questions: QuestionWithSection[]
+  answers: Record<string, string>
+  onAnswer: (id: string, v: string) => void
+}) {
+  const firstOpts = (getOptionsObj(questions[0]) ?? {}) as Record<string, unknown>
+  const mapTitle = (firstOpts.map_title as string | undefined) ?? 'Label the map'
+  const hint = (firstOpts.hint as string | undefined) ?? 'Write the correct letter'
+  const imageUrl = questions[0].image_url
+
+  return (
+    <div className="border-2 border-gray-400 dark:border-gray-500 bg-white dark:bg-gray-950 rounded-sm overflow-hidden">
+      <div className="px-5 py-3 border-b-2 border-gray-400 dark:border-gray-500 flex items-center justify-between">
+        <span className="text-sm font-bold italic text-gray-800 dark:text-gray-200">{mapTitle}</span>
+        <span className="text-[10px] text-gray-400 dark:text-gray-500 italic">{hint}</span>
+      </div>
+      {imageUrl && (
+        <div className="p-3 border-b border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900/40">
+          <Image
+            src={imageUrl}
+            alt={mapTitle}
+            width={700}
+            height={500}
+            className="w-full h-auto object-contain"
+            unoptimized
+          />
+        </div>
+      )}
+      <div className="divide-y divide-gray-100 dark:divide-gray-800">
+        {questions.map(q => (
+          <div key={q.id} className="flex items-center px-5 py-2.5 gap-3">
+            <span className="shrink-0 text-[10px] font-bold text-teal-600 dark:text-teal-400 w-5 text-right">
+              {q.question_number}
+            </span>
+            <span className="flex-1 text-sm text-gray-700 dark:text-gray-300">{q.question_text}</span>
+            <input
+              type="text"
+              value={answers[q.id] ?? ''}
+              onChange={e => onAnswer(q.id, e.target.value.toUpperCase().slice(0, 1))}
+              className="w-10 border-b-2 border-gray-500 dark:border-gray-400 bg-transparent focus:outline-none focus:border-amber-500 dark:focus:border-amber-400 text-sm text-gray-900 dark:text-white placeholder-gray-400 text-center transition-colors pb-0.5 uppercase font-bold"
+              placeholder="_"
+              maxLength={1}
+            />
+          </div>
+        ))}
+      </div>
+    </div>
+  )
+}
+
+// ── Matching Pool Card (Q25-30 style: pool box on top + question rows below) ───
+
+function MatchingPoolCard({
+  questions,
+  answers,
+  onAnswer,
+}: {
+  questions: QuestionWithSection[]
+  answers: Record<string, string>
+  onAnswer: (id: string, v: string) => void
+}) {
+  const firstOpts = (getOptionsObj(questions[0]) ?? {}) as Record<string, unknown>
+  const poolTitle = (firstOpts.pool_title as string | undefined) ?? 'Options'
+  const pool = (firstOpts.pool as Record<string, string> | undefined) ?? {}
+  const poolLetters = Object.keys(pool).sort()
+
+  return (
+    <div className="space-y-3">
+      {/* Pool options reference box */}
+      <div className="border-2 border-gray-400 dark:border-gray-500 rounded-sm overflow-hidden">
+        <div className="px-4 py-2 bg-gray-100 dark:bg-gray-800/60 border-b border-gray-300 dark:border-gray-600">
+          <span className="text-xs font-black uppercase tracking-widest text-gray-700 dark:text-gray-300">{poolTitle}</span>
+        </div>
+        <div className="divide-y divide-gray-100 dark:divide-gray-800">
+          {poolLetters.map(letter => (
+            <div key={letter} className="flex items-start gap-3 px-4 py-2">
+              <span className="shrink-0 w-5 text-xs font-black text-gray-500 dark:text-gray-400 pt-0.5">{letter}</span>
+              <span className="text-sm text-gray-700 dark:text-gray-300 leading-snug">{pool[letter]}</span>
+            </div>
+          ))}
+        </div>
+      </div>
+      {/* Question rows */}
+      <div className="border-2 border-gray-400 dark:border-gray-500 rounded-sm overflow-hidden divide-y divide-gray-100 dark:divide-gray-800">
+        {questions.map(q => (
+          <div key={q.id} className="flex items-center px-5 py-2.5 gap-3">
+            <span className="shrink-0 text-[10px] font-bold text-teal-600 dark:text-teal-400 w-5 text-right">
+              {q.question_number}
+            </span>
+            <span className="flex-1 text-sm text-gray-700 dark:text-gray-300">{q.question_text}</span>
+            <input
+              type="text"
+              value={answers[q.id] ?? ''}
+              onChange={e => onAnswer(q.id, e.target.value.toUpperCase().slice(0, 1))}
+              className="w-10 border-b-2 border-gray-500 dark:border-gray-400 bg-transparent focus:outline-none focus:border-amber-500 dark:focus:border-amber-400 text-sm text-gray-900 dark:text-white placeholder-gray-400 text-center transition-colors pb-0.5 uppercase font-bold"
+              placeholder="_"
+              maxLength={1}
+            />
+          </div>
+        ))}
+      </div>
+    </div>
+  )
+}
+
 // Helper: group consecutive questions by type so fill-in blocks render together
 function groupByType(qs: QuestionWithSection[]) {
   type GroupKind =
     | 'mc' | 'multiselect' | 'form' | 'inline' | 'passage'
     | 'twoColForm' | 'box' | 'diagram' | 'multiBox' | 'table' | 'diagramTable' | 'diagramLabels'
+    | 'mapMatching' | 'matchingPool'
   type Group = { kind: GroupKind; items: QuestionWithSection[] }
   const groups: Group[] = []
 
@@ -1264,6 +1385,10 @@ function groupByType(qs: QuestionWithSection[]) {
     let kind: GroupKind
     if (opts?.form) {
       kind = 'twoColForm'
+    } else if (opts?.map_matching) {
+      kind = 'mapMatching'
+    } else if (opts?.matching_pool) {
+      kind = 'matchingPool'
     } else if (opts?.diagram_labels) {
       kind = 'diagramLabels'
     } else if (opts?.diagram) {
@@ -1294,10 +1419,12 @@ function groupByType(qs: QuestionWithSection[]) {
       continue
     }
 
-    // Passage questions only merge if they share the same passage_group number
+    // Passage questions only merge if they share the same passage_group number.
+    // Box questions split when a new box_title appears (start of a new bordered box).
     const sameGroup =
       last &&
       last.kind === kind &&
+      !(kind === 'box' && opts?.box_title && opts.box_title !== getOptionsObj(last.items[0])?.box_title) &&
       (kind !== 'passage' ||
         last.items[last.items.length - 1].passage_group === q.passage_group)
 
@@ -1757,6 +1884,18 @@ export default function ListeningTestPage() {
                   />
                 ) : group.kind === 'diagramLabels' ? (
                   <DiagramLabelsCard
+                    questions={group.items}
+                    answers={answers}
+                    onAnswer={setAnswer}
+                  />
+                ) : group.kind === 'mapMatching' ? (
+                  <MapMatchingCard
+                    questions={group.items}
+                    answers={answers}
+                    onAnswer={setAnswer}
+                  />
+                ) : group.kind === 'matchingPool' ? (
+                  <MatchingPoolCard
                     questions={group.items}
                     answers={answers}
                     onAnswer={setAnswer}
