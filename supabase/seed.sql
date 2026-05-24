@@ -1891,3 +1891,303 @@ VALUES (s4_id, 40, 'fill_blank',
 
 END $$;
 
+-- ============================================================
+-- LISTENING TEST 7 (Cambridge IELTS 19 Academic — Test 3)
+-- ============================================================
+
+DO $$
+DECLARE
+  t7_id uuid;
+  s1_id uuid;
+  s2_id uuid;
+  s3_id uuid;
+  s4_id uuid;
+BEGIN
+
+INSERT INTO tests (title, type, book_number, test_number, difficulty)
+VALUES ('Listening Test 7', 'listening', 2, 3, 'medium')
+RETURNING id INTO t7_id;
+
+INSERT INTO test_sections (test_id, section_number, title, instructions, audio_url)
+VALUES (t7_id, 1, 'Part 1 — Questions 1-10',
+'Questions 1-6: Complete the notes. Write ONE WORD AND/OR A NUMBER for each answer. Questions 7-10: Complete the table. Write ONE WORD ONLY for each answer.',
+'https://vqyyoxfsitsdmmxecqka.supabase.co/storage/v1/object/public/test-audio/test-7-section1.mp3')
+RETURNING id INTO s1_id;
+
+INSERT INTO test_sections (test_id, section_number, title, instructions, audio_url)
+VALUES (t7_id, 2, 'Part 2 — Questions 11-20',
+'Questions 11-16: Choose SIX answers from the box A-H. Questions 17-18: Choose TWO letters, A-E. Questions 19-20: Choose TWO letters, A-E.',
+'https://vqyyoxfsitsdmmxecqka.supabase.co/storage/v1/object/public/test-audio/test-7-section2.mp3')
+RETURNING id INTO s2_id;
+
+INSERT INTO test_sections (test_id, section_number, title, instructions, audio_url)
+VALUES (t7_id, 3, 'Part 3 — Questions 21-30',
+'Questions 21-25: Choose the correct letter, A, B or C. Questions 26-30: Choose FIVE answers from the box A-H.',
+'https://vqyyoxfsitsdmmxecqka.supabase.co/storage/v1/object/public/test-audio/test-7-section3.mp3')
+RETURNING id INTO s3_id;
+
+INSERT INTO test_sections (test_id, section_number, title, instructions, audio_url)
+VALUES (t7_id, 4, 'Part 4 — Questions 31-40',
+'Complete the notes below. Write ONE WORD ONLY for each answer.',
+'https://vqyyoxfsitsdmmxecqka.supabase.co/storage/v1/object/public/test-audio/test-7-section4.mp3')
+RETURNING id INTO s4_id;
+
+-- ============================================================
+-- PART 1 — Q1-6 (Local food shops notes box)
+-- ============================================================
+
+INSERT INTO questions (section_id, question_number, question_type, question_text, correct_answer, options, points)
+VALUES (s1_id, 1, 'fill_blank',
+'Kite Place – near the (1) ___',
+'harbour/harbor',
+'{"box":true,"box_title":"Local food shops","box_subtitle":"Where to go"}', 1);
+
+INSERT INTO questions (section_id, question_number, question_type, question_text, correct_answer, options, points)
+VALUES (s1_id, 2, 'fill_blank',
+'Fish market — cross the (2) ___ and turn right',
+'bridge',
+'{"box":true,"box_subtitle":"Fish market"}', 1);
+
+INSERT INTO questions (section_id, question_number, question_type, question_text, correct_answer, options, points)
+VALUES (s1_id, 3, 'fill_blank',
+'Best to go before (3) ___ pm, earlier than closing time',
+'3.30/three thirty/half 3/three',
+'{"box":true}', 1);
+
+INSERT INTO questions (section_id, question_number, question_type, question_text, correct_answer, options, points)
+VALUES (s1_id, 4, 'fill_blank',
+'Organic shop — called (4) ___',
+'Rose/rose',
+'{"box":true,"box_subtitle":"Organic shop"}', 1);
+
+INSERT INTO questions (section_id, question_number, question_type, question_text, correct_answer, options, points)
+VALUES (s1_id, 5, 'fill_blank',
+'Look for the large (5) ___ outside',
+'sign',
+'{"box":true}', 1);
+
+INSERT INTO questions (section_id, question_number, question_type, question_text, correct_answer, options, points)
+VALUES (s1_id, 6, 'fill_blank',
+'Supermarket — take a (6) ___ minibus, number 289',
+'purple',
+'{"box":true,"box_subtitle":"Supermarket"}', 1);
+
+-- ============================================================
+-- PART 1 — Q7-10 (Shopping table)
+-- ============================================================
+
+INSERT INTO questions (section_id, question_number, question_type, question_text, correct_answer, options, points)
+VALUES (s1_id, 7, 'fill_blank',
+'Fish market — Other ideas: a handful of (7) ___ (type of seaweed)',
+'samphire',
+'{"table":true,"table_title":"Shopping","col_left":"","col_middle":"To buy","col_right":"Other ideas","row_left":"Fish market","row_middle":"a dozen prawns","row_right_prefix":"a handful of","row_right_suffix":"(type of seaweed)"}', 1);
+
+INSERT INTO questions (section_id, question_number, question_type, question_text, correct_answer, options, points)
+VALUES (s1_id, 8, 'fill_blank',
+'Organic shop — To buy: beans and a (8) ___ for dessert',
+'melon',
+'{"table":true,"row_left":"Organic shop","row_middle_prefix":"beans and a","row_middle_suffix":"for dessert"}', 1);
+
+INSERT INTO questions (section_id, question_number, question_type, question_text, correct_answer, options, points)
+VALUES (s1_id, 9, 'fill_blank',
+'Organic shop — Other ideas: spices and (9) ___',
+'coconut',
+'{"table":true,"row_right_prefix":"spices and"}', 1);
+
+INSERT INTO questions (section_id, question_number, question_type, question_text, correct_answer, options, points)
+VALUES (s1_id, 10, 'fill_blank',
+'Bakery — Other ideas: a (10) ___ tart',
+'strawberry',
+'{"table":true,"row_left":"Bakery","row_middle":"a brown loaf","row_right_prefix":"a","row_right_suffix":"tart"}', 1);
+
+-- ============================================================
+-- PART 2 — Q11-16 (matching pool — festival workshops)
+-- ============================================================
+
+INSERT INTO questions (section_id, question_number, question_type, question_text, correct_answer, options, points)
+VALUES (s2_id, 11, 'multiple_choice',
+'Superheroes',
+'C',
+'{"matching_pool":true,"pool_title":"Information","pool":{"A":"involves painting and drawing","B":"will be led by a prize-winning author","C":"is aimed at children with a disability","D":"involves a drama activity","E":"focuses on new relationships","F":"is aimed at a specific age group","G":"explores an unhappy feeling","H":"raises awareness of a particular culture"},"pool_instruction":"Choose SIX answers from the box and write the correct letter, A-H","pool_intro":"What information is given about each of the following festival workshops?"}', 1);
+
+INSERT INTO questions (section_id, question_number, question_type, question_text, correct_answer, options, points)
+VALUES (s2_id, 12, 'multiple_choice', 'Just do it', 'D', '{"matching_pool":true}', 1);
+
+INSERT INTO questions (section_id, question_number, question_type, question_text, correct_answer, options, points)
+VALUES (s2_id, 13, 'multiple_choice', 'Count on me', 'F', '{"matching_pool":true}', 1);
+
+INSERT INTO questions (section_id, question_number, question_type, question_text, correct_answer, options, points)
+VALUES (s2_id, 14, 'multiple_choice', 'Speak up', 'G', '{"matching_pool":true}', 1);
+
+INSERT INTO questions (section_id, question_number, question_type, question_text, correct_answer, options, points)
+VALUES (s2_id, 15, 'multiple_choice', 'Jump for joy', 'B', '{"matching_pool":true}', 1);
+
+INSERT INTO questions (section_id, question_number, question_type, question_text, correct_answer, options, points)
+VALUES (s2_id, 16, 'multiple_choice', 'Sticks and stones', 'H', '{"matching_pool":true}', 1);
+
+-- ============================================================
+-- PART 2 — Q17-18 (Choose TWO from A-E)
+-- ============================================================
+
+INSERT INTO questions (section_id, question_number, question_type, question_text, correct_answer, options, points)
+VALUES (s2_id, 17, 'multiple_choice',
+'Which TWO reasons does the speaker give for recommending Alive and Kicking?',
+'D',
+'{"A":"It will appeal to both boys and girls.","B":"The author is well known.","C":"It has colourful illustrations.","D":"It is funny.","E":"It deals with an important topic.","multi":true,"select_count":2,"linked_pair":18}', 1);
+
+INSERT INTO questions (section_id, question_number, question_type, question_text, correct_answer, options, points)
+VALUES (s2_id, 18, 'multiple_choice',
+'Which TWO reasons — second answer',
+'E',
+'{"multi":true,"select_count":2,"linked_pair":17,"hidden_label":true}', 1);
+
+-- ============================================================
+-- PART 2 — Q19-20 (Choose TWO from A-E)
+-- ============================================================
+
+INSERT INTO questions (section_id, question_number, question_type, question_text, correct_answer, options, points)
+VALUES (s2_id, 19, 'multiple_choice',
+'Which TWO pieces of advice does the speaker give to parents about reading?',
+'B',
+'{"A":"Encourage children to write down new vocabulary.","B":"Allow children to listen to audio books.","C":"Get recommendations from librarians.","D":"Give children a choice about what they read.","E":"Only read aloud to children until they can read independently.","multi":true,"select_count":2,"linked_pair":20}', 1);
+
+INSERT INTO questions (section_id, question_number, question_type, question_text, correct_answer, options, points)
+VALUES (s2_id, 20, 'multiple_choice',
+'Which TWO pieces of advice — second answer',
+'C',
+'{"multi":true,"select_count":2,"linked_pair":19,"hidden_label":true}', 1);
+
+-- ============================================================
+-- PART 3 — Q21-25 (MC A/B/C — Science experiment)
+-- ============================================================
+
+INSERT INTO questions (section_id, question_number, question_type, question_text, correct_answer, options, points)
+VALUES (s3_id, 21, 'multiple_choice',
+'How does Clare feel about the students in her Year 12 science class?',
+'C',
+'{"A":"worried that they are not making progress","B":"challenged by their poor behaviour in class","C":"frustrated at their lack of interest in the subject"}', 1);
+
+INSERT INTO questions (section_id, question_number, question_type, question_text, correct_answer, options, points)
+VALUES (s3_id, 22, 'multiple_choice',
+'How does Jake react to Clare''s suggestion about an experiment based on children''s diet?',
+'B',
+'{"A":"He is concerned that the results might not be meaningful.","B":"He feels some of the data might be difficult to obtain.","C":"He suspects that the conclusions might be upsetting."}', 1);
+
+INSERT INTO questions (section_id, question_number, question_type, question_text, correct_answer, options, points)
+VALUES (s3_id, 23, 'multiple_choice',
+'What problem do they agree may be involved in an experiment involving animals?',
+'A',
+'{"A":"Any results may not apply to humans.","B":"It may be complicated to get permission.","C":"Students may not be happy about animal experiments."}', 1);
+
+INSERT INTO questions (section_id, question_number, question_type, question_text, correct_answer, options, points)
+VALUES (s3_id, 24, 'multiple_choice',
+'What question do they decide the experiment should address?',
+'A',
+'{"A":"Are mice capable of controlling their food intake?","B":"Does an increase in sugar lead to health problems?","C":"How much do supplements of different kinds affect health?"}', 1);
+
+INSERT INTO questions (section_id, question_number, question_type, question_text, correct_answer, options, points)
+VALUES (s3_id, 25, 'multiple_choice',
+'Clare might also consider doing another experiment involving',
+'C',
+'{"A":"other types of food supplement.","B":"different genetic strains of mice.","C":"varying amounts of exercise."}', 1);
+
+-- ============================================================
+-- PART 3 — Q26-30 (matching pool FIVE answers from A-H — flowchart)
+-- ============================================================
+
+INSERT INTO questions (section_id, question_number, question_type, question_text, correct_answer, options, points)
+VALUES (s3_id, 26, 'multiple_choice',
+'Choose mice which are all the same (26) ___',
+'C',
+'{"matching_pool":true,"pool_title":"Options","pool":{"A":"size","B":"escape","C":"age","D":"water","E":"cereal","F":"calculations","G":"changes","H":"colour"},"pool_instruction":"Choose FIVE answers from the box and write the correct letter, A-H","pool_intro":"Complete the flowchart","select_count":5}', 1);
+
+INSERT INTO questions (section_id, question_number, question_type, question_text, correct_answer, options, points)
+VALUES (s3_id, 27, 'multiple_choice',
+'Divide the mice into two groups, each with a different (27) ___',
+'H',
+'{"matching_pool":true}', 1);
+
+INSERT INTO questions (section_id, question_number, question_type, question_text, correct_answer, options, points)
+VALUES (s3_id, 28, 'multiple_choice',
+'Feed group B the same, but also sugar contained in (28) ___',
+'E',
+'{"matching_pool":true}', 1);
+
+INSERT INTO questions (section_id, question_number, question_type, question_text, correct_answer, options, points)
+VALUES (s3_id, 29, 'multiple_choice',
+'Place them in a weighing chamber to prevent (29) ___',
+'B',
+'{"matching_pool":true}', 1);
+
+INSERT INTO questions (section_id, question_number, question_type, question_text, correct_answer, options, points)
+VALUES (s3_id, 30, 'multiple_choice',
+'Do all necessary (30) ___',
+'F',
+'{"matching_pool":true}', 1);
+
+-- ============================================================
+-- PART 4 — Q31-40 (Microplastics notes box)
+-- ============================================================
+
+INSERT INTO questions (section_id, question_number, question_type, question_text, correct_answer, options, points)
+VALUES (s4_id, 31, 'fill_blank',
+'Fibres from some (31) ___ during washing',
+'clothing',
+'{"box":true,"box_title":"Microplastics","box_subtitle":"Where microplastics come from"}', 1);
+
+INSERT INTO questions (section_id, question_number, question_type, question_text, correct_answer, options, points)
+VALUES (s4_id, 32, 'fill_blank',
+'They cause injuries to the (32) ___ of wildlife and affect their digestive systems',
+'mouths',
+'{"box":true,"box_subtitle":"Effects of microplastics"}', 1);
+
+INSERT INTO questions (section_id, question_number, question_type, question_text, correct_answer, options, points)
+VALUES (s4_id, 33, 'fill_blank',
+'They enter the food chain, e.g., in bottled and tap water, (33) ___ and seafood',
+'salt',
+'{"box":true}', 1);
+
+INSERT INTO questions (section_id, question_number, question_type, question_text, correct_answer, options, points)
+VALUES (s4_id, 34, 'fill_blank',
+'They are already banned in skin cleaning products and (34) ___ in some countries',
+'toothpaste',
+'{"box":true}', 1);
+
+INSERT INTO questions (section_id, question_number, question_type, question_text, correct_answer, options, points)
+VALUES (s4_id, 35, 'fill_blank',
+'Microplastics enter the soil through the air, rain and (35) ___',
+'fertilisers/fertilizers',
+'{"box":true}', 1);
+
+INSERT INTO questions (section_id, question_number, question_type, question_text, correct_answer, options, points)
+VALUES (s4_id, 36, 'fill_blank',
+'Earthworms are important because they add (36) ___ to the soil',
+'nutrients',
+'{"box":true,"box_subtitle":"Microplastics in the soil – a study by Anglia Ruskin University"}', 1);
+
+INSERT INTO questions (section_id, question_number, question_type, question_text, correct_answer, options, points)
+VALUES (s4_id, 37, 'fill_blank',
+'The study aimed to find whether microplastics in earthworms affect the (37) ___ of plants',
+'growth',
+'{"box":true}', 1);
+
+INSERT INTO questions (section_id, question_number, question_type, question_text, correct_answer, options, points)
+VALUES (s4_id, 38, 'fill_blank',
+'Microplastics caused: (38) ___ loss in earthworms',
+'weight',
+'{"box":true}', 1);
+
+INSERT INTO questions (section_id, question_number, question_type, question_text, correct_answer, options, points)
+VALUES (s4_id, 39, 'fill_blank',
+'A rise in the level of (39) ___ in the soil',
+'acid',
+'{"box":true}', 1);
+
+INSERT INTO questions (section_id, question_number, question_type, question_text, correct_answer, options, points)
+VALUES (s4_id, 40, 'fill_blank',
+'Changes to soil damage both ecosystems and (40) ___',
+'society',
+'{"box":true}', 1);
+
+END $$;
+
