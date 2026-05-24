@@ -6,7 +6,7 @@
 insert into tests (id, title, type, book_number, test_number, difficulty)
 values (
   '11111111-0001-0001-0001-000000000001',
-  'Listening Test 1',
+  'Cambridge IELTS 1 — Test 1',
   'listening', 1, 1, 'medium'
 ) on conflict (id) do nothing;
  
@@ -437,7 +437,7 @@ BEGIN
 
 -- Test
 INSERT INTO tests (title, type, book_number, test_number, difficulty)
-VALUES ('Listening Test 2', 'listening', 1, 2, 'medium')
+VALUES ('Cambridge IELTS 1 — Test 2', 'listening', 1, 2, 'medium')
 RETURNING id INTO t2_id;
 
 -- Sections
@@ -708,7 +708,7 @@ DECLARE
 BEGIN
 
 INSERT INTO tests (title, type, book_number, test_number, difficulty)
-VALUES ('Listening Test 3', 'listening', 1, 3, 'medium')
+VALUES ('Cambridge IELTS 1 — Test 3', 'listening', 1, 3, 'medium')
 RETURNING id INTO t3_id;
 
 INSERT INTO test_sections (test_id, section_number, title, instructions, audio_url)
@@ -1002,7 +1002,7 @@ DECLARE
 BEGIN
 
 INSERT INTO tests (title, type, book_number, test_number, difficulty)
-VALUES ('Listening Test 4', 'listening', 1, 4, 'medium')
+VALUES ('Cambridge IELTS 1 — Test 4', 'listening', 1, 4, 'medium')
 RETURNING id INTO t4_id;
 
 INSERT INTO test_sections (test_id, section_number, title, instructions, audio_url)
@@ -1306,7 +1306,7 @@ DECLARE
 BEGIN
 
 INSERT INTO tests (title, type, book_number, test_number, difficulty)
-VALUES ('Listening Test 5', 'listening', 2, 1, 'medium')
+VALUES ('Cambridge IELTS 19 — Test 1', 'listening', 2, 1, 'medium')
 RETURNING id INTO t5_id;
 
 INSERT INTO test_sections (test_id, section_number, title, instructions, audio_url)
@@ -1604,7 +1604,7 @@ DECLARE
 BEGIN
 
 INSERT INTO tests (title, type, book_number, test_number, difficulty)
-VALUES ('Listening Test 6', 'listening', 2, 2, 'medium')
+VALUES ('Cambridge IELTS 19 — Test 2', 'listening', 2, 2, 'medium')
 RETURNING id INTO t6_id;
 
 INSERT INTO test_sections (test_id, section_number, title, instructions, audio_url)
@@ -1905,7 +1905,7 @@ DECLARE
 BEGIN
 
 INSERT INTO tests (title, type, book_number, test_number, difficulty)
-VALUES ('Listening Test 7', 'listening', 2, 3, 'medium')
+VALUES ('Cambridge IELTS 19 — Test 3', 'listening', 2, 3, 'medium')
 RETURNING id INTO t7_id;
 
 INSERT INTO test_sections (test_id, section_number, title, instructions, audio_url)
