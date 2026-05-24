@@ -2726,3 +2726,245 @@ VALUES (s4_id, 40, 'fill_blank', 'An increase in (40) ___ as a contributor to GD
 
 END $$;
 
+-- ============================================================
+-- LISTENING TEST 10 (Cambridge IELTS 18 Academic — Test 2)
+-- ============================================================
+
+DO $$
+DECLARE
+  t10_id uuid;
+  s1_id uuid;
+  s2_id uuid;
+  s3_id uuid;
+  s4_id uuid;
+BEGIN
+
+INSERT INTO tests (title, type, book_number, test_number, difficulty)
+VALUES ('Cambridge IELTS 18 — Test 2', 'listening', 3, 2, 'medium')
+RETURNING id INTO t10_id;
+
+INSERT INTO test_sections (test_id, section_number, title, instructions, audio_url)
+VALUES (t10_id, 1, 'Part 1 — Questions 1-10',
+'Questions 1-5: Complete the notes. Write ONE WORD ONLY for each answer. Questions 6-10: Complete the table. Write ONE WORD AND/OR A NUMBER for each answer.',
+'https://vqyyoxfsitsdmmxecqka.supabase.co/storage/v1/object/public/test-audio/C 18 test2-part1.mp3')
+RETURNING id INTO s1_id;
+
+INSERT INTO test_sections (test_id, section_number, title, instructions, audio_url)
+VALUES (t10_id, 2, 'Part 2 — Questions 11-20',
+'Questions 11-12: Choose TWO letters, A-E. Questions 13-14: Choose TWO letters, A-E. Questions 15-20: Label the map. Write the correct letter, A-I.',
+'https://vqyyoxfsitsdmmxecqka.supabase.co/storage/v1/object/public/test-audio/C 18 test2-part2.mp3')
+RETURNING id INTO s2_id;
+
+INSERT INTO test_sections (test_id, section_number, title, instructions, audio_url)
+VALUES (t10_id, 3, 'Part 3 — Questions 21-30',
+'Questions 21-24: Choose the correct letter, A, B or C. Questions 25-26: Choose TWO letters, A-E. Questions 27-30: Choose FOUR answers from the box A-F.',
+'https://vqyyoxfsitsdmmxecqka.supabase.co/storage/v1/object/public/test-audio/C 18 test2- part3.mp3')
+RETURNING id INTO s3_id;
+
+INSERT INTO test_sections (test_id, section_number, title, instructions, audio_url)
+VALUES (t10_id, 4, 'Part 4 — Questions 31-40',
+'Complete the notes below. Write ONE WORD ONLY for each answer.',
+'https://vqyyoxfsitsdmmxecqka.supabase.co/storage/v1/object/public/test-audio/C 18 test2- part4.mp3')
+RETURNING id INTO s4_id;
+
+-- ============================================================
+-- PART 1 — Q1-5 (Working at Milo's Restaurants notes box)
+-- ============================================================
+
+INSERT INTO questions (section_id, question_number, question_type, question_text, correct_answer, options, points)
+VALUES (s1_id, 1, 'fill_blank', '(1) ___ provided for all staff', 'training',
+'{"box":true,"box_title":"Working at Milo''s Restaurants","box_subtitle":"Benefits"}', 1);
+
+INSERT INTO questions (section_id, question_number, question_type, question_text, correct_answer, options, points)
+VALUES (s1_id, 2, 'fill_blank', '(2) ___ during weekdays at all Milo''s Restaurants', 'discount',
+'{"box":true}', 1);
+
+INSERT INTO questions (section_id, question_number, question_type, question_text, correct_answer, options, points)
+VALUES (s1_id, 3, 'fill_blank', '(3) ___ provided after midnight', 'taxi',
+'{"box":true}', 1);
+
+INSERT INTO questions (section_id, question_number, question_type, question_text, correct_answer, options, points)
+VALUES (s1_id, 4, 'fill_blank', 'Must care about maintaining a high standard of (4) ___', 'service',
+'{"box":true,"box_subtitle":"Person specification"}', 1);
+
+INSERT INTO questions (section_id, question_number, question_type, question_text, correct_answer, options, points)
+VALUES (s1_id, 5, 'fill_blank', 'Must have a qualification in (5) ___', 'English',
+'{"box":true}', 1);
+
+-- ============================================================
+-- PART 1 — Q6-10 (jobs table)
+-- ============================================================
+
+INSERT INTO questions (section_id, question_number, question_type, question_text, correct_answer, options, points)
+VALUES (s1_id, 6, 'fill_blank', 'Location: (6) ___ Street — Breakfast supervisor', 'Wivenhoe',
+'{"table":true,"table_title":"","col_left":"Location","col_middle":"Job title","col_middle2":"Responsibilities include","col_right":"Pay and conditions","row_left_prefix":"","row_left_suffix":"Street","row_middle":"Breakfast supervisor","row_middle2":"Checking portions, etc. are correct / Making sure (7) is clean","row_right":"Starting salary 8 £ per hour / Start work at 5.30 a.m."}', 1);
+
+INSERT INTO questions (section_id, question_number, question_type, question_text, correct_answer, options, points)
+VALUES (s1_id, 7, 'fill_blank', 'Making sure (7) ___ is clean', 'equipment',
+'{"table":true}', 1);
+
+INSERT INTO questions (section_id, question_number, question_type, question_text, correct_answer, options, points)
+VALUES (s1_id, 8, 'fill_blank', 'Starting salary (8) £ ___ per hour', '9.75',
+'{"table":true}', 1);
+
+INSERT INTO questions (section_id, question_number, question_type, question_text, correct_answer, options, points)
+VALUES (s1_id, 9, 'fill_blank', 'City Road — Junior chef: Maintaining stock and organising (9) ___', 'deliveries',
+'{"table":true,"row_left":"City Road","row_middle":"Junior chef","row_middle2":"Supporting senior chefs / Maintaining stock and organising (9)","row_right":"Annual salary £23,000 / No work on a (10) once a month"}', 1);
+
+INSERT INTO questions (section_id, question_number, question_type, question_text, correct_answer, options, points)
+VALUES (s1_id, 10, 'fill_blank', 'No work on a (10) ___ once a month', 'Sunday',
+'{"table":true}', 1);
+
+-- ============================================================
+-- PART 2 — Q11-12 (Choose TWO from A-E)
+-- ============================================================
+
+INSERT INTO questions (section_id, question_number, question_type, question_text, correct_answer, options, points)
+VALUES (s2_id, 11, 'multiple_choice',
+'What are the TWO main reasons why this site has been chosen for the housing development?',
+'B',
+'{"A":"It has suitable geographical features.","B":"There is easy access to local facilities.","C":"It has good connections with the airport.","D":"The land is of little agricultural value.","E":"It will be convenient for workers.","multi":true,"select_count":2,"linked_pair":12}', 1);
+
+INSERT INTO questions (section_id, question_number, question_type, question_text, correct_answer, options, points)
+VALUES (s2_id, 12, 'multiple_choice', 'TWO main reasons — second answer', 'E',
+'{"multi":true,"select_count":2,"linked_pair":11,"hidden_label":true}', 1);
+
+-- ============================================================
+-- PART 2 — Q13-14 (Choose TWO from A-E)
+-- ============================================================
+
+INSERT INTO questions (section_id, question_number, question_type, question_text, correct_answer, options, points)
+VALUES (s2_id, 13, 'multiple_choice',
+'Which TWO aspects of the planned housing development have people given positive feedback about?',
+'B',
+'{"A":"the facilities for cyclists","B":"the impact on the environment","C":"the encouragement of good relations between residents","D":"the low cost of all the accommodation","E":"the rural location","multi":true,"select_count":2,"linked_pair":14}', 1);
+
+INSERT INTO questions (section_id, question_number, question_type, question_text, correct_answer, options, points)
+VALUES (s2_id, 14, 'multiple_choice', 'TWO positive aspects — second answer', 'C',
+'{"multi":true,"select_count":2,"linked_pair":13,"hidden_label":true}', 1);
+
+-- ============================================================
+-- PART 2 — Q15-20 (map matching A-I)
+-- ============================================================
+
+INSERT INTO questions (section_id, question_number, question_type, question_text, correct_answer, options, points, image_url)
+VALUES (s2_id, 15, 'fill_blank', 'School', 'G',
+'{"map_matching":true,"map_title":"Housing Development Map","letters":"A,B,C,D,E,F,G,H,I","hint":"Write the correct letter A-I"}',
+1, 'https://vqyyoxfsitsdmmxecqka.supabase.co/storage/v1/object/public/question-images/C18 Q15-20.png');
+
+INSERT INTO questions (section_id, question_number, question_type, question_text, correct_answer, options, points)
+VALUES (s2_id, 16, 'fill_blank', 'Sports centre', 'C', '{"map_matching":true}', 1);
+
+INSERT INTO questions (section_id, question_number, question_type, question_text, correct_answer, options, points)
+VALUES (s2_id, 17, 'fill_blank', 'Clinic', 'D', '{"map_matching":true}', 1);
+
+INSERT INTO questions (section_id, question_number, question_type, question_text, correct_answer, options, points)
+VALUES (s2_id, 18, 'fill_blank', 'Community centre', 'B', '{"map_matching":true}', 1);
+
+INSERT INTO questions (section_id, question_number, question_type, question_text, correct_answer, options, points)
+VALUES (s2_id, 19, 'fill_blank', 'Supermarket', 'H', '{"map_matching":true}', 1);
+
+INSERT INTO questions (section_id, question_number, question_type, question_text, correct_answer, options, points)
+VALUES (s2_id, 20, 'fill_blank', 'Playground', 'A', '{"map_matching":true}', 1);
+
+-- ============================================================
+-- PART 3 — Q21-24 (MC A/B/C — Laki eruption)
+-- ============================================================
+
+INSERT INTO questions (section_id, question_number, question_type, question_text, correct_answer, options, points)
+VALUES (s3_id, 21, 'multiple_choice',
+'Why do the students think the Laki eruption of 1783 is so important?',
+'C', '{"A":"It was the most severe eruption in modern times.","B":"It led to the formal study of volcanoes.","C":"It had a profound effect on society."}', 1);
+
+INSERT INTO questions (section_id, question_number, question_type, question_text, correct_answer, options, points)
+VALUES (s3_id, 22, 'multiple_choice',
+'What surprised Adam about observations made at the time?',
+'A', '{"A":"the number of places producing them","B":"the contradictions in them","C":"the lack of scientific data to support them"}', 1);
+
+INSERT INTO questions (section_id, question_number, question_type, question_text, correct_answer, options, points)
+VALUES (s3_id, 23, 'multiple_choice',
+'According to Michelle, what did the contemporary sources say about the Laki haze?',
+'B', '{"A":"People thought it was similar to ordinary fog.","B":"It was associated with health issues.","C":"It completely blocked out the sun for weeks."}', 1);
+
+INSERT INTO questions (section_id, question_number, question_type, question_text, correct_answer, options, points)
+VALUES (s3_id, 24, 'multiple_choice',
+'Adam corrects Michelle when she claims that Benjamin Franklin',
+'B', '{"A":"came to the wrong conclusion about the cause of the haze.","B":"was the first to identify the reason for the haze.","C":"supported the opinions of other observers about the haze."}', 1);
+
+-- ============================================================
+-- PART 3 — Q25-26 (Choose TWO from A-E)
+-- ============================================================
+
+INSERT INTO questions (section_id, question_number, question_type, question_text, correct_answer, options, points)
+VALUES (s3_id, 25, 'multiple_choice',
+'Which TWO issues following the Laki eruption surprised the students?',
+'A',
+'{"A":"how widespread the effects were","B":"how long-lasting the effects were","C":"the number of deaths it caused","D":"the speed at which the volcanic ash cloud spread","E":"how people ignored the warning signs","multi":true,"select_count":2,"linked_pair":26}', 1);
+
+INSERT INTO questions (section_id, question_number, question_type, question_text, correct_answer, options, points)
+VALUES (s3_id, 26, 'multiple_choice', 'TWO surprising issues — second answer', 'B',
+'{"multi":true,"select_count":2,"linked_pair":25,"hidden_label":true}', 1);
+
+-- ============================================================
+-- PART 3 — Q27-30 (matching pool FOUR from A-F — countries)
+-- ============================================================
+
+INSERT INTO questions (section_id, question_number, question_type, question_text, correct_answer, options, points)
+VALUES (s3_id, 27, 'multiple_choice', 'Iceland', 'D',
+'{"matching_pool":true,"pool_title":"Comments","pool":{"A":"This country suffered the most severe loss of life.","B":"The impact on agriculture was predictable.","C":"There was a significant increase in deaths of young people.","D":"Animals suffered from a sickness.","E":"This country saw the highest rise in food prices in the world.","F":"It caused a particularly harsh winter."},"pool_instruction":"Choose FOUR answers from the box A-F","pool_intro":"What comment do the students make about the impact of the Laki eruption on the following countries?","select_count":4}', 1);
+
+INSERT INTO questions (section_id, question_number, question_type, question_text, correct_answer, options, points)
+VALUES (s3_id, 28, 'multiple_choice', 'Egypt', 'A', '{"matching_pool":true}', 1);
+
+INSERT INTO questions (section_id, question_number, question_type, question_text, correct_answer, options, points)
+VALUES (s3_id, 29, 'multiple_choice', 'UK', 'C', '{"matching_pool":true}', 1);
+
+INSERT INTO questions (section_id, question_number, question_type, question_text, correct_answer, options, points)
+VALUES (s3_id, 30, 'multiple_choice', 'USA', 'F', '{"matching_pool":true}', 1);
+
+-- ============================================================
+-- PART 4 — Q31-40 (Pockets notes box)
+-- ============================================================
+
+INSERT INTO questions (section_id, question_number, question_type, question_text, correct_answer, options, points)
+VALUES (s4_id, 31, 'fill_blank', 'They are (31) ___ but can be overlooked by consumers and designers', 'convenient',
+'{"box":true,"box_title":"Pockets","box_subtitle":"Reason for choice of subject"}', 1);
+
+INSERT INTO questions (section_id, question_number, question_type, question_text, correct_answer, options, points)
+VALUES (s4_id, 32, 'fill_blank', 'Men started to wear (32) ___ in the 18th century', 'suits',
+'{"box":true,"box_subtitle":"Pockets in men''s clothes"}', 1);
+
+INSERT INTO questions (section_id, question_number, question_type, question_text, correct_answer, options, points)
+VALUES (s4_id, 33, 'fill_blank', 'A (33) ___ sewed pockets into the lining of the garments', 'tailor',
+'{"box":true}', 1);
+
+INSERT INTO questions (section_id, question_number, question_type, question_text, correct_answer, options, points)
+VALUES (s4_id, 34, 'fill_blank', 'Bigger pockets for men who belonged to a certain type of (34) ___', 'profession',
+'{"box":true}', 1);
+
+INSERT INTO questions (section_id, question_number, question_type, question_text, correct_answer, options, points)
+VALUES (s4_id, 35, 'fill_blank', 'Women''s pockets were less (35) ___ than men''s', 'visible',
+'{"box":true,"box_subtitle":"Pockets in women''s clothes"}', 1);
+
+INSERT INTO questions (section_id, question_number, question_type, question_text, correct_answer, options, points)
+VALUES (s4_id, 36, 'fill_blank', 'Pockets were produced in pairs using (36) ___ to link them together', 'string(s)',
+'{"box":true}', 1);
+
+INSERT INTO questions (section_id, question_number, question_type, question_text, correct_answer, options, points)
+VALUES (s4_id, 37, 'fill_blank', 'Pockets hung from the women''s (37) ___ under skirts and petticoats', 'waist(s)',
+'{"box":true}', 1);
+
+INSERT INTO questions (section_id, question_number, question_type, question_text, correct_answer, options, points)
+VALUES (s4_id, 38, 'fill_blank', 'Items such as (38) ___ could be reached through a gap in the material', 'perfume',
+'{"box":true}', 1);
+
+INSERT INTO questions (section_id, question_number, question_type, question_text, correct_answer, options, points)
+VALUES (s4_id, 39, 'fill_blank', 'Hidden pockets had a negative effect on the (39) ___ of women', 'image',
+'{"box":true}', 1);
+
+INSERT INTO questions (section_id, question_number, question_type, question_text, correct_answer, options, points)
+VALUES (s4_id, 40, 'fill_blank', 'Before women carried a (40) ___', 'handbag',
+'{"box":true}', 1);
+
+END $$;
+
