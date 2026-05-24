@@ -779,6 +779,147 @@ function TableCard({
 }) {
   const firstOpts = (getOptionsObj(questions[0]) ?? {}) as Record<string, unknown>
   const tableTitle = firstOpts.table_title as string | undefined
+  const hasFourColumns = typeof firstOpts.col4 === 'string'
+
+  if (hasFourColumns) {
+    type FourColKey = 'col1' | 'col2' | 'col3' | 'col4'
+    type FourColCell = {
+      staticText?: string
+      question?: QuestionWithSection
+      prefix?: string
+      suffix?: string
+    }
+    type FourColRow = Record<FourColKey, FourColCell>
+
+    const columns: FourColKey[] = ['col1', 'col2', 'col3', 'col4']
+    const headers = columns.map(col => (firstOpts[col] as string | undefined) ?? '')
+    const rowMap = new Map<number, FourColRow>()
+
+    const ensureRow = (rowNumber: number) => {
+      const existing = rowMap.get(rowNumber)
+      if (existing) return existing
+
+      const row: FourColRow = {
+        col1: {},
+        col2: {},
+        col3: {},
+        col4: {},
+      }
+      rowMap.set(rowNumber, row)
+      return row
+    }
+
+    for (const q of questions) {
+      const opts = (getOptionsObj(q) ?? {}) as Record<string, unknown>
+      const rowNumber = typeof opts.row === 'number' ? opts.row : 1
+      const row = ensureRow(rowNumber)
+      const rowStatic = (opts.row_static ?? {}) as Partial<Record<FourColKey, string>>
+
+      for (const col of columns) {
+        if (rowStatic[col] !== undefined) row[col].staticText = rowStatic[col]
+      }
+
+      const cellKey = typeof opts.cell === 'string' ? opts.cell : undefined
+      const colKey = cellKey?.match(/^(col[1-4])/)?.[1] as FourColKey | undefined
+      if (colKey) {
+        row[colKey].question = q
+        row[colKey].prefix = opts.cell_prefix as string | undefined
+        row[colKey].suffix = opts.cell_suffix as string | undefined
+      }
+    }
+
+    const rows = Array.from(rowMap.entries())
+      .sort(([a], [b]) => a - b)
+      .map(([, row]) => row)
+
+    function renderInput(q: QuestionWithSection) {
+      return (
+        <input
+          type="text"
+          value={answers[q.id] ?? ''}
+          onChange={e => onAnswer(q.id, e.target.value)}
+          className="mx-1 inline-block w-24 border-b-2 border-gray-500 dark:border-gray-400 bg-transparent focus:outline-none focus:border-amber-500 dark:focus:border-amber-400 text-sm text-gray-900 dark:text-white placeholder-gray-400 text-center transition-colors pb-0.5 align-baseline"
+          placeholder="..."
+        />
+      )
+    }
+
+    function renderFourColCell(cell: FourColCell) {
+      const q = cell.question
+      const text = cell.staticText ?? ''
+
+      if (!q) {
+        return (
+          <div className="px-3 py-3 text-sm leading-7 text-gray-700 dark:text-gray-300 whitespace-pre-line">
+            {text}
+          </div>
+        )
+      }
+
+      const blankPattern = new RegExp(`\\(${q.question_number}\\)\\s*___`)
+      const match = text.match(blankPattern)
+
+      if (match?.index !== undefined) {
+        const before = text.slice(0, match.index)
+        const after = text.slice(match.index + match[0].length)
+        return (
+          <div className="px-3 py-3 text-sm leading-7 text-gray-800 dark:text-gray-200 whitespace-pre-line">
+            {before}
+            <sup className="text-[10px] font-bold text-teal-600 dark:text-teal-400">
+              ({q.question_number})
+            </sup>
+            {renderInput(q)}
+            {after}
+          </div>
+        )
+      }
+
+      return (
+        <div className="px-3 py-3 flex items-baseline flex-wrap gap-x-1 text-sm text-gray-800 dark:text-gray-200 leading-7">
+          <sup className="text-[10px] font-bold text-teal-600 dark:text-teal-400 shrink-0">
+            ({q.question_number})
+          </sup>
+          {cell.prefix && <span>{cell.prefix}</span>}
+          {renderInput(q)}
+          {cell.suffix && <span>{cell.suffix}</span>}
+        </div>
+      )
+    }
+
+    return (
+      <div className="border-2 border-gray-400 dark:border-gray-500 rounded-sm overflow-x-auto">
+        <div className="min-w-[760px]">
+          {tableTitle && (
+            <div className="px-5 py-3 border-b-2 border-gray-400 dark:border-gray-500 text-center">
+              <span className="text-xs font-black uppercase tracking-widest text-gray-800 dark:text-gray-200">
+                {tableTitle}
+              </span>
+            </div>
+          )}
+          <div className="grid grid-cols-4 divide-x divide-gray-400 dark:divide-gray-500 bg-gray-100 dark:bg-gray-800/60 border-b border-gray-400 dark:border-gray-500">
+            {headers.map((header, index) => (
+              <div
+                key={`${header}-${index}`}
+                className="px-3 py-2 text-[10px] font-black uppercase tracking-widest text-gray-600 dark:text-gray-400"
+              >
+                {header}
+              </div>
+            ))}
+          </div>
+          <div className="divide-y divide-gray-200 dark:divide-gray-700">
+            {rows.map((row, rowIndex) => (
+              <div key={rowIndex} className="grid grid-cols-4 divide-x divide-gray-200 dark:divide-gray-700">
+                {columns.map(col => (
+                  <div key={col}>{renderFourColCell(row[col])}</div>
+                ))}
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+    )
+  }
+
   const colLeft = firstOpts.col_left as string | undefined
   const colRight = firstOpts.col_right as string | undefined
 

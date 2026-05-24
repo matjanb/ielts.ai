@@ -2797,23 +2797,23 @@ VALUES (s1_id, 5, 'fill_blank', 'Must have a qualification in (5) ___', 'English
 
 INSERT INTO questions (section_id, question_number, question_type, question_text, correct_answer, options, points)
 VALUES (s1_id, 6, 'fill_blank', 'Location: (6) ___ Street — Breakfast supervisor', 'Wivenhoe',
-'{"table":true,"table_title":"","col_left":"Location","col_middle":"Job title","col_middle2":"Responsibilities include","col_right":"Pay and conditions","row_left_prefix":"","row_left_suffix":"Street","row_middle":"Breakfast supervisor","row_middle2":"Checking portions, etc. are correct / Making sure (7) is clean","row_right":"Starting salary 8 £ per hour / Start work at 5.30 a.m."}', 1);
+'{"table":true,"table_title":"","col1":"Location","col2":"Job title","col3":"Responsibilities include","col4":"Pay and conditions","row":1,"cell":"col1","cell_suffix":" Street","row_static":{"col2":"Breakfast supervisor","col3":"Checking portions, etc. are correct\nMaking sure (7) ___ is clean","col4":"Starting salary 8 £ (8) ___ per hour\nStart work at 5.30 a.m."}}', 1);
 
 INSERT INTO questions (section_id, question_number, question_type, question_text, correct_answer, options, points)
 VALUES (s1_id, 7, 'fill_blank', 'Making sure (7) ___ is clean', 'equipment',
-'{"table":true}', 1);
+'{"table":true,"row":1,"cell":"col3_part2"}', 1);
 
 INSERT INTO questions (section_id, question_number, question_type, question_text, correct_answer, options, points)
 VALUES (s1_id, 8, 'fill_blank', 'Starting salary (8) £ ___ per hour', '9.75',
-'{"table":true}', 1);
+'{"table":true,"row":1,"cell":"col4_part1"}', 1);
 
 INSERT INTO questions (section_id, question_number, question_type, question_text, correct_answer, options, points)
 VALUES (s1_id, 9, 'fill_blank', 'City Road — Junior chef: Maintaining stock and organising (9) ___', 'deliveries',
-'{"table":true,"row_left":"City Road","row_middle":"Junior chef","row_middle2":"Supporting senior chefs / Maintaining stock and organising (9)","row_right":"Annual salary £23,000 / No work on a (10) once a month"}', 1);
+'{"table":true,"row":2,"cell":"col3_part2","row_static":{"col1":"City Road","col2":"Junior chef","col3":"Supporting senior chefs\nMaintaining stock and organising (9) ___","col4":"Annual salary £23,000\nNo work on a (10) ___ once a month"}}', 1);
 
 INSERT INTO questions (section_id, question_number, question_type, question_text, correct_answer, options, points)
 VALUES (s1_id, 10, 'fill_blank', 'No work on a (10) ___ once a month', 'Sunday',
-'{"table":true}', 1);
+'{"table":true,"row":2,"cell":"col4_part2"}', 1);
 
 -- ============================================================
 -- PART 2 — Q11-12 (Choose TWO from A-E)
@@ -2967,4 +2967,3 @@ VALUES (s4_id, 40, 'fill_blank', 'Before women carried a (40) ___', 'handbag',
 '{"box":true}', 1);
 
 END $$;
-
