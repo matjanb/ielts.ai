@@ -19,53 +19,46 @@ const SPEEDS = [0.75, 1, 1.25, 1.5]
 
 function AudioPlayer({
   audioUrl,
-  autoPlay = false,
+  externalRef,
 }: {
   audioUrl: string | null
-  autoPlay?: boolean
+  externalRef?: React.RefObject<HTMLAudioElement | null>
 }) {
-  const audioRef = useRef<HTMLAudioElement | null>(null)
+  const internalRef = useRef<HTMLAudioElement | null>(null)
+  const audioRef = (externalRef ?? internalRef) as React.RefObject<HTMLAudioElement>
   const [playing, setPlaying] = useState(false)
   const [progress, setProgress] = useState(0)
   const [duration, setDuration] = useState(0)
   const [speed, setSpeed] = useState(1)
-  const [autoPlayBlocked, setAutoPlayBlocked] = useState(false)
 
-  // Reset state when audio source changes
+  // Reset display state when audio URL changes
   useEffect(() => {
     setPlaying(false)
     setProgress(0)
     setDuration(0)
-    setAutoPlayBlocked(false)
   }, [audioUrl])
 
-  // Wire up audio element events
+  // Wire up audio element events — re-attach when URL changes
   useEffect(() => {
     const el = audioRef.current
     if (!el) return
     const onTime = () => setProgress(el.currentTime)
     const onDur = () => setDuration(el.duration)
     const onEnd = () => setPlaying(false)
+    const onPlay = () => setPlaying(true)
+    const onPause = () => setPlaying(false)
     el.addEventListener('timeupdate', onTime)
     el.addEventListener('loadedmetadata', onDur)
     el.addEventListener('ended', onEnd)
+    el.addEventListener('play', onPlay)
+    el.addEventListener('pause', onPause)
     return () => {
       el.removeEventListener('timeupdate', onTime)
       el.removeEventListener('loadedmetadata', onDur)
       el.removeEventListener('ended', onEnd)
+      el.removeEventListener('play', onPlay)
+      el.removeEventListener('pause', onPause)
     }
-  }, [audioUrl])
-
-  // Attempt auto-play when audio changes (if autoPlay is enabled)
-  useEffect(() => {
-    if (!autoPlay || !audioUrl) return
-    const el = audioRef.current
-    if (!el) return
-    console.log('[AudioPlayer] loading section audio:', audioUrl)
-    el.load()
-    el.play()
-      .then(() => { setPlaying(true); setAutoPlayBlocked(false) })
-      .catch(() => { setPlaying(false); setAutoPlayBlocked(true) })
   }, [audioUrl]) // eslint-disable-line react-hooks/exhaustive-deps
 
   function togglePlay() {
@@ -73,11 +66,8 @@ function AudioPlayer({
     if (!el) return
     if (playing) {
       el.pause()
-      setPlaying(false)
     } else {
-      el.play()
-        .then(() => { setPlaying(true); setAutoPlayBlocked(false) })
-        .catch(() => {})
+      el.play().catch(() => {})
     }
   }
 
@@ -110,41 +100,31 @@ function AudioPlayer({
 
   return (
     <div className="flex items-center gap-3 flex-1 min-w-0">
-      {/* eslint-disable-next-line jsx-a11y/media-has-caption */}
-      <audio key={audioUrl} ref={audioRef} src={audioUrl} preload="auto" />
-
-      {autoPlayBlocked ? (
-        /* Autoplay was blocked — show a prominent CTA in place of the normal play button */
-        <button
-          onClick={togglePlay}
-          className="shrink-0 flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-amber-500 hover:bg-amber-400 text-white text-xs font-semibold animate-pulse transition-colors"
-        >
-          <Play size={12} strokeWidth={2.5} />
-          Click to start audio
-        </button>
-      ) : (
-        <button
-          onClick={togglePlay}
-          className="shrink-0 w-8 h-8 rounded-xl bg-amber-500 hover:bg-amber-400 text-white flex items-center justify-center transition-colors"
-        >
-          {playing ? <Pause size={13} strokeWidth={2} /> : <Play size={13} strokeWidth={2} />}
-        </button>
+      {/* Only render <audio> when we own the element (no external ref) */}
+      {!externalRef && (
+        // eslint-disable-next-line jsx-a11y/media-has-caption
+        <audio ref={internalRef} src={audioUrl} preload="auto" />
       )}
 
-      {!autoPlayBlocked && (
-        <div className="flex-1 min-w-0 flex items-center gap-2">
-          <span className="text-[10px] text-gray-400 tabular-nums shrink-0 w-8 text-right">{fmt(progress)}</span>
-          <input
-            type="range"
-            min={0}
-            max={duration || 1}
-            value={progress}
-            onChange={seek}
-            className="flex-1 h-1 accent-amber-500 cursor-pointer min-w-0"
-          />
-          <span className="text-[10px] text-gray-400 tabular-nums shrink-0 w-8">{fmt(duration)}</span>
-        </div>
-      )}
+      <button
+        onClick={togglePlay}
+        className="shrink-0 w-8 h-8 rounded-xl bg-amber-500 hover:bg-amber-400 text-white flex items-center justify-center transition-colors"
+      >
+        {playing ? <Pause size={13} strokeWidth={2} /> : <Play size={13} strokeWidth={2} />}
+      </button>
+
+      <div className="flex-1 min-w-0 flex items-center gap-2">
+        <span className="text-[10px] text-gray-400 tabular-nums shrink-0 w-8 text-right">{fmt(progress)}</span>
+        <input
+          type="range"
+          min={0}
+          max={duration || 1}
+          value={progress}
+          onChange={seek}
+          className="flex-1 h-1 accent-amber-500 cursor-pointer min-w-0"
+        />
+        <span className="text-[10px] text-gray-400 tabular-nums shrink-0 w-8">{fmt(duration)}</span>
+      </div>
 
       <button
         onClick={cycleSpeed}
@@ -1498,14 +1478,12 @@ function StartScreen({
   test,
   sections,
   questionCount,
-  starting,
   onStart,
   t,
 }: {
   test: IeltsTest
   sections: TestSection[]
   questionCount: number
-  starting: boolean
   onStart: () => void
   t: (k: string) => string
 }) {
@@ -1536,11 +1514,9 @@ function StartScreen({
         </div>
         <button
           onClick={onStart}
-          disabled={starting}
-          className="w-full py-3.5 rounded-2xl font-semibold text-sm bg-amber-500 hover:bg-amber-400 text-white transition-colors disabled:opacity-70 flex items-center justify-center gap-2"
+          className="w-full py-3.5 rounded-2xl font-semibold text-sm bg-amber-500 hover:bg-amber-400 text-white transition-colors flex items-center justify-center gap-2"
         >
-          {starting && <Loader2 size={15} className="animate-spin" />}
-          {starting ? 'Starting…' : t('listening.startTest')}
+          {t('listening.startTest')}
         </button>
       </div>
     </div>
@@ -1561,13 +1537,13 @@ export default function ListeningTestPage() {
   const [answers, setAnswers] = useState<Record<string, string>>({})
   const [currentSectionIdx, setCurrentSectionIdx] = useState(0)
   const [started, setStarted] = useState(false)
-  const [starting, setStarting] = useState(false)
   const [submitting, setSubmitting] = useState(false)
   const [attemptId, setAttemptId] = useState<string | null>(null)
   const [loading, setLoading] = useState(true)
   const [loadError, setLoadError] = useState<string | null>(null)
   const [sectionToast, setSectionToast] = useState<string | null>(null)
   const toastTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const audioRef = useRef<HTMLAudioElement | null>(null)
 
   // Load test data on mount
   useEffect(() => {
@@ -1645,24 +1621,26 @@ export default function ListeningTestPage() {
     }
   }, [currentSectionIdx, started]) // eslint-disable-line react-hooks/exhaustive-deps
 
-  // Create attempt and start test
-  async function handleStart() {
-    setStarting(true)
-    try {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const supabase = createClient() as any
-      const { data: { user } } = await supabase.auth.getUser()
-      if (user) {
-        const { data } = await supabase
-          .from('user_attempts')
-          .insert({ user_id: user.id, test_id: testId })
-          .select('id')
-          .single()
-        if (data?.id) setAttemptId(data.id)
-      }
-    } catch { /* attempt creation is optional */ }
-    setStarting(false)
+  // Start test — play() must be called synchronously within the user gesture
+  function handleStart() {
+    audioRef.current?.play().catch(() => {})
     setStarted(true)
+    // Fire-and-forget attempt creation (no await here — gesture context must not be blocked)
+    ;(async () => {
+      try {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const supabase = createClient() as any
+        const { data: { user } } = await supabase.auth.getUser()
+        if (user) {
+          const { data } = await supabase
+            .from('user_attempts')
+            .insert({ user_id: user.id, test_id: testId })
+            .select('id')
+            .single()
+          if (data?.id) setAttemptId(data.id)
+        }
+      } catch { /* attempt creation is optional */ }
+    })()
   }
 
   // Auto-save single answer
@@ -1775,16 +1753,22 @@ export default function ListeningTestPage() {
     )
   }
 
+  const currentSection = sections[currentSectionIdx] ?? sections[0]
+
   if (!started) {
     return (
-      <StartScreen
-        test={test}
-        sections={sections}
-        questionCount={questions.length}
-        starting={starting}
-        onStart={handleStart}
-        t={t}
-      />
+      <>
+        {/* Pre-render audio so play() can be called synchronously in handleStart */}
+        {/* eslint-disable-next-line jsx-a11y/media-has-caption */}
+        <audio ref={audioRef} src={currentSection?.audio_url ?? ''} preload="auto" style={{ display: 'none' }} />
+        <StartScreen
+          test={test}
+          sections={sections}
+          questionCount={questions.length}
+          onStart={handleStart}
+          t={t}
+        />
+      </>
     )
   }
 
@@ -1804,7 +1788,6 @@ export default function ListeningTestPage() {
     )
   }
 
-  const currentSection = sections[currentSectionIdx] ?? sections[0]
   const sectionQuestions = questions.filter(q => q.sectionNumber === currentSection?.section_number)
   const groups = groupByType(sectionQuestions)
   const answeredCount = Object.values(answers).filter(Boolean).length
@@ -1824,7 +1807,7 @@ export default function ListeningTestPage() {
 
       {/* ── Sticky top bar: audio + timer + submit ── */}
       <div className="sticky top-0 z-40 bg-white/95 dark:bg-[#08080f]/95 backdrop-blur-sm border-b border-gray-100 dark:border-gray-800 px-4 lg:px-6 py-3 flex items-center gap-4">
-        <AudioPlayer key={currentSection?.id} audioUrl={currentSection?.audio_url ?? null} autoPlay={started} />
+        <AudioPlayer externalRef={audioRef} audioUrl={currentSection?.audio_url ?? null} />
         <div className="shrink-0 flex items-center gap-3">
           <span className="hidden sm:flex items-center gap-1 text-xs text-gray-400 tabular-nums">
             <span className="text-gray-600 dark:text-gray-300 font-medium">{answeredCount}</span>
@@ -1986,7 +1969,15 @@ export default function ListeningTestPage() {
             return (
               <button
                 key={s.id}
-                onClick={() => setCurrentSectionIdx(i)}
+                onClick={() => {
+                  const sec = sections[i]
+                  if (audioRef.current && sec?.audio_url) {
+                    audioRef.current.src = sec.audio_url
+                    audioRef.current.load()
+                    audioRef.current.play().catch(() => {})
+                  }
+                  setCurrentSectionIdx(i)
+                }}
                 className={`flex-1 flex flex-col items-center py-3 px-2 border-t-2 transition-all duration-150 ${
                   active
                     ? 'border-amber-500 bg-amber-50/50 dark:bg-amber-500/8'
