@@ -2489,3 +2489,240 @@ VALUES (s4_id, 40, 'fill_blank',
 
 END $$;
 
+-- ============================================================
+-- LISTENING TEST 9 (Cambridge IELTS 18 Academic — Test 1)
+-- ============================================================
+
+DO $$
+DECLARE
+  t9_id uuid;
+  s1_id uuid;
+  s2_id uuid;
+  s3_id uuid;
+  s4_id uuid;
+BEGIN
+
+INSERT INTO tests (title, type, book_number, test_number, difficulty)
+VALUES ('Cambridge IELTS 18 — Test 1', 'listening', 3, 1, 'medium')
+RETURNING id INTO t9_id;
+
+INSERT INTO test_sections (test_id, section_number, title, instructions, audio_url)
+VALUES (t9_id, 1, 'Part 1 — Questions 1-10',
+'Complete the notes below. Write ONE WORD AND/OR A NUMBER for each answer.',
+'https://vqyyoxfsitsdmmxecqka.supabase.co/storage/v1/object/public/test-audio/test-9-section1.mp3')
+RETURNING id INTO s1_id;
+
+INSERT INTO test_sections (test_id, section_number, title, instructions, audio_url)
+VALUES (t9_id, 2, 'Part 2 — Questions 11-20',
+'Questions 11-13: Choose the correct letter, A, B or C. Questions 14-15: Choose TWO letters, A-E. Questions 16-20: Choose FIVE answers from the box A-G.',
+'https://vqyyoxfsitsdmmxecqka.supabase.co/storage/v1/object/public/test-audio/test-9-section2.mp3')
+RETURNING id INTO s2_id;
+
+INSERT INTO test_sections (test_id, section_number, title, instructions, audio_url)
+VALUES (t9_id, 3, 'Part 3 — Questions 21-30',
+'Questions 21-26: Choose the correct letter, A, B or C. Questions 27-28: Choose TWO letters, A-E. Questions 29-30: Choose TWO letters, A-E.',
+'https://vqyyoxfsitsdmmxecqka.supabase.co/storage/v1/object/public/test-audio/test-9-section3.mp3')
+RETURNING id INTO s3_id;
+
+INSERT INTO test_sections (test_id, section_number, title, instructions, audio_url)
+VALUES (t9_id, 4, 'Part 4 — Questions 31-40',
+'Complete the notes below. Write ONE WORD ONLY for each answer.',
+'https://vqyyoxfsitsdmmxecqka.supabase.co/storage/v1/object/public/test-audio/test-9-section4.mp3')
+RETURNING id INTO s4_id;
+
+-- ============================================================
+-- PART 1 — Q1-10 (Transport survey notes box)
+-- ============================================================
+
+INSERT INTO questions (section_id, question_number, question_type, question_text, correct_answer, options, points)
+VALUES (s1_id, 1, 'fill_blank', 'Postcode: (1) ___', 'DW30 7YZ',
+'{"box":true,"box_title":"Transport survey","box_subtitle":""}', 1);
+
+INSERT INTO questions (section_id, question_number, question_type, question_text, correct_answer, options, points)
+VALUES (s1_id, 2, 'fill_blank', 'Date of bus journey: (2) ___', '24(th) April',
+'{"box":true,"box_subtitle":"Travelling by bus"}', 1);
+
+INSERT INTO questions (section_id, question_number, question_type, question_text, correct_answer, options, points)
+VALUES (s1_id, 3, 'fill_blank', 'Reason for trip: shopping and visit to the (3) ___', 'dentist',
+'{"box":true}', 1);
+
+INSERT INTO questions (section_id, question_number, question_type, question_text, correct_answer, options, points)
+VALUES (s1_id, 4, 'fill_blank', 'Travelled by bus because cost of (4) ___ too high', 'parking',
+'{"box":true}', 1);
+
+INSERT INTO questions (section_id, question_number, question_type, question_text, correct_answer, options, points)
+VALUES (s1_id, 5, 'fill_blank', 'Got on bus at (5) ___ Street', 'Claxby',
+'{"box":true}', 1);
+
+INSERT INTO questions (section_id, question_number, question_type, question_text, correct_answer, options, points)
+VALUES (s1_id, 6, 'fill_blank', 'Complaints: bus today was (6) ___', 'late',
+'{"box":true}', 1);
+
+INSERT INTO questions (section_id, question_number, question_type, question_text, correct_answer, options, points)
+VALUES (s1_id, 7, 'fill_blank', 'Frequency of buses in the (7) ___', 'evening',
+'{"box":true}', 1);
+
+INSERT INTO questions (section_id, question_number, question_type, question_text, correct_answer, options, points)
+VALUES (s1_id, 8, 'fill_blank', 'Goes to the (8) ___ by car', 'supermarket',
+'{"box":true,"box_subtitle":"Travelling by car"}', 1);
+
+INSERT INTO questions (section_id, question_number, question_type, question_text, correct_answer, options, points)
+VALUES (s1_id, 9, 'fill_blank', 'Dislikes travelling by bike in the city centre because of the (9) ___', 'pollution',
+'{"box":true,"box_subtitle":"Travelling by bicycle"}', 1);
+
+INSERT INTO questions (section_id, question_number, question_type, question_text, correct_answer, options, points)
+VALUES (s1_id, 10, 'fill_blank', 'Doesn''t own a bike because of a lack of (10) ___', 'storage',
+'{"box":true}', 1);
+
+-- ============================================================
+-- PART 2 — Q11-13 (MC A/B/C — ACE volunteers)
+-- ============================================================
+
+INSERT INTO questions (section_id, question_number, question_type, question_text, correct_answer, options, points)
+VALUES (s2_id, 11, 'multiple_choice', 'Why does the speaker apologise about the seats?',
+'C', '{"A":"They are too small.","B":"There are not enough of them.","C":"Some of them are very close together."}', 1);
+
+INSERT INTO questions (section_id, question_number, question_type, question_text, correct_answer, options, points)
+VALUES (s2_id, 12, 'multiple_choice', 'What does the speaker say about the age of volunteers?',
+'A', '{"A":"The age of volunteers is less important than other factors.","B":"Young volunteers are less reliable than older ones.","C":"Most volunteers are about 60 years old."}', 1);
+
+INSERT INTO questions (section_id, question_number, question_type, question_text, correct_answer, options, points)
+VALUES (s2_id, 13, 'multiple_choice', 'What does the speaker say about training?',
+'A', '{"A":"It is continuous.","B":"It is conducted by a manager.","C":"It takes place online."}', 1);
+
+-- ============================================================
+-- PART 2 — Q14-15 (Choose TWO from A-E)
+-- ============================================================
+
+INSERT INTO questions (section_id, question_number, question_type, question_text, correct_answer, options, points)
+VALUES (s2_id, 14, 'multiple_choice',
+'Which TWO issues does the speaker ask the audience to consider before applying?',
+'B',
+'{"A":"their financial situation","B":"their level of commitment","C":"their work experience","D":"their ambition","E":"their availability","multi":true,"select_count":2,"linked_pair":15}', 1);
+
+INSERT INTO questions (section_id, question_number, question_type, question_text, correct_answer, options, points)
+VALUES (s2_id, 15, 'multiple_choice', 'Which TWO issues — second answer', 'E',
+'{"multi":true,"select_count":2,"linked_pair":14,"hidden_label":true}', 1);
+
+-- ============================================================
+-- PART 2 — Q16-20 (matching pool FIVE from A-G)
+-- ============================================================
+
+INSERT INTO questions (section_id, question_number, question_type, question_text, correct_answer, options, points)
+VALUES (s2_id, 16, 'multiple_choice', 'Fundraising', 'B',
+'{"matching_pool":true,"pool_title":"Helpful things volunteers might offer","pool":{"A":"experience on stage","B":"original, new ideas","C":"parenting skills","D":"an understanding of food and diet","E":"retail experience","F":"a good memory","G":"a good level of fitness"},"pool_instruction":"Choose FIVE answers from the box A-G","pool_intro":"What does the speaker suggest would be helpful for each area of voluntary work?","select_count":5}', 1);
+
+INSERT INTO questions (section_id, question_number, question_type, question_text, correct_answer, options, points)
+VALUES (s2_id, 17, 'multiple_choice', 'Litter collection', 'G', '{"matching_pool":true}', 1);
+
+INSERT INTO questions (section_id, question_number, question_type, question_text, correct_answer, options, points)
+VALUES (s2_id, 18, 'multiple_choice', '''Playmates''', 'D', '{"matching_pool":true}', 1);
+
+INSERT INTO questions (section_id, question_number, question_type, question_text, correct_answer, options, points)
+VALUES (s2_id, 19, 'multiple_choice', 'Story club', 'A', '{"matching_pool":true}', 1);
+
+INSERT INTO questions (section_id, question_number, question_type, question_text, correct_answer, options, points)
+VALUES (s2_id, 20, 'multiple_choice', 'First aid', 'F', '{"matching_pool":true}', 1);
+
+-- ============================================================
+-- PART 3 — Q21-26 (MC A/B/C — fashion design)
+-- ============================================================
+
+INSERT INTO questions (section_id, question_number, question_type, question_text, correct_answer, options, points)
+VALUES (s3_id, 21, 'multiple_choice', 'What problem did Chantal have at the start of the talk?',
+'A', '{"A":"Her view of the speaker was blocked.","B":"She was unable to find an empty seat.","C":"The students next to her were talking."}', 1);
+
+INSERT INTO questions (section_id, question_number, question_type, question_text, correct_answer, options, points)
+VALUES (s3_id, 22, 'multiple_choice', 'What were Hugo and Chantal surprised to hear about the job market?',
+'B', '{"A":"It has become more competitive than it used to be.","B":"There is more variety in it than they had realised.","C":"Some areas of it are more exciting than others."}', 1);
+
+INSERT INTO questions (section_id, question_number, question_type, question_text, correct_answer, options, points)
+VALUES (s3_id, 23, 'multiple_choice', 'Hugo and Chantal agree that the speaker''s message was',
+'A', '{"A":"unfair to them at times.","B":"hard for them to follow.","C":"critical of the industry."}', 1);
+
+INSERT INTO questions (section_id, question_number, question_type, question_text, correct_answer, options, points)
+VALUES (s3_id, 24, 'multiple_choice', 'What do Hugo and Chantal criticise about their school careers advice?',
+'C', '{"A":"when they received the advice","B":"how much advice was given","C":"who gave the advice"}', 1);
+
+INSERT INTO questions (section_id, question_number, question_type, question_text, correct_answer, options, points)
+VALUES (s3_id, 25, 'multiple_choice', 'When discussing their future, Hugo and Chantal disagree on',
+'B', '{"A":"which is the best career in fashion.","B":"when to choose a career in fashion.","C":"why they would like a career in fashion."}', 1);
+
+INSERT INTO questions (section_id, question_number, question_type, question_text, correct_answer, options, points)
+VALUES (s3_id, 26, 'multiple_choice', 'How does Hugo feel about being an unpaid assistant?',
+'A', '{"A":"He is realistic about the practice.","B":"He feels the practice is dishonest.","C":"He thinks others want to change the practice."}', 1);
+
+-- ============================================================
+-- PART 3 — Q27-28 (Choose TWO from A-E)
+-- ============================================================
+
+INSERT INTO questions (section_id, question_number, question_type, question_text, correct_answer, options, points)
+VALUES (s3_id, 27, 'multiple_choice',
+'Which TWO mistakes did the speaker admit she made in her first job?',
+'B',
+'{"A":"being dishonest to her employer","B":"paying too much attention to how she looked","C":"expecting to become well known","D":"trying to earn a lot of money","E":"openly disliking her client","multi":true,"select_count":2,"linked_pair":28}', 1);
+
+INSERT INTO questions (section_id, question_number, question_type, question_text, correct_answer, options, points)
+VALUES (s3_id, 28, 'multiple_choice', 'Which TWO mistakes — second answer', 'E',
+'{"multi":true,"select_count":2,"linked_pair":27,"hidden_label":true}', 1);
+
+-- ============================================================
+-- PART 3 — Q29-30 (Choose TWO from A-E)
+-- ============================================================
+
+INSERT INTO questions (section_id, question_number, question_type, question_text, correct_answer, options, points)
+VALUES (s3_id, 29, 'multiple_choice',
+'Which TWO pieces of retail information do Hugo and Chantal agree would be useful?',
+'A',
+'{"A":"the reasons people return fashion items","B":"how much time people have to shop for clothes","C":"fashion designs people want but can''t find","D":"the best time of year for fashion buying","E":"the most popular fashion sizes","multi":true,"select_count":2,"linked_pair":30}', 1);
+
+INSERT INTO questions (section_id, question_number, question_type, question_text, correct_answer, options, points)
+VALUES (s3_id, 30, 'multiple_choice', 'Which TWO pieces — second answer', 'C',
+'{"multi":true,"select_count":2,"linked_pair":29,"hidden_label":true}', 1);
+
+-- ============================================================
+-- PART 4 — Q31-40 (Elephant translocation notes box)
+-- ============================================================
+
+INSERT INTO questions (section_id, question_number, question_type, question_text, correct_answer, options, points)
+VALUES (s4_id, 31, 'fill_blank', 'Damage to (31) ___ in the park', 'fences',
+'{"box":true,"box_title":"Elephant translocation","box_subtitle":"Problems caused by elephant overpopulation"}', 1);
+
+INSERT INTO questions (section_id, question_number, question_type, question_text, correct_answer, options, points)
+VALUES (s4_id, 32, 'fill_blank', 'A suitable group from the same (32) ___ was selected', 'family',
+'{"box":true,"box_subtitle":"The translocation process"}', 1);
+
+INSERT INTO questions (section_id, question_number, question_type, question_text, correct_answer, options, points)
+VALUES (s4_id, 33, 'fill_blank', 'Vets made use of (33) ___ to help guide the elephants into an open plain', 'helicopters',
+'{"box":true}', 1);
+
+INSERT INTO questions (section_id, question_number, question_type, question_text, correct_answer, options, points)
+VALUES (s4_id, 34, 'fill_blank', 'This process had to be completed quickly to reduce (34) ___', 'stress',
+'{"box":true}', 1);
+
+INSERT INTO questions (section_id, question_number, question_type, question_text, correct_answer, options, points)
+VALUES (s4_id, 35, 'fill_blank', 'Elephants had to be turned on their (35) ___ to avoid damage to their lungs', 'sides',
+'{"box":true}', 1);
+
+INSERT INTO questions (section_id, question_number, question_type, question_text, correct_answer, options, points)
+VALUES (s4_id, 36, 'fill_blank', 'Elephants'' (36) ___ had to be monitored constantly', 'breathing',
+'{"box":true}', 1);
+
+INSERT INTO questions (section_id, question_number, question_type, question_text, correct_answer, options, points)
+VALUES (s4_id, 37, 'fill_blank', 'Data including the size of their tusks and (37) ___ was taken', 'feet',
+'{"box":true}', 1);
+
+INSERT INTO questions (section_id, question_number, question_type, question_text, correct_answer, options, points)
+VALUES (s4_id, 38, 'fill_blank', '(38) ___ opportunities', 'employment',
+'{"box":true,"box_subtitle":"Advantages of translocation at Nkhotakota Wildlife Park"}', 1);
+
+INSERT INTO questions (section_id, question_number, question_type, question_text, correct_answer, options, points)
+VALUES (s4_id, 39, 'fill_blank', 'A reduction in the number of poachers and (39) ___', 'weapons',
+'{"box":true}', 1);
+
+INSERT INTO questions (section_id, question_number, question_type, question_text, correct_answer, options, points)
+VALUES (s4_id, 40, 'fill_blank', 'An increase in (40) ___ as a contributor to GDP', 'tourism',
+'{"box":true}', 1);
+
+END $$;
+
