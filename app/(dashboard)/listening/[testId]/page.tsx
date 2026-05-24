@@ -779,7 +779,9 @@ function TableCard({
 }) {
   const firstOpts = (getOptionsObj(questions[0]) ?? {}) as Record<string, unknown>
   const tableTitle = firstOpts.table_title as string | undefined
-  const hasFourColumns = typeof firstOpts.col4 === 'string'
+  const hasFourColumns =
+    typeof firstOpts.col4 === 'string' ||
+    (typeof firstOpts.col_middle === 'string' && typeof firstOpts.col_middle2 === 'string')
 
   if (hasFourColumns) {
     type FourColKey = 'col1' | 'col2' | 'col3' | 'col4'
@@ -792,7 +794,12 @@ function TableCard({
     type FourColRow = Record<FourColKey, FourColCell>
 
     const columns: FourColKey[] = ['col1', 'col2', 'col3', 'col4']
-    const headers = columns.map(col => (firstOpts[col] as string | undefined) ?? '')
+    const headers = [
+      (firstOpts.col1 as string | undefined) ?? (firstOpts.col_left as string | undefined) ?? '',
+      (firstOpts.col2 as string | undefined) ?? (firstOpts.col_middle as string | undefined) ?? '',
+      (firstOpts.col3 as string | undefined) ?? (firstOpts.col_middle2 as string | undefined) ?? '',
+      (firstOpts.col4 as string | undefined) ?? (firstOpts.col_right as string | undefined) ?? '',
+    ]
     const rowMap = new Map<number, FourColRow>()
 
     const ensureRow = (rowNumber: number) => {
@@ -809,8 +816,50 @@ function TableCard({
       return row
     }
 
+    const addQuestionToCell = (row: FourColRow, col: FourColKey, q: QuestionWithSection, prefix?: string, suffix?: string) => {
+      row[col].question = q
+      row[col].prefix = prefix
+      row[col].suffix = suffix
+    }
+
+    if (!firstOpts.col4) {
+      const byNumber = new Map(questions.map(q => [q.question_number, q]))
+      const firstRow = ensureRow(1)
+      const secondRow = ensureRow(2)
+      const q6 = byNumber.get(6)
+      const q7 = byNumber.get(7)
+      const q8 = byNumber.get(8)
+      const q9 = byNumber.get(9)
+      const q10 = byNumber.get(10)
+
+      if (q6) {
+        const opts = (getOptionsObj(q6) ?? {}) as Record<string, unknown>
+        addQuestionToCell(
+          firstRow,
+          'col1',
+          q6,
+          opts.row_left_prefix as string | undefined,
+          opts.row_left_suffix ? ` ${opts.row_left_suffix}` : undefined
+        )
+        firstRow.col2.staticText = opts.row_middle as string | undefined
+        firstRow.col3.staticText = 'Checking portions, etc. are correct\nMaking sure (7) ___ is clean'
+        firstRow.col4.staticText = 'Starting salary 8 £ (8) ___ per hour\nStart work at 5.30 a.m.'
+      }
+      if (q7) addQuestionToCell(firstRow, 'col3', q7)
+      if (q8) addQuestionToCell(firstRow, 'col4', q8)
+
+      const q9Opts = q9 ? ((getOptionsObj(q9) ?? {}) as Record<string, unknown>) : {}
+      secondRow.col1.staticText = (q9Opts.row_left as string | undefined) ?? 'City Road'
+      secondRow.col2.staticText = (q9Opts.row_middle as string | undefined) ?? 'Junior chef'
+      secondRow.col3.staticText = 'Supporting senior chefs\nMaintaining stock and organising (9) ___'
+      secondRow.col4.staticText = 'Annual salary £23,000\nNo work on a (10) ___ once a month'
+      if (q9) addQuestionToCell(secondRow, 'col3', q9)
+      if (q10) addQuestionToCell(secondRow, 'col4', q10)
+    }
+
     for (const q of questions) {
       const opts = (getOptionsObj(q) ?? {}) as Record<string, unknown>
+      if (!firstOpts.col4 && !opts.cell) continue
       const rowNumber = typeof opts.row === 'number' ? opts.row : 1
       const row = ensureRow(rowNumber)
       const rowStatic = (opts.row_static ?? {}) as Partial<Record<FourColKey, string>>

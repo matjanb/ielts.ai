@@ -2967,3 +2967,39 @@ VALUES (s4_id, 40, 'fill_blank', 'Before women carried a (40) ___', 'handbag',
 '{"box":true}', 1);
 
 END $$;
+
+-- Existing DB correction: Listening Test 10, Part 1, Q6-10 jobs table
+UPDATE questions SET options = '{"table":true,"table_title":"","col1":"Location","col2":"Job title","col3":"Responsibilities include","col4":"Pay and conditions","row":1,"cell":"col1","cell_suffix":" Street","row_static":{"col2":"Breakfast supervisor","col3":"Checking portions, etc. are correct\nMaking sure (7) ___ is clean","col4":"Starting salary 8 £ (8) ___ per hour\nStart work at 5.30 a.m."}}'
+WHERE section_id IN (
+  SELECT ts.id FROM test_sections ts
+  JOIN tests t ON ts.test_id = t.id
+  WHERE t.title = 'Cambridge IELTS 18 — Test 2' AND ts.section_number = 1
+) AND question_number = 6;
+
+UPDATE questions SET options = '{"table":true,"row":1,"cell":"col3_part2"}'
+WHERE section_id IN (
+  SELECT ts.id FROM test_sections ts
+  JOIN tests t ON ts.test_id = t.id
+  WHERE t.title = 'Cambridge IELTS 18 — Test 2' AND ts.section_number = 1
+) AND question_number = 7;
+
+UPDATE questions SET options = '{"table":true,"row":1,"cell":"col4_part1"}'
+WHERE section_id IN (
+  SELECT ts.id FROM test_sections ts
+  JOIN tests t ON ts.test_id = t.id
+  WHERE t.title = 'Cambridge IELTS 18 — Test 2' AND ts.section_number = 1
+) AND question_number = 8;
+
+UPDATE questions SET options = '{"table":true,"row":2,"cell":"col3_part2","row_static":{"col1":"City Road","col2":"Junior chef","col3":"Supporting senior chefs\nMaintaining stock and organising (9) ___","col4":"Annual salary £23,000\nNo work on a (10) ___ once a month"}}'
+WHERE section_id IN (
+  SELECT ts.id FROM test_sections ts
+  JOIN tests t ON ts.test_id = t.id
+  WHERE t.title = 'Cambridge IELTS 18 — Test 2' AND ts.section_number = 1
+) AND question_number = 9;
+
+UPDATE questions SET options = '{"table":true,"row":2,"cell":"col4_part2"}'
+WHERE section_id IN (
+  SELECT ts.id FROM test_sections ts
+  JOIN tests t ON ts.test_id = t.id
+  WHERE t.title = 'Cambridge IELTS 18 — Test 2' AND ts.section_number = 1
+) AND question_number = 10;
