@@ -2191,3 +2191,301 @@ VALUES (s4_id, 40, 'fill_blank',
 
 END $$;
 
+-- ============================================================
+-- LISTENING TEST 8 (Cambridge IELTS 19 Academic — Test 4)
+-- ============================================================
+
+DO $$
+DECLARE
+  t8_id uuid;
+  s1_id uuid;
+  s2_id uuid;
+  s3_id uuid;
+  s4_id uuid;
+BEGIN
+
+INSERT INTO tests (title, type, book_number, test_number, difficulty)
+VALUES ('Cambridge IELTS 19 — Test 4', 'listening', 2, 4, 'medium')
+RETURNING id INTO t8_id;
+
+INSERT INTO test_sections (test_id, section_number, title, instructions, audio_url)
+VALUES (t8_id, 1, 'Part 1 — Questions 1-10',
+'Questions 1-6: Complete the notes. Write ONE WORD AND/OR A NUMBER for each answer. Questions 7-10: Complete the table. Write ONE WORD ONLY for each answer.',
+'https://vqyyoxfsitsdmmxecqka.supabase.co/storage/v1/object/public/test-audio/test-8-section1.mp3')
+RETURNING id INTO s1_id;
+
+INSERT INTO test_sections (test_id, section_number, title, instructions, audio_url)
+VALUES (t8_id, 2, 'Part 2 — Questions 11-20',
+'Questions 11-12: Choose TWO letters, A-E. Questions 13-14: Choose TWO letters, A-E. Questions 15-18: Write the correct letter, A, B or C. Questions 19-20: Choose the correct letter, A, B or C.',
+'https://vqyyoxfsitsdmmxecqka.supabase.co/storage/v1/object/public/test-audio/test-8-section2.mp3')
+RETURNING id INTO s2_id;
+
+INSERT INTO test_sections (test_id, section_number, title, instructions, audio_url)
+VALUES (t8_id, 3, 'Part 3 — Questions 21-30',
+'Questions 21-25: Choose the correct letter, A, B or C. Questions 26-30: Choose FIVE answers from the box A-G.',
+'https://vqyyoxfsitsdmmxecqka.supabase.co/storage/v1/object/public/test-audio/test-8-section3.mp3')
+RETURNING id INTO s3_id;
+
+INSERT INTO test_sections (test_id, section_number, title, instructions, audio_url)
+VALUES (t8_id, 4, 'Part 4 — Questions 31-40',
+'Complete the notes below. Write ONE WORD ONLY for each answer.',
+'https://vqyyoxfsitsdmmxecqka.supabase.co/storage/v1/object/public/test-audio/test-8-section4.mp3')
+RETURNING id INTO s4_id;
+
+-- ============================================================
+-- PART 1 — Q1-6 (First day at work notes box)
+-- ============================================================
+
+INSERT INTO questions (section_id, question_number, question_type, question_text, correct_answer, options, points)
+VALUES (s1_id, 1, 'fill_blank',
+'Name of supervisor: (1) ___',
+'Kaeden',
+'{"box":true,"box_title":"First day at work"}', 1);
+
+INSERT INTO questions (section_id, question_number, question_type, question_text, correct_answer, options, points)
+VALUES (s1_id, 2, 'fill_blank',
+'Where to leave coat and bag: use (2) ___ in staffroom',
+'locker(s)',
+'{"box":true}', 1);
+
+INSERT INTO questions (section_id, question_number, question_type, question_text, correct_answer, options, points)
+VALUES (s1_id, 3, 'fill_blank',
+'See Tiffany in HR: to give (3) ___ number',
+'passport',
+'{"box":true}', 1);
+
+INSERT INTO questions (section_id, question_number, question_type, question_text, correct_answer, options, points)
+VALUES (s1_id, 4, 'fill_blank',
+'See Tiffany in HR: to collect (4) ___',
+'uniform',
+'{"box":true}', 1);
+
+INSERT INTO questions (section_id, question_number, question_type, question_text, correct_answer, options, points)
+VALUES (s1_id, 5, 'fill_blank',
+'Location of HR office: on (5) ___ floor',
+'third/3rd',
+'{"box":true}', 1);
+
+INSERT INTO questions (section_id, question_number, question_type, question_text, correct_answer, options, points)
+VALUES (s1_id, 6, 'fill_blank',
+'Supervisor''s mobile number: (6) ___',
+'0412 665 903',
+'{"box":true}', 1);
+
+-- ============================================================
+-- PART 1 — Q7-10 (Responsibilities table)
+-- ============================================================
+
+INSERT INTO questions (section_id, question_number, question_type, question_text, correct_answer, options, points)
+VALUES (s1_id, 7, 'fill_blank',
+'Bakery section — Notes: Use (7) ___ labels',
+'yellow',
+'{"table":true,"table_title":"Responsibilities","col_left":"","col_middle":"Task 1","col_middle2":"Task 2","col_right":"Notes","row_left":"Bakery section","row_middle":"Check sell-by dates","row_middle2":"Change price labels","row_right_prefix":"Use","row_right_suffix":"labels"}', 1);
+
+INSERT INTO questions (section_id, question_number, question_type, question_text, correct_answer, options, points)
+VALUES (s1_id, 8, 'fill_blank',
+'Sushi takeaway counter — Task 1: Re-stock with (8) ___ boxes if needed',
+'plastic',
+'{"table":true,"row_left":"Sushi takeaway counter","row_middle_prefix":"Re-stock with","row_middle_suffix":"boxes if needed","row_middle2":"Wipe preparation area and clean the sink","row_right":"Do not clean any knives"}', 1);
+
+INSERT INTO questions (section_id, question_number, question_type, question_text, correct_answer, options, points)
+VALUES (s1_id, 9, 'fill_blank',
+'Meat and fish counters — Task 2: Collect (9) ___ for the fish from the cold-room',
+'ice',
+'{"table":true,"row_left":"Meat and fish counters","row_middle":"Clean the serving area, including the weighing scales","row_middle2_prefix":"Collect","row_middle2_suffix":"for the fish from the cold-room"}', 1);
+
+INSERT INTO questions (section_id, question_number, question_type, question_text, correct_answer, options, points)
+VALUES (s1_id, 10, 'fill_blank',
+'Meat and fish counters — Notes: Must wear special (10) ___',
+'gloves',
+'{"table":true,"row_right_prefix":"Must wear special"}', 1);
+
+-- ============================================================
+-- PART 2 — Q11-12 (Choose TWO from A-E)
+-- ============================================================
+
+INSERT INTO questions (section_id, question_number, question_type, question_text, correct_answer, options, points)
+VALUES (s2_id, 11, 'multiple_choice',
+'Which TWO problems with some training programmes for new runners does Liz mention?',
+'C',
+'{"A":"There is a risk of serious injury.","B":"They are unsuitable for certain age groups.","C":"They are unsuitable for people with health issues.","D":"It is difficult to stay motivated.","E":"There is a lack of individual support.","multi":true,"select_count":2,"linked_pair":12}', 1);
+
+INSERT INTO questions (section_id, question_number, question_type, question_text, correct_answer, options, points)
+VALUES (s2_id, 12, 'multiple_choice',
+'Which TWO problems — second answer',
+'E',
+'{"multi":true,"select_count":2,"linked_pair":11,"hidden_label":true}', 1);
+
+-- ============================================================
+-- PART 2 — Q13-14 (Choose TWO from A-E)
+-- ============================================================
+
+INSERT INTO questions (section_id, question_number, question_type, question_text, correct_answer, options, points)
+VALUES (s2_id, 13, 'multiple_choice',
+'Which TWO tips does Liz recommend for new runners?',
+'A',
+'{"A":"doing two runs a week","B":"running in the evening","C":"going on runs with a friend","D":"listening to music during runs","E":"running very slowly","multi":true,"select_count":2,"linked_pair":14}', 1);
+
+INSERT INTO questions (section_id, question_number, question_type, question_text, correct_answer, options, points)
+VALUES (s2_id, 14, 'multiple_choice',
+'Which TWO tips — second answer',
+'D',
+'{"multi":true,"select_count":2,"linked_pair":13,"hidden_label":true}', 1);
+
+-- ============================================================
+-- PART 2 — Q15-18 (matching pool — club members, reasons A/B/C)
+-- ============================================================
+
+INSERT INTO questions (section_id, question_number, question_type, question_text, correct_answer, options, points)
+VALUES (s2_id, 15, 'multiple_choice',
+'Ceri',
+'A',
+'{"matching_pool":true,"pool_title":"Reasons","pool":{"A":"a lack of confidence","B":"a dislike of running","C":"a lack of time"},"pool_instruction":"Write the correct letter, A, B or C next to Questions 15-18","pool_intro":"What reason prevented each of the following members from joining until recently?"}', 1);
+
+INSERT INTO questions (section_id, question_number, question_type, question_text, correct_answer, options, points)
+VALUES (s2_id, 16, 'multiple_choice', 'James', 'B', '{"matching_pool":true}', 1);
+
+INSERT INTO questions (section_id, question_number, question_type, question_text, correct_answer, options, points)
+VALUES (s2_id, 17, 'multiple_choice', 'Leo', 'C', '{"matching_pool":true}', 1);
+
+INSERT INTO questions (section_id, question_number, question_type, question_text, correct_answer, options, points)
+VALUES (s2_id, 18, 'multiple_choice', 'Mark', 'A', '{"matching_pool":true}', 1);
+
+-- ============================================================
+-- PART 2 — Q19-20 (MC A/B/C)
+-- ============================================================
+
+INSERT INTO questions (section_id, question_number, question_type, question_text, correct_answer, options, points)
+VALUES (s2_id, 19, 'multiple_choice',
+'What does Liz say about running her first marathon?',
+'C',
+'{"A":"It had always been her ambition.","B":"Her husband persuaded her to do it.","C":"She nearly gave up before the end."}', 1);
+
+INSERT INTO questions (section_id, question_number, question_type, question_text, correct_answer, options, points)
+VALUES (s2_id, 20, 'multiple_choice',
+'Liz says new runners should sign up for a race',
+'B',
+'{"A":"every six months.","B":"within a few weeks of taking up running.","C":"after completing several practice runs."}', 1);
+
+-- ============================================================
+-- PART 3 — Q21-25 (MC A/B/C — books)
+-- ============================================================
+
+INSERT INTO questions (section_id, question_number, question_type, question_text, correct_answer, options, points)
+VALUES (s3_id, 21, 'multiple_choice',
+'Kieran thinks the packing advice given by Jane''s grandfather is',
+'A',
+'{"A":"common sense.","B":"hard to follow.","C":"over-protective."}', 1);
+
+INSERT INTO questions (section_id, question_number, question_type, question_text, correct_answer, options, points)
+VALUES (s3_id, 22, 'multiple_choice',
+'How does Jane feel about the books her grandfather has given her?',
+'C',
+'{"A":"They are not worth keeping.","B":"They should go to a collector.","C":"They have sentimental value for her."}', 1);
+
+INSERT INTO questions (section_id, question_number, question_type, question_text, correct_answer, options, points)
+VALUES (s3_id, 23, 'multiple_choice',
+'Jane and Kieran agree that hardback books should be',
+'A',
+'{"A":"put out on display.","B":"given as gifts to visitors.","C":"more attractively designed."}', 1);
+
+INSERT INTO questions (section_id, question_number, question_type, question_text, correct_answer, options, points)
+VALUES (s3_id, 24, 'multiple_choice',
+'While talking about taking a book from a shelf, Jane',
+'B',
+'{"A":"describes the mistakes other people make doing it.","B":"reflects on a significant childhood experience.","C":"explains why some books are easier to remove than others."}', 1);
+
+INSERT INTO questions (section_id, question_number, question_type, question_text, correct_answer, options, points)
+VALUES (s3_id, 25, 'multiple_choice',
+'What do Jane and Kieran suggest about new books?',
+'C',
+'{"A":"Their parents liked buying them as presents.","B":"They would like to buy more of them.","C":"Not everyone can afford them."}', 1);
+
+-- ============================================================
+-- PART 3 — Q26-30 (matching pool FIVE from A-G — location of books)
+-- ============================================================
+
+INSERT INTO questions (section_id, question_number, question_type, question_text, correct_answer, options, points)
+VALUES (s3_id, 26, 'multiple_choice',
+'rare books',
+'D',
+'{"matching_pool":true,"pool_title":"Location of books","pool":{"A":"near the entrance","B":"in the attic","C":"at the back of the shop","D":"on a high shelf","E":"near the stairs","F":"in a specially designed space","G":"within the café"},"pool_instruction":"Choose FIVE answers from the box and write the correct letter, A-G","pool_intro":"Where does Jane''s grandfather keep each of the following types of books?","select_count":5}', 1);
+
+INSERT INTO questions (section_id, question_number, question_type, question_text, correct_answer, options, points)
+VALUES (s3_id, 27, 'multiple_choice', 'children''s books', 'F', '{"matching_pool":true}', 1);
+
+INSERT INTO questions (section_id, question_number, question_type, question_text, correct_answer, options, points)
+VALUES (s3_id, 28, 'multiple_choice', 'unwanted books', 'A', '{"matching_pool":true}', 1);
+
+INSERT INTO questions (section_id, question_number, question_type, question_text, correct_answer, options, points)
+VALUES (s3_id, 29, 'multiple_choice', 'requested books', 'C', '{"matching_pool":true}', 1);
+
+INSERT INTO questions (section_id, question_number, question_type, question_text, correct_answer, options, points)
+VALUES (s3_id, 30, 'multiple_choice', 'coursebooks', 'G', '{"matching_pool":true}', 1);
+
+-- ============================================================
+-- PART 4 — Q31-40 (Tree planting notes box)
+-- ============================================================
+
+INSERT INTO questions (section_id, question_number, question_type, question_text, correct_answer, options, points)
+VALUES (s4_id, 31, 'fill_blank',
+'Not include invasive species because of possible (31) ___ with native species',
+'competition',
+'{"box":true,"box_title":"Tree planting","box_subtitle":"Reforestation projects should:"}', 1);
+
+INSERT INTO questions (section_id, question_number, question_type, question_text, correct_answer, options, points)
+VALUES (s4_id, 32, 'fill_blank',
+'Provide sustainable sources of (32) ___ for local people',
+'food',
+'{"box":true}', 1);
+
+INSERT INTO questions (section_id, question_number, question_type, question_text, correct_answer, options, points)
+VALUES (s4_id, 33, 'fill_blank',
+'Use tree seeds with high genetic diversity to increase resistance to (33) ___ and climate change',
+'disease',
+'{"box":true}', 1);
+
+INSERT INTO questions (section_id, question_number, question_type, question_text, correct_answer, options, points)
+VALUES (s4_id, 34, 'fill_blank',
+'Not select land which is being used for (34) ___',
+'agriculture',
+'{"box":true}', 1);
+
+INSERT INTO questions (section_id, question_number, question_type, question_text, correct_answer, options, points)
+VALUES (s4_id, 35, 'fill_blank',
+'Base planning decisions on information from accurate (35) ___',
+'maps',
+'{"box":true,"box_subtitle":"Large-scale reforestation projects"}', 1);
+
+INSERT INTO questions (section_id, question_number, question_type, question_text, correct_answer, options, points)
+VALUES (s4_id, 36, 'fill_blank',
+'Drones are useful for identifying areas endangered by keeping (36) ___ and illegal logging',
+'cattle',
+'{"box":true}', 1);
+
+INSERT INTO questions (section_id, question_number, question_type, question_text, correct_answer, options, points)
+VALUES (s4_id, 37, 'fill_blank',
+'Increasing the (37) ___ of recovery by attracting animals and birds',
+'speed',
+'{"box":true,"box_subtitle":"Lampang Province, Northern Thailand"}', 1);
+
+INSERT INTO questions (section_id, question_number, question_type, question_text, correct_answer, options, points)
+VALUES (s4_id, 38, 'fill_blank',
+'(38) ___ were soon attracted to the area',
+'monkeys',
+'{"box":true}', 1);
+
+INSERT INTO questions (section_id, question_number, question_type, question_text, correct_answer, options, points)
+VALUES (s4_id, 39, 'fill_blank',
+'Destruction of mangrove forests made it difficult for people to make a living from (39) ___',
+'fishing',
+'{"box":true,"box_subtitle":"Involving local communities"}', 1);
+
+INSERT INTO questions (section_id, question_number, question_type, question_text, correct_answer, options, points)
+VALUES (s4_id, 40, 'fill_blank',
+'Protects against the higher risk of (40) ___',
+'flooding',
+'{"box":true}', 1);
+
+END $$;
+
