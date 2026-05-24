@@ -1590,3 +1590,304 @@ VALUES (s4_id, 40, 'fill_blank',
 
 END $$;
 
+-- ============================================================
+-- LISTENING TEST 6 (Cambridge IELTS 19 Academic — Test 2)
+-- ============================================================
+
+DO $$
+DECLARE
+  t6_id uuid;
+  s1_id uuid;
+  s2_id uuid;
+  s3_id uuid;
+  s4_id uuid;
+BEGIN
+
+INSERT INTO tests (title, type, book_number, test_number, difficulty)
+VALUES ('Listening Test 6', 'listening', 2, 2, 'medium')
+RETURNING id INTO t6_id;
+
+INSERT INTO test_sections (test_id, section_number, title, instructions, audio_url)
+VALUES (t6_id, 1, 'Part 1 — Questions 1-10',
+'Questions 1-6: Complete the form. Write ONE WORD AND/OR A NUMBER for each answer. Questions 7-10: Complete the table. Write ONE WORD ONLY for each answer.',
+'https://vqyyoxfsitsdmmxecqka.supabase.co/storage/v1/object/public/test-audio/test-6-section1.mp3')
+RETURNING id INTO s1_id;
+
+INSERT INTO test_sections (test_id, section_number, title, instructions, audio_url)
+VALUES (t6_id, 2, 'Part 2 — Questions 11-20',
+'Questions 11-16: Choose the correct letter, A, B or C. Questions 17-18: Choose TWO letters, A-E. Questions 19-20: Choose TWO letters, A-E.',
+'https://vqyyoxfsitsdmmxecqka.supabase.co/storage/v1/object/public/test-audio/test-6-section2.mp3')
+RETURNING id INTO s2_id;
+
+INSERT INTO test_sections (test_id, section_number, title, instructions, audio_url)
+VALUES (t6_id, 3, 'Part 3 — Questions 21-30',
+'Questions 21-24: Choose the correct letter, A, B or C. Questions 25-28: Choose FOUR answers from the box A-F. Questions 29-30: Choose the correct letter, A, B or C.',
+'https://vqyyoxfsitsdmmxecqka.supabase.co/storage/v1/object/public/test-audio/test-6-section3.mp3')
+RETURNING id INTO s3_id;
+
+INSERT INTO test_sections (test_id, section_number, title, instructions, audio_url)
+VALUES (t6_id, 4, 'Part 4 — Questions 31-40',
+'Complete the notes below. Write ONE WORD ONLY for each answer.',
+'https://vqyyoxfsitsdmmxecqka.supabase.co/storage/v1/object/public/test-audio/test-6-section4.mp3')
+RETURNING id INTO s4_id;
+
+-- PART 1 — Q1-6 (Guitar Group form)
+
+INSERT INTO questions (section_id, question_number, question_type, question_text, correct_answer, options, points)
+VALUES (s1_id, 1, 'fill_blank',
+'Coordinator: Gary (1) ___',
+'Mathieson',
+'{"form":true,"label":"Coordinator","form_title":"Guitar Group","prefill":"Gary"}', 1);
+
+INSERT INTO questions (section_id, question_number, question_type, question_text, correct_answer, options, points)
+VALUES (s1_id, 2, 'fill_blank',
+'Level: (2) ___',
+'beginners',
+'{"form":true,"label":"Level"}', 1);
+
+INSERT INTO questions (section_id, question_number, question_type, question_text, correct_answer, options, points)
+VALUES (s1_id, 3, 'fill_blank',
+'Place: the (3) ___',
+'college',
+'{"form":true,"label":"Place","prefill":"the"}', 1);
+
+INSERT INTO questions (section_id, question_number, question_type, question_text, correct_answer, options, points)
+VALUES (s1_id, 4, 'fill_blank',
+'(4) ___ Street, First floor, Room T347',
+'New',
+'{"form":true,"label":"Street","suffix":"Street, First floor, Room T347"}', 1);
+
+INSERT INTO questions (section_id, question_number, question_type, question_text, correct_answer, options, points)
+VALUES (s1_id, 5, 'fill_blank',
+'Time: Thursday morning at (5) ___',
+'11/eleven (am)',
+'{"form":true,"label":"Time","prefill":"Thursday morning at"}', 1);
+
+INSERT INTO questions (section_id, question_number, question_type, question_text, correct_answer, options, points)
+VALUES (s1_id, 6, 'fill_blank',
+'Recommended website: ''The perfect (6) ___''',
+'instrument',
+'{"form":true,"label":"Recommended website","prefill":"''The perfect","suffix":"''"}', 1);
+
+-- PART 1 — Q7-10 (guitar lesson table)
+
+INSERT INTO questions (section_id, question_number, question_type, question_text, correct_answer, options, points)
+VALUES (s1_id, 7, 'fill_blank',
+'Tuning guitars — using an app or by (7) ___',
+'ear',
+'{"table":true,"table_title":"A typical 45-minute guitar lesson","col_left":"Time","col_right":"Notes","row_left":"5 minutes","row_left_prefix":"tuning guitars","row_right_prefix":"using an app or by"}', 1);
+
+INSERT INTO questions (section_id, question_number, question_type, question_text, correct_answer, options, points)
+VALUES (s1_id, 8, 'fill_blank',
+'Strumming chords — keeping time while the teacher is (8) ___',
+'clapping',
+'{"table":true,"row_left":"10 minutes","row_left_prefix":"strumming chords using our thumbs","row_right_prefix":"keeping time while the teacher is"}', 1);
+
+INSERT INTO questions (section_id, question_number, question_type, question_text, correct_answer, options, points)
+VALUES (s1_id, 9, 'fill_blank',
+'Playing songs — often listening to a (9) ___ of a song',
+'recording',
+'{"table":true,"row_left":"15 minutes","row_left_prefix":"playing songs","row_right_prefix":"often listening to a","row_right_suffix":"of a song"}', 1);
+
+INSERT INTO questions (section_id, question_number, question_type, question_text, correct_answer, options, points)
+VALUES (s1_id, 10, 'fill_blank',
+'Playing single notes — playing together, then (10) ___',
+'alone',
+'{"table":true,"row_left":"10 minutes","row_left_prefix":"playing single notes and simple tunes","row_right_prefix":"playing together, then"}', 1);
+
+-- PART 2 — Q11-16 (Working as a lifeboat volunteer — MC A/B/C)
+
+INSERT INTO questions (section_id, question_number, question_type, question_text, correct_answer, options, points)
+VALUES (s2_id, 11, 'multiple_choice',
+'What made David leave London and move to Northsea?',
+'A',
+'{"A":"He was eager to develop a hobby.","B":"He wanted to work shorter hours.","C":"He found his job in website design unsatisfying."}', 1);
+
+INSERT INTO questions (section_id, question_number, question_type, question_text, correct_answer, options, points)
+VALUES (s2_id, 12, 'multiple_choice',
+'The Lifeboat Institution in Northsea was built with money provided by',
+'B',
+'{"A":"a local organisation.","B":"a local resident.","C":"the local council."}', 1);
+
+INSERT INTO questions (section_id, question_number, question_type, question_text, correct_answer, options, points)
+VALUES (s2_id, 13, 'multiple_choice',
+'In his health assessment, the doctor was concerned about the fact that David',
+'A',
+'{"A":"might be colour blind.","B":"was rather short-sighted.","C":"had undergone eye surgery."}', 1);
+
+INSERT INTO questions (section_id, question_number, question_type, question_text, correct_answer, options, points)
+VALUES (s2_id, 14, 'multiple_choice',
+'After arriving at the lifeboat station, they aim to launch the boat within',
+'B',
+'{"A":"five minutes.","B":"six to eight minutes.","C":"eight and a half minutes."}', 1);
+
+INSERT INTO questions (section_id, question_number, question_type, question_text, correct_answer, options, points)
+VALUES (s2_id, 15, 'multiple_choice',
+'As a ''helmsman'', David has the responsibility of deciding',
+'C',
+'{"A":"who will be the members of his crew.","B":"what equipment it will be necessary to take.","C":"if the lifeboat should be launched."}', 1);
+
+INSERT INTO questions (section_id, question_number, question_type, question_text, correct_answer, options, points)
+VALUES (s2_id, 16, 'multiple_choice',
+'As well as going out on the lifeboat, David',
+'A',
+'{"A":"gives talks on safety at sea.","B":"helps with fundraising.","C":"recruits new volunteers."}', 1);
+
+-- PART 2 — Q17-18 (Choose TWO from A-E)
+
+INSERT INTO questions (section_id, question_number, question_type, question_text, correct_answer, options, points)
+VALUES (s2_id, 17, 'multiple_choice',
+'Which TWO things does David say about the lifeboat volunteer training?',
+'C',
+'{"A":"The residential course developed his leadership skills.","B":"The training in use of ropes and knots was quite brief.","C":"The training exercises have built up his mental strength.","D":"The casualty care activities were particularly challenging for him.","E":"The wave tank activities provided practice in survival techniques.","multi":true,"select_count":2,"linked_pair":18}', 1);
+
+INSERT INTO questions (section_id, question_number, question_type, question_text, correct_answer, options, points)
+VALUES (s2_id, 18, 'multiple_choice',
+'Which TWO things — second answer',
+'E',
+'{"multi":true,"select_count":2,"linked_pair":17,"hidden_label":true}', 1);
+
+-- PART 2 — Q19-20 (Choose TWO from A-E)
+
+INSERT INTO questions (section_id, question_number, question_type, question_text, correct_answer, options, points)
+VALUES (s2_id, 19, 'multiple_choice',
+'Which TWO things does David find most motivating about the work he does?',
+'A',
+'{"A":"working as part of a team","B":"experiences when working in winter","C":"being thanked by those he has helped","D":"the fact that it keeps him fit","E":"the chance to develop new equipment","multi":true,"select_count":2,"linked_pair":20}', 1);
+
+INSERT INTO questions (section_id, question_number, question_type, question_text, correct_answer, options, points)
+VALUES (s2_id, 20, 'multiple_choice',
+'Which TWO things — second answer',
+'B',
+'{"multi":true,"select_count":2,"linked_pair":19,"hidden_label":true}', 1);
+
+-- PART 3 — Q21-24 (MC A/B/C — recycling footwear)
+
+INSERT INTO questions (section_id, question_number, question_type, question_text, correct_answer, options, points)
+VALUES (s3_id, 21, 'multiple_choice',
+'At first, Don thought the topic of recycling footwear might be too',
+'A',
+'{"A":"limited in scope.","B":"hard to research.","C":"boring for listeners."}', 1);
+
+INSERT INTO questions (section_id, question_number, question_type, question_text, correct_answer, options, points)
+VALUES (s3_id, 22, 'multiple_choice',
+'When discussing trainers, Bella and Don disagree about',
+'B',
+'{"A":"how popular they are among young people.","B":"how suitable they are for school.","C":"how quickly they wear out."}', 1);
+
+INSERT INTO questions (section_id, question_number, question_type, question_text, correct_answer, options, points)
+VALUES (s3_id, 23, 'multiple_choice',
+'Bella says that she sometimes recycles shoes because',
+'B',
+'{"A":"they no longer fit.","B":"she no longer likes them.","C":"they are no longer in fashion."}', 1);
+
+INSERT INTO questions (section_id, question_number, question_type, question_text, correct_answer, options, points)
+VALUES (s3_id, 24, 'multiple_choice',
+'What did the article say that confused Don?',
+'B',
+'{"A":"Public consumption of footwear has risen.","B":"Less footwear is recycled now than in the past.","C":"People dispose of more footwear than they used to."}', 1);
+
+-- PART 3 — Q25-28 (matching pool FOUR answers from A-F)
+
+INSERT INTO questions (section_id, question_number, question_type, question_text, correct_answer, options, points)
+VALUES (s3_id, 25, 'multiple_choice',
+'the high-heeled shoes',
+'B',
+'{"matching_pool":true,"pool_title":"Reasons","pool":{"A":"one shoe was missing","B":"the colour of one shoe had faded","C":"one shoe had a hole in it","D":"the shoes were brand new","E":"the shoes were too dirty","F":"the stitching on the shoes was broken"},"pool_instruction":"Choose FOUR answers from the box and write the correct letter, A-F","pool_intro":"What reasons did the recycling manager give for rejecting footwear?","select_count":4}', 1);
+
+INSERT INTO questions (section_id, question_number, question_type, question_text, correct_answer, options, points)
+VALUES (s3_id, 26, 'multiple_choice',
+'the ankle boots',
+'E',
+'{"matching_pool":true}', 1);
+
+INSERT INTO questions (section_id, question_number, question_type, question_text, correct_answer, options, points)
+VALUES (s3_id, 27, 'multiple_choice',
+'the baby shoes',
+'A',
+'{"matching_pool":true}', 1);
+
+INSERT INTO questions (section_id, question_number, question_type, question_text, correct_answer, options, points)
+VALUES (s3_id, 28, 'multiple_choice',
+'the trainers',
+'F',
+'{"matching_pool":true}', 1);
+
+-- PART 3 — Q29-30 (MC A/B/C)
+
+INSERT INTO questions (section_id, question_number, question_type, question_text, correct_answer, options, points)
+VALUES (s3_id, 29, 'multiple_choice',
+'Why did the project to make ''new'' shoes out of old shoes fail?',
+'C',
+'{"A":"People believed the ''new'' pairs of shoes were unhygienic.","B":"There were not enough good parts to use in the old shoes.","C":"The shoes in the ''new'' pairs were not completely alike."}', 1);
+
+INSERT INTO questions (section_id, question_number, question_type, question_text, correct_answer, options, points)
+VALUES (s3_id, 30, 'multiple_choice',
+'Bella and Don agree that they can present their topic',
+'A',
+'{"A":"from a new angle.","B":"with relevant images.","C":"in a straightforward way."}', 1);
+
+-- PART 4 — Q31-40 (Tardigrades notes box)
+
+INSERT INTO questions (section_id, question_number, question_type, question_text, correct_answer, options, points)
+VALUES (s4_id, 31, 'fill_blank',
+'Also known as water ''bears'' (due to how they (31) ___) and ''moss piglets''',
+'move',
+'{"box":true,"box_title":"Tardigrades"}', 1);
+
+INSERT INTO questions (section_id, question_number, question_type, question_text, correct_answer, options, points)
+VALUES (s4_id, 32, 'fill_blank',
+'A (32) ___ round body and four pairs of legs',
+'short',
+'{"box":true,"box_subtitle":"Physical appearance"}', 1);
+
+INSERT INTO questions (section_id, question_number, question_type, question_text, correct_answer, options, points)
+VALUES (s4_id, 33, 'fill_blank',
+'Claws or (33) ___ for gripping',
+'discs',
+'{"box":true}', 1);
+
+INSERT INTO questions (section_id, question_number, question_type, question_text, correct_answer, options, points)
+VALUES (s4_id, 34, 'fill_blank',
+'Body filled with a liquid that carries both (34) ___ and blood',
+'oxygen',
+'{"box":true}', 1);
+
+INSERT INTO questions (section_id, question_number, question_type, question_text, correct_answer, options, points)
+VALUES (s4_id, 35, 'fill_blank',
+'Mouth shaped like a (35) ___ with teeth called stylets',
+'tube',
+'{"box":true}', 1);
+
+INSERT INTO questions (section_id, question_number, question_type, question_text, correct_answer, options, points)
+VALUES (s4_id, 36, 'fill_blank',
+'Very resilient and can exist in very low or high (36) ___',
+'temperatures',
+'{"box":true,"box_subtitle":"Habitat"}', 1);
+
+INSERT INTO questions (section_id, question_number, question_type, question_text, correct_answer, options, points)
+VALUES (s4_id, 37, 'fill_blank',
+'A type of (37) ___ ensures their DNA is not damaged',
+'protein',
+'{"box":true,"box_subtitle":"Cryptobiosis"}', 1);
+
+INSERT INTO questions (section_id, question_number, question_type, question_text, correct_answer, options, points)
+VALUES (s4_id, 38, 'fill_blank',
+'Research is underway to find out how many days they can stay alive in (38) ___',
+'space',
+'{"box":true}', 1);
+
+INSERT INTO questions (section_id, question_number, question_type, question_text, correct_answer, options, points)
+VALUES (s4_id, 39, 'fill_blank',
+'Consume liquids, e.g., those found in moss or (39) ___',
+'seaweed',
+'{"box":true,"box_subtitle":"Feeding"}', 1);
+
+INSERT INTO questions (section_id, question_number, question_type, question_text, correct_answer, options, points)
+VALUES (s4_id, 40, 'fill_blank',
+'They are not considered to be (40) ___',
+'endangered',
+'{"box":true,"box_subtitle":"Conservation status"}', 1);
+
+END $$;
+
