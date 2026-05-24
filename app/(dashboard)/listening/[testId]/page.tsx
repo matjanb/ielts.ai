@@ -61,6 +61,8 @@ function AudioPlayer({
     if (!autoPlay || !audioUrl) return
     const el = audioRef.current
     if (!el) return
+    console.log('[AudioPlayer] loading section audio:', audioUrl)
+    el.load()
     el.play()
       .then(() => { setPlaying(true); setAutoPlayBlocked(false) })
       .catch(() => { setPlaying(false); setAutoPlayBlocked(true) })
@@ -109,7 +111,7 @@ function AudioPlayer({
   return (
     <div className="flex items-center gap-3 flex-1 min-w-0">
       {/* eslint-disable-next-line jsx-a11y/media-has-caption */}
-      <audio ref={audioRef} src={audioUrl} preload="auto" />
+      <audio key={audioUrl} ref={audioRef} src={audioUrl} preload="auto" />
 
       {autoPlayBlocked ? (
         /* Autoplay was blocked — show a prominent CTA in place of the normal play button */
@@ -1822,7 +1824,7 @@ export default function ListeningTestPage() {
 
       {/* ── Sticky top bar: audio + timer + submit ── */}
       <div className="sticky top-0 z-40 bg-white/95 dark:bg-[#08080f]/95 backdrop-blur-sm border-b border-gray-100 dark:border-gray-800 px-4 lg:px-6 py-3 flex items-center gap-4">
-        <AudioPlayer audioUrl={currentSection?.audio_url ?? null} autoPlay={started} />
+        <AudioPlayer key={currentSection?.id} audioUrl={currentSection?.audio_url ?? null} autoPlay={started} />
         <div className="shrink-0 flex items-center gap-3">
           <span className="hidden sm:flex items-center gap-1 text-xs text-gray-400 tabular-nums">
             <span className="text-gray-600 dark:text-gray-300 font-medium">{answeredCount}</span>
