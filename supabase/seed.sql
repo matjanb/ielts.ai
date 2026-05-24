@@ -1312,25 +1312,25 @@ RETURNING id INTO t5_id;
 INSERT INTO test_sections (test_id, section_number, title, instructions, audio_url)
 VALUES (t5_id, 1, 'Part 1 — Questions 1-10',
 'Complete the notes below. Write ONE WORD AND/OR A NUMBER for each answer.',
-'https://vqyyoxfsitsdmmxecqka.supabase.co/storage/v1/object/public/test-audio/test-5.mp3')
+'https://vqyyoxfsitsdmmxecqka.supabase.co/storage/v1/object/public/test-audio/test-5-section1.mp3')
 RETURNING id INTO s1_id;
 
 INSERT INTO test_sections (test_id, section_number, title, instructions, audio_url)
 VALUES (t5_id, 2, 'Part 2 — Questions 11-20',
 'Questions 11-15: Choose the correct letter, A, B or C. Questions 16-20: Label the map. Write the correct letter, A-H, next to Questions 16-20.',
-'https://vqyyoxfsitsdmmxecqka.supabase.co/storage/v1/object/public/test-audio/test-5.mp3')
+'https://vqyyoxfsitsdmmxecqka.supabase.co/storage/v1/object/public/test-audio/test-5-section2.mp3')
 RETURNING id INTO s2_id;
 
 INSERT INTO test_sections (test_id, section_number, title, instructions, audio_url)
 VALUES (t5_id, 3, 'Part 3 — Questions 21-30',
 'Questions 21-22: Choose TWO letters, A-E. Questions 23-24: Choose TWO letters, A-E. Questions 25-30: Choose SIX answers from the box and write the correct letter, A-H, next to Questions 25-30.',
-'https://vqyyoxfsitsdmmxecqka.supabase.co/storage/v1/object/public/test-audio/test-5.mp3')
+'https://vqyyoxfsitsdmmxecqka.supabase.co/storage/v1/object/public/test-audio/test-5-section3.mp3')
 RETURNING id INTO s3_id;
 
 INSERT INTO test_sections (test_id, section_number, title, instructions, audio_url)
 VALUES (t5_id, 4, 'Part 4 — Questions 31-40',
 'Complete the notes below. Write ONE WORD ONLY for each answer.',
-'https://vqyyoxfsitsdmmxecqka.supabase.co/storage/v1/object/public/test-audio/test-5.mp3')
+'https://vqyyoxfsitsdmmxecqka.supabase.co/storage/v1/object/public/test-audio/test-5-section4.mp3')
 RETURNING id INTO s4_id;
 
 -- PART 1 — Q1-10 (Hinchingbrooke Country Park notes box)

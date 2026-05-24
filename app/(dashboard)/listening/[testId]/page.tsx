@@ -17,19 +17,29 @@ const SPEEDS = [0.75, 1, 1.25, 1.5]
 
 // ── Audio Player ──────────────────────────────────────────────────────────────
 
-function AudioPlayer({ audioUrl }: { audioUrl: string | null }) {
+function AudioPlayer({
+  audioUrl,
+  autoPlay = false,
+}: {
+  audioUrl: string | null
+  autoPlay?: boolean
+}) {
   const audioRef = useRef<HTMLAudioElement | null>(null)
   const [playing, setPlaying] = useState(false)
   const [progress, setProgress] = useState(0)
   const [duration, setDuration] = useState(0)
   const [speed, setSpeed] = useState(1)
+  const [autoPlayBlocked, setAutoPlayBlocked] = useState(false)
 
+  // Reset state when audio source changes
   useEffect(() => {
     setPlaying(false)
     setProgress(0)
     setDuration(0)
+    setAutoPlayBlocked(false)
   }, [audioUrl])
 
+  // Wire up audio element events
   useEffect(() => {
     const el = audioRef.current
     if (!el) return
@@ -46,11 +56,27 @@ function AudioPlayer({ audioUrl }: { audioUrl: string | null }) {
     }
   }, [audioUrl])
 
+  // Attempt auto-play when audio changes (if autoPlay is enabled)
+  useEffect(() => {
+    if (!autoPlay || !audioUrl) return
+    const el = audioRef.current
+    if (!el) return
+    el.play()
+      .then(() => { setPlaying(true); setAutoPlayBlocked(false) })
+      .catch(() => { setPlaying(false); setAutoPlayBlocked(true) })
+  }, [audioUrl]) // eslint-disable-line react-hooks/exhaustive-deps
+
   function togglePlay() {
     const el = audioRef.current
     if (!el) return
-    if (playing) { el.pause(); setPlaying(false) }
-    else { el.play().catch(() => {}); setPlaying(true) }
+    if (playing) {
+      el.pause()
+      setPlaying(false)
+    } else {
+      el.play()
+        .then(() => { setPlaying(true); setAutoPlayBlocked(false) })
+        .catch(() => {})
+    }
   }
 
   function seek(e: React.ChangeEvent<HTMLInputElement>) {
@@ -83,25 +109,41 @@ function AudioPlayer({ audioUrl }: { audioUrl: string | null }) {
   return (
     <div className="flex items-center gap-3 flex-1 min-w-0">
       {/* eslint-disable-next-line jsx-a11y/media-has-caption */}
-      <audio ref={audioRef} src={audioUrl} preload="metadata" />
-      <button
-        onClick={togglePlay}
-        className="shrink-0 w-8 h-8 rounded-xl bg-amber-500 hover:bg-amber-400 text-white flex items-center justify-center transition-colors"
-      >
-        {playing ? <Pause size={13} strokeWidth={2} /> : <Play size={13} strokeWidth={2} />}
-      </button>
-      <div className="flex-1 min-w-0 flex items-center gap-2">
-        <span className="text-[10px] text-gray-400 tabular-nums shrink-0 w-8 text-right">{fmt(progress)}</span>
-        <input
-          type="range"
-          min={0}
-          max={duration || 1}
-          value={progress}
-          onChange={seek}
-          className="flex-1 h-1 accent-amber-500 cursor-pointer min-w-0"
-        />
-        <span className="text-[10px] text-gray-400 tabular-nums shrink-0 w-8">{fmt(duration)}</span>
-      </div>
+      <audio ref={audioRef} src={audioUrl} preload="auto" />
+
+      {autoPlayBlocked ? (
+        /* Autoplay was blocked — show a prominent CTA in place of the normal play button */
+        <button
+          onClick={togglePlay}
+          className="shrink-0 flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-amber-500 hover:bg-amber-400 text-white text-xs font-semibold animate-pulse transition-colors"
+        >
+          <Play size={12} strokeWidth={2.5} />
+          Click to start audio
+        </button>
+      ) : (
+        <button
+          onClick={togglePlay}
+          className="shrink-0 w-8 h-8 rounded-xl bg-amber-500 hover:bg-amber-400 text-white flex items-center justify-center transition-colors"
+        >
+          {playing ? <Pause size={13} strokeWidth={2} /> : <Play size={13} strokeWidth={2} />}
+        </button>
+      )}
+
+      {!autoPlayBlocked && (
+        <div className="flex-1 min-w-0 flex items-center gap-2">
+          <span className="text-[10px] text-gray-400 tabular-nums shrink-0 w-8 text-right">{fmt(progress)}</span>
+          <input
+            type="range"
+            min={0}
+            max={duration || 1}
+            value={progress}
+            onChange={seek}
+            className="flex-1 h-1 accent-amber-500 cursor-pointer min-w-0"
+          />
+          <span className="text-[10px] text-gray-400 tabular-nums shrink-0 w-8">{fmt(duration)}</span>
+        </div>
+      )}
+
       <button
         onClick={cycleSpeed}
         className="shrink-0 text-xs font-bold text-amber-600 dark:text-amber-400 bg-amber-50 dark:bg-amber-500/10 px-2 py-1 rounded-lg hover:bg-amber-100 dark:hover:bg-amber-500/20 transition-colors tabular-nums"
@@ -1522,6 +1564,8 @@ export default function ListeningTestPage() {
   const [attemptId, setAttemptId] = useState<string | null>(null)
   const [loading, setLoading] = useState(true)
   const [loadError, setLoadError] = useState<string | null>(null)
+  const [sectionToast, setSectionToast] = useState<string | null>(null)
+  const toastTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
   // Load test data on mount
   useEffect(() => {
@@ -1585,12 +1629,19 @@ export default function ListeningTestPage() {
     load()
   }, [testId])
 
-  // Scroll to top of main scroll container when section changes
+  // Scroll to top + show section toast when section changes
   useEffect(() => {
     if (!started) return
     const main = document.querySelector('main')
     main?.scrollTo({ top: 0, behavior: 'smooth' })
-  }, [currentSectionIdx, started])
+
+    const section = sections[currentSectionIdx]
+    if (section) {
+      setSectionToast(`Part ${section.section_number} — audio starting`)
+      if (toastTimerRef.current) clearTimeout(toastTimerRef.current)
+      toastTimerRef.current = setTimeout(() => setSectionToast(null), 2000)
+    }
+  }, [currentSectionIdx, started]) // eslint-disable-line react-hooks/exhaustive-deps
 
   // Create attempt and start test
   async function handleStart() {
@@ -1760,9 +1811,18 @@ export default function ListeningTestPage() {
     // Bleed to edges of the dashboard main padding so top/bottom bars span full width
     <div className="-mx-6 -mt-6 -mb-6 lg:-mx-8 lg:-mt-8 lg:-mb-8">
 
+      {/* ── Section transition toast ── */}
+      {sectionToast && (
+        <div className="sticky top-0 z-50 flex justify-center pointer-events-none">
+          <div className="mt-1 px-4 py-1.5 rounded-full bg-amber-500 text-white text-xs font-semibold shadow-lg animate-fade-in">
+            🎧 {sectionToast}
+          </div>
+        </div>
+      )}
+
       {/* ── Sticky top bar: audio + timer + submit ── */}
       <div className="sticky top-0 z-40 bg-white/95 dark:bg-[#08080f]/95 backdrop-blur-sm border-b border-gray-100 dark:border-gray-800 px-4 lg:px-6 py-3 flex items-center gap-4">
-        <AudioPlayer audioUrl={currentSection?.audio_url ?? null} />
+        <AudioPlayer audioUrl={currentSection?.audio_url ?? null} autoPlay={started} />
         <div className="shrink-0 flex items-center gap-3">
           <span className="hidden sm:flex items-center gap-1 text-xs text-gray-400 tabular-nums">
             <span className="text-gray-600 dark:text-gray-300 font-medium">{answeredCount}</span>
