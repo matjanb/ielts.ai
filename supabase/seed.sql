@@ -987,3 +987,308 @@ VALUES (s4_id, 42, 'fill_blank',
 '{"diagram_table":true,"zone":"EXIT","zone_position":"right"}', 1);
 
 END $$;
+
+-- ============================================================
+-- LISTENING TEST 4
+-- ============================================================
+
+DO $$
+DECLARE
+  t4_id uuid;
+  s1_id uuid;
+  s2_id uuid;
+  s3_id uuid;
+  s4_id uuid;
+BEGIN
+
+INSERT INTO tests (title, type, book_number, test_number, difficulty)
+VALUES ('Listening Test 4', 'listening', 1, 4, 'medium')
+RETURNING id INTO t4_id;
+
+INSERT INTO test_sections (test_id, section_number, title, instructions, audio_url)
+VALUES (t4_id, 1, 'Section 1 — Questions 1-12',
+'Questions 1-5: Circle the appropriate letter. Questions 6-10: Complete the registration form using NO MORE THAN THREE WORDS. Questions 11-12: Circle the appropriate letter.',
+'https://vqyyoxfsitsdmmxecqka.supabase.co/storage/v1/object/public/test-audio/test-4.mp3')
+RETURNING id INTO s1_id;
+
+INSERT INTO test_sections (test_id, section_number, title, instructions, audio_url)
+VALUES (t4_id, 2, 'Section 2 — Questions 13-21',
+'Complete the notes. Write NO MORE THAN THREE WORDS for each answer.',
+'https://vqyyoxfsitsdmmxecqka.supabase.co/storage/v1/object/public/test-audio/test-4.mp3')
+RETURNING id INTO s2_id;
+
+INSERT INTO test_sections (test_id, section_number, title, instructions, audio_url)
+VALUES (t4_id, 3, 'Section 3 — Questions 22-31',
+'Questions 22-25: Complete the factsheet using NO MORE THAN THREE WORDS. Questions 26-31: Label the aluminium can diagram using NO MORE THAN THREE WORDS.',
+'https://vqyyoxfsitsdmmxecqka.supabase.co/storage/v1/object/public/test-audio/test-4.mp3')
+RETURNING id INTO s3_id;
+
+INSERT INTO test_sections (test_id, section_number, title, instructions, audio_url)
+VALUES (t4_id, 4, 'Section 4 — Questions 32-42',
+'Complete the lecture notes. Use NO MORE THAN THREE WORDS for each answer.',
+'https://vqyyoxfsitsdmmxecqka.supabase.co/storage/v1/object/public/test-audio/test-4.mp3')
+RETURNING id INTO s4_id;
+
+-- SECTION 1 — Q1-5 (multiple choice with images)
+
+INSERT INTO questions (section_id, question_number, question_type, question_text, correct_answer, options, points, image_url)
+VALUES (s1_id, 1, 'multiple_choice',
+'Where is the administration building?',
+'C',
+'{"A":"A","B":"B","C":"C","D":"D","image_options":true}',
+1, 'https://vqyyoxfsitsdmmxecqka.supabase.co/storage/v1/object/public/question-images/lt4 q1.png');
+
+INSERT INTO questions (section_id, question_number, question_type, question_text, correct_answer, options, points)
+VALUES (s1_id, 2, 'multiple_choice',
+'How many people are waiting in the queue?',
+'A',
+'{"A":"50","B":"100","C":"200","D":"300"}', 1);
+
+INSERT INTO questions (section_id, question_number, question_type, question_text, correct_answer, options, points, image_url)
+VALUES (s1_id, 3, 'multiple_choice',
+'What does the woman order for lunch?',
+'B',
+'{"A":"A","B":"B","C":"C","D":"D","image_options":true}',
+1, 'https://vqyyoxfsitsdmmxecqka.supabase.co/storage/v1/object/public/question-images/lt4 q3.png');
+
+INSERT INTO questions (section_id, question_number, question_type, question_text, correct_answer, options, points, image_url)
+VALUES (s1_id, 4, 'multiple_choice',
+'What does the woman order to drink?',
+'D',
+'{"A":"A","B":"B","C":"C","D":"D","image_options":true}',
+1, 'https://vqyyoxfsitsdmmxecqka.supabase.co/storage/v1/object/public/question-images/lt4 q4.png');
+
+INSERT INTO questions (section_id, question_number, question_type, question_text, correct_answer, options, points)
+VALUES (s1_id, 5, 'multiple_choice',
+'How much money does the woman give the man?',
+'D',
+'{"A":"$2.00","B":"$3.00","C":"$3.50","D":"$5.00"}', 1);
+
+-- SECTION 1 — Q6-10 (registration form)
+
+INSERT INTO questions (section_id, question_number, question_type, question_text, correct_answer, options, points)
+VALUES (s1_id, 6, 'fill_blank', 'Name of student', 'Julia Perkins',
+'{"form":true,"label":"Name of student","form_title":"Registration Form"}', 1);
+
+INSERT INTO questions (section_id, question_number, question_type, question_text, correct_answer, options, points)
+VALUES (s1_id, 7, 'fill_blank', 'Address', '15 Waratah Road',
+'{"form":true,"label":"Address","prefill":"Flat 5/"}', 1);
+
+INSERT INTO questions (section_id, question_number, question_type, question_text, correct_answer, options, points)
+VALUES (s1_id, 8, 'fill_blank', 'Town', 'Brisbane',
+'{"form":true,"label":"Town"}', 1);
+
+INSERT INTO questions (section_id, question_number, question_type, question_text, correct_answer, options, points)
+VALUES (s1_id, 9, 'fill_blank', 'Tel', 'to be advised',
+'{"form":true,"label":"Tel"}', 1);
+
+INSERT INTO questions (section_id, question_number, question_type, question_text, correct_answer, options, points)
+VALUES (s1_id, 10, 'fill_blank', 'Course', 'first year Law',
+'{"form":true,"label":"Course"}', 1);
+
+-- SECTION 1 — Q11-12
+
+INSERT INTO questions (section_id, question_number, question_type, question_text, correct_answer, options, points, image_url)
+VALUES (s1_id, 11, 'multiple_choice',
+'What did the man buy for her to eat?',
+'C',
+'{"A":"A","B":"B","C":"C","D":"D","image_options":true}',
+1, 'https://vqyyoxfsitsdmmxecqka.supabase.co/storage/v1/object/public/question-images/lt4 q11.png');
+
+INSERT INTO questions (section_id, question_number, question_type, question_text, correct_answer, options, points)
+VALUES (s1_id, 12, 'multiple_choice',
+'What must the students do as part of registration at the university?',
+'D',
+'{"A":"Check the notice board in the Law Faculty.","B":"Find out about lectures.","C":"Organise tutorial groups.","D":"Pay the union fees."}', 1);
+
+-- SECTION 2 — Q13-21 (STUDENT BANKING)
+
+INSERT INTO questions (section_id, question_number, question_type, question_text, correct_answer, options, points)
+VALUES (s2_id, 13, 'fill_blank',
+'Midland bank location: (13) ___',
+'Hope Street',
+'{"table":true,"table_title":"STUDENT BANKING","col_left":"Recommended Banks","col_right":"Location","row_left":"Midland","row_right_prefix":""}', 1);
+
+INSERT INTO questions (section_id, question_number, question_type, question_text, correct_answer, options, points)
+VALUES (s2_id, 14, 'fill_blank',
+'Funding — Must provide (14) ___ I can support myself.',
+'evidence',
+'{"box":true,"box_title":"STUDENT BANKING — Notes"}', 1);
+
+INSERT INTO questions (section_id, question_number, question_type, question_text, correct_answer, options, points)
+VALUES (s2_id, 15, 'fill_blank',
+'Opening an account — Take with me: (15) ___ and letter of enrolment.',
+'passport',
+'{"box":true}', 1);
+
+INSERT INTO questions (section_id, question_number, question_type, question_text, correct_answer, options, points)
+VALUES (s2_id, 16, 'fill_blank',
+'Recommended account: (16) ___',
+'current/student (account)',
+'{"box":true}', 1);
+
+INSERT INTO questions (section_id, question_number, question_type, question_text, correct_answer, options, points)
+VALUES (s2_id, 17, 'fill_blank',
+'Bank supplies: (17) ___ and chequecard which guarantees cheques.',
+'chequebook',
+'{"box":true}', 1);
+
+INSERT INTO questions (section_id, question_number, question_type, question_text, correct_answer, options, points)
+VALUES (s2_id, 18, 'fill_blank',
+'Cashcard: you can (18) ___ cash at any time.',
+'withdraw/draw (out)/take out',
+'{"box":true}', 1);
+
+INSERT INTO questions (section_id, question_number, question_type, question_text, correct_answer, options, points)
+VALUES (s2_id, 19, 'fill_blank',
+'Switch/Delta cards: take the money (19) ___ the account.',
+'directly from/right out of',
+'{"box":true}', 1);
+
+INSERT INTO questions (section_id, question_number, question_type, question_text, correct_answer, options, points)
+VALUES (s2_id, 20, 'fill_blank',
+'Overdraft — Must have (20) ___',
+'permission of/from bank',
+'{"box":true}', 1);
+
+INSERT INTO questions (section_id, question_number, question_type, question_text, correct_answer, options, points)
+VALUES (s2_id, 21, 'fill_blank',
+'Opening times — Most banks open until (21) ___ during the week.',
+'4.30 pm or/to 5 pm',
+'{"box":true}', 1);
+
+-- SECTION 3 — Q22-25 (FACTSHEET - Aluminium Cans)
+
+INSERT INTO questions (section_id, question_number, question_type, question_text, correct_answer, options, points)
+VALUES (s3_id, 22, 'fill_blank',
+'(22) ___ produced every day in the US — more cans produced than nails or (23) ___',
+'300 million',
+'{"box":true,"box_title":"FACTSHEET - Aluminium Cans"}', 1);
+
+INSERT INTO questions (section_id, question_number, question_type, question_text, correct_answer, options, points)
+VALUES (s3_id, 23, 'fill_blank',
+'More cans produced than nails or (23) ___',
+'paper clips',
+'{"box":true}', 1);
+
+INSERT INTO questions (section_id, question_number, question_type, question_text, correct_answer, options, points)
+VALUES (s3_id, 24, 'fill_blank',
+'Each can weighs 0.48 ounces — thinner than two (24) ___',
+'magazine pages/pieces of paper/pages',
+'{"box":true}', 1);
+
+INSERT INTO questions (section_id, question_number, question_type, question_text, correct_answer, options, points)
+VALUES (s3_id, 25, 'fill_blank',
+'Can take more than 90 pounds of pressure per square inch — over (25) ___ the pressure of a car tyre',
+'three times',
+'{"box":true}', 1);
+
+-- SECTION 3 — Q26-31 (aluminium can diagram)
+
+INSERT INTO questions (section_id, question_number, question_type, question_text, correct_answer, options, points, image_url)
+VALUES (s3_id, 26, 'fill_blank',
+'Body — (26) ___ at base (reflective surface of aluminium can easily be decorated)',
+'thicker',
+'{"diagram_labels":true,"diagram_title":"Aluminium Can","hint":"reflective surface, easily decorated"}',
+1, 'https://vqyyoxfsitsdmmxecqka.supabase.co/storage/v1/object/public/question-images/lt4 q26-31.jpg');
+
+INSERT INTO questions (section_id, question_number, question_type, question_text, correct_answer, options, points)
+VALUES (s3_id, 27, 'fill_blank',
+'(27) ___ — reflective surface of aluminium can easily be decorated',
+'label',
+'{"diagram_labels":true,"hint":"reflective surface label"}', 1);
+
+INSERT INTO questions (section_id, question_number, question_type, question_text, correct_answer, options, points)
+VALUES (s3_id, 28, 'fill_blank',
+'Base — shaped like (28) ___ to withstand pressure',
+'(a) dome',
+'{"diagram_labels":true,"hint":"base shape"}', 1);
+
+INSERT INTO questions (section_id, question_number, question_type, question_text, correct_answer, options, points)
+VALUES (s3_id, 29, 'fill_blank',
+'(29) ___ (shown in close-up detail)',
+'flange',
+'{"diagram_labels":true,"hint":"close-up detail part"}', 1);
+
+INSERT INTO questions (section_id, question_number, question_type, question_text, correct_answer, options, points)
+VALUES (s3_id, 30, 'fill_blank',
+'Lid — makes up (30) ___ of total weight',
+'25%',
+'{"diagram_labels":true,"hint":"percentage of total weight"}', 1);
+
+INSERT INTO questions (section_id, question_number, question_type, question_text, correct_answer, options, points)
+VALUES (s3_id, 31, 'fill_blank',
+'(31) ___ (opening mechanism)',
+'scored opening',
+'{"diagram_labels":true,"hint":"opening mechanism"}', 1);
+
+-- SECTION 4 — Q32-42 (lecture notes)
+
+INSERT INTO questions (section_id, question_number, question_type, question_text, correct_answer, options, points)
+VALUES (s4_id, 32, 'fill_blank',
+'Purpose of the mini lecture — To experience: (32) ___',
+'a university lecture',
+'{"box":true,"box_title":"Purpose of the mini lecture"}', 1);
+
+INSERT INTO questions (section_id, question_number, question_type, question_text, correct_answer, options, points)
+VALUES (s4_id, 33, 'fill_blank',
+'Purpose of the mini lecture — To find out about: (33) ___',
+'Sports Studies (programme)',
+'{"box":true}', 1);
+
+INSERT INTO questions (section_id, question_number, question_type, question_text, correct_answer, options, points)
+VALUES (s4_id, 34, 'fill_blank',
+'The three strands of Sports Studies — b. Sports (34) ___',
+'management',
+'{"box":true,"box_title":"The three strands of Sports Studies are:"}', 1);
+
+INSERT INTO questions (section_id, question_number, question_type, question_text, correct_answer, options, points)
+VALUES (s4_id, 35, 'fill_blank',
+'a. The psychologists work with (35) ___',
+'top athletes',
+'{"box":true,"box_title":"a — Sports psychology"}', 1);
+
+INSERT INTO questions (section_id, question_number, question_type, question_text, correct_answer, options, points)
+VALUES (s4_id, 36, 'fill_blank',
+'They want to discover what (36) ___',
+'makes winners/makes them/people win',
+'{"box":true}', 1);
+
+INSERT INTO questions (section_id, question_number, question_type, question_text, correct_answer, options, points)
+VALUES (s4_id, 37, 'fill_blank',
+'b. Sports marketing looks at (37) ___',
+'market forces',
+'{"box":true,"box_title":"b — Sports marketing"}', 1);
+
+INSERT INTO questions (section_id, question_number, question_type, question_text, correct_answer, options, points)
+VALUES (s4_id, 38, 'fill_blank',
+'Sport now competes with (38) ___',
+'(other) leisure activities',
+'{"box":true}', 1);
+
+INSERT INTO questions (section_id, question_number, question_type, question_text, correct_answer, options, points)
+VALUES (s4_id, 39, 'fill_blank',
+'Spectators want (39) ___',
+'entertainment/to be entertained',
+'{"box":true}', 1);
+
+INSERT INTO questions (section_id, question_number, question_type, question_text, correct_answer, options, points)
+VALUES (s4_id, 40, 'fill_blank',
+'c. Sports physiology is also known as (40) ___',
+'exercise science',
+'{"box":true,"box_title":"c — Sports physiology"}', 1);
+
+INSERT INTO questions (section_id, question_number, question_type, question_text, correct_answer, options, points)
+VALUES (s4_id, 41, 'fill_blank',
+'Macro levels look at (41) ___',
+'fitness testing/body measurements',
+'{"box":true}', 1);
+
+INSERT INTO questions (section_id, question_number, question_type, question_text, correct_answer, options, points)
+VALUES (s4_id, 42, 'fill_blank',
+'Micro level looks at (42) ___',
+'cellular research/cellular change/body cells',
+'{"box":true}', 1);
+
+END $$;
+

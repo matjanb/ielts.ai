@@ -1009,6 +1009,81 @@ function MultiBoxCard({
   )
 }
 
+// ── Diagram Labels Card (image left 60% + numbered label inputs right 40%) ────
+
+function DiagramLabelsCard({
+  questions,
+  answers,
+  onAnswer,
+}: {
+  questions: QuestionWithSection[]
+  answers: Record<string, string>
+  onAnswer: (id: string, v: string) => void
+}) {
+  const firstOpts = (getOptionsObj(questions[0]) ?? {}) as Record<string, unknown>
+  const title = (firstOpts.diagram_title as string | undefined) ?? 'Label the diagram'
+  const imageUrl = questions[0].image_url
+
+  return (
+    <div className="border-2 border-gray-400 dark:border-gray-500 bg-white dark:bg-gray-950 rounded-sm overflow-hidden">
+      <div className="px-5 py-3 border-b-2 border-gray-400 dark:border-gray-500">
+        <span className="text-sm font-bold italic text-gray-800 dark:text-gray-200">
+          Label the diagram — {title}
+        </span>
+      </div>
+      <div className="flex gap-0">
+        {/* Left: diagram image at 60% */}
+        <div className="w-[60%] border-r-2 border-gray-400 dark:border-gray-500 p-3 flex items-start justify-center bg-gray-50 dark:bg-gray-900/40">
+          {imageUrl ? (
+            <Image
+              src={imageUrl}
+              alt={title}
+              width={500}
+              height={600}
+              className="w-full h-auto object-contain"
+              unoptimized
+            />
+          ) : (
+            <div className="w-full h-40 flex items-center justify-center text-xs text-gray-400">No image</div>
+          )}
+        </div>
+        {/* Right: label inputs at 40% */}
+        <div className="w-[40%] p-4 space-y-4">
+          {questions.map(q => {
+            const opts = (getOptionsObj(q) ?? {}) as Record<string, unknown>
+            const hint = opts.hint as string | undefined
+            const raw = q.question_text.replace(/\(\d+\)\s*/g, '')
+            const blankIdx = raw.indexOf('___')
+            const before = blankIdx >= 0 ? raw.slice(0, blankIdx).trim() : raw.trim()
+            const after = blankIdx >= 0 ? raw.slice(blankIdx + 3).trim() : ''
+            return (
+              <div key={q.id} className="space-y-1">
+                <div className="flex items-baseline flex-wrap gap-x-1 text-sm text-gray-800 dark:text-gray-200">
+                  <span className="shrink-0 text-[10px] font-bold text-teal-600 dark:text-teal-400">
+                    ({q.question_number})
+                  </span>
+                  {before && <span className="font-semibold">{before}</span>}
+                  <input
+                    type="text"
+                    value={answers[q.id] ?? ''}
+                    onChange={e => onAnswer(q.id, e.target.value)}
+                    className="w-full border-b-2 border-gray-500 dark:border-gray-400 bg-transparent focus:outline-none focus:border-amber-500 dark:focus:border-amber-400 text-sm text-gray-900 dark:text-white placeholder-gray-400 text-center transition-colors pb-0.5"
+                    placeholder="..."
+                  />
+                  {after && <span>{after}</span>}
+                </div>
+                {hint && (
+                  <p className="text-[10px] italic text-gray-400 dark:text-gray-500 leading-tight pl-4">{hint}</p>
+                )}
+              </div>
+            )
+          })}
+        </div>
+      </div>
+    </div>
+  )
+}
+
 // ── Diagram Card (Q40-41 style: left box — center image — right box) ──────────
 
 function DiagramCard({
@@ -1178,7 +1253,7 @@ function MultiSelectBlock({
 function groupByType(qs: QuestionWithSection[]) {
   type GroupKind =
     | 'mc' | 'multiselect' | 'form' | 'inline' | 'passage'
-    | 'twoColForm' | 'box' | 'diagram' | 'multiBox' | 'table' | 'diagramTable'
+    | 'twoColForm' | 'box' | 'diagram' | 'multiBox' | 'table' | 'diagramTable' | 'diagramLabels'
   type Group = { kind: GroupKind; items: QuestionWithSection[] }
   const groups: Group[] = []
 
@@ -1189,6 +1264,8 @@ function groupByType(qs: QuestionWithSection[]) {
     let kind: GroupKind
     if (opts?.form) {
       kind = 'twoColForm'
+    } else if (opts?.diagram_labels) {
+      kind = 'diagramLabels'
     } else if (opts?.diagram) {
       kind = 'diagram'
     } else if (opts?.box) {
@@ -1674,6 +1751,12 @@ export default function ListeningTestPage() {
                   />
                 ) : group.kind === 'diagramTable' ? (
                   <DiagramTableCard
+                    questions={group.items}
+                    answers={answers}
+                    onAnswer={setAnswer}
+                  />
+                ) : group.kind === 'diagramLabels' ? (
+                  <DiagramLabelsCard
                     questions={group.items}
                     answers={answers}
                     onAnswer={setAnswer}
