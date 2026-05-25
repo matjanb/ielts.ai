@@ -111,7 +111,7 @@ function ReadingQuestion({
           className="px-3 py-1.5 rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-sm text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500/30 focus:border-blue-500 transition-all"
         >
           <option value="">— Select —</option>
-          {['A','B','C','D','E','F','G','H'].map(l => {
+          {(allOptions.length > 0 ? allOptions.map(o => o.split('=')[0].trim()) : ['A','B','C','D','E','F','G','H']).map(l => {
             const desc = allOptions.find(o => o.startsWith(l + '='))?.replace(l + '=', '').trim() ?? ''
             return <option key={l} value={l}>{desc ? `${l} — ${desc}` : l}</option>
           })}
