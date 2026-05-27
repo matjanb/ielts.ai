@@ -1730,7 +1730,15 @@ function MapMatchingCard({
   const firstOpts = (getOptionsObj(questions[0]) ?? {}) as Record<string, unknown>
   const mapTitle = (firstOpts.map_title as string | undefined) ?? 'Label the map'
   const hint = (firstOpts.hint as string | undefined) ?? 'Write the correct letter'
-  const imageUrl = questions[0].image_url
+  // map_image (new format) takes priority over the legacy image_url column
+  const imageUrl = (firstOpts.map_image as string | undefined) ?? questions[0].image_url
+
+  // Build label lookup from items array so satellites with {"map_matching":true}
+  // only get the correct label even when their question_text is absent/minimal.
+  type ItemDef = { question_number: number; label: string }
+  const itemsArr = Array.isArray(firstOpts.items) ? (firstOpts.items as ItemDef[]) : []
+  const labelMap = new Map(itemsArr.map(item => [item.question_number, item.label]))
+  const getLabel = (q: QuestionWithSection) => labelMap.get(q.question_number) ?? q.question_text
 
   return (
     <div className="border-2 border-gray-400 dark:border-gray-500 bg-white dark:bg-gray-950 rounded-sm overflow-hidden">
@@ -1756,7 +1764,7 @@ function MapMatchingCard({
             <span className="shrink-0 text-[10px] font-bold text-teal-600 dark:text-teal-400 w-5 text-right">
               {q.question_number}
             </span>
-            <span className="flex-1 text-sm text-gray-700 dark:text-gray-300">{q.question_text}</span>
+            <span className="flex-1 text-sm text-gray-700 dark:text-gray-300">{getLabel(q)}</span>
             <input
               type="text"
               value={answers[q.id] ?? ''}
