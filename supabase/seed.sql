@@ -3592,3 +3592,626 @@ VALUES (v_s4_id, 40, 'fill_blank', 'Victor Hugo''s 40 ___ gave ownership of the 
 RAISE NOTICE 'Cambridge IELTS 18 Test 4 inserted successfully. Test ID: %', v_test_id;
 
 END $$;
+
+-- ============================================================
+-- LISTENING TEST 11 (Cambridge IELTS 17 Academic — Test 1)
+-- ============================================================
+
+DO $$
+DECLARE
+  v_test_id UUID;
+  v_s1_id UUID;
+  v_s2_id UUID;
+  v_s3_id UUID;
+  v_s4_id UUID;
+BEGIN
+
+INSERT INTO tests (title, type, book_number, test_number, difficulty)
+VALUES ('Cambridge IELTS 17 — Test 1', 'listening', 4, 1, 'medium')
+RETURNING id INTO v_test_id;
+
+INSERT INTO test_sections (test_id, section_number, title, instructions, audio_url)
+VALUES (v_test_id, 1, 'Part 1', 'Complete the notes below. Write ONE WORD AND/OR A NUMBER for each answer.',
+  'https://vqyyoxfsitsdmmxecqka.supabase.co/storage/v1/object/public/test-audio/IELTS17_t1_audio1.mp3')
+RETURNING id INTO v_s1_id;
+
+INSERT INTO test_sections (test_id, section_number, title, instructions, audio_url)
+VALUES (v_test_id, 2, 'Part 2', 'Questions 11–20',
+  'https://vqyyoxfsitsdmmxecqka.supabase.co/storage/v1/object/public/test-audio/IELTS17_t1_audio2.mp3')
+RETURNING id INTO v_s2_id;
+
+INSERT INTO test_sections (test_id, section_number, title, instructions, audio_url)
+VALUES (v_test_id, 3, 'Part 3', 'Questions 21–30',
+  'https://vqyyoxfsitsdmmxecqka.supabase.co/storage/v1/object/public/test-audio/IELTS17_t1_audio3.mp3')
+RETURNING id INTO v_s3_id;
+
+INSERT INTO test_sections (test_id, section_number, title, instructions, audio_url)
+VALUES (v_test_id, 4, 'Part 4', 'Complete the notes below. Write ONE WORD ONLY for each answer.',
+  'https://vqyyoxfsitsdmmxecqka.supabase.co/storage/v1/object/public/test-audio/IELTS17_t1_audio4.mp3')
+RETURNING id INTO v_s4_id;
+
+-- =====================
+-- PART 1: Q1-10 (notes box)
+-- =====================
+
+INSERT INTO questions (section_id, question_number, question_type, question_text, correct_answer, options, points)
+VALUES (v_s1_id, 1, 'fill_blank', 'making sure the beach does not have 1 ___ on it', 'litter',
+  '{"format": "box", "box_title": "Buckworth Conservation Group",
+    "sections": [
+      {
+        "title": "Regular activities",
+        "subsections": [
+          {
+            "subtitle": "Beach",
+            "bullets": [
+              {"text": "making sure the beach does not have ___ on it", "question_number": 1},
+              {"text": "no ___", "question_number": 2}
+            ]
+          },
+          {
+            "subtitle": "Nature reserve",
+            "bullets": [
+              {"text": "maintaining paths"},
+              {"text": "nesting boxes for birds installed"},
+              {"text": "next task is taking action to attract ___ to the place", "question_number": 3},
+              {"text": "identifying types of ___", "question_number": 4},
+              {"text": "building a new ___", "question_number": 5}
+            ]
+          }
+        ]
+      },
+      {
+        "title": "Forthcoming events",
+        "subsections": [
+          {
+            "subtitle": "Saturday",
+            "bullets": [
+              {"text": "meet at Dunsmore Beach car park"},
+              {"text": "walk across the sands and reach the ___", "question_number": 6},
+              {"text": "take a picnic"},
+              {"text": "wear appropriate ___", "question_number": 7}
+            ]
+          },
+          {
+            "subtitle": "Woodwork session",
+            "bullets": [
+              {"text": "suitable for ___ to participate in", "question_number": 8},
+              {"text": "making ___ out of wood", "question_number": 9},
+              {"text": "17th, from 10 a.m. to 3 p.m."},
+              {"text": "cost of session (no camping): 10 £ ___", "question_number": 10}
+            ]
+          }
+        ]
+      }
+    ]
+  }', 1);
+
+INSERT INTO questions (section_id, question_number, question_type, question_text, correct_answer, options, points)
+VALUES (v_s1_id, 2, 'fill_blank', 'no 2 ___', 'dogs', '{"format": "box_ref"}', 1);
+INSERT INTO questions (section_id, question_number, question_type, question_text, correct_answer, options, points)
+VALUES (v_s1_id, 3, 'fill_blank', 'attract 3 ___ to the place', 'insects', '{"format": "box_ref"}', 1);
+INSERT INTO questions (section_id, question_number, question_type, question_text, correct_answer, options, points)
+VALUES (v_s1_id, 4, 'fill_blank', 'identifying types of 4 ___', 'butterflies', '{"format": "box_ref"}', 1);
+INSERT INTO questions (section_id, question_number, question_type, question_text, correct_answer, options, points)
+VALUES (v_s1_id, 5, 'fill_blank', 'building a new 5 ___', 'wall', '{"format": "box_ref"}', 1);
+INSERT INTO questions (section_id, question_number, question_type, question_text, correct_answer, options, points)
+VALUES (v_s1_id, 6, 'fill_blank', 'walk across the sands and reach the 6 ___', 'island', '{"format": "box_ref"}', 1);
+INSERT INTO questions (section_id, question_number, question_type, question_text, correct_answer, options, points)
+VALUES (v_s1_id, 7, 'fill_blank', 'wear appropriate 7 ___', 'boots', '{"format": "box_ref"}', 1);
+INSERT INTO questions (section_id, question_number, question_type, question_text, correct_answer, options, points)
+VALUES (v_s1_id, 8, 'fill_blank', 'suitable for 8 ___ to participate in', 'beginners', '{"format": "box_ref"}', 1);
+INSERT INTO questions (section_id, question_number, question_type, question_text, correct_answer, options, points)
+VALUES (v_s1_id, 9, 'fill_blank', 'making 9 ___ out of wood', 'spoons', '{"format": "box_ref"}', 1);
+INSERT INTO questions (section_id, question_number, question_type, question_text, correct_answer, options, points)
+VALUES (v_s1_id, 10, 'fill_blank', 'cost of session: 10 £ ___', '35', '{"format": "box_ref"}', 1);
+
+-- =====================
+-- PART 2: Q11-14 (multiple_choice A/B/C)
+-- =====================
+
+INSERT INTO questions (section_id, question_number, question_type, question_text, correct_answer, options, points)
+VALUES (v_s2_id, 11, 'multiple_choice',
+  'What is the maximum number of people who can stand on each side of the boat?', 'A',
+  '{"choices": [
+    {"key": "A", "text": "9"},
+    {"key": "B", "text": "15"},
+    {"key": "C", "text": "18"}
+  ]}', 1);
+
+INSERT INTO questions (section_id, question_number, question_type, question_text, correct_answer, options, points)
+VALUES (v_s2_id, 12, 'multiple_choice', 'What colour are the tour boats?', 'C',
+  '{"choices": [
+    {"key": "A", "text": "dark red"},
+    {"key": "B", "text": "jet black"},
+    {"key": "C", "text": "light green"}
+  ]}', 1);
+
+INSERT INTO questions (section_id, question_number, question_type, question_text, correct_answer, options, points)
+VALUES (v_s2_id, 13, 'multiple_choice',
+  'Which lunchbox is suitable for someone who doesn''t eat meat or fish?', 'B',
+  '{"choices": [
+    {"key": "A", "text": "Lunchbox 1"},
+    {"key": "B", "text": "Lunchbox 2"},
+    {"key": "C", "text": "Lunchbox 3"}
+  ]}', 1);
+
+INSERT INTO questions (section_id, question_number, question_type, question_text, correct_answer, options, points)
+VALUES (v_s2_id, 14, 'multiple_choice', 'What should people do with their litter?', 'B',
+  '{"choices": [
+    {"key": "A", "text": "take it home"},
+    {"key": "B", "text": "hand it to a member of staff"},
+    {"key": "C", "text": "put it in the bins provided on the boat"}
+  ]}', 1);
+
+-- PART 2: Q15-16 (options.multi TWO из A-E — lighthouse)
+
+INSERT INTO questions (section_id, question_number, question_type, question_text, correct_answer, options, points)
+VALUES (v_s2_id, 15, 'multiple_choice',
+  'Which TWO features of the lighthouse does Lou mention?', 'A,D',
+  '{"format": "multi",
+    "instruction": "Choose TWO letters, A–E.",
+    "choices": [
+      {"key": "A", "text": "why it was built"},
+      {"key": "B", "text": "who built it"},
+      {"key": "C", "text": "how long it took to build"},
+      {"key": "D", "text": "who staffed it"},
+      {"key": "E", "text": "what it was built with"}
+    ],
+    "select_count": 2
+  }', 1);
+
+INSERT INTO questions (section_id, question_number, question_type, question_text, correct_answer, options, points)
+VALUES (v_s2_id, 16, 'multiple_choice', 'Which TWO features of the lighthouse does Lou mention? (second answer)', 'A,D',
+  '{"format": "multi_ref"}', 1);
+
+-- PART 2: Q17-18 (options.multi TWO из A-E — creatures)
+
+INSERT INTO questions (section_id, question_number, question_type, question_text, correct_answer, options, points)
+VALUES (v_s2_id, 17, 'multiple_choice',
+  'Which TWO types of creature might come close to the boat?', 'B,C',
+  '{"format": "multi",
+    "instruction": "Choose TWO letters, A–E.",
+    "choices": [
+      {"key": "A", "text": "sea eagles"},
+      {"key": "B", "text": "fur seals"},
+      {"key": "C", "text": "dolphins"},
+      {"key": "D", "text": "whales"},
+      {"key": "E", "text": "penguins"}
+    ],
+    "select_count": 2
+  }', 1);
+
+INSERT INTO questions (section_id, question_number, question_type, question_text, correct_answer, options, points)
+VALUES (v_s2_id, 18, 'multiple_choice', 'Which TWO types of creature might come close to the boat? (second answer)', 'B,C',
+  '{"format": "multi_ref"}', 1);
+
+-- PART 2: Q19-20 (options.multi TWO из A-E — caves)
+
+INSERT INTO questions (section_id, question_number, question_type, question_text, correct_answer, options, points)
+VALUES (v_s2_id, 19, 'multiple_choice',
+  'Which TWO points does Lou make about the caves?', 'D,E',
+  '{"format": "multi",
+    "instruction": "Choose TWO letters, A–E.",
+    "choices": [
+      {"key": "A", "text": "Only large tourist boats can visit them."},
+      {"key": "B", "text": "The entrances to them are often blocked."},
+      {"key": "C", "text": "It is too dangerous for individuals to go near them."},
+      {"key": "D", "text": "Someone will explain what is inside them."},
+      {"key": "E", "text": "They cannot be reached on foot."}
+    ],
+    "select_count": 2
+  }', 1);
+
+INSERT INTO questions (section_id, question_number, question_type, question_text, correct_answer, options, points)
+VALUES (v_s2_id, 20, 'multiple_choice', 'Which TWO points does Lou make about the caves? (second answer)', 'D,E',
+  '{"format": "multi_ref"}', 1);
+
+-- =====================
+-- PART 3: Q21-26 (multiple_choice A/B/C)
+-- =====================
+
+INSERT INTO questions (section_id, question_number, question_type, question_text, correct_answer, options, points)
+VALUES (v_s3_id, 21, 'multiple_choice',
+  'What problem did both Diana and Tim have when arranging their work experience?', 'A',
+  '{"choices": [
+    {"key": "A", "text": "making initial contact with suitable farms"},
+    {"key": "B", "text": "organising transport to and from the farm"},
+    {"key": "C", "text": "finding a placement for the required length of time"}
+  ]}', 1);
+
+INSERT INTO questions (section_id, question_number, question_type, question_text, correct_answer, options, points)
+VALUES (v_s3_id, 22, 'multiple_choice', 'Tim was pleased to be able to help', 'B',
+  '{"choices": [
+    {"key": "A", "text": "a lamb that had a broken leg."},
+    {"key": "B", "text": "a sheep that was having difficulty giving birth."},
+    {"key": "C", "text": "a newly born lamb that was having trouble feeding."}
+  ]}', 1);
+
+INSERT INTO questions (section_id, question_number, question_type, question_text, correct_answer, options, points)
+VALUES (v_s3_id, 23, 'multiple_choice', 'Diana says the sheep on her farm', 'B',
+  '{"choices": [
+    {"key": "A", "text": "were of various different varieties."},
+    {"key": "B", "text": "were mainly reared for their meat."},
+    {"key": "C", "text": "had better quality wool than sheep on the hills."}
+  ]}', 1);
+
+INSERT INTO questions (section_id, question_number, question_type, question_text, correct_answer, options, points)
+VALUES (v_s3_id, 24, 'multiple_choice',
+  'What did the students learn about adding supplements to chicken feed?', 'A',
+  '{"choices": [
+    {"key": "A", "text": "These should only be given if specially needed."},
+    {"key": "B", "text": "It is worth paying extra for the most effective ones."},
+    {"key": "C", "text": "The amount given at one time should be limited."}
+  ]}', 1);
+
+INSERT INTO questions (section_id, question_number, question_type, question_text, correct_answer, options, points)
+VALUES (v_s3_id, 25, 'multiple_choice',
+  'What happened when Diana was working with dairy cows?', 'C',
+  '{"choices": [
+    {"key": "A", "text": "She identified some cows incorrectly."},
+    {"key": "B", "text": "She accidentally threw some milk away."},
+    {"key": "C", "text": "She made a mistake when storing milk."}
+  ]}', 1);
+
+INSERT INTO questions (section_id, question_number, question_type, question_text, correct_answer, options, points)
+VALUES (v_s3_id, 26, 'multiple_choice',
+  'What did both farmers mention about vets and farming?', 'C',
+  '{"choices": [
+    {"key": "A", "text": "Vets are failing to cope with some aspects of animal health."},
+    {"key": "B", "text": "There needs to be a fundamental change in the training of vets."},
+    {"key": "C", "text": "Some jobs could be done by the farmer rather than by a vet."}
+  ]}', 1);
+
+-- PART 3: Q27-30 (matching_pool A-F — Opinions)
+
+INSERT INTO questions (section_id, question_number, question_type, question_text, correct_answer, options, points)
+VALUES (v_s3_id, 27, 'fill_blank', 'Medical terminology', 'A',
+  '{"format": "matching_pool",
+    "instruction": "What opinion do the students give about each of the following modules on their veterinary science course? Choose FOUR answers from the box and write the correct letter, A–F, next to questions 27–30.",
+    "pool": [
+      {"key": "A", "text": "Tim found this easier than expected."},
+      {"key": "B", "text": "Tim thought this was not very clearly organised."},
+      {"key": "C", "text": "Diana may do some further study on this."},
+      {"key": "D", "text": "They both found the reading required for this was difficult."},
+      {"key": "E", "text": "Tim was shocked at something he learned on this module."},
+      {"key": "F", "text": "They were both surprised how little is known about some aspects of this."}
+    ],
+    "items": [
+      {"question_number": 27, "label": "Medical terminology"},
+      {"question_number": 28, "label": "Diet and nutrition"},
+      {"question_number": 29, "label": "Animal disease"},
+      {"question_number": 30, "label": "Wildlife medication"}
+    ]
+  }', 1);
+
+INSERT INTO questions (section_id, question_number, question_type, question_text, correct_answer, options, points)
+VALUES (v_s3_id, 28, 'fill_blank', 'Diet and nutrition', 'E', '{"format": "matching_pool_ref"}', 1);
+INSERT INTO questions (section_id, question_number, question_type, question_text, correct_answer, options, points)
+VALUES (v_s3_id, 29, 'fill_blank', 'Animal disease', 'F', '{"format": "matching_pool_ref"}', 1);
+INSERT INTO questions (section_id, question_number, question_type, question_text, correct_answer, options, points)
+VALUES (v_s3_id, 30, 'fill_blank', 'Wildlife medication', 'C', '{"format": "matching_pool_ref"}', 1);
+
+-- =====================
+-- PART 4: Q31-40 (notes box — Labyrinths)
+-- =====================
+
+INSERT INTO questions (section_id, question_number, question_type, question_text, correct_answer, options, points)
+VALUES (v_s4_id, 31, 'fill_blank', 'Mazes are a type of 31 ___', 'puzzle',
+  '{"format": "box", "box_title": "Labyrinths",
+    "sections": [
+      {
+        "title": "Definition",
+        "bullets": [
+          {"text": "a winding spiral path leading to a central area"}
+        ]
+      },
+      {
+        "title": "Labyrinths compared with mazes",
+        "bullets": [
+          {"text": "Mazes are a type of ___", "question_number": 31,
+            "sub_bullets": [
+              {"text": "___ is needed to navigate through a maze", "question_number": 32},
+              {"text": "the word ''maze'' is derived from a word meaning a feeling of ___", "question_number": 33}
+            ]
+          },
+          {"text": "Labyrinths represent a journey through life",
+            "sub_bullets": [
+              {"text": "they have frequently been used in ___ and prayer", "question_number": 34}
+            ]
+          }
+        ]
+      },
+      {
+        "title": "Early examples of the labyrinth spiral",
+        "bullets": [
+          {"text": "Ancient carvings on ___ have been found across many cultures", "question_number": 35},
+          {"text": "The Pima, a Native American tribe, wove the symbol on baskets"},
+          {"text": "Ancient Greeks used the symbol on ___", "question_number": 36}
+        ]
+      },
+      {
+        "title": "Walking labyrinths",
+        "bullets": [
+          {"text": "The largest surviving example of a turf labyrinth once had a big ___ at its centre", "question_number": 37}
+        ]
+      },
+      {
+        "title": "Labyrinths nowadays",
+        "bullets": [
+          {"text": "Believed to have a beneficial impact on mental and physical health, e.g., walking a maze can reduce a person''s ___ rate", "question_number": 38},
+          {"text": "Used in medical and health and fitness settings and also prisons"},
+          {"text": "Popular with patients, visitors and staff in hospitals",
+            "sub_bullets": [
+              {"text": "patients who can''t walk can use ''finger labyrinths'' made from ___", "question_number": 39},
+              {"text": "research has shown that Alzheimer''s sufferers experience less ___", "question_number": 40}
+            ]
+          }
+        ]
+      }
+    ]
+  }', 1);
+
+INSERT INTO questions (section_id, question_number, question_type, question_text, correct_answer, options, points)
+VALUES (v_s4_id, 32, 'fill_blank', '___ is needed to navigate through a maze', 'logic', '{"format": "box_ref"}', 1);
+INSERT INTO questions (section_id, question_number, question_type, question_text, correct_answer, options, points)
+VALUES (v_s4_id, 33, 'fill_blank', 'a word meaning a feeling of ___', 'confusion', '{"format": "box_ref"}', 1);
+INSERT INTO questions (section_id, question_number, question_type, question_text, correct_answer, options, points)
+VALUES (v_s4_id, 34, 'fill_blank', 'used in ___ and prayer', 'meditation', '{"format": "box_ref"}', 1);
+INSERT INTO questions (section_id, question_number, question_type, question_text, correct_answer, options, points)
+VALUES (v_s4_id, 35, 'fill_blank', 'Ancient carvings on ___', 'stone', '{"format": "box_ref"}', 1);
+INSERT INTO questions (section_id, question_number, question_type, question_text, correct_answer, options, points)
+VALUES (v_s4_id, 36, 'fill_blank', 'Ancient Greeks used the symbol on ___', 'coins', '{"format": "box_ref"}', 1);
+INSERT INTO questions (section_id, question_number, question_type, question_text, correct_answer, options, points)
+VALUES (v_s4_id, 37, 'fill_blank', 'once had a big ___ at its centre', 'tree', '{"format": "box_ref"}', 1);
+INSERT INTO questions (section_id, question_number, question_type, question_text, correct_answer, options, points)
+VALUES (v_s4_id, 38, 'fill_blank', 'reduce a person''s ___ rate', 'breathing', '{"format": "box_ref"}', 1);
+INSERT INTO questions (section_id, question_number, question_type, question_text, correct_answer, options, points)
+VALUES (v_s4_id, 39, 'fill_blank', '''finger labyrinths'' made from ___', 'paper', '{"format": "box_ref"}', 1);
+INSERT INTO questions (section_id, question_number, question_type, question_text, correct_answer, options, points)
+VALUES (v_s4_id, 40, 'fill_blank', 'Alzheimer''s sufferers experience less ___', 'anxiety', '{"format": "box_ref"}', 1);
+
+RAISE NOTICE 'Cambridge IELTS 17 Test 1 inserted successfully. Test ID: %', v_test_id;
+
+END $$;
+
+-- ============================================================
+-- LISTENING TEST (Cambridge IELTS 17 — Test 2)
+-- ============================================================
+
+DO $$
+DECLARE
+  t_id uuid;
+  s1_id uuid;
+  s2_id uuid;
+  s3_id uuid;
+  s4_id uuid;
+BEGIN
+
+INSERT INTO tests (title, type, book_number, test_number, difficulty)
+VALUES ('Cambridge IELTS 17 — Test 2', 'listening', 4, 2, 'medium')
+RETURNING id INTO t_id;
+
+INSERT INTO test_sections (test_id, section_number, title, instructions, audio_url)
+VALUES (t_id, 1, 'Part 1 — Questions 1-10',
+'Questions 1-7: Complete the notes below. Write ONE WORD ONLY for each answer. Questions 8-10: Complete the table below. Write ONE WORD ONLY for each answer.',
+'https://vqyyoxfsitsdmmxecqka.supabase.co/storage/v1/object/public/test-audio/IELTS17_t2_audio1.mp3')
+RETURNING id INTO s1_id;
+
+INSERT INTO test_sections (test_id, section_number, title, instructions, audio_url)
+VALUES (t_id, 2, 'Part 2 — Questions 11-20',
+'Questions 11-14: Choose the correct letter, A, B or C. Questions 15-20: Choose SIX answers from the box A-H.',
+'https://vqyyoxfsitsdmmxecqka.supabase.co/storage/v1/object/public/test-audio/IELTS17_t2_audio2.mp3')
+RETURNING id INTO s2_id;
+
+INSERT INTO test_sections (test_id, section_number, title, instructions, audio_url)
+VALUES (t_id, 3, 'Part 3 — Questions 21-30',
+'Questions 21-22: Choose TWO letters, A-E. Questions 23-27: Choose FIVE answers from the box A-G. Questions 28-30: Choose the correct letter, A, B or C.',
+'https://vqyyoxfsitsdmmxecqka.supabase.co/storage/v1/object/public/test-audio/IELTS17_t2_audio3.mp3')
+RETURNING id INTO s3_id;
+
+INSERT INTO test_sections (test_id, section_number, title, instructions, audio_url)
+VALUES (t_id, 4, 'Part 4 — Questions 31-40',
+'Complete the notes below. Write ONE WORD AND/OR A NUMBER for each answer.',
+'https://vqyyoxfsitsdmmxecqka.supabase.co/storage/v1/object/public/test-audio/IELTS17_t2_audio4.mp3')
+RETURNING id INTO s4_id;
+
+-- ============================================================
+-- PART 1 — Q1-7 (notes box)
+-- ============================================================
+
+INSERT INTO questions (section_id, question_number, question_type, question_text, correct_answer, options, points)
+VALUES (s1_id, 1, 'fill_blank', 'Help with (1) ___ books (times to be arranged)', 'collecting',
+'{"box":true,"box_title":"Opportunities for voluntary work in Southoe village","box_subtitle":"Library"}', 1);
+
+INSERT INTO questions (section_id, question_number, question_type, question_text, correct_answer, options, points)
+VALUES (s1_id, 2, 'fill_blank', 'Help needed to keep (2) ___ of books up to date', 'records',
+'{"box":true}', 1);
+
+INSERT INTO questions (section_id, question_number, question_type, question_text, correct_answer, options, points)
+VALUES (s1_id, 3, 'fill_blank', 'Library is in the (3) ___ Room in the village hall', 'West',
+'{"box":true}', 1);
+
+INSERT INTO questions (section_id, question_number, question_type, question_text, correct_answer, options, points)
+VALUES (s1_id, 4, 'fill_blank', 'Help by providing (4) ___', 'transport',
+'{"box":true,"box_subtitle":"Lunch club"}', 1);
+
+INSERT INTO questions (section_id, question_number, question_type, question_text, correct_answer, options, points)
+VALUES (s1_id, 5, 'fill_blank', 'Help with hobbies such as (5) ___', 'art',
+'{"box":true}', 1);
+
+INSERT INTO questions (section_id, question_number, question_type, question_text, correct_answer, options, points)
+VALUES (s1_id, 6, 'fill_blank', 'Taking Mrs Carroll to (6) ___', 'hospital',
+'{"box":true,"box_subtitle":"Help for individuals needed next week"}', 1);
+
+INSERT INTO questions (section_id, question_number, question_type, question_text, correct_answer, options, points)
+VALUES (s1_id, 7, 'fill_blank', 'Work in the (7) ___ at Mr Selsbury''s house', 'garden',
+'{"box":true}', 1);
+
+-- ============================================================
+-- PART 1 — Q8-10 (table)
+-- ============================================================
+
+INSERT INTO questions (section_id, question_number, question_type, question_text, correct_answer, options, points)
+VALUES (s1_id, 8, 'fill_blank', '19 Oct — Event: (8) ___ — Location: Village hall — Help needed: providing refreshments', 'quiz',
+'{"table":true,"table_title":"Village social events","col_headers":["Date","Event","Location","Help needed"],"rows":[{"Date":"19 Oct","Event":"(8)","Location":"Village hall","Help needed":"providing refreshments"},{"Date":"18 Nov","Event":"dance","Location":"Village hall","Help needed":"checking (9)"},{"Date":"31 Dec","Event":"New Year''s Eve party","Location":"Mountfort Hotel","Help needed":"designing the (10)"}]}', 1);
+
+INSERT INTO questions (section_id, question_number, question_type, question_text, correct_answer, options, points)
+VALUES (s1_id, 9, 'fill_blank', '18 Nov — dance — Village hall — checking (9) ___', 'tickets',
+'{"table":true}', 1);
+
+INSERT INTO questions (section_id, question_number, question_type, question_text, correct_answer, options, points)
+VALUES (s1_id, 10, 'fill_blank', '31 Dec — New Year''s Eve party — Mountfort Hotel — designing the (10) ___', 'poster',
+'{"table":true}', 1);
+
+-- ============================================================
+-- PART 2 — Q11-14 (multiple_choice A/B/C — Oniton Hall)
+-- ============================================================
+
+INSERT INTO questions (section_id, question_number, question_type, question_text, correct_answer, options, points)
+VALUES (s2_id, 11, 'multiple_choice', 'Many past owners made changes to', 'B',
+'{"A":"the gardens.","B":"the house.","C":"the farm."}', 1);
+
+INSERT INTO questions (section_id, question_number, question_type, question_text, correct_answer, options, points)
+VALUES (s2_id, 12, 'multiple_choice', 'Sir Edward Downes built Oniton Hall because he wanted', 'C',
+'{"A":"a place for discussing politics.","B":"a place to display his wealth.","C":"a place for artists and writers."}', 1);
+
+INSERT INTO questions (section_id, question_number, question_type, question_text, correct_answer, options, points)
+VALUES (s2_id, 13, 'multiple_choice', 'Visitors can learn about the work of servants in the past from', 'C',
+'{"A":"audio guides.","B":"photographs.","C":"people in costume."}', 1);
+
+INSERT INTO questions (section_id, question_number, question_type, question_text, correct_answer, options, points)
+VALUES (s2_id, 14, 'multiple_choice', 'What is new for children at Oniton Hall?', 'B',
+'{"A":"clothes for dressing up","B":"mini tractors","C":"the adventure playground"}', 1);
+
+-- ============================================================
+-- PART 2 — Q15-20 (matching_pool A-H — Locations on the farm)
+-- ============================================================
+
+INSERT INTO questions (section_id, question_number, question_type, question_text, correct_answer, options, points)
+VALUES (s2_id, 15, 'multiple_choice', 'dairy', 'D',
+'{"matching_pool":true,"pool_title":"Activities","pool":{"A":"shopping","B":"watching cows being milked","C":"seeing old farming equipment","D":"eating and drinking","E":"starting a trip","F":"seeing rare breeds of animals","G":"helping to look after animals","H":"using farming tools"},"pool_instruction":"Choose SIX answers from the box and write the correct letter, A-H, next to Questions 15-20","pool_intro":"Which activity is offered at each of the following locations on the farm?","select_count":6}', 1);
+
+INSERT INTO questions (section_id, question_number, question_type, question_text, correct_answer, options, points)
+VALUES (s2_id, 16, 'multiple_choice', 'large barn', 'C',
+'{"matching_pool":true}', 1);
+
+INSERT INTO questions (section_id, question_number, question_type, question_text, correct_answer, options, points)
+VALUES (s2_id, 17, 'multiple_choice', 'small barn', 'G',
+'{"matching_pool":true}', 1);
+
+INSERT INTO questions (section_id, question_number, question_type, question_text, correct_answer, options, points)
+VALUES (s2_id, 18, 'multiple_choice', 'stables', 'A',
+'{"matching_pool":true}', 1);
+
+INSERT INTO questions (section_id, question_number, question_type, question_text, correct_answer, options, points)
+VALUES (s2_id, 19, 'multiple_choice', 'shed', 'E',
+'{"matching_pool":true}', 1);
+
+INSERT INTO questions (section_id, question_number, question_type, question_text, correct_answer, options, points)
+VALUES (s2_id, 20, 'multiple_choice', 'parkland', 'F',
+'{"matching_pool":true}', 1);
+
+-- ============================================================
+-- PART 3 — Q21-22 (multi TWO из A-E — Romeo and Juliet)
+-- ============================================================
+
+INSERT INTO questions (section_id, question_number, question_type, question_text, correct_answer, options, points)
+VALUES (s3_id, 21, 'multiple_choice',
+'Which TWO things do the students agree they need to include in their reviews of Romeo and Juliet?',
+'D',
+'{"A":"analysis of the text","B":"a summary of the plot","C":"a description of the theatre","D":"a personal reaction","E":"a reference to particular scenes","multi":true,"select_count":2,"linked_pair":22}', 1);
+
+INSERT INTO questions (section_id, question_number, question_type, question_text, correct_answer, options, points)
+VALUES (s3_id, 22, 'multiple_choice', 'Which TWO things — second answer', 'E',
+'{"multi":true,"select_count":2,"linked_pair":21,"hidden_label":true}', 1);
+
+-- ============================================================
+-- PART 3 — Q23-27 (matching_pool A-G — Aspects of the production)
+-- ============================================================
+
+INSERT INTO questions (section_id, question_number, question_type, question_text, correct_answer, options, points)
+VALUES (s3_id, 23, 'multiple_choice', 'the set', 'D',
+'{"matching_pool":true,"pool_title":"Opinions","pool":{"A":"They both expected this to be more traditional.","B":"They both thought this was original.","C":"They agree this created the right atmosphere.","D":"They agree this was a major strength.","E":"They were both disappointed by this.","F":"They disagree about why this was an issue.","G":"They disagree about how this could be improved."},"pool_instruction":"Choose FIVE answers from the box and write the correct letter, A-G, next to Questions 23-27","pool_intro":"Which opinion do the speakers give about each of the following aspects of The Emporium''s production of Romeo and Juliet?","select_count":5}', 1);
+
+INSERT INTO questions (section_id, question_number, question_type, question_text, correct_answer, options, points)
+VALUES (s3_id, 24, 'multiple_choice', 'the lighting', 'C',
+'{"matching_pool":true}', 1);
+
+INSERT INTO questions (section_id, question_number, question_type, question_text, correct_answer, options, points)
+VALUES (s3_id, 25, 'multiple_choice', 'the costume design', 'A',
+'{"matching_pool":true}', 1);
+
+INSERT INTO questions (section_id, question_number, question_type, question_text, correct_answer, options, points)
+VALUES (s3_id, 26, 'multiple_choice', 'the music', 'E',
+'{"matching_pool":true}', 1);
+
+INSERT INTO questions (section_id, question_number, question_type, question_text, correct_answer, options, points)
+VALUES (s3_id, 27, 'multiple_choice', 'the actors'' delivery', 'F',
+'{"matching_pool":true}', 1);
+
+-- ============================================================
+-- PART 3 — Q28-30 (multiple_choice A/B/C)
+-- ============================================================
+
+INSERT INTO questions (section_id, question_number, question_type, question_text, correct_answer, options, points)
+VALUES (s3_id, 28, 'multiple_choice',
+'The students think the story of Romeo and Juliet is still relevant for young people today because', 'C',
+'{"A":"it illustrates how easily conflict can start.","B":"it deals with problems that families experience.","C":"it teaches them about relationships."}', 1);
+
+INSERT INTO questions (section_id, question_number, question_type, question_text, correct_answer, options, points)
+VALUES (s3_id, 29, 'multiple_choice',
+'The students found watching Romeo and Juliet in another language', 'C',
+'{"A":"frustrating.","B":"demanding.","C":"moving."}', 1);
+
+INSERT INTO questions (section_id, question_number, question_type, question_text, correct_answer, options, points)
+VALUES (s3_id, 30, 'multiple_choice',
+'Why do the students think Shakespeare''s plays have such international appeal?', 'C',
+'{"A":"The stories are exciting.","B":"There are recognisable characters.","C":"They can be interpreted in many ways."}', 1);
+
+-- ============================================================
+-- PART 4 — Q31-40 (notes box — Icelandic language)
+-- ============================================================
+
+INSERT INTO questions (section_id, question_number, question_type, question_text, correct_answer, options, points)
+VALUES (s4_id, 31, 'fill_blank', 'has approximately (31) ___ speakers', '321,000',
+'{"box":true,"box_title":"The impact of digital technology on the Icelandic language","box_subtitle":"The Icelandic language"}', 1);
+
+INSERT INTO questions (section_id, question_number, question_type, question_text, correct_answer, options, points)
+VALUES (s4_id, 32, 'fill_blank', 'has a (32) ___ that is still growing', 'vocabulary',
+'{"box":true}', 1);
+
+INSERT INTO questions (section_id, question_number, question_type, question_text, correct_answer, options, points)
+VALUES (s4_id, 33, 'fill_blank', 'has its own words for computer-based concepts, such as web browser and (33) ___', 'podcast',
+'{"box":true}', 1);
+
+INSERT INTO questions (section_id, question_number, question_type, question_text, correct_answer, options, points)
+VALUES (s4_id, 34, 'fill_blank', 'are big users of digital technology, such as (34) ___', 'smartphones',
+'{"box":true,"box_subtitle":"Young speakers"}', 1);
+
+INSERT INTO questions (section_id, question_number, question_type, question_text, correct_answer, options, points)
+VALUES (s4_id, 35, 'fill_blank', 'are becoming (35) ___ very quickly', 'bilingual',
+'{"box":true}', 1);
+
+INSERT INTO questions (section_id, question_number, question_type, question_text, correct_answer, options, points)
+VALUES (s4_id, 36, 'fill_blank', 'are having discussions using only English while they are in the (36) ___ at school', 'playground',
+'{"box":true}', 1);
+
+INSERT INTO questions (section_id, question_number, question_type, question_text, correct_answer, options, points)
+VALUES (s4_id, 37, 'fill_blank', 'are better able to identify the content of a (37) ___ in English than Icelandic', 'picture',
+'{"box":true}', 1);
+
+INSERT INTO questions (section_id, question_number, question_type, question_text, correct_answer, options, points)
+VALUES (s4_id, 38, 'fill_blank', 'write very little in Icelandic because of the small number of speakers and because of how complicated its (38) ___ is', 'grammar',
+'{"box":true,"box_subtitle":"Technology and internet companies"}', 1);
+
+INSERT INTO questions (section_id, question_number, question_type, question_text, correct_answer, options, points)
+VALUES (s4_id, 39, 'fill_blank', 'is worried that young Icelanders may lose their (39) ___ as Icelanders', 'identity',
+'{"box":true,"box_subtitle":"The Icelandic government"}', 1);
+
+INSERT INTO questions (section_id, question_number, question_type, question_text, correct_answer, options, points)
+VALUES (s4_id, 40, 'fill_blank', 'is worried about the consequences of children not being (40) ___ in either Icelandic or English', 'fluent',
+'{"box":true}', 1);
+
+RAISE NOTICE 'Cambridge IELTS 17 Test 2 inserted successfully. Test ID: %', t_id;
+
+END $$;
