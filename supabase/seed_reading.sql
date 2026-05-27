@@ -963,3 +963,161 @@ INSERT INTO questions (id, section_id, question_number, question_type, question_
 ('c1800000-0000-0000-0000-000000001038', 'b1800000-0000-0000-0000-000000000103', 38, 'multiple_choice', 'What point does the reviewer make about Charles II in the fourth paragraph? A) He chose to celebrate what was essentially a defeat. B) He misunderstood the motives of his opponents. C) He aimed to restore people''s faith in the monarchy. D) He was driven by a desire to be popular.', 'A', 1),
 ('c1800000-0000-0000-0000-000000001039', 'b1800000-0000-0000-0000-000000000103', 39, 'multiple_choice', 'What does the reviewer say about Charles Spencer in the fifth paragraph? A) His decision to write the book comes as a surprise. B) He takes an unbiased approach to the subject matter. C) His descriptions of events would be better if they included more detail. D) He chooses language that is suitable for a twenty-first-century audience.', 'B', 1),
 ('c1800000-0000-0000-0000-000000001040', 'b1800000-0000-0000-0000-000000000103', 40, 'multiple_choice', 'When the reviewer says the book ''doesn''t quite hit the mark'', she is making the point that A) it overlooks the impact of events on ordinary people. B) it lacks an analysis of prevalent views on monarchy. C) it omits any references to the deceit practised by Charles II during his time in hiding. D) it fails to address whether Charles II''s experiences had a lasting influence on him.', 'D', 1);
+
+-- ============================================================
+-- Cambridge IELTS 18 Academic — Reading Test 2 (Test 11 on site)
+-- ============================================================
+
+INSERT INTO tests (id, title, type, book_number, test_number, difficulty) VALUES
+  ('a1800000-0000-0000-0000-000000000011', 'Cambridge IELTS 18 — Reading Test 11', 'reading', 18, 11, 'medium');
+
+INSERT INTO test_sections (id, test_id, section_number, title, instructions) VALUES
+(
+  'b1800000-0000-0000-0000-000000000111',
+  'a1800000-0000-0000-0000-000000000011',
+  1,
+  'The Dead Sea Scrolls',
+  'PASSAGE 1: The Dead Sea Scrolls
+
+You should spend about 20 minutes on Questions 1–13, which are based on Reading Passage 1 below.
+
+In late 1946 or early 1947, three Bedouin teenagers were tending their goats and sheep near the ancient settlement of Qumran, located on the northwest shore of the Dead Sea in what is now known as the West Bank. One of these young shepherds tossed a rock into an opening on the side of a cliff and was surprised to hear a shattering sound. He and his companions later entered the cave and stumbled across a collection of large clay jars, seven of which contained scrolls with writing on them. The teenagers took the seven scrolls to a nearby town where they were sold for a small sum to a local antiquities dealer. Word of the find spread, and Bedouins and archaeologists eventually unearthed tens of thousands of additional scroll fragments from 10 nearby caves; together they make up between 800 and 900 manuscripts. It soon became clear that this was one of the greatest archaeological discoveries ever made.
+
+The origin of the Dead Sea Scrolls, which were written around 2,000 years ago between 150 BCE and 70 CE, is still the subject of scholarly debate even today. According to the prevailing theory, they are the work of a population that inhabited the area until Roman troops destroyed the settlement around 70 CE. The area was known as Judea at that time, and the people are thought to have belonged to a group called the Essenes, a devout Jewish sect.
+
+The majority of the texts on the Dead Sea Scrolls are in Hebrew, with some fragments written in an ancient version of its alphabet thought to have fallen out of use in the fifth century BCE. But there are other languages as well. Some scrolls are in Aramaic, the language spoken by many inhabitants of the region from the sixth century BCE to the siege of Jerusalem in 70 CE. In addition, several texts feature translations of the Hebrew Bible into Greek.
+
+The Dead Sea Scrolls include fragments from every book of the Old Testament of the Bible except for the Book of Esther. The only entire book of the Hebrew Bible preserved among the manuscripts from Qumran is Isaiah; this copy, dated to the first century BCE, is considered the earliest biblical manuscript still in existence. Along with biblical texts, the scrolls include documents about sectarian regulations and religious writings that do not appear in the Old Testament.
+
+The writing on the Dead Sea Scrolls is mostly in black or occasionally red ink, and the scrolls themselves are nearly all made of either parchment (animal skin) or an early form of paper called ''papyrus''. The only exception is the scroll numbered 3Q15, which was created out of a combination of copper and tin. Known as the Copper Scroll, this curious document features letters chiselled onto metal – perhaps, as some have theorized, to better withstand the passage of time. One of the most intriguing manuscripts from Qumran, this is a sort of ancient treasure map that lists dozens of gold and silver caches. Using an unconventional vocabulary and odd spelling, it describes 64 underground hiding places that supposedly contain riches buried for safekeeping. None of these hoards have been recovered, possibly because the Romans pillaged Judea during the first century CE. According to various hypotheses, the treasure belonged to local people, or was rescued from the Second Temple before its destruction or never existed to begin with.
+
+Some of the Dead Sea Scrolls have been on interesting journeys. In 1948, a Syrian Orthodox archbishop known as Mar Samuel acquired four of the original seven scrolls from a Jerusalem shoemaker and part-time antiquity dealer, paying less than $100 for them. He then travelled to the United States and unsuccessfully offered them to a number of universities, including Yale. Finally, in 1954, he placed an advertisement in the business newspaper The Wall Street Journal – under the category ''Miscellaneous Items for Sale'' – that read: ''Biblical Manuscripts dating back to at least 200 B.C. are for sale. This would be an ideal gift to an educational or religious institution by an individual or group.'' Fortunately, Israeli archaeologist and statesman Yigael Yadin negotiated their purchase and brought the scrolls back to Jerusalem, where they remain to this day.
+
+In 2017, researchers from the University of Haifa restored and deciphered one of the last untranslated scrolls. The university''s Eshbal Ratson and Jonathan Ben-Dov spent one year reassembling the 60 fragments that make up the scroll. Deciphered from a band of coded text on parchment, the find provides insight into the community of people who wrote it and the 364-day calendar they would have used. The scroll names celebrations that indicate shifts in seasons and details two yearly religious events known from another Dead Sea Scroll. Only one more known scroll remains untranslated.'
+),
+(
+  'b1800000-0000-0000-0000-000000000112',
+  'a1800000-0000-0000-0000-000000000011',
+  2,
+  'A second attempt at domesticating the tomato',
+  'PASSAGE 2: A second attempt at domesticating the tomato
+
+You should spend about 20 minutes on Questions 14–26, which are based on Reading Passage 2 below.
+
+A  It took at least 3,000 years for humans to learn how to domesticate the wild tomato and cultivate it for food. Now two separate teams in Brazil and China have done it all over again in less than three years. And they have done it better in some ways, as the re-domesticated tomatoes are more nutritious than the ones we eat at present.
+
+This approach relies on the revolutionary CRISPR genome editing technique, in which changes are deliberately made to the DNA of a living cell, allowing genetic material to be added, removed or altered. The technique could not only improve existing crops, but could also be used to turn thousands of wild plants into useful and appealing foods. In fact, a third team in the US has already begun to do this with a relative of the tomato called the groundcherry.
+
+This fast-track domestication could help make the world''s food supply healthier and far more resistant to diseases, such as the rust fungus devastating wheat crops.
+
+''This could transform what we eat,'' says Jorg Kudla at the University of Munster in Germany, a member of the Brazilian team. ''There are 50,000 edible plants in the world, but 90 percent of our energy comes from just 15 crops.''
+
+''We can now mimic the known domestication course of major crops like rice, maize, sorghum or others,'' says Caixia Gao of the Chinese Academy of Sciences in Beijing. ''Then we might try to domesticate plants that have never been domesticated.''
+
+B  Wild tomatoes, which are native to the Andes region in South America, produce pea-sized fruits. Over many generations, peoples such as the Aztecs and Incas transformed the plant by selecting and breeding plants with mutations in their genetic structure, which resulted in desirable traits such as larger fruit.
+
+But every time a single plant with a mutation is taken from a larger population for breeding, much genetic diversity is lost. And sometimes the desirable mutations come with less desirable traits. For instance, the tomato strains grown for supermarkets have lost much of their flavour.
+
+By comparing the genomes of modern plants to those of their wild relatives, biologists have been working out what genetic changes occurred as plants were domesticated. The teams in Brazil and China have now used this knowledge to reintroduce these changes from scratch while maintaining or even enhancing the desirable traits of wild strains.
+
+C  Kudla''s team made six changes altogether. For instance, they tripled the size of fruit by editing a gene called FRUIT WEIGHT, and increased the number of tomatoes per truss by editing another called MULTIFLORA.
+
+While the historical domestication of tomatoes reduced levels of the red pigment lycopene – thought to have potential health benefits – the team in Brazil managed to boost it instead. The wild tomato has twice as much lycopene as cultivated ones; the newly domesticated one has five times as much.
+
+''They are quite tasty,'' says Kudla. ''A little bit strong. And very aromatic.''
+
+The team in China re-domesticated several strains of wild tomatoes with desirable traits lost in domesticated tomatoes. In this way they managed to create a strain resistant to a common disease called bacterial spot race, which can devastate yields. They also created another strain that is more salt tolerant – and has higher levels of vitamin C.
+
+D  Meanwhile, Joyce Van Eck at the Boyce Thompson Institute in New York state decided to use the same approach to domesticate the groundcherry or goldenberry (Physalis pruinosa) for the first time. This fruit looks similar to the closely related Cape gooseberry (Physalis peruviana).
+
+Groundcherries are already sold to a limited extent in the US but they are hard to produce because the plant has a sprawling growth habit and the small fruits fall off the branches when ripe. Van Eck''s team has edited the plants to increase fruit size, make their growth more compact and to stop fruits dropping. ''There''s potential for this to be a commercial crop,'' says Van Eck. But she adds that taking the work further would be expensive because of the need to pay for a licence for the CRISPR technology and get regulatory approval.
+
+E  This approach could boost the use of many obscure plants, says Jonathan Jones of the Sainsbury Lab in the UK. But it will be hard for new foods to grow so popular with farmers and consumers that they become new staple crops, he thinks.
+
+The three teams already have their eye on other plants that could be ''catapulted into the mainstream'', including foxtail, oat-grass and cowpea. By choosing wild plants that are drought or heat tolerant, says Gao, we could create crops that will thrive even as the planet warms.
+
+But Kudla didn''t want to reveal which species were in his team''s sights, because CRISPR has made the process so easy. ''Any one with the right skills could go to their lab and do this.'''
+),
+(
+  'b1800000-0000-0000-0000-000000000113',
+  'a1800000-0000-0000-0000-000000000011',
+  3,
+  'Insight or evolution?',
+  'PASSAGE 3: Insight or evolution?
+
+You should spend about 20 minutes on Questions 27–40, which are based on Reading Passage 3 below.
+
+Two scientists consider the origins of discoveries and other innovative behavior
+
+Scientific discovery is popularly believed to result from the sheer genius of such intellectual stars as naturalist Charles Darwin and theoretical physicist Albert Einstein. Our view of such unique contributions to science often disregards the person''s prior experience and the efforts of their lesser-known predecessors. Conventional wisdom also places great weight on insight in promoting breakthrough scientific achievements, as if ideas spontaneously pop into someone''s head – fully formed and functional.
+
+There may be some limited truth to this view. However, we believe that it largely misrepresents the real nature of scientific discovery, as well as that of creativity and innovation in many other realms of human endeavor.
+
+Setting aside such greats as Darwin and Einstein – whose monumental contributions are duly celebrated – we suggest that innovation is more a process of trial and error, where two steps forward may sometimes come with one step back, as well as one or more steps to the right or left. This evolutionary view of human innovation undermines the notion of creative genius and recognizes the cumulative nature of scientific progress.
+
+Consider one unheralded scientist: John Nicholson, a mathematical physicist working in the 1910s who postulated the existence of ''proto-elements'' in outer space. By combining different numbers of weights of these proto-elements'' atoms, Nicholson could recover the weights of all the elements in the then-known periodic table. These successes are all the more noteworthy given the fact that Nicholson was wrong about the presence of proto-elements: they do not actually exist. Yet, amid his often fanciful theories and wild speculations, Nicholson also proposed a novel theory about the structure of atoms. Niels Bohr, the Nobel prize-winning father of modern atomic theory, jumped off from this interesting idea to conceive his now-famous model of the atom.
+
+What are we to make of this story? One might simply conclude that science is a collective and cumulative enterprise. That may be true, but there may be a deeper insight to be gleaned. We propose that science is constantly evolving, much as species of animals do. In biological systems, organisms may display new characteristics that result from random genetic mutations. In the same way, random, arbitrary or accidental mutations of ideas may help pave the way for advances in science. If mutations prove beneficial, then the animal or the scientific theory will continue to thrive and perhaps reproduce.
+
+Support for this evolutionary view of behavioral innovation comes from many domains. Consider one example of an influential innovation in US horseracing. The so-called ''acey-deucy'' stirrup placement, in which the rider''s foot in his left stirrup is placed as much as 25 centimeters lower than the right, is believed to confer important speed advantages when turning on oval tracks. It was developed by a relatively unknown jockey named Jackie Westrope. Had Westrope conducted methodical investigations or examined extensive film records in a shrewd plan to outrun his rivals? Had he foreseen the speed advantage that would be conferred by riding acey-deucy? No. He suffered a leg injury, which left him unable to fully bend his left knee. His modification just happened to coincide with enhanced left-hand turning performance. This led to the rapid and widespread adoption of riding acey-deucy by many riders, a racing style which continues in today''s thoroughbred racing.
+
+Plenty of other stories show that fresh advances can arise from error, misadventure, and also pure serendipity – a happy accident. For example, in the early 1970s, two employees of the company 3M each had a problem: Spencer Silver had a product – a glue which was only slightly sticky – and no use for it, while his colleague Art Fry was trying to figure out how to affix temporary bookmarks in his hymn book without damaging its pages. The solution to both these problems was the invention of the brilliantly simple yet phenomenally successful Post-It note. Such examples give lie to the claim that ingenious, designing minds are responsible for human creativity and invention. Far more banal and mechanical forces may be at work; forces that are fundamentally connected to the laws of science.
+
+The notions of insight, creativity and genius are often invoked, but they remain vague and of doubtful scientific utility, especially when one considers the diverse and enduring contributions of individuals such as Plato, Leonardo da Vinci, Shakespeare, Beethoven, Galileo, Newton, Kepler, Curie, Pasteur and Edison. These notions merely label rather than explain the evolution of human innovations. We need another approach, and there is a promising candidate.
+
+The Law of Effect was advanced by psychologist Edward Thorndike in 1898, some 40 years after Charles Darwin published his groundbreaking work on biological evolution, On the Origin of Species. This simple law holds that organisms tend to repeat successful behaviors and to refrain from performing unsuccessful ones. Just like Darwin''s Law of Natural Selection, the Law of Effect involves an entirely mechanical process of variation and selection, without any end objective in sight.
+
+Of course, the origin of human innovation demands much further study. In particular, the provenance of the raw material on which the Law of Effect operates is not as clearly known as that of the genetic mutations on which the Law of Natural Selection operates. The generation of novel ideas and behaviors may not be entirely random, but constrained by prior successes and failures – of the current individual (such as Bohr) or of predecessors (such as Nicholson).
+
+The time seems right for abandoning the naive notions of intelligent design and genius, and for scientifically exploring the true origins of creative behavior.'
+);
+
+INSERT INTO questions (id, section_id, question_number, question_type, question_text, correct_answer, points) VALUES
+-- PASSAGE 1: Q1-5 fill blank ONE WORD ONLY
+('c1800000-0000-0000-0000-000000001101', 'b1800000-0000-0000-0000-000000000111', 1, 'fill_blank', '[Complete the notes. Choose ONE WORD ONLY from the passage.] heard a noise of breaking when one teenager threw a ___ (1)', 'rock', 1),
+('c1800000-0000-0000-0000-000000001102', 'b1800000-0000-0000-0000-000000000111', 2, 'fill_blank', '[Complete the notes. Choose ONE WORD ONLY from the passage.] teenagers went into the ___ (2) and found a number of containers', 'cave', 1),
+('c1800000-0000-0000-0000-000000001103', 'b1800000-0000-0000-0000-000000000111', 3, 'fill_blank', '[Complete the notes. Choose ONE WORD ONLY from the passage.] found a number of containers made of ___ (3)', 'clay', 1),
+('c1800000-0000-0000-0000-000000001104', 'b1800000-0000-0000-0000-000000000111', 4, 'fill_blank', '[Complete the notes. Choose ONE WORD ONLY from the passage.] thought to have been written by group of people known as the ___ (4)', 'Essenes', 1),
+('c1800000-0000-0000-0000-000000001105', 'b1800000-0000-0000-0000-000000000111', 5, 'fill_blank', '[Complete the notes. Choose ONE WORD ONLY from the passage.] written mainly in the ___ (5) language', 'Hebrew', 1),
+-- PASSAGE 1: Q6-13 TRUE/FALSE/NOT GIVEN
+('c1800000-0000-0000-0000-000000001106', 'b1800000-0000-0000-0000-000000000111', 6, 'true_false', '[Write TRUE if agrees, FALSE if contradicts, NOT GIVEN if no information.] The Bedouin teenagers who found the scrolls were disappointed by how little money they received for them.', 'NOT GIVEN', 1),
+('c1800000-0000-0000-0000-000000001107', 'b1800000-0000-0000-0000-000000000111', 7, 'true_false', '[Write TRUE if agrees, FALSE if contradicts, NOT GIVEN if no information.] There is agreement among academics about the origin of the Dead Sea Scrolls.', 'FALSE', 1),
+('c1800000-0000-0000-0000-000000001108', 'b1800000-0000-0000-0000-000000000111', 8, 'true_false', '[Write TRUE if agrees, FALSE if contradicts, NOT GIVEN if no information.] Most of the books of the Bible written on the scrolls are incomplete.', 'TRUE', 1),
+('c1800000-0000-0000-0000-000000001109', 'b1800000-0000-0000-0000-000000000111', 9, 'true_false', '[Write TRUE if agrees, FALSE if contradicts, NOT GIVEN if no information.] The information on the Copper Scroll is written in an unusual way.', 'TRUE', 1),
+('c1800000-0000-0000-0000-000000001110', 'b1800000-0000-0000-0000-000000000111', 10, 'true_false', '[Write TRUE if agrees, FALSE if contradicts, NOT GIVEN if no information.] Mar Samuel was given some of the scrolls as a gift.', 'FALSE', 1),
+('c1800000-0000-0000-0000-000000001111', 'b1800000-0000-0000-0000-000000000111', 11, 'true_false', '[Write TRUE if agrees, FALSE if contradicts, NOT GIVEN if no information.] In the early 1950s, a number of educational establishments in the US were keen to buy scrolls from Mar Samuel.', 'FALSE', 1),
+('c1800000-0000-0000-0000-000000001112', 'b1800000-0000-0000-0000-000000000111', 12, 'true_false', '[Write TRUE if agrees, FALSE if contradicts, NOT GIVEN if no information.] The scroll that was pieced together in 2017 contains information about annual occasions in the Qumran area 2,000 years ago.', 'TRUE', 1),
+('c1800000-0000-0000-0000-000000001113', 'b1800000-0000-0000-0000-000000000111', 13, 'true_false', '[Write TRUE if agrees, FALSE if contradicts, NOT GIVEN if no information.] Academics at the University of Haifa are currently researching how to decipher the final scroll.', 'NOT GIVEN', 1),
+-- PASSAGE 2: Q14-18 matching sections A-E
+('c1800000-0000-0000-0000-000000001114', 'b1800000-0000-0000-0000-000000000112', 14, 'matching', '[Reading Passage 2 has five sections, A–E. Which section contains the following information? Write the correct letter, A–E. NB You may use any letter more than once.] a reference to a type of tomato that can resist a dangerous infection', 'C', 1),
+('c1800000-0000-0000-0000-000000001115', 'b1800000-0000-0000-0000-000000000112', 15, 'matching', '[Reading Passage 2 has five sections, A–E. Which section contains the following information? Write the correct letter, A–E. NB You may use any letter more than once.] an explanation of how problems can arise from focusing only on a certain type of tomato plant', 'B', 1),
+('c1800000-0000-0000-0000-000000001116', 'b1800000-0000-0000-0000-000000000112', 16, 'matching', '[Reading Passage 2 has five sections, A–E. Which section contains the following information? Write the correct letter, A–E. NB You may use any letter more than once.] a number of examples of plants that are not cultivated at present but could be useful as food sources', 'E', 1),
+('c1800000-0000-0000-0000-000000001117', 'b1800000-0000-0000-0000-000000000112', 17, 'matching', '[Reading Passage 2 has five sections, A–E. Which section contains the following information? Write the correct letter, A–E. NB You may use any letter more than once.] a comparison between the early domestication of the tomato and more recent research', 'A', 1),
+('c1800000-0000-0000-0000-000000001118', 'b1800000-0000-0000-0000-000000000112', 18, 'matching', '[Reading Passage 2 has five sections, A–E. Which section contains the following information? Write the correct letter, A–E. NB You may use any letter more than once.] a personal reaction to the flavour of a tomato that has been genetically edited', 'C', 1),
+-- PASSAGE 2: Q19-23 matching researchers A-D
+('c1800000-0000-0000-0000-000000001119', 'b1800000-0000-0000-0000-000000000112', 19, 'matching', '[Match each statement with the correct researcher: A=Jorg Kudla B=Caixia Gao C=Joyce Van Eck D=Jonathan Jones. NB You may use any letter more than once.] Domestication of certain plants could allow them to adapt to future environmental challenges.', 'B', 1),
+('c1800000-0000-0000-0000-000000001120', 'b1800000-0000-0000-0000-000000000112', 20, 'matching', '[Match each statement with the correct researcher: A=Jorg Kudla B=Caixia Gao C=Joyce Van Eck D=Jonathan Jones. NB You may use any letter more than once.] The idea of growing and eating unusual plants may not be accepted on a large scale.', 'D', 1),
+('c1800000-0000-0000-0000-000000001121', 'b1800000-0000-0000-0000-000000000112', 21, 'matching', '[Match each statement with the correct researcher: A=Jorg Kudla B=Caixia Gao C=Joyce Van Eck D=Jonathan Jones. NB You may use any letter more than once.] It is not advisable for the future direction of certain research to be made public.', 'A', 1),
+('c1800000-0000-0000-0000-000000001122', 'b1800000-0000-0000-0000-000000000112', 22, 'matching', '[Match each statement with the correct researcher: A=Jorg Kudla B=Caixia Gao C=Joyce Van Eck D=Jonathan Jones. NB You may use any letter more than once.] Present efforts to domesticate one wild fruit are limited by the costs involved.', 'C', 1),
+('c1800000-0000-0000-0000-000000001123', 'b1800000-0000-0000-0000-000000000112', 23, 'matching', '[Match each statement with the correct researcher: A=Jorg Kudla B=Caixia Gao C=Joyce Van Eck D=Jonathan Jones. NB You may use any letter more than once.] Humans only make use of a small proportion of the plant food available on Earth.', 'A', 1),
+-- PASSAGE 2: Q24-26 fill blank ONE WORD ONLY
+('c1800000-0000-0000-0000-000000001124', 'b1800000-0000-0000-0000-000000000112', 24, 'fill_blank', '[Complete the sentences. Choose ONE WORD ONLY from the passage.] An undesirable trait such as loss of ___ (24) may be caused by a mutation in a tomato gene.', 'flavour', 1),
+('c1800000-0000-0000-0000-000000001125', 'b1800000-0000-0000-0000-000000000112', 25, 'fill_blank', '[Complete the sentences. Choose ONE WORD ONLY from the passage.] By modifying one gene in a tomato plant, researchers made the tomato three times its original ___ (25).', 'size', 1),
+('c1800000-0000-0000-0000-000000001126', 'b1800000-0000-0000-0000-000000000112', 26, 'fill_blank', '[Complete the sentences. Choose ONE WORD ONLY from the passage.] A type of tomato which was not badly affected by ___ (26), and was rich in vitamin C, was produced by a team of researchers in China.', 'salt', 1),
+-- PASSAGE 3: Q27-31 multiple choice
+('c1800000-0000-0000-0000-000000001127', 'b1800000-0000-0000-0000-000000000113', 27, 'multiple_choice', 'The purpose of the first paragraph is to A) defend particular ideas. B) compare certain beliefs. C) disprove a widely held view. D) outline a common assumption.', 'D', 1),
+('c1800000-0000-0000-0000-000000001128', 'b1800000-0000-0000-0000-000000000113', 28, 'multiple_choice', 'What are the writers doing in the second paragraph? A) criticising an opinion B) justifying a standpoint C) explaining an approach D) supporting an argument', 'A', 1),
+('c1800000-0000-0000-0000-000000001129', 'b1800000-0000-0000-0000-000000000113', 29, 'multiple_choice', 'In the third paragraph, what do the writers suggest about Darwin and Einstein? A) They represent an exception to a general rule. B) Their way of working has been misunderstood. C) They are an ideal which others should aspire to. D) Their achievements deserve greater recognition.', 'A', 1),
+('c1800000-0000-0000-0000-000000001130', 'b1800000-0000-0000-0000-000000000113', 30, 'multiple_choice', 'John Nicholson is an example of a person whose idea A) established his reputation as an influential scientist. B) was only fully understood at a later point in history. C) laid the foundations for someone else''s breakthrough. D) initially met with scepticism from the scientific community.', 'C', 1),
+('c1800000-0000-0000-0000-000000001131', 'b1800000-0000-0000-0000-000000000113', 31, 'multiple_choice', 'What is the key point of interest about the ''acey-deucy'' stirrup placement? A) the simple reason why it was invented B) the enthusiasm with which it was adopted C) the research that went into its development D) the cleverness of the person who first used it', 'A', 1),
+-- PASSAGE 3: Q32-36 YES/NO/NOT GIVEN
+('c1800000-0000-0000-0000-000000001132', 'b1800000-0000-0000-0000-000000000113', 32, 'true_false', '[Do the following statements agree with the claims of the writer? Write YES if agrees, NO if contradicts, NOT GIVEN if impossible to say.] Acknowledging people such as Plato or da Vinci as geniuses will help us understand the process by which great minds create new ideas.', 'NO', 1),
+('c1800000-0000-0000-0000-000000001133', 'b1800000-0000-0000-0000-000000000113', 33, 'true_false', '[Do the following statements agree with the claims of the writer? Write YES if agrees, NO if contradicts, NOT GIVEN if impossible to say.] The Law of Effect was discovered at a time when psychologists were seeking a scientific reason why creativity occurs.', 'NOT GIVEN', 1),
+('c1800000-0000-0000-0000-000000001134', 'b1800000-0000-0000-0000-000000000113', 34, 'true_false', '[Do the following statements agree with the claims of the writer? Write YES if agrees, NO if contradicts, NOT GIVEN if impossible to say.] The Law of Effect states that no planning is involved in the behaviour of organisms.', 'YES', 1),
+('c1800000-0000-0000-0000-000000001135', 'b1800000-0000-0000-0000-000000000113', 35, 'true_false', '[Do the following statements agree with the claims of the writer? Write YES if agrees, NO if contradicts, NOT GIVEN if impossible to say.] The Law of Effect sets out clear explanations about the sources of new ideas and behaviours.', 'NO', 1),
+('c1800000-0000-0000-0000-000000001136', 'b1800000-0000-0000-0000-000000000113', 36, 'true_false', '[Do the following statements agree with the claims of the writer? Write YES if agrees, NO if contradicts, NOT GIVEN if impossible to say.] Many scientists are now turning away from the notion of intelligent design and genius.', 'NOT GIVEN', 1),
+-- PASSAGE 3: Q37-40 matching words A-G — "The origins of creative behaviour"
+('c1800000-0000-0000-0000-000000001137', 'b1800000-0000-0000-0000-000000000113', 37, 'matching', '[Complete the summary using the list of words A–G. Write the correct letter, A–G. Words: A=invention B=goals C=compromise D=mistakes E=luck F=inspiration G=experiments] The traditional view of scientific discovery is that breakthroughs happen when a single great mind has sudden ___ (37).', 'F', 1),
+('c1800000-0000-0000-0000-000000001138', 'b1800000-0000-0000-0000-000000000113', 38, 'matching', '[Complete the summary using the list of words A–G. Write the correct letter, A–G. Words: A=invention B=goals C=compromise D=mistakes E=luck F=inspiration G=experiments] In some cases, this process involves ___ (38), such as Nicholson''s theory about proto-elements.', 'D', 1),
+('c1800000-0000-0000-0000-000000001139', 'b1800000-0000-0000-0000-000000000113', 39, 'matching', '[Complete the summary using the list of words A–G. Write the correct letter, A–G. Words: A=invention B=goals C=compromise D=mistakes E=luck F=inspiration G=experiments] There is also often an element of ___ (39), for example, the coincidence of ideas that led to the invention of the Post-It note.', 'E', 1),
+('c1800000-0000-0000-0000-000000001140', 'b1800000-0000-0000-0000-000000000113', 40, 'matching', '[Complete the summary using the list of words A–G. Write the correct letter, A–G. Words: A=invention B=goals C=compromise D=mistakes E=luck F=inspiration G=experiments] With both the Law of Natural Selection and the Law of Effect, there may be no clear ___ (40) involved, but merely a process of variation and selection.', 'B', 1);
