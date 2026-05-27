@@ -309,6 +309,9 @@ function RadioQuestion({
 // any hardcoded question numbers or section numbers.
 function isFormStyle(q: QuestionWithSection): boolean {
   if (q.question_type !== 'fill_blank') return false
+  // box_ref questions are part of a structured notes box — never treat as standalone form
+  const opts = getOptionsObj(q)
+  if (opts?.format === 'box_ref' || opts?.format === 'box' || opts?.box) return false
   const text = q.question_text.trim()
   const blankIdx = text.indexOf('___')
   if (blankIdx < 0) return false
@@ -515,26 +518,8 @@ function NotepadCard({
   onAnswer: (id: string, v: string) => void
 }) {
   return (
-    <div className="rounded-xl overflow-hidden border border-gray-300 dark:border-gray-600 shadow-sm">
-      {/* Spiral binding row — repeating holes */}
-      <div
-        className="h-5 bg-gray-300 dark:bg-gray-700"
-        style={{
-          backgroundImage:
-            'radial-gradient(circle, white 4px, transparent 4px), radial-gradient(circle, #6b7280 5px, transparent 5px)',
-          backgroundSize: '22px 20px',
-          backgroundPosition: '11px center',
-        }}
-      />
-      {/* Notepad lines */}
-      <div
-        className="px-5 py-4 space-y-3 bg-[#fffef5] dark:bg-[#1a1a10]"
-        style={{
-          backgroundImage:
-            'repeating-linear-gradient(transparent, transparent 27px, #d1d5db 27px, #d1d5db 28px)',
-          backgroundPositionY: '12px',
-        }}
-      >
+    <div className="border-2 border-gray-700 dark:border-gray-400 bg-white dark:bg-gray-950 rounded-sm">
+      <div className="px-5 py-4 space-y-3">
         {questions.map(q => {
           const text = q.question_text
           const blankIdx = text.indexOf('___')
@@ -1663,6 +1648,12 @@ function groupByType(qs: QuestionWithSection[]) {
       continue
     }
 
+    // multi_ref questions are second-slot companions for format:"multi" — absorb into preceding group
+    if (opts?.format === 'multi_ref' && last) {
+      last.items.push(q)
+      continue
+    }
+
     // Passage questions only merge if they share the same passage_group number.
     // Box questions split when a new box_title appears (start of a new bordered box).
     const sameGroup =
@@ -2081,14 +2072,16 @@ export default function ListeningTestPage() {
 
                 {group.kind === 'mc' ? (
                   <div className="space-y-8">
-                    {group.items.map(q => (
-                      <RadioQuestion
-                        key={q.id}
-                        question={q}
-                        answer={answers[q.id] ?? ''}
-                        onChange={v => setAnswer(q.id, v)}
-                      />
-                    ))}
+                    {group.items
+                      .filter(q => getOptionsObj(q)?.format !== 'multi_ref')
+                      .map(q => (
+                        <RadioQuestion
+                          key={q.id}
+                          question={q}
+                          answer={answers[q.id] ?? ''}
+                          onChange={v => setAnswer(q.id, v)}
+                        />
+                      ))}
                   </div>
                 ) : group.kind === 'multiselect' ? (
                   <MultiSelectBlock
