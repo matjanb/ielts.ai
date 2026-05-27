@@ -550,6 +550,162 @@ function NotepadCard({
   )
 }
 
+// ── Structured Box Card (format:"box" with sections/bullets tree) ────────────
+// Renders the full sections definition from the first question's options JSON,
+// including static bullets (no question_number), nested sub_bullets, subsection
+// headers, and optional two-column layouts.
+
+function StructuredBoxCard({
+  questions,
+  answers,
+  onAnswer,
+}: {
+  questions: QuestionWithSection[]
+  answers: Record<string, string>
+  onAnswer: (id: string, v: string) => void
+}) {
+  type BulletDef = { text: string; question_number?: number; sub_bullets?: BulletDef[] }
+  type ColDef = { bullets: BulletDef[] }
+  type SubsectionDef = { subtitle: string; bullets: BulletDef[] }
+  type SectionDef = {
+    title?: string
+    bullets?: BulletDef[]
+    subsections?: SubsectionDef[]
+    columns?: ColDef[]
+  }
+
+  const firstOpts = getOptionsObj(questions[0]) as Record<string, unknown> | null
+  const title = firstOpts?.box_title as string | undefined
+  const sections = firstOpts?.sections as SectionDef[] | undefined
+  const questionMap = new Map(questions.map(q => [q.question_number, q]))
+
+  function renderBullet(bullet: BulletDef, depth = 0): React.ReactNode {
+    const q = bullet.question_number != null ? questionMap.get(bullet.question_number) : null
+    // Strip any leading (N) token the text may include
+    const raw = bullet.text.replace(/^\(\d+\)\s*/, '')
+    const key = q ? `q${q.question_number}` : `s-${raw.slice(0, 20)}-${depth}`
+
+    let rowContent: React.ReactNode
+    if (q) {
+      const blankIdx = raw.indexOf('___')
+      const before = blankIdx >= 0 ? raw.slice(0, blankIdx) : raw
+      const after = blankIdx >= 0 ? raw.slice(blankIdx + 3) : ''
+      rowContent = (
+        <div className="flex items-baseline flex-wrap gap-x-1 text-sm text-gray-800 dark:text-gray-200 leading-7">
+          <span className="shrink-0 text-[10px] font-bold text-teal-600 dark:text-teal-400 mr-0.5">
+            ({q.question_number})
+          </span>
+          {before && <span>{before}</span>}
+          <input
+            type="text"
+            value={answers[q.id] ?? ''}
+            onChange={e => onAnswer(q.id, e.target.value)}
+            className="w-28 border-b-2 border-gray-500 dark:border-gray-400 bg-transparent focus:outline-none focus:border-amber-500 dark:focus:border-amber-400 text-sm text-gray-900 dark:text-white placeholder-gray-400 text-center transition-colors pb-0.5"
+            placeholder="..."
+          />
+          {after && <span>{after}</span>}
+        </div>
+      )
+    } else {
+      rowContent = (
+        <p className="text-sm text-gray-700 dark:text-gray-300 leading-relaxed">{raw}</p>
+      )
+    }
+
+    return (
+      <div key={key} className={depth > 0 ? 'ml-5 space-y-1' : 'space-y-1'}>
+        {rowContent}
+        {bullet.sub_bullets?.map((sub, i) => (
+          <div key={i}>{renderBullet(sub, depth + 1)}</div>
+        ))}
+      </div>
+    )
+  }
+
+  // Fallback when no sections definition (box_ref-only group with missing template)
+  if (!sections) {
+    return (
+      <div className="border-2 border-gray-700 dark:border-gray-400 bg-white dark:bg-gray-950 rounded-sm">
+        <div className="px-5 py-4 space-y-3">
+          {questions.filter(q => getOptionsObj(q)?.format !== 'box').map(q => {
+            const text = q.question_text
+            const blankIdx = text.indexOf('___')
+            const before = blankIdx >= 0 ? text.slice(0, blankIdx) : text
+            const after = blankIdx >= 0 ? text.slice(blankIdx + 3) : ''
+            return (
+              <div key={q.id} className="flex items-baseline flex-wrap gap-x-1 text-sm text-gray-800 dark:text-gray-200 leading-7">
+                <span className="font-bold text-gray-600 dark:text-gray-400 shrink-0 mr-0.5">({q.question_number})</span>
+                {before && <span>{before}</span>}
+                <input type="text" value={answers[q.id] ?? ''} onChange={e => onAnswer(q.id, e.target.value)}
+                  className="inline-block w-32 px-1 pb-0.5 border-b-2 border-gray-500 dark:border-gray-400 bg-transparent focus:outline-none focus:border-amber-500 dark:focus:border-amber-400 text-sm text-gray-900 dark:text-white placeholder-gray-400 text-center transition-colors"
+                  placeholder="..." />
+                {after && <span>{after}</span>}
+              </div>
+            )
+          })}
+        </div>
+      </div>
+    )
+  }
+
+  return (
+    <div className="border-2 border-gray-400 dark:border-gray-500 bg-white dark:bg-gray-950 rounded-sm">
+      {title && (
+        <div className="px-5 py-3 border-b-2 border-gray-400 dark:border-gray-500">
+          <span className="text-sm font-bold italic text-gray-800 dark:text-gray-200">{title}</span>
+        </div>
+      )}
+      <div className="px-5 py-4 space-y-5">
+        {sections.map((section, si) => (
+          <div key={si} className="space-y-2">
+            {section.title && (
+              <p className="text-[10px] font-black uppercase tracking-widest text-gray-500 dark:text-gray-400 mt-2 mb-1 pb-1 border-b border-gray-200 dark:border-gray-700">
+                {section.title}
+              </p>
+            )}
+
+            {/* Two-column layout */}
+            {section.columns && (
+              <div className="grid grid-cols-2 gap-x-8 gap-y-1">
+                {section.columns.map((col, ci) => (
+                  <div key={ci} className="space-y-1">
+                    {col.bullets.map((b, bi) => (
+                      <div key={bi}>{renderBullet(b)}</div>
+                    ))}
+                  </div>
+                ))}
+              </div>
+            )}
+
+            {/* Direct bullets on the section (no columns, no subsections) */}
+            {section.bullets && !section.columns && (
+              <div className="space-y-1">
+                {section.bullets.map((b, bi) => (
+                  <div key={bi}>{renderBullet(b)}</div>
+                ))}
+              </div>
+            )}
+
+            {/* Subsections */}
+            {section.subsections?.map((sub, ssi) => (
+              <div key={ssi} className="space-y-1 mt-2">
+                <p className="text-[10px] font-black uppercase tracking-widest text-gray-400 dark:text-gray-500 mb-1">
+                  {sub.subtitle}
+                </p>
+                <div className="space-y-1">
+                  {sub.bullets.map((b, bi) => (
+                    <div key={bi}>{renderBullet(b)}</div>
+                  ))}
+                </div>
+              </div>
+            ))}
+          </div>
+        ))}
+      </div>
+    </div>
+  )
+}
+
 // ── Two-Column Form Card ───────────────────────────────────────────────────────
 // Two variants:
 //   Person-grouped (Test 2 KATE/LUKI): person header row, static interleaved rows
@@ -1679,13 +1835,19 @@ function MatchingPoolCard({
 function groupByType(qs: QuestionWithSection[]) {
   type GroupKind =
     | 'mc' | 'multiselect' | 'form' | 'inline' | 'passage'
-    | 'twoColForm' | 'box' | 'diagram' | 'multiBox' | 'table' | 'diagramTable' | 'diagramLabels'
+    | 'twoColForm' | 'box' | 'structuredBox' | 'diagram' | 'multiBox' | 'table' | 'diagramTable' | 'diagramLabels'
     | 'mapMatching' | 'matchingPool'
   type Group = { kind: GroupKind; items: QuestionWithSection[] }
   const groups: Group[] = []
 
   for (const q of qs) {
     const opts = getOptionsObj(q)
+
+    // box_ref satellites always absorb into a preceding structuredBox group
+    if (opts?.format === 'box_ref' && groups[groups.length - 1]?.kind === 'structuredBox') {
+      groups[groups.length - 1].items.push(q)
+      continue
+    }
 
     // Determine kind for this question
     let kind: GroupKind
@@ -1699,6 +1861,8 @@ function groupByType(qs: QuestionWithSection[]) {
       kind = 'diagramLabels'
     } else if (opts?.diagram) {
       kind = 'diagram'
+    } else if (opts?.format === 'box') {
+      kind = 'structuredBox'
     } else if (opts?.box) {
       kind = 'box'
     } else if (opts?.multi) {
@@ -2180,6 +2344,12 @@ export default function ListeningTestPage() {
                   />
                 ) : group.kind === 'twoColForm' ? (
                   <TwoColFormCard
+                    questions={group.items}
+                    answers={answers}
+                    onAnswer={setAnswer}
+                  />
+                ) : group.kind === 'structuredBox' ? (
+                  <StructuredBoxCard
                     questions={group.items}
                     answers={answers}
                     onAnswer={setAnswer}
