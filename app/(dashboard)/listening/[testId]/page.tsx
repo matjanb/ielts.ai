@@ -1905,9 +1905,12 @@ function groupByType(qs: QuestionWithSection[]) {
 
     // Passage questions only merge if they share the same passage_group number.
     // Box questions split when a new box_title appears (start of a new bordered box).
+    // multiBox questions never merge — each primary question starts its own group;
+    // hidden_label satellites are absorbed by the earlier check above.
     const sameGroup =
       last &&
       last.kind === kind &&
+      kind !== 'multiBox' &&
       !(kind === 'box' && opts?.box_title && opts.box_title !== getOptionsObj(last.items[0])?.box_title) &&
       (kind !== 'passage' ||
         last.items[last.items.length - 1].passage_group === q.passage_group)
