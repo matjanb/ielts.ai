@@ -353,6 +353,7 @@ function getOptionsObj(q: QuestionWithSection): Record<string, unknown> | null {
 // Normalise MC options to a uniform {letter, text, value} shape.
 // Array format ("A. text"): value = full string (legacy scoring).
 // Object format ({A: "text"}): value = letter only (new scoring).
+// New format ({choices: [{key, text}]}): value = key.
 function parseMcOptions(q: QuestionWithSection): Array<{ letter: string; text: string; value: string }> {
   const opts = q.options
   if (!opts) return []
@@ -364,6 +365,13 @@ function parseMcOptions(q: QuestionWithSection): Array<{ letter: string; text: s
   }
   if (typeof opts === 'object') {
     const obj = opts as Record<string, unknown>
+    // New format: {"choices": [{"key": "A", "text": "..."},...]}
+    if (Array.isArray(obj.choices)) {
+      return (obj.choices as Array<{ key: string; text: string }>).map(c => ({
+        letter: c.key, text: c.text, value: c.key,
+      }))
+    }
+    // Legacy format: {"A": "text", "B": "text", ...}
     return ['A', 'B', 'C', 'D', 'E']
       .filter(k => k in obj && typeof obj[k] === 'string')
       .map(k => ({ letter: k, text: obj[k] as string, value: k }))
@@ -1559,7 +1567,11 @@ function MatchingPoolCard({
 }) {
   const firstOpts = (getOptionsObj(questions[0]) ?? {}) as Record<string, unknown>
   const poolTitle = (firstOpts.pool_title as string | undefined) ?? 'Options'
-  const pool = (firstOpts.pool as Record<string, string> | undefined) ?? {}
+  // Support both legacy {A:"text"} and new [{key:"A",text:"..."}] pool formats
+  const rawPool = firstOpts.pool
+  const pool: Record<string, string> = Array.isArray(rawPool)
+    ? Object.fromEntries((rawPool as Array<{ key: string; text: string }>).map(e => [e.key, e.text]))
+    : (rawPool as Record<string, string> | undefined) ?? {}
   const poolLetters = Object.keys(pool).sort()
 
   return (
@@ -1619,7 +1631,7 @@ function groupByType(qs: QuestionWithSection[]) {
       kind = 'twoColForm'
     } else if (opts?.map_matching) {
       kind = 'mapMatching'
-    } else if (opts?.matching_pool) {
+    } else if (opts?.matching_pool || opts?.format === 'matching_pool' || opts?.format === 'matching_pool_ref') {
       kind = 'matchingPool'
     } else if (opts?.diagram_labels) {
       kind = 'diagramLabels'
