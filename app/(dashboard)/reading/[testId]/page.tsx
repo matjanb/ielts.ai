@@ -135,6 +135,50 @@ function ReadingQuestion({
   )
 }
 
+// ── Passage Renderer ──────────────────────────────────────────────────────────
+
+function PassageText({ text }: { text: string }) {
+  const normalized = text.replace(/\\n/g, '\n')
+  const hasParagraphs = /\n[A-H]\s{1,3}[A-Z]/.test(normalized) || /^[A-H]\s{1,3}[A-Z]/m.test(normalized)
+  const lines = normalized.split('\n').filter(Boolean)
+
+  return (
+    <div className="text-sm text-gray-700 dark:text-gray-300 leading-relaxed space-y-3">
+      {lines.map((line, i) => {
+        const trimmed = line.trim()
+
+        if (i === 0 || i === 1) {
+          return (
+            <p key={i} className="font-bold text-gray-900 dark:text-white text-base">
+              {trimmed}
+            </p>
+          )
+        }
+
+        if (hasParagraphs) {
+          const match = trimmed.match(/^([A-H])\s{1,3}(.+)/)
+          if (match) {
+            return (
+              <div key={i} className="flex gap-3">
+                <span className="shrink-0 w-6 h-6 rounded-md bg-blue-100 dark:bg-blue-500/20 text-blue-600 dark:text-blue-400 flex items-center justify-center text-xs font-bold mt-0.5">
+                  {match[1]}
+                </span>
+                <p className="flex-1">{match[2].trim()}</p>
+              </div>
+            )
+          }
+        }
+
+        return (
+          <p key={i} className="text-gray-500 dark:text-gray-400 italic">
+            {trimmed}
+          </p>
+        )
+      })}
+    </div>
+  )
+}
+
 // ── Start Screen ──────────────────────────────────────────────────────────────
 
 function StartScreen({ test, onStart }: { test: IeltsTest; onStart: () => void }) {
@@ -324,7 +368,6 @@ export default function ReadingTestPage() {
   const answeredCount = Object.keys(answers).length
   const totalQuestions = questions.length
 
-  // Group questions by type for display
   function groupQuestions(qs: QuestionWithSection[]) {
     const groups: { label: string; questions: QuestionWithSection[] }[] = []
     let currentGroup: QuestionWithSection[] = []
@@ -379,42 +422,8 @@ export default function ReadingTestPage() {
             <h2 className="text-base font-bold text-gray-900 dark:text-white">{currentPassage?.title}</h2>
           </div>
           <div className="flex-1 overflow-y-auto px-6 py-4">
-  <div className="text-sm text-gray-700 dark:text-gray-300 leading-relaxed space-y-3">
-    {passageText
-      .replace(/\\n/g, '\n')
-      .split('\n')
-      .filter(Boolean)
-      .map((line, i) => {
-        const trimmed = line.trim()
-
-        if (i === 0 || i === 1) {
-          return (
-            <p key={i} className="font-bold text-gray-900 dark:text-white text-base">
-              {trimmed}
-            </p>
-          )
-        }
-
-        const match = trimmed.match(/^([A-H])\s{1,2}(.+)/)
-        if (match) {
-          return (
-            <div key={i} className="flex gap-3">
-              <span className="shrink-0 w-6 h-6 rounded-md bg-blue-100 dark:bg-blue-500/20 text-blue-600 dark:text-blue-400 flex items-center justify-center text-xs font-bold mt-0.5">
-                {match[1]}
-              </span>
-              <p className="flex-1">{match[2]}</p>
-            </div>
-          )
-        }
-
-        return (
-          <p key={i} className="text-gray-500 dark:text-gray-400 italic">
-            {trimmed}
-          </p>
-        )
-      })}
-  </div>
-</div>
+            <PassageText text={passageText} />
+          </div>
         </div>
 
         <div
