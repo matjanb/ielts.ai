@@ -772,6 +772,83 @@ function TableCard({
 }) {
   const firstOpts = (getOptionsObj(questions[0]) ?? {}) as Record<string, unknown>
   const tableTitle = firstOpts.table_title as string | undefined
+
+  // ── col_headers + rows array format (e.g. "Village social events") ───────────
+  if (Array.isArray(firstOpts.col_headers) && Array.isArray(firstOpts.rows)) {
+    const colHeaders = firstOpts.col_headers as string[]
+    const tableRows = firstOpts.rows as Record<string, string>[]
+    const questionMap = new Map(questions.map(q => [q.question_number, q]))
+
+    function parseCellValue(cellValue: string) {
+      const m = cellValue.match(/^(.*?)\((\d+)\)(.*)$/)
+      if (m) {
+        const q = questionMap.get(parseInt(m[2]))
+        if (q) return { prefix: m[1].trim(), question: q, suffix: m[3].trim() }
+      }
+      return { staticText: cellValue }
+    }
+
+    function renderCellContent(cellValue: string) {
+      const parsed = parseCellValue(cellValue)
+      if ('staticText' in parsed) return <>{parsed.staticText}</>
+      const { prefix, question, suffix } = parsed
+      return (
+        <span className="inline-flex items-baseline flex-wrap gap-x-1">
+          {prefix && <span>{prefix}</span>}
+          <sup className="text-[10px] font-bold text-teal-600 dark:text-teal-400">({question.question_number})</sup>
+          <input
+            type="text"
+            value={answers[question.id] ?? ''}
+            onChange={e => onAnswer(question.id, e.target.value)}
+            className="w-24 border-b-2 border-gray-500 dark:border-gray-400 bg-transparent focus:outline-none focus:border-amber-500 dark:focus:border-amber-400 text-sm text-gray-900 dark:text-white placeholder-gray-400 text-center transition-colors pb-0.5 align-baseline"
+            placeholder="..."
+          />
+          {suffix && <span>{suffix}</span>}
+        </span>
+      )
+    }
+
+    return (
+      <div className="border-2 border-gray-400 dark:border-gray-500 rounded-sm overflow-x-auto">
+        {tableTitle && (
+          <div className="px-5 py-3 border-b-2 border-gray-400 dark:border-gray-500 text-center">
+            <span className="text-xs font-black uppercase tracking-widest text-gray-800 dark:text-gray-200">
+              {tableTitle}
+            </span>
+          </div>
+        )}
+        <table className="w-full min-w-[480px] border-collapse">
+          <thead>
+            <tr className="bg-gray-100 dark:bg-gray-800/60">
+              {colHeaders.map((header, i) => (
+                <th
+                  key={i}
+                  className={`px-3 py-2 text-[10px] font-black uppercase tracking-widest text-gray-600 dark:text-gray-400 text-left border-b border-gray-400 dark:border-gray-500 ${i < colHeaders.length - 1 ? 'border-r border-gray-400 dark:border-gray-500' : ''}`}
+                >
+                  {header}
+                </th>
+              ))}
+            </tr>
+          </thead>
+          <tbody>
+            {tableRows.map((row, rowIndex) => (
+              <tr key={rowIndex} className={rowIndex < tableRows.length - 1 ? 'border-b border-gray-200 dark:border-gray-700' : ''}>
+                {colHeaders.map((col, colIndex) => (
+                  <td
+                    key={col}
+                    className={`px-3 py-2.5 text-sm text-gray-700 dark:text-gray-300 ${colIndex < colHeaders.length - 1 ? 'border-r border-gray-200 dark:border-gray-700' : ''}`}
+                  >
+                    {renderCellContent(row[col] ?? '')}
+                  </td>
+                ))}
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    )
+  }
+
   const hasFourColumns =
     typeof firstOpts.col4 === 'string' ||
     (typeof firstOpts.col_middle === 'string' && typeof firstOpts.col_middle2 === 'string')
