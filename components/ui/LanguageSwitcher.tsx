@@ -1,14 +1,13 @@
 'use client'
 
 import { useState, useRef, useEffect } from 'react'
-import { Globe, ChevronDown } from 'lucide-react'
 import { useLanguage, type Language } from '@/lib/i18n/LanguageContext'
 
-const LANGS: { code: Language; label: string; flag: string }[] = [
-  { code: 'en', label: 'English',  flag: '🇬🇧' },
-  { code: 'ru', label: 'Русский',  flag: '🇷🇺' },
-  { code: 'kz', label: 'Қазақша', flag: '🇰🇿' },
-  { code: 'uz', label: "O'zbek",   flag: '🇺🇿' },
+const LANGS: { code: Language; label: string; short: string }[] = [
+  { code: 'en', label: 'English',  short: 'EN' },
+  { code: 'ru', label: 'Русский',  short: 'RU' },
+  { code: 'kz', label: 'Қазақша', short: 'KZ' },
+  { code: 'uz', label: "O'zbek",  short: 'UZ' },
 ]
 
 export function LanguageSwitcher() {
@@ -16,47 +15,61 @@ export function LanguageSwitcher() {
   const [open, setOpen] = useState(false)
   const ref = useRef<HTMLDivElement>(null)
 
-  const current = LANGS.find(l => l.code === language) ?? LANGS[0]
-
   useEffect(() => {
-    function handler(e: MouseEvent) {
+    const handler = (e: MouseEvent) => {
       if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false)
     }
     document.addEventListener('mousedown', handler)
     return () => document.removeEventListener('mousedown', handler)
   }, [])
 
+  const current = LANGS.find(l => l.code === language) ?? LANGS[0]
+
   return (
-    <div ref={ref} className="relative">
+    <div ref={ref} style={{ position: 'relative' }}>
       <button
         onClick={() => setOpen(o => !o)}
-        className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl text-sm text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white hover:bg-black/5 dark:hover:bg-white/8 transition-all duration-150"
+        style={{
+          display: 'flex', alignItems: 'center', gap: 6,
+          padding: '6px 10px', borderRadius: 8,
+          fontSize: 13, fontWeight: 600,
+          color: 'var(--text-2)',
+          border: '1px solid var(--border-strong)',
+          transition: 'background 0.15s',
+        }}
+        onMouseEnter={e => (e.currentTarget.style.background = 'var(--bg-soft)')}
+        onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}
         aria-label="Switch language"
       >
-        <Globe size={14} strokeWidth={1.8} />
-        <span className="font-medium hidden sm:inline">{current.flag} {current.label}</span>
-        <span className="font-medium sm:hidden">{current.flag}</span>
-        <ChevronDown
-          size={11}
-          strokeWidth={2}
-          className={`opacity-50 transition-transform duration-200 ${open ? 'rotate-180' : ''}`}
-        />
+        <svg width={13} height={13} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+          <circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3a14 14 0 0 1 0 18M12 3a14 14 0 0 0 0 18"/>
+        </svg>
+        <span>{current.short}</span>
       </button>
 
       {open && (
-        <div className="absolute top-full mt-2 right-0 w-44 rounded-2xl border border-gray-200/80 dark:border-gray-700/60 bg-white dark:bg-gray-900 shadow-xl shadow-black/10 dark:shadow-black/50 overflow-hidden animate-scale-in z-[9999]">
+        <div className="card animate-fade-in" style={{ position: 'absolute', top: 'calc(100% + 6px)', right: 0, padding: 6, minWidth: 160, zIndex: 50, boxShadow: 'var(--shadow)' }}>
           {LANGS.map(lang => (
             <button
               key={lang.code}
               onClick={() => { setLanguage(lang.code); setOpen(false) }}
-              className={`w-full flex items-center gap-3 px-4 py-2.5 text-sm text-left transition-colors duration-100
-                ${lang.code === language
-                  ? 'bg-indigo-50 dark:bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 font-medium'
-                  : 'text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-white/5'
-                }`}
+              style={{
+                display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                width: '100%', padding: '8px 10px', borderRadius: 8,
+                fontSize: 13,
+                background: lang.code === language ? 'var(--bg-soft)' : 'transparent',
+                color: lang.code === language ? 'var(--accent)' : 'var(--text)',
+                transition: 'background 0.1s',
+              }}
+              onMouseEnter={e => { if (lang.code !== language) e.currentTarget.style.background = 'var(--bg-soft)' }}
+              onMouseLeave={e => { if (lang.code !== language) e.currentTarget.style.background = 'transparent' }}
             >
-              <span className="text-base">{lang.flag}</span>
-              {lang.label}
+              <span>{lang.label}</span>
+              {lang.code === language && (
+                <svg width={13} height={13} viewBox="0 0 24 24" fill="none" stroke="var(--accent)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M5 12l5 5L20 7"/>
+                </svg>
+              )}
             </button>
           ))}
         </div>

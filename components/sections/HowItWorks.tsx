@@ -2,51 +2,38 @@
 
 import { useLanguage } from '@/lib/i18n/LanguageContext'
 
-const STEPS = [
-  { numKey: 'step1Number', titleKey: 'step1Title', descKey: 'step1Desc' },
-  { numKey: 'step2Number', titleKey: 'step2Title', descKey: 'step2Desc' },
-  { numKey: 'step3Number', titleKey: 'step3Title', descKey: 'step3Desc' },
-]
-
 export function HowItWorks() {
   const { t } = useLanguage()
 
-  return (
-    <section id="how" className="py-28 px-4">
-      <div className="max-w-4xl mx-auto">
+  const steps = [
+    { n: '1', title: t('howItWorks.step1Title'), desc: t('howItWorks.step1Desc') },
+    { n: '2', title: t('howItWorks.step2Title'), desc: t('howItWorks.step2Desc') },
+    { n: '3', title: t('howItWorks.step3Title'), desc: t('howItWorks.step3Desc') },
+  ]
 
-        {/* Header */}
-        <div className="text-center mb-20">
-          <p className="text-xs font-semibold tracking-widest uppercase text-indigo-500 dark:text-indigo-400 mb-4">
+  return (
+    <section id="how" style={{ background: 'var(--bg-soft)', borderTop: '1px solid var(--border)', borderBottom: '1px solid var(--border)' }}>
+      <div style={{ maxWidth: 1080, margin: '0 auto', padding: '88px 32px' }}>
+        <div style={{ textAlign: 'center', marginBottom: 48 }}>
+          <div style={{ fontSize: 12, letterSpacing: '0.1em', textTransform: 'uppercase', color: 'var(--text-3)' }}>
             {t('howItWorks.sectionBadge')}
-          </p>
-          <h2 className="text-3xl sm:text-4xl font-bold text-gray-900 dark:text-white mb-4 tracking-tight">
-            {t('howItWorks.sectionTitle')}
+          </div>
+          <h2 style={{ fontSize: 40, letterSpacing: '-0.025em', margin: '12px 0 0', fontWeight: 700 }}>
+            From day one to <span className="font-serif" style={{ color: 'var(--accent)' }}>exam day</span>, mapped.
           </h2>
-          <p className="text-base text-gray-500 dark:text-gray-400 max-w-md mx-auto leading-relaxed">
-            {t('howItWorks.sectionSubtitle')}
-          </p>
         </div>
 
-        {/* Steps */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-12 relative">
-          {/* Connector line (desktop) */}
-          <div className="hidden md:block absolute top-8 left-[20%] right-[20%] h-px bg-gradient-to-r from-transparent via-gray-200 dark:via-gray-800 to-transparent" />
-
-          {STEPS.map(({ numKey, titleKey, descKey }, i) => (
-            <div
-              key={numKey}
-              className="relative flex flex-col items-center text-center animate-fade-in-up"
-              style={{ animationDelay: `${i * 120}ms` }}
-            >
-              <div className="relative mb-7 w-16 h-16 rounded-2xl flex items-center justify-center bg-white dark:bg-gray-900 border border-gray-100 dark:border-gray-800 shadow-sm shadow-black/4 dark:shadow-black/20">
-                <span className="text-xl font-bold gradient-text">{t(`howItWorks.${numKey}`)}</span>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 12 }}>
+          {steps.map((step) => (
+            <div key={step.n} className="card" style={{ padding: 32 }}>
+              <div className="font-serif" style={{ fontSize: 64, lineHeight: 0.9, color: 'var(--accent)', fontWeight: 400 }}>
+                0{step.n}
               </div>
-              <h3 className="text-base font-semibold text-gray-900 dark:text-white mb-3">
-                {t(`howItWorks.${titleKey}`)}
+              <h3 style={{ fontSize: 19, margin: '22px 0 6px', fontWeight: 600, letterSpacing: '-0.01em' }}>
+                {step.title}
               </h3>
-              <p className="text-sm text-gray-500 dark:text-gray-400 leading-relaxed max-w-xs">
-                {t(`howItWorks.${descKey}`)}
+              <p style={{ fontSize: 14, margin: 0, lineHeight: 1.55, color: 'var(--text-2)' }}>
+                {step.desc}
               </p>
             </div>
           ))}

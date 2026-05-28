@@ -17,13 +17,18 @@
     "subscription": "Subscription",
     "logout": "Sign Out"
   },
+  "stat": {
+    "students": "active learners",
+    "band": "avg. band gain",
+    "rate": "reach target band"
+  },
   "hero": {
-    "badge": "AI-Powered IELTS Preparation",
-    "headline": "Master IELTS",
-    "headlineAccent": "with AI",
-    "subtitle": "Achieve your target band score with personalised AI feedback, adaptive mock tests, and intelligent study plans built around your goals.",
-    "cta": "Start Free Today",
-    "ctaSecondary": "See How It Works",
+    "badge": "AI-powered IELTS prep",
+    "headline": "Your shortest path to",
+    "headlineAccent": "Band 8+",
+    "subtitle": "Mock tests, daily drills and a personal AI coach across Listening, Reading, Writing, Speaking. Built around the real computer-based IELTS Academic format.",
+    "cta": "Start free diagnostic",
+    "ctaSecondary": "Watch 90s demo",
     "stat1Value": "50,000+",
     "stat1Label": "Active learners",
     "stat2Value": "+1.5",

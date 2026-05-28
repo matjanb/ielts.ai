@@ -1,27 +1,43 @@
 import type { Metadata } from 'next'
-import { Geist, Geist_Mono } from 'next/font/google'
+import { Manrope, Newsreader, JetBrains_Mono } from 'next/font/google'
 import './globals.css'
 import { ThemeProvider } from '@/components/providers/ThemeProvider'
 import { LanguageProvider } from '@/lib/i18n/LanguageContext'
 
-const geistSans = Geist({ variable: '--font-geist-sans', subsets: ['latin'] })
-const geistMono = Geist_Mono({ variable: '--font-geist-mono', subsets: ['latin'] })
+const manrope = Manrope({
+  variable: '--font-sans',
+  subsets: ['latin'],
+  weight: ['400', '500', '600', '700', '800'],
+})
+
+const newsreader = Newsreader({
+  variable: '--font-display',
+  subsets: ['latin'],
+  weight: ['400', '500'],
+  style: ['normal', 'italic'],
+})
+
+const jetbrainsMono = JetBrains_Mono({
+  variable: '--font-mono',
+  subsets: ['latin'],
+  weight: ['400', '500'],
+})
 
 export const metadata: Metadata = {
-  title: 'IELTS Camp — AI-Powered IELTS Preparation',
-  description: 'Achieve your target IELTS band score with personalised AI feedback, adaptive mock tests, and intelligent study plans.',
+  title: 'ielts.camp — AI-powered IELTS prep',
+  description: 'Mock tests, daily drills and a personal AI coach across Listening, Reading, Writing, Speaking. Built around the real computer-based IELTS Academic format.',
   keywords: ['IELTS', 'AI', 'preparation', 'band score', 'mock test', 'writing', 'speaking'],
   openGraph: {
-    title: 'IELTS Camp — Master IELTS with AI',
-    description: 'Personalised AI feedback, adaptive mock tests, and smart study plans for IELTS success.',
+    title: 'ielts.camp — AI-powered IELTS prep',
+    description: 'Your shortest path to Band 8+',
     type: 'website',
   },
 }
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en" suppressHydrationWarning className={`${geistSans.variable} ${geistMono.variable}`}>
-      <body className="min-h-screen bg-white dark:bg-[#06060f] text-gray-900 dark:text-white antialiased transition-colors duration-200">
+    <html lang="en" suppressHydrationWarning className={`${manrope.variable} ${newsreader.variable} ${jetbrainsMono.variable}`}>
+      <body className="min-h-screen antialiased">
         <ThemeProvider>
           <LanguageProvider>
             {children}
