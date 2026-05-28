@@ -131,7 +131,7 @@ function PreviewReading() {
     <div>
       <div style={{ display: 'grid', gridTemplateColumns: '1.1fr 1fr', gap: 8, background: '#f4f4f4', padding: 10, borderRadius: 10, border: '1px solid var(--border)' }}>
         <div style={{ background: '#fff', padding: 12, fontFamily: 'serif', fontSize: 11, lineHeight: 1.55, color: '#1a1a1a', borderRadius: 6 }}>
-          <div style={{ fontWeight: 700, marginBottom: 6, color: '#555', fontSize: 9, letterSpacing: '0.08em' }}>READING PASSAGE 1</div>
+          <div style={{ fontWeight: 700, marginBottom: 6, color: 'var(--text-3)', fontSize: 9, letterSpacing: '0.08em' }}>READING PASSAGE 1</div>
           <h4 style={{ fontSize: 13, fontWeight: 700, textAlign: 'center', margin: '4px 0 8px' }}>The History of Glass</h4>
           <p style={{ margin: 0 }}>From our earliest origins, man has been making use of glass. <mark style={{ background: '#fff2a8', padding: '0 2px' }}>Natural glass — obsidian</mark> — formed at volcano mouths was first used as spear tips...</p>
         </div>
@@ -205,7 +205,7 @@ function PreviewSpeaking() {
           <span style={{ width: 6, height: 6, borderRadius: '50%', background: '#3aa278', boxShadow: '0 0 0 3px rgba(58,162,120,0.2)' }}/>
           <span style={{ fontSize: 10, fontWeight: 600, color: '#3aa278' }}>LIVE · AI examiner Sarah</span>
         </div>
-        <span style={{ fontSize: 10, color: '#888', fontFamily: 'var(--font-mono)' }}>04:32 · Part 1</span>
+        <span style={{ fontSize: 10, color: 'var(--text-3)', fontFamily: 'var(--font-mono)' }}>04:32 · Part 1</span>
       </div>
       {[
         { who: 'Sarah', text: 'What do you like most about where you live?', side: 'left' },
