@@ -123,6 +123,13 @@ function ReadingQuestion({
   // fill_blank
   return (
     <div className="space-y-2">
+      {question.image_url && (
+        <img
+          src={question.image_url}
+          alt="Question diagram"
+          className="w-full rounded-xl border border-gray-200 dark:border-gray-700"
+        />
+      )}
       <p className="text-sm text-gray-800 dark:text-gray-200 leading-relaxed">{qText}</p>
       <input
         type="text"
