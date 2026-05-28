@@ -87,26 +87,41 @@ export default function LoginClient() {
   }
 
   return (
-    <div className="w-full max-w-md">
-      <div className="bg-white dark:bg-gray-900/60 rounded-3xl border border-gray-100 dark:border-gray-800 p-8 shadow-xl shadow-black/5 dark:shadow-black/30">
+    <div style={{ width: '100%', maxWidth: 440 }}>
+      {/* Logo */}
+      <div style={{ textAlign: 'center', marginBottom: 28 }}>
+        <div style={{ display: 'inline-flex', alignItems: 'center', gap: 8, fontWeight: 700, letterSpacing: '-0.02em', fontSize: 18, marginBottom: 20 }}>
+          <svg width={24} height={24} viewBox="0 0 24 24" fill="none">
+            <path d="M4 19L10 5l3 7 2.5-4L20 19" stroke="var(--accent)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+            <circle cx="20" cy="6" r="2" fill="var(--accent)"/>
+          </svg>
+          ielts<span style={{ color: 'var(--accent)' }}>.</span>camp
+        </div>
+      </div>
+
+      <div className="card" style={{ padding: 32, boxShadow: 'var(--shadow-lg)' }}>
 
         {/* Header */}
-        <div className="text-center mb-8">
-          <h1 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">
+        <div style={{ textAlign: 'center', marginBottom: 28 }}>
+          <h1 style={{ fontSize: 24, fontWeight: 700, letterSpacing: '-0.02em', margin: '0 0 8px', color: 'var(--text)' }}>
             {t('auth.loginTitle')}
           </h1>
-          <p className="text-sm text-gray-500 dark:text-gray-400">
+          <p style={{ fontSize: 14, color: 'var(--text-2)', margin: 0 }}>
             {t('auth.loginSubtitle')}
           </p>
         </div>
 
         {/* Google button */}
-        <button
-          onClick={handleGoogleSignIn}
-          disabled={loading}
-          className="w-full flex items-center justify-center gap-3 py-3 px-4 rounded-xl border border-gray-200 dark:border-gray-700 text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800 transition-all duration-200 mb-6 disabled:opacity-60"
+        <button onClick={handleGoogleSignIn} disabled={loading} style={{
+          width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 10,
+          padding: '11px 16px', borderRadius: 10, fontSize: 13, fontWeight: 600,
+          border: '1px solid var(--border-strong)', background: 'var(--bg-elev)', color: 'var(--text)',
+          cursor: 'pointer', marginBottom: 20, opacity: loading ? 0.6 : 1, transition: 'background .15s',
+        }}
+        onMouseEnter={e => (e.currentTarget.style.background = 'var(--bg-soft)')}
+        onMouseLeave={e => (e.currentTarget.style.background = 'var(--bg-elev)')}
         >
-          <svg className="w-4 h-4" viewBox="0 0 24 24">
+          <svg style={{ width: 16, height: 16 }} viewBox="0 0 24 24">
             <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
             <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
             <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/>
@@ -116,32 +131,27 @@ export default function LoginClient() {
         </button>
 
         {/* Divider */}
-        <div className="flex items-center gap-3 mb-6">
-          <div className="flex-1 h-px bg-gray-200 dark:bg-gray-800" />
-          <span className="text-xs text-gray-400">{t('auth.orContinueWith')}</span>
-          <div className="flex-1 h-px bg-gray-200 dark:bg-gray-800" />
+        <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 20 }}>
+          <div style={{ flex: 1, height: 1, background: 'var(--border)' }}/>
+          <span style={{ fontSize: 12, color: 'var(--text-3)' }}>{t('auth.orContinueWith')}</span>
+          <div style={{ flex: 1, height: 1, background: 'var(--border)' }}/>
         </div>
 
         {/* Form */}
-        <form onSubmit={handleSubmit} className="space-y-4">
+        <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
           {error && (
-            <div className="px-4 py-3 rounded-xl bg-red-50 dark:bg-red-500/10 border border-red-200 dark:border-red-500/20 text-sm text-red-600 dark:text-red-400">
+            <div style={{ padding: '12px 14px', borderRadius: 10, background: 'color-mix(in srgb, var(--danger) 12%, transparent)', border: '1px solid color-mix(in srgb, var(--danger) 30%, transparent)', fontSize: 13, color: 'var(--danger)' }}>
               {error}
             </div>
           )}
 
           {emailNotConfirmed && (
-            <div className="px-4 py-3 rounded-xl bg-amber-50 dark:bg-amber-500/10 border border-amber-200 dark:border-amber-500/20 text-sm text-amber-700 dark:text-amber-400 space-y-2">
-              <p>{t('auth.errorEmailNotConfirmed')}</p>
+            <div style={{ padding: '12px 14px', borderRadius: 10, background: 'color-mix(in srgb, var(--warn) 12%, transparent)', border: '1px solid color-mix(in srgb, var(--warn) 30%, transparent)', fontSize: 13, color: 'var(--warn)', display: 'flex', flexDirection: 'column', gap: 8 }}>
+              <p style={{ margin: 0 }}>{t('auth.errorEmailNotConfirmed')}</p>
               {resendSuccess ? (
-                <p className="text-green-600 dark:text-green-400">{t('auth.resendEmailSent')}</p>
+                <p style={{ margin: 0, color: 'var(--accent)' }}>{t('auth.resendEmailSent')}</p>
               ) : (
-                <button
-                  type="button"
-                  onClick={handleResend}
-                  disabled={resendLoading}
-                  className="font-medium underline hover:no-underline disabled:opacity-60"
-                >
+                <button type="button" onClick={handleResend} disabled={resendLoading} style={{ background: 'none', border: 'none', cursor: 'pointer', textDecoration: 'underline', fontSize: 13, color: 'inherit', opacity: resendLoading ? 0.6 : 1 }}>
                   {resendLoading ? t('auth.resendEmailLoading') : t('auth.resendEmail')}
                 </button>
               )}
@@ -149,60 +159,52 @@ export default function LoginClient() {
           )}
 
           <div>
-            <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1.5">
-              {t('auth.emailLabel')}
+            <label style={{ display: 'block', fontSize: 11, fontWeight: 600, color: 'var(--text-3)', letterSpacing: '0.06em', marginBottom: 6 }}>
+              {t('auth.emailLabel').toUpperCase()}
             </label>
-            <input
-              type="email"
-              value={email}
-              onChange={e => setEmail(e.target.value)}
-              required
-              className="w-full px-4 py-3 rounded-xl text-sm border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-indigo-500/40 focus:border-indigo-500 transition-all"
+            <input type="email" value={email} onChange={e => setEmail(e.target.value)} required
               placeholder="you@example.com"
+              style={{ width: '100%', padding: '11px 14px', borderRadius: 8, fontSize: 14, border: '1px solid var(--border-strong)', background: 'var(--bg-elev)', color: 'var(--text)', outline: 'none', boxSizing: 'border-box' }}
+              onFocus={e => (e.currentTarget.style.borderColor = 'var(--accent)')}
+              onBlur={e => (e.currentTarget.style.borderColor = 'var(--border-strong)')}
             />
           </div>
 
           <div>
-            <div className="flex items-center justify-between mb-1.5">
-              <label className="text-xs font-medium text-gray-700 dark:text-gray-300">
-                {t('auth.passwordLabel')}
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 6 }}>
+              <label style={{ fontSize: 11, fontWeight: 600, color: 'var(--text-3)', letterSpacing: '0.06em' }}>
+                {t('auth.passwordLabel').toUpperCase()}
               </label>
-              <button type="button" className="text-xs text-indigo-600 dark:text-indigo-400 hover:underline">
+              <button type="button" style={{ fontSize: 12, color: 'var(--accent)', background: 'none', border: 'none', cursor: 'pointer' }}>
                 {t('auth.forgotPassword')}
               </button>
             </div>
-            <div className="relative">
-              <input
-                type={showPassword ? 'text' : 'password'}
-                value={password}
-                onChange={e => setPassword(e.target.value)}
-                required
-                className="w-full px-4 py-3 pr-11 rounded-xl text-sm border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-indigo-500/40 focus:border-indigo-500 transition-all"
+            <div style={{ position: 'relative' }}>
+              <input type={showPassword ? 'text' : 'password'} value={password} onChange={e => setPassword(e.target.value)} required
                 placeholder="••••••••"
+                style={{ width: '100%', padding: '11px 42px 11px 14px', borderRadius: 8, fontSize: 14, border: '1px solid var(--border-strong)', background: 'var(--bg-elev)', color: 'var(--text)', outline: 'none', boxSizing: 'border-box' }}
+                onFocus={e => (e.currentTarget.style.borderColor = 'var(--accent)')}
+                onBlur={e => (e.currentTarget.style.borderColor = 'var(--border-strong)')}
               />
-              <button
-                type="button"
-                onClick={() => setShowPassword(s => !s)}
-                className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
-              >
+              <button type="button" onClick={() => setShowPassword(s => !s)} style={{ position: 'absolute', right: 12, top: '50%', transform: 'translateY(-50%)', color: 'var(--text-3)', background: 'none', border: 'none', cursor: 'pointer' }}>
                 {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
               </button>
             </div>
           </div>
 
-          <button
-            type="submit"
-            disabled={loading}
-            className="w-full py-3 rounded-xl text-sm font-semibold btn-primary text-white disabled:opacity-60 mt-2"
-          >
+          <button type="submit" disabled={loading} style={{
+            width: '100%', padding: '12px', borderRadius: 10, fontSize: 14, fontWeight: 700,
+            background: 'var(--accent)', color: 'var(--accent-fg)', border: 'none', cursor: 'pointer',
+            opacity: loading ? 0.6 : 1, marginTop: 4, transition: 'background .15s',
+          }}>
             {loading ? t('auth.loginLoading') : t('auth.loginBtn')}
           </button>
         </form>
 
         {/* Sign up link */}
-        <p className="text-center text-sm text-gray-500 dark:text-gray-400 mt-6">
+        <p style={{ textAlign: 'center', fontSize: 14, color: 'var(--text-2)', marginTop: 20, marginBottom: 0 }}>
           {t('auth.noAccount')}{' '}
-          <Link href="/signup" className="text-indigo-600 dark:text-indigo-400 font-medium hover:underline">
+          <Link href="/signup" style={{ color: 'var(--accent)', fontWeight: 600 }}>
             {t('auth.signUpLink')}
           </Link>
         </p>
