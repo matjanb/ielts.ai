@@ -233,67 +233,61 @@ export default function DiagnosticResultPage() {
   const displayWeaknesses = weaknesses.length > 0 ? weaknesses : allSkills.slice(0, 2)
 
   return (
-    <div className="flex-1 px-4 py-10">
-      <div className="max-w-2xl mx-auto space-y-10">
+    <div style={{ flex: 1, padding: '40px 24px', background: 'var(--bg)' }}>
+      <div style={{ maxWidth: 640, margin: '0 auto', display: 'flex', flexDirection: 'column', gap: 28 }}>
 
         {/* Page title */}
-        <div className="text-center animate-fade-in-up">
-          <h1 className="text-3xl sm:text-4xl font-bold text-gray-900 dark:text-white mb-2 tracking-tight">
+        <div style={{ textAlign: 'center' }} className="animate-fade-up">
+          <div style={{ display: 'inline-flex', alignItems: 'center', gap: 8, padding: '5px 12px', borderRadius: 999, background: 'var(--accent-soft)', color: 'var(--accent)', fontSize: 12, fontWeight: 600, marginBottom: 16 }}>
+            <svg width={12} height={12} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M5 12l5 5L20 7"/></svg>
+            PLAN READY
+          </div>
+          <h1 style={{ fontSize: 40, fontWeight: 700, letterSpacing: '-0.025em', margin: 0, color: 'var(--text)' }}>
             {t('diagnostic.resultTitle')}
           </h1>
         </div>
 
         {/* ── Social proof stats ── */}
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 animate-fade-in-up delay-100">
-          {stats.map(({ value, label, subtext, icon: Icon, color, bg: bgColor }, i) => (
-            <div
-              key={i}
-              className="bg-white dark:bg-gray-900/50 border border-gray-100 dark:border-gray-800 rounded-2xl p-5 text-center hover:shadow-md hover:shadow-black/4 transition-all duration-200"
-            >
-              <div className={`w-10 h-10 rounded-xl ${bgColor} flex items-center justify-center mx-auto mb-3`}>
-                <Icon size={18} strokeWidth={2} className={color} />
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 12 }}>
+          {stats.map(({ value, label, subtext, icon: Icon }, i) => (
+            <div key={i} className="card" style={{ padding: 20, textAlign: 'center' }}>
+              <div style={{ width: 36, height: 36, borderRadius: 10, background: 'var(--accent-soft)', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 10px' }}>
+                <Icon size={16} strokeWidth={2} style={{ color: 'var(--accent)' }} />
               </div>
-              <div className="text-2xl font-bold text-gray-900 dark:text-white mb-0.5">{value}</div>
-              <div className="text-xs font-semibold text-gray-600 dark:text-gray-300 mb-1">{label}</div>
-              <div className="text-xs text-gray-400 dark:text-gray-500 leading-snug">{subtext}</div>
+              <div style={{ fontSize: 22, fontWeight: 700, color: 'var(--text)', marginBottom: 2 }}>{value}</div>
+              <div style={{ fontSize: 11, fontWeight: 600, color: 'var(--text-2)', marginBottom: 4 }}>{label}</div>
+              <div style={{ fontSize: 11, color: 'var(--text-3)', lineHeight: 1.45 }}>{subtext}</div>
             </div>
           ))}
         </div>
 
         {/* ── Estimated band ── */}
-        <div className="animate-fade-in-up delay-200">
-          <div className={`bg-white dark:bg-gray-900/50 border-2 ${bandRingColor(band)} rounded-3xl p-8 text-center`}>
-            <p className="text-xs font-semibold text-indigo-500 dark:text-indigo-400 uppercase tracking-widest mb-4">
-              {t('diagnostic.resultBandLabel')}
-            </p>
-            <div className={`text-7xl sm:text-8xl font-bold mb-2 ${bandColor(band)}`}>
-              {band.toFixed(1)}
-            </div>
-            <p className="text-sm text-gray-500 dark:text-gray-400 mb-6">
-              {gap > 0
-                ? `${gap.toFixed(1)} bands below your target of ${target}`
-                : `You're at or above your target band of ${target}!`}
-            </p>
-
-            {/* Section breakdown */}
-            <div className="grid grid-cols-4 gap-3 max-w-sm mx-auto">
-              {[
-                { label: 'Vocab', score: testResult.sectionScores.vocab_grammar, max: 3, color: 'bg-amber-400' },
-                { label: 'Reading', score: testResult.sectionScores.reading, max: 3, color: 'bg-emerald-500' },
-                { label: 'Listening', score: testResult.sectionScores.listening, max: 1, color: 'bg-blue-500' },
-                { label: 'Speaking', score: testResult.sectionScores.speaking, max: 1, color: 'bg-violet-500' },
-              ].map(({ label, score, max, color }) => (
-                <div key={label} className="text-center">
-                  <div className="h-1.5 rounded-full bg-gray-100 dark:bg-gray-800 mb-1.5 overflow-hidden">
-                    <div
-                      className={`h-1.5 rounded-full ${color} transition-all duration-700`}
-                      style={{ width: `${(score / max) * 100}%` }}
-                    />
-                  </div>
-                  <span className="text-[10px] text-gray-400 dark:text-gray-500">{label}</span>
+        <div className="card" style={{ padding: 32, textAlign: 'center' }}>
+          <div style={{ fontSize: 11, fontWeight: 700, color: 'var(--accent)', letterSpacing: '0.1em', textTransform: 'uppercase', marginBottom: 16 }}>
+            {t('diagnostic.resultBandLabel')}
+          </div>
+          <div style={{ fontFamily: 'var(--font-display)', fontStyle: 'italic', fontSize: 96, lineHeight: 1, color: 'var(--accent)', fontWeight: 500, marginBottom: 10 }}>
+            {band.toFixed(1)}
+          </div>
+          <p style={{ fontSize: 14, color: 'var(--text-2)', marginBottom: 24 }}>
+            {gap > 0
+              ? `${gap.toFixed(1)} bands below your target of ${target}`
+              : `You're at or above your target band of ${target}!`}
+          </p>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 10, maxWidth: 340, margin: '0 auto' }}>
+            {[
+              { label: 'Vocab', score: testResult.sectionScores.vocab_grammar, max: 3 },
+              { label: 'Reading', score: testResult.sectionScores.reading, max: 3 },
+              { label: 'Listening', score: testResult.sectionScores.listening, max: 1 },
+              { label: 'Speaking', score: testResult.sectionScores.speaking, max: 1 },
+            ].map(({ label, score, max }) => (
+              <div key={label} style={{ textAlign: 'center' }}>
+                <div style={{ height: 6, borderRadius: 999, background: 'var(--bg-soft)', marginBottom: 6, overflow: 'hidden' }}>
+                  <div style={{ height: '100%', width: `${(score / max) * 100}%`, background: 'var(--accent)', borderRadius: 999, transition: 'width .6s' }}/>
                 </div>
-              ))}
-            </div>
+                <span style={{ fontSize: 10, color: 'var(--text-3)' }}>{label}</span>
+              </div>
+            ))}
           </div>
         </div>
 
@@ -444,44 +438,33 @@ export default function DiagnosticResultPage() {
           </div>
         </div>
 
-        {/* ── Account creation CTA ── */}
-        <div className="animate-fade-in-up delay-600">
-          <div className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-indigo-600 to-violet-600 p-8 text-center">
-            {/* Decorative circles */}
-            <div className="absolute -top-8 -right-8 w-40 h-40 rounded-full bg-white/5" />
-            <div className="absolute -bottom-6 -left-6 w-32 h-32 rounded-full bg-white/5" />
-
-            <div className="relative">
-              <div className="w-12 h-12 rounded-2xl bg-white/15 flex items-center justify-center mx-auto mb-4">
-                <Zap size={22} strokeWidth={2} className="text-white" />
-              </div>
-              <h2 className="text-xl sm:text-2xl font-bold text-white mb-2">
-                {t('diagnostic.resultCreateAccount')}
-              </h2>
-              <p className="text-sm text-indigo-200 mb-8 max-w-sm mx-auto leading-relaxed">
-                {t('diagnostic.resultCreateAccountSub')}
-              </p>
-
-              <Link
-                href="/signup"
-                className="inline-flex items-center gap-2.5 bg-white hover:bg-gray-50 text-indigo-700 font-semibold px-8 py-3.5 rounded-2xl text-sm transition-all duration-200 hover:shadow-lg hover:shadow-white/20 mb-4"
-              >
-                {t('diagnostic.resultSignup')}
-                <ArrowRight size={16} strokeWidth={2.5} />
-              </Link>
-
-              <p className="text-sm text-indigo-200">
-                {t('diagnostic.resultLogin')}{' '}
-                <Link href="/login" className="text-white font-medium hover:underline">
-                  {t('diagnostic.resultLoginLink')}
-                </Link>
-              </p>
-            </div>
-          </div>
+        {/* ── CTA: unlock plan ── */}
+        <div style={{ padding: '52px 40px', background: 'var(--accent)', borderRadius: 24, textAlign: 'center' }}>
+          <h2 style={{ fontSize: 32, fontWeight: 700, letterSpacing: '-0.025em', margin: '0 0 12px', color: 'var(--accent-fg)' }}>
+            {t('diagnostic.resultCreateAccount')}
+          </h2>
+          <p style={{ fontSize: 15, opacity: 0.85, margin: '0 0 28px', color: 'var(--accent-fg)' }}>
+            {t('diagnostic.resultCreateAccountSub')}
+          </p>
+          <Link href="/subscription" style={{
+            display: 'inline-flex', alignItems: 'center', gap: 8,
+            padding: '13px 28px', borderRadius: 'var(--radius-lg)',
+            fontWeight: 700, fontSize: 15,
+            background: 'white', color: 'var(--accent)',
+            textDecoration: 'none',
+          }}>
+            Unlock my plan
+            <ArrowRight size={16} strokeWidth={2.5} />
+          </Link>
+          <p style={{ marginTop: 16, fontSize: 13, color: 'var(--accent-fg)', opacity: 0.75 }}>
+            {t('diagnostic.resultLogin')}{' '}
+            <Link href="/login" style={{ color: 'white', fontWeight: 600 }}>
+              {t('diagnostic.resultLoginLink')}
+            </Link>
+          </p>
         </div>
 
-        {/* Bottom spacing */}
-        <div className="h-4" />
+        <div style={{ height: 16 }} />
       </div>
     </div>
   )
