@@ -4,31 +4,18 @@ import { useEffect, useState } from 'react'
 import Link from 'next/link'
 import { Headphones, Clock, HelpCircle, ChevronRight } from 'lucide-react'
 import { useLanguage } from '@/lib/i18n/LanguageContext'
-import { createClient } from '@/lib/supabase/client'
-
-interface ListeningTest {
-  id: string
-  title: string
-  book_number: number | null
-  test_number: number | null
-  difficulty: string | null
-}
+import { getListeningTests } from '@/lib/services/tests'
+import type { IeltsTest } from '@/lib/types/database'
 
 export default function ListeningIndexPage() {
   const { t } = useLanguage()
-  const [tests, setTests] = useState<ListeningTest[]>([])
+  const [tests, setTests] = useState<IeltsTest[]>([])
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
     async function load() {
-      const supabase = createClient() as any
-      const { data, error } = await supabase
-        .from('tests')
-        .select('id, title, book_number, test_number, difficulty')
-        .eq('type', 'listening')
-        .order('created_at', { ascending: true })
-      console.log('Listening tests:', data, error)
-      setTests(data ?? [])
+      const data = await getListeningTests()
+      setTests(data)
       setLoading(false)
     }
     load()

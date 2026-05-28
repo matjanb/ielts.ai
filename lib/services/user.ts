@@ -124,6 +124,15 @@ export async function getRecentActivity(userId: string, limit = 5) {
   }
 }
 
+export async function getStudyPlan(userId: string) {
+  const { data } = await db()
+    .from('study_plans')
+    .select('*')
+    .eq('user_id', userId)
+    .single()
+  return data
+}
+
 export async function getStudyStreak(userId: string): Promise<number> {
   const { data } = await db()
     .from('study_sessions')

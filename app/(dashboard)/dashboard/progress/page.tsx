@@ -2,7 +2,8 @@
 
 import { useEffect, useState, type ReactNode } from 'react'
 import { useLanguage } from '@/lib/i18n/LanguageContext'
-import { createClient } from '@/lib/supabase/client'
+import { getProgressData } from '@/lib/services/progress'
+import { getUser } from '@/lib/services/auth'
 import {
   BandRing, BandBar, Sparkline,
   LineChart, StackBars, CriteriaRadar, StreakHeatmap,
@@ -116,43 +117,15 @@ export default function ProgressPage() {
 
   useEffect(() => {
     async function load() {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const supabase = createClient() as any
-      const { data: { user } } = await supabase.auth.getUser()
+      const { user } = await getUser()
       if (!user) { setLoading(false); return }
 
-      const [
-        { data: bandHistory },
-        { data: writingSubs },
-        { data: mockAttempts },
-        { data: studySessions },
-        { data: profile },
-      ] = await Promise.all([
-        supabase.from('band_score_history')
-          .select('skill, score, source, recorded_at')
-          .eq('user_id', user.id)
-          .order('recorded_at', { ascending: true })
-          .limit(400),
-        supabase.from('writing_submissions')
-          .select('id, task_type, band_score, task_achievement, coherence_cohesion, lexical_resource, grammatical_accuracy, created_at')
-          .eq('user_id', user.id)
-          .order('created_at', { ascending: false })
-          .limit(20),
-        supabase.from('user_attempts')
-          .select('id, completed_at, band_score, total_score')
-          .eq('user_id', user.id)
-          .not('completed_at', 'is', null)
-          .order('completed_at', { ascending: true }),
-        supabase.from('study_sessions')
-          .select('skill, duration_minutes, created_at')
-          .eq('user_id', user.id)
-          .order('created_at', { ascending: false })
-          .limit(500),
-        supabase.from('profiles')
-          .select('target_band_score')
-          .eq('id', user.id)
-          .single(),
-      ])
+      const raw = await getProgressData(user.id)
+      const bandHistory = raw.bandHistory
+      const writingSubs = raw.writingSubmissions
+      const mockAttempts = raw.attempts
+      const studySessions = raw.studySessions
+      const profile = raw.profile
 
       const targetBand: number = profile?.target_band_score ?? 7.5
       const history: { skill: string; score: number; source: string; recorded_at: string }[] = bandHistory ?? []

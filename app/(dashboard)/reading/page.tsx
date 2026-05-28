@@ -4,30 +4,18 @@ import { useEffect, useState } from 'react'
 import Link from 'next/link'
 import { BookOpen, Clock, HelpCircle, ChevronRight } from 'lucide-react'
 import { useLanguage } from '@/lib/i18n/LanguageContext'
-import { createClient } from '@/lib/supabase/client'
-
-interface ReadingTest {
-  id: string
-  title: string
-  book_number: number | null
-  test_number: number | null
-  difficulty: string | null
-}
+import { getReadingTests } from '@/lib/services/tests'
+import type { IeltsTest } from '@/lib/types/database'
 
 export default function ReadingIndexPage() {
   const { t } = useLanguage()
-  const [tests, setTests] = useState<ReadingTest[]>([])
+  const [tests, setTests] = useState<IeltsTest[]>([])
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
     async function load() {
-      const supabase = createClient() as any
-      const { data } = await supabase
-        .from('tests')
-        .select('id, title, book_number, test_number, difficulty')
-        .eq('type', 'reading')
-        .order('created_at', { ascending: true })
-      setTests(data ?? [])
+      const data = await getReadingTests()
+      setTests(data)
       setLoading(false)
     }
     load()

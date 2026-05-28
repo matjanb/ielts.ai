@@ -4,9 +4,10 @@ import { useEffect, useState } from 'react'
 import { useRouter, useParams, useSearchParams } from 'next/navigation'
 import { CheckCircle2, XCircle, RotateCcw, LayoutDashboard, Loader2 } from 'lucide-react'
 import { useLanguage } from '@/lib/i18n/LanguageContext'
-import { createClient } from '@/lib/supabase/client'
 import type { Question, TestSection } from '@/lib/types/database'
 import { isAnswerCorrect } from '@/lib/utils/answerChecking'
+import { getSectionsByTestId, getQuestionsBySectionIds } from '@/lib/services/tests'
+import { getAttemptWithAnswers } from '@/lib/services/attempts'
 
 type QuestionWithSection = Question & { sectionNumber: number; sectionTitle: string }
 
@@ -57,28 +58,15 @@ export default function ListeningResultsPage() {
     if (!testId) { setReviewLoading(false); return }
     async function load() {
       try {
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const supabase = createClient() as any
-
-        const { data: sectionsData } = await supabase
-          .from('test_sections')
-          .select('*')
-          .eq('test_id', testId)
-          .order('section_number')
-        const secs: TestSection[] = sectionsData ?? []
+        const secs = await getSectionsByTestId(testId)
         setSections(secs)
 
         if (secs.length > 0) {
           const sectionIds = secs.map((s: TestSection) => s.id)
-          const { data: rawQuestionsData } = await supabase
-            .from('questions')
-            .select('*')
-            .in('section_id', sectionIds)
-            .order('question_number')
-          const questionsData = (rawQuestionsData ?? []) as Question[]
+          const questionsData = await getQuestionsBySectionIds(sectionIds)
 
           const sectionMap = new Map(secs.map((s: TestSection) => [s.id, s]))
-          const enriched: QuestionWithSection[] = questionsData.map(q => ({
+          const enriched: QuestionWithSection[] = (questionsData as Question[]).map(q => ({
             ...q,
             sectionNumber: (sectionMap.get(q.section_id) as TestSection | undefined)?.section_number ?? 0,
             sectionTitle: (sectionMap.get(q.section_id) as TestSection | undefined)?.title ?? '',
@@ -87,12 +75,9 @@ export default function ListeningResultsPage() {
         }
 
         if (attemptId) {
-          const { data: answersData } = await supabase
-            .from('user_answers')
-            .select('question_id, user_answer')
-            .eq('attempt_id', attemptId)
+          const { answers } = await getAttemptWithAnswers(attemptId)
           const map: Record<string, string> = {}
-          for (const a of (answersData ?? [])) {
+          for (const a of answers) {
             map[a.question_id] = a.user_answer ?? ''
           }
           setUserAnswers(map)

@@ -4,8 +4,9 @@ import { useEffect, useState } from 'react'
 import { TrendingUp, Flame, Target, BookOpen, Mic, FileText, ChevronRight, Zap, Headphones } from 'lucide-react'
 import Link from 'next/link'
 import { useLanguage } from '@/lib/i18n/LanguageContext'
-import { createClient } from '@/lib/supabase/client'
-import { getRecentActivity, getStudyStreak } from '@/lib/services/user'
+import { getStudyStreak } from '@/lib/services/user'
+import { getDashboardData } from '@/lib/services/progress'
+import { getUser } from '@/lib/services/auth'
 import type { Profile } from '@/lib/types/database'
 
 interface BandSnapshot {
@@ -35,26 +36,13 @@ export default function DashboardPage() {
 
   useEffect(() => {
     async function load() {
-      const supabase = createClient()
-      const { data: { user } } = await supabase.auth.getUser()
+      const { user } = await getUser()
       if (!user) return
 
-      // Load profile
-      const { data: prof } = await (supabase as any)
-        .from('profiles')
-        .select('*')
-        .eq('id', user.id)
-        .single()
-      setProfile(prof)
+      const dashData = await getDashboardData(user.id)
+      setProfile(dashData.profile)
 
-      // Load band score history (latest per skill)
-      const { data: history } = await (supabase as any)
-        .from('band_score_history')
-        .select('skill, score, recorded_at')
-        .eq('user_id', user.id)
-        .order('recorded_at', { ascending: false })
-        .limit(40)
-
+      const history = dashData.bandHistory
       if (history?.length) {
         const latest: Record<string, number> = {}
         for (const row of history) {
@@ -87,7 +75,6 @@ export default function DashboardPage() {
             })) as any
         )
       } else {
-        // Default placeholder scores if no data yet
         setBandScores([
           { skill: 'overall',   score: 0, pct: 0, color: 'bg-indigo-500' },
           { skill: 'writing',   score: 0, pct: 0, color: 'bg-violet-500' },
@@ -97,16 +84,14 @@ export default function DashboardPage() {
         ] as any)
       }
 
-      // Load recent activity
-      const activity = await getRecentActivity(user.id, 5)
       const items: ActivityItem[] = [
-        ...activity.writing.slice(0, 2).map((w: any) => ({
+        ...dashData.writingSubmissions.slice(0, 2).map((w: any) => ({
           icon:  BookOpen,
           label: `${t('dashboardPreview.writingTask')} ${w.task_type === '1' ? '1' : '2'}`,
           score: w.band_score,
           href:  '/dashboard/writing',
         })),
-        ...activity.speaking.slice(0, 2).map((s: any) => ({
+        ...dashData.speakingSubmissions.slice(0, 2).map((s: any) => ({
           icon:  Mic,
           label: `${t('dashboardPreview.speakingPart')} ${s.part}`,
           score: s.band_score,
@@ -124,7 +109,6 @@ export default function DashboardPage() {
         setRecentItems(items.slice(0, 3))
       }
 
-      // Load streak
       const s = await getStudyStreak(user.id)
       setStreak(s)
 

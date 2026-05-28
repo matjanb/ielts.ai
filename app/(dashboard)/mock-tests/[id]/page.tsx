@@ -8,7 +8,8 @@ import { TestTimer } from '@/components/test/TestTimer'
 import { QuestionNav } from '@/components/test/QuestionNav'
 import { QuestionRenderer } from '@/components/test/QuestionRenderer'
 import { SAMPLE_QUESTIONS, SAMPLE_TEST_META } from '@/lib/data/sampleTest'
-import { createClient } from '@/lib/supabase/client'
+import { getUser } from '@/lib/services/auth'
+import { saveBandScoreHistory } from '@/lib/services/attempts'
 
 const QUESTIONS = SAMPLE_QUESTIONS
 const SECTION_LABELS: Record<string, string> = {
@@ -68,17 +69,10 @@ export default function TestPage({ params }: { params: { id: string } }) {
     // RLS policy "Users can insert own band scores" allows this client-side insert.
     // We skip test_sessions/test_results because test_id is not a real UUID in mock_tests.
     try {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const supabase = createClient() as any
-      const { data: { user } } = await supabase.auth.getUser()
+      const { user } = await getUser()
       if (user) {
-        // Insert overall + per-section scores in one batch
-        const rows = [
-          { user_id: user.id, skill: 'overall',  score: bandScore, source: 'mock_test' },
-          { user_id: user.id, skill: 'reading',  score: bandScore, source: 'mock_test' },
-        ]
-        const { error } = await supabase.from('band_score_history').insert(rows)
-        if (error) console.error('[mock-test] band_score_history insert error:', error)
+        await saveBandScoreHistory(user.id, 'overall', bandScore)
+        await saveBandScoreHistory(user.id, 'reading', bandScore)
       }
     } catch (e) {
       console.error('[mock-test] Failed to save band score:', e)

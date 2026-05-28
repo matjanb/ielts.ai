@@ -30,16 +30,12 @@ export default function StudyPlanPage() {
 
   async function loadPlan() {
     try {
-      const { createClient } = await import('@/lib/supabase/client')
-      const supabase = createClient()
-      const { data: { user } } = await supabase.auth.getUser()
+      const { getUser } = await import('@/lib/services/auth')
+      const { getStudyPlan } = await import('@/lib/services/user')
+      const { user } = await getUser()
       if (!user) return
-      const { data } = await (supabase as any)
-        .from('study_plans')
-        .select('*')
-        .eq('user_id', user.id)
-        .single()
-      if (data) setPlan(data)
+      const data = await getStudyPlan(user.id)
+      if (data) setPlan(data as any)
     } finally {
       setLoading(false)
     }

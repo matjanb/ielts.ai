@@ -4,8 +4,10 @@ import { useState, useEffect, useCallback, useRef } from 'react'
 import { useRouter, useParams } from 'next/navigation'
 import { Send, Clock, BookOpen, ChevronLeft, ChevronRight } from 'lucide-react'
 import { useLanguage } from '@/lib/i18n/LanguageContext'
-import { createClient } from '@/lib/supabase/client'
 import type { IeltsTest, TestSection, Question } from '@/lib/types/database'
+import { getTestById, getSectionsByTestId, getQuestionsBySectionIds } from '@/lib/services/tests'
+import { createAttempt, saveAnswer as saveAnswerService, saveAnswerWithResult, completeAttempt, saveBandScoreHistory } from '@/lib/services/attempts'
+import { getUser } from '@/lib/services/auth'
 
 type QuestionWithSection = Question & { sectionNumber: number; sectionTitle: string; passageText: string }
 
@@ -254,23 +256,18 @@ export default function ReadingTestPage() {
   useEffect(() => {
     async function load() {
       try {
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const supabase = createClient() as any
-        const { data: testData } = await supabase.from('tests').select('*').eq('id', testId).single()
+        const testData = await getTestById(testId)
         if (!testData) { setError('Test not found'); return }
         setTest(testData)
 
-        const { data: sectionsData } = await supabase
-          .from('test_sections').select('*').eq('test_id', testId).order('section_number')
-        const secs: TestSection[] = sectionsData ?? []
+        const secs = await getSectionsByTestId(testId)
         setSections(secs)
 
         const sectionIds = secs.map((s: TestSection) => s.id)
-        const { data: rawQ } = await supabase
-          .from('questions').select('*').in('section_id', sectionIds).order('question_number')
+        const rawQ = await getQuestionsBySectionIds(sectionIds)
 
         const sectionMap = new Map(secs.map((s: TestSection) => [s.id, s]))
-        const enriched: QuestionWithSection[] = (rawQ ?? []).map((q: Question) => ({
+        const enriched: QuestionWithSection[] = rawQ.map((q: Question) => ({
           ...q,
           sectionNumber: sectionMap.get(q.section_id)?.section_number ?? 0,
           sectionTitle: sectionMap.get(q.section_id)?.title ?? '',
@@ -289,12 +286,10 @@ export default function ReadingTestPage() {
 
   async function handleStart() {
     try {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const supabase = createClient() as any
-      const { data: { user } } = await supabase.auth.getUser()
+      const { user } = await getUser()
       if (!user) { router.push('/login'); return }
-      const { data } = await supabase.from('user_attempts').insert({ user_id: user.id, test_id: testId }).select('id').single()
-      if (data) setAttemptId(data.id)
+      const id = await createAttempt(user.id, testId)
+      if (id) setAttemptId(id)
     } catch { /* no-op */ }
     setStarted(true)
   }
@@ -302,9 +297,7 @@ export default function ReadingTestPage() {
   const saveAnswer = useCallback(async (questionId: string, value: string) => {
     if (!attemptId) return
     try {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const supabase = createClient() as any
-      await supabase.from('user_answers').upsert({ attempt_id: attemptId, question_id: questionId, user_answer: value })
+      await saveAnswerService(attemptId, questionId, value)
     } catch { /* silent */ }
   }, [attemptId])
 
@@ -330,9 +323,7 @@ export default function ReadingTestPage() {
       if (isCorrect) { totalCorrect++; sectionCorrect[n].correct++ }
       if (attemptId) {
         try {
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          const supabase = createClient() as any
-          await supabase.from('user_answers').upsert({ attempt_id: attemptId, question_id: q.id, user_answer: answers[q.id] ?? null, is_correct: isCorrect })
+          await saveAnswerWithResult(attemptId, q.id, answers[q.id] ?? null, isCorrect)
         } catch { /* silent */ }
       }
     }
@@ -348,11 +339,9 @@ export default function ReadingTestPage() {
 
     if (attemptId) {
       try {
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const supabase = createClient() as any
-        await supabase.from('user_attempts').update({ completed_at: new Date().toISOString(), total_score: totalCorrect, band_score: band, section_scores: sectionCorrect }).eq('id', attemptId)
-        const { data: { user } } = await supabase.auth.getUser()
-        if (user) await supabase.from('band_score_history').insert({ user_id: user.id, skill: 'reading', score: band, source: 'mock_test', source_id: attemptId })
+        await completeAttempt(attemptId, totalCorrect, band, sectionCorrect)
+        const { user } = await getUser()
+        if (user) await saveBandScoreHistory(user.id, 'reading', band, attemptId)
       } catch { /* silent */ }
     }
 

@@ -4,8 +4,9 @@ import { useSearchParams, useRouter, useParams } from 'next/navigation'
 import { useEffect, useState } from 'react'
 import { CheckCircle, XCircle, BookOpen, RotateCcw, ArrowLeft } from 'lucide-react'
 import { useLanguage } from '@/lib/i18n/LanguageContext'
-import { createClient } from '@/lib/supabase/client'
 import type { Question, TestSection } from '@/lib/types/database'
+import { getSectionsByTestId, getQuestionsBySectionIds } from '@/lib/services/tests'
+import { getAttemptWithAnswers } from '@/lib/services/attempts'
 
 type QuestionWithSection = Question & { sectionNumber: number; sectionTitle: string }
 type UserAnswer = { question_id: string; user_answer: string | null; is_correct: boolean | null }
@@ -35,20 +36,14 @@ export default function ReadingResultsPage() {
   useEffect(() => {
     async function load() {
       try {
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const supabase = createClient() as any
-
-        const { data: sectionsData } = await supabase
-          .from('test_sections').select('*').eq('test_id', testId).order('section_number')
-        const secs: TestSection[] = sectionsData ?? []
+        const secs = await getSectionsByTestId(testId)
         setSections(secs)
 
         const sectionIds = secs.map((s: TestSection) => s.id)
-        const { data: rawQ } = await supabase
-          .from('questions').select('*').in('section_id', sectionIds).order('question_number')
+        const rawQ = await getQuestionsBySectionIds(sectionIds)
 
         const sectionMap = new Map(secs.map((s: TestSection) => [s.id, s]))
-        const enriched: QuestionWithSection[] = (rawQ ?? []).map((q: Question) => ({
+        const enriched: QuestionWithSection[] = rawQ.map((q: Question) => ({
           ...q,
           sectionNumber: sectionMap.get(q.section_id)?.section_number ?? 0,
           sectionTitle: sectionMap.get(q.section_id)?.title ?? '',
@@ -56,10 +51,9 @@ export default function ReadingResultsPage() {
         setQuestions(enriched)
 
         if (attemptId) {
-          const { data: answersData } = await supabase
-            .from('user_answers').select('*').eq('attempt_id', attemptId)
+          const { answers } = await getAttemptWithAnswers(attemptId)
           const map: Record<string, UserAnswer> = {}
-          for (const a of (answersData ?? [])) map[a.question_id] = a
+          for (const a of answers) map[a.question_id] = a
           setUserAnswers(map)
         }
       } catch { /* silent */ }

@@ -6,7 +6,8 @@ import Link from 'next/link'
 import { useLanguage } from '@/lib/i18n/LanguageContext'
 import { ThemeToggle } from '@/components/ui/ThemeToggle'
 import { LanguageSwitcher } from '@/components/ui/LanguageSwitcher'
-import { createClient } from '@/lib/supabase/client'
+import { getProfile, updateProfile } from '@/lib/services/user'
+import { getUser } from '@/lib/services/auth'
 
 export default function SettingsPage() {
   const { t } = useLanguage()
@@ -20,15 +21,10 @@ export default function SettingsPage() {
 
   useEffect(() => {
     async function load() {
-      const supabase = createClient()
-      const { data: { user } } = await supabase.auth.getUser()
+      const { user } = await getUser()
       if (!user) return
       setEmail(user.email ?? '')
-      const { data: profile } = await (supabase as any)
-        .from('profiles')
-        .select('full_name, subscription_status')
-        .eq('id', user.id)
-        .single()
+      const profile = await getProfile(user.id)
       if (profile) {
         setFullName(profile.full_name ?? '')
         setSubscription(profile.subscription_status ?? 'free')
@@ -44,13 +40,9 @@ export default function SettingsPage() {
     setSaving(true)
     setSaved(false)
     try {
-      const supabase = createClient()
-      const { data: { user } } = await supabase.auth.getUser()
+      const { user } = await getUser()
       if (!user) return
-      const { error: updateError } = await (supabase as any)
-        .from('profiles')
-        .update({ full_name: fullName, updated_at: new Date().toISOString() })
-        .eq('id', user.id)
+      const { error: updateError } = await updateProfile(user.id, { full_name: fullName })
       if (updateError) {
         setError(updateError.message)
       } else {

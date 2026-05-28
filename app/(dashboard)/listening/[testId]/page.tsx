@@ -6,10 +6,12 @@ import { Play, Pause, Send, Volume2, AlertCircle, Loader2, Clock } from 'lucide-
 import Image from 'next/image'
 import { useLanguage } from '@/lib/i18n/LanguageContext'
 import { TestTimer } from '@/components/test/TestTimer'
-import { createClient } from '@/lib/supabase/client'
 import { listeningRawToBand } from '@/lib/utils/bandScore'
 import { isAnswerCorrect } from '@/lib/utils/answerChecking'
 import type { IeltsTest, TestSection, Question } from '@/lib/types/database'
+import { getTestById, getSectionsByTestId, getQuestionsBySectionIds } from '@/lib/services/tests'
+import { createAttempt, saveAnswer as saveAnswerService, saveAnswerWithResult, completeAttempt, saveBandScoreHistory } from '@/lib/services/attempts'
+import { getUser } from '@/lib/services/auth'
 
 type QuestionWithSection = Question & { sectionNumber: number; sectionTitle: string }
 
@@ -2019,24 +2021,14 @@ export default function ListeningTestPage() {
       setLoading(true)
       setLoadError(null)
       try {
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const supabase = createClient() as any
-
-        const { data: testData, error: testErr } = await supabase
-          .from('tests').select('*').eq('id', testId).single()
-        if (testErr || !testData) {
-          setLoadError(`Test not found (${testErr?.message ?? 'no data'})`)
+        const testData = await getTestById(testId)
+        if (!testData) {
+          setLoadError('Test not found')
           return
         }
-        setTest(testData as IeltsTest)
+        setTest(testData)
 
-        const { data: sectionsData, error: secErr } = await supabase
-          .from('test_sections').select('*').eq('test_id', testId).order('section_number')
-        if (secErr) {
-          setLoadError(`Could not load sections: ${secErr.message}`)
-          return
-        }
-        const secs: TestSection[] = sectionsData ?? []
+        const secs = await getSectionsByTestId(testId)
         setSections(secs)
 
         if (secs.length === 0) {
@@ -2044,14 +2036,8 @@ export default function ListeningTestPage() {
           return
         }
 
-        const sectionIds: string[] = secs.map((s: TestSection) => s.id)
-        const { data: rawQs, error: qErr } = await supabase
-          .from('questions').select('*').in('section_id', sectionIds).order('question_number')
-        if (qErr) {
-          setLoadError(`Could not load questions: ${qErr.message}`)
-          return
-        }
-        const questionsData = (rawQs ?? []) as Question[]
+        const sectionIds = secs.map((s: TestSection) => s.id)
+        const questionsData = await getQuestionsBySectionIds(sectionIds)
 
         if (questionsData.length === 0) {
           setLoadError('No questions found for this test. Please run the seed data.')
@@ -2059,7 +2045,7 @@ export default function ListeningTestPage() {
         }
 
         const sectionMap = new Map(secs.map((s: TestSection) => [s.id, s]))
-        const enriched: QuestionWithSection[] = questionsData.map(q => ({
+        const enriched: QuestionWithSection[] = questionsData.map((q: Question) => ({
           ...q,
           sectionNumber: (sectionMap.get(q.section_id) as TestSection | undefined)?.section_number ?? 0,
           sectionTitle: (sectionMap.get(q.section_id) as TestSection | undefined)?.title ?? '',
@@ -2092,16 +2078,10 @@ export default function ListeningTestPage() {
   async function handleStart() {
     setStarting(true)
     try {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const supabase = createClient() as any
-      const { data: { user } } = await supabase.auth.getUser()
+      const { user } = await getUser()
       if (user) {
-        const { data } = await supabase
-          .from('user_attempts')
-          .insert({ user_id: user.id, test_id: testId })
-          .select('id')
-          .single()
-        if (data?.id) setAttemptId(data.id)
+        const id = await createAttempt(user.id, testId)
+        if (id) setAttemptId(id)
       }
     } catch { /* attempt creation is optional */ }
     setStarting(false)
@@ -2112,12 +2092,7 @@ export default function ListeningTestPage() {
   const saveAnswer = useCallback(async (questionId: string, value: string) => {
     if (!attemptId) return
     try {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const supabase = createClient() as any
-      await supabase.from('user_answers').upsert(
-        { attempt_id: attemptId, question_id: questionId, user_answer: value },
-        { onConflict: 'attempt_id,question_id' }
-      )
+      await saveAnswerService(attemptId, questionId, value)
     } catch { /* silent */ }
   }, [attemptId])
 
@@ -2145,12 +2120,7 @@ export default function ListeningTestPage() {
 
       if (attemptId) {
         try {
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          const supabase = createClient() as any
-          await supabase.from('user_answers').upsert(
-            { attempt_id: attemptId, question_id: q.id, user_answer: answers[q.id] ?? null, is_correct: correct },
-            { onConflict: 'attempt_id,question_id' }
-          )
+          await saveAnswerWithResult(attemptId, q.id, answers[q.id] ?? null, correct)
         } catch { /* silent */ }
       }
     }
@@ -2160,24 +2130,10 @@ export default function ListeningTestPage() {
 
     if (attemptId) {
       try {
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const supabase = createClient() as any
-        await supabase.from('user_attempts').update({
-          completed_at: new Date().toISOString(),
-          total_score: totalCorrect,
-          band_score: band,
-          section_scores: sectionScores,
-        }).eq('id', attemptId)
-
-        const { data: { user } } = await supabase.auth.getUser()
+        await completeAttempt(attemptId, totalCorrect, band, sectionScores)
+        const { user } = await getUser()
         if (user) {
-          await supabase.from('band_score_history').insert({
-            user_id: user.id,
-            skill: 'listening',
-            score: band,
-            source: 'mock_test',
-            source_id: attemptId,
-          })
+          await saveBandScoreHistory(user.id, 'listening', band, attemptId)
         }
       } catch { /* silent */ }
     }
