@@ -2,159 +2,225 @@
 
 import { useState } from 'react'
 import Link from 'next/link'
-import { Check, Zap, ArrowLeft, Star } from 'lucide-react'
 import { ThemeProvider } from '@/components/providers/ThemeProvider'
 import { LanguageProvider, useLanguage } from '@/lib/i18n/LanguageContext'
 import { ThemeToggle } from '@/components/ui/ThemeToggle'
-import { LanguageSwitcher } from '@/components/ui/LanguageSwitcher'
 
-const FREE_FEATURES = ['limitedMockTests', 'basicFeedback', 'studyGuides', 'communityAccess']
-const PRO_FEATURES = ['unlimitedMockTests', 'aiWritingFeedback', 'aiSpeakingFeedback', 'personalizedPlan', 'progressAnalytics', 'prioritySupport']
-
+// Keep existing Stripe checkout logic unchanged
 async function handleCheckout(plan: 'monthly' | 'yearly') {
-  // Stripe integration placeholder — replace with real Stripe Checkout session
   console.log('Initiating checkout for plan:', plan)
   alert('Stripe integration coming soon. Add your Stripe keys to enable payments.')
+}
+
+const PLANS = [
+  {
+    id: 'starter',
+    name: 'Starter',
+    monthly: 0,
+    yearly: 0,
+    tag: 'Try it free',
+    features: [
+      'Diagnostic & placement test',
+      '1 full mock exam',
+      'Limited vocabulary decks',
+      '3 AI writing reviews/mo',
+      'Community access',
+    ],
+    cta: 'Continue free',
+    popular: false,
+    elite: false,
+  },
+  {
+    id: 'pro',
+    name: 'Pro',
+    monthly: 19,
+    yearly: 14,
+    tag: 'Most popular',
+    features: [
+      'Everything in Starter',
+      'Unlimited mock exams',
+      'AI Writing examiner (Task 1 + 2)',
+      'AI Speaking examiner (live)',
+      'Adaptive daily study plan',
+      'Full progress analytics',
+    ],
+    cta: 'Start 7-day trial',
+    popular: true,
+    elite: false,
+  },
+  {
+    id: 'elite',
+    name: 'Elite',
+    monthly: 39,
+    yearly: 29,
+    tag: '+ human tutor',
+    features: [
+      'Everything in Pro',
+      'Weekly 1:1 tutor session',
+      'Hand-graded writing reviews',
+      'Priority Speaking feedback (4h)',
+      'Exam-week boot camp',
+    ],
+    cta: 'Join Elite',
+    popular: false,
+    elite: true,
+  },
+]
+
+function CheckIcon() {
+  return (
+    <svg width={15} height={15} viewBox="0 0 24 24" fill="none" stroke="var(--accent)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M5 12l5 5L20 7"/>
+    </svg>
+  )
 }
 
 function SubscriptionContent() {
   const { t } = useLanguage()
   const [billing, setBilling] = useState<'monthly' | 'yearly'>('monthly')
-
-  const monthlyPrice = 19
-  const yearlyMonthly = Math.round(monthlyPrice * 0.7)
-  const yearlyTotal = yearlyMonthly * 12
+  const [selected, setSelected] = useState('pro')
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-[#06060f]">
+    <div style={{ minHeight: '100vh', background: 'var(--bg)' }}>
       {/* Header */}
-      <div className="flex items-center justify-between px-6 py-4 border-b border-gray-200 dark:border-gray-800 bg-white dark:bg-[#080812]">
-        <Link href="/dashboard" className="flex items-center gap-2 text-sm text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white transition-colors">
-          <ArrowLeft size={16} />
-          {t('common.back')}
+      <header style={{
+        padding: '20px 32px', borderBottom: '1px solid var(--border)',
+        display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+        background: 'var(--bg-elev)',
+      }}>
+        <Link href="/dashboard" style={{ display: 'flex', alignItems: 'center', gap: 8, color: 'var(--text-2)', fontSize: 14, textDecoration: 'none' }}>
+          <svg width={14} height={14} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M19 12H5M11 19l-7-7 7-7"/>
+          </svg>
+          Back to dashboard
         </Link>
-        <div className="flex items-center gap-1">
-          <LanguageSwitcher />
-          <ThemeToggle />
-        </div>
-      </div>
+        <ThemeToggle />
+      </header>
 
-      <div className="max-w-5xl mx-auto px-4 py-16">
-
-        {/* Header */}
-        <div className="text-center mb-12">
-          <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-indigo-50 dark:bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 border border-indigo-200/50 dark:border-indigo-500/20 text-sm font-semibold mb-5">
-            <Star size={14} />
-            {t('subscription.proName')}
-          </div>
-          <h1 className="text-4xl sm:text-5xl font-bold text-gray-900 dark:text-white mb-4">
+      <div style={{ maxWidth: 1180, margin: '0 auto', padding: '60px 32px 80px' }}>
+        {/* Heading */}
+        <div style={{ textAlign: 'center', marginBottom: 48 }}>
+          <h1 style={{ fontSize: 52, fontWeight: 700, letterSpacing: '-0.03em', margin: '0 0 14px', color: 'var(--text)' }}>
             {t('subscription.title')}
           </h1>
-          <p className="text-lg text-gray-500 dark:text-gray-400 max-w-xl mx-auto">
+          <p style={{ fontSize: 17, color: 'var(--text-2)', margin: 0 }}>
             {t('subscription.subtitle')}
           </p>
-        </div>
 
-        {/* Billing toggle */}
-        <div className="flex justify-center mb-10">
-          <div className="inline-flex items-center gap-2 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-full p-1">
-            <button
-              onClick={() => setBilling('monthly')}
-              className={`px-6 py-2.5 rounded-full text-sm font-medium transition-all duration-200 ${
-                billing === 'monthly'
-                  ? 'bg-gray-900 dark:bg-white text-white dark:text-gray-900'
-                  : 'text-gray-500 dark:text-gray-400'
-              }`}
-            >
-              {t('subscription.monthly')}
-            </button>
-            <button
-              onClick={() => setBilling('yearly')}
-              className={`px-6 py-2.5 rounded-full text-sm font-medium transition-all duration-200 flex items-center gap-2 ${
-                billing === 'yearly'
-                  ? 'bg-gray-900 dark:bg-white text-white dark:text-gray-900'
-                  : 'text-gray-500 dark:text-gray-400'
-              }`}
-            >
-              {t('subscription.yearly')}
-              <span className="text-xs font-semibold px-2 py-0.5 rounded-full bg-emerald-100 dark:bg-emerald-500/20 text-emerald-600 dark:text-emerald-400">
-                {t('subscription.saveLabel')}
-              </span>
-            </button>
+          {/* Billing toggle */}
+          <div style={{ display: 'inline-flex', marginTop: 28, padding: 4, borderRadius: 999, background: 'var(--bg-soft)', border: '1px solid var(--border)' }}>
+            {(['monthly', 'yearly'] as const).map(b => (
+              <button key={b} onClick={() => setBilling(b)} style={{
+                padding: '8px 20px', borderRadius: 999, fontSize: 13, fontWeight: 600,
+                background: billing === b ? 'var(--bg-elev)' : 'transparent',
+                color: billing === b ? 'var(--text)' : 'var(--text-2)',
+                boxShadow: billing === b ? 'var(--shadow-sm)' : 'none',
+                transition: 'all .15s',
+                display: 'flex', alignItems: 'center', gap: 8,
+              }}>
+                {b === 'monthly' ? 'Monthly' : 'Yearly'}
+                {b === 'yearly' && (
+                  <span style={{ fontSize: 10, fontWeight: 700, padding: '1px 7px', borderRadius: 999, background: 'var(--accent-soft)', color: 'var(--accent)' }}>
+                    -26%
+                  </span>
+                )}
+              </button>
+            ))}
           </div>
         </div>
 
-        {/* Plans */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 max-w-3xl mx-auto">
+        {/* Plan cards */}
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 16 }}>
+          {PLANS.map(plan => {
+            const price = billing === 'monthly' ? plan.monthly : plan.yearly
+            const isSelected = selected === plan.id
+            return (
+              <div
+                key={plan.id}
+                onClick={() => setSelected(plan.id)}
+                className="card"
+                style={{
+                  padding: 28, position: 'relative', cursor: 'pointer',
+                  borderColor: isSelected ? 'var(--accent)' : 'var(--border)',
+                  borderWidth: isSelected ? 2 : 1,
+                  background: plan.popular ? 'var(--accent-soft)' : 'var(--bg-elev)',
+                  transform: isSelected ? 'translateY(-4px)' : 'none',
+                  transition: 'all .2s',
+                }}
+              >
+                {plan.popular && (
+                  <div style={{
+                    position: 'absolute', top: -12, left: '50%', transform: 'translateX(-50%)',
+                    padding: '4px 14px', background: 'var(--accent)', color: 'var(--accent-fg)',
+                    borderRadius: 999, fontSize: 11, fontWeight: 700,
+                    whiteSpace: 'nowrap',
+                  }}>
+                    {plan.tag}
+                  </div>
+                )}
+                {plan.elite && (
+                  <div style={{
+                    position: 'absolute', top: -12, left: '50%', transform: 'translateX(-50%)',
+                    padding: '4px 14px', background: 'var(--warn)', color: 'white',
+                    borderRadius: 999, fontSize: 11, fontWeight: 700,
+                    whiteSpace: 'nowrap',
+                  }}>
+                    {plan.tag}
+                  </div>
+                )}
 
-          {/* Free plan */}
-          <div className="rounded-2xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900/60 p-7">
-            <div className="mb-6">
-              <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-1">{t('subscription.freeName')}</h2>
-              <p className="text-sm text-gray-500 dark:text-gray-400">{t('subscription.freeDesc')}</p>
-            </div>
-            <div className="flex items-end gap-1 mb-7">
-              <span className="text-5xl font-bold text-gray-900 dark:text-white">$0</span>
-              <span className="text-sm text-gray-400 mb-2">{t('subscription.perMonth')}</span>
-            </div>
-            <ul className="space-y-3 mb-7">
-              {FREE_FEATURES.map(key => (
-                <li key={key} className="flex items-center gap-3 text-sm text-gray-600 dark:text-gray-400">
-                  <Check size={14} className="text-gray-400 shrink-0" />
-                  {t(`subscription.${key}`)}
-                </li>
-              ))}
-            </ul>
-            <div className="block text-center py-3 rounded-xl text-sm font-medium border border-gray-200 dark:border-gray-700 text-gray-500 dark:text-gray-500 cursor-default">
-              {t('subscription.currentPlan')}
-            </div>
-          </div>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 18 }}>
+                  <h3 style={{ fontSize: 22, fontWeight: 700, margin: 0, color: 'var(--text)' }}>{plan.name}</h3>
+                  {!plan.popular && !plan.elite && (
+                    <span style={{ fontSize: 11, fontWeight: 600, color: 'var(--text-3)', background: 'var(--bg-soft)', padding: '3px 9px', borderRadius: 999, border: '1px solid var(--border)' }}>
+                      {plan.tag}
+                    </span>
+                  )}
+                </div>
 
-          {/* Pro plan */}
-          <div className="relative rounded-2xl bg-gray-900 dark:bg-white p-7 shadow-2xl shadow-gray-900/25 dark:shadow-black/40">
-            <div className="absolute -top-3.5 left-1/2 -translate-x-1/2 flex items-center gap-1.5 px-4 py-1.5 rounded-full bg-gradient-to-r from-indigo-500 to-violet-500 text-white text-xs font-bold">
-              <Zap size={11} />
-              {t('subscription.proName')}
-            </div>
+                <div style={{ display: 'flex', alignItems: 'baseline', gap: 4, marginBottom: 4 }}>
+                  <span style={{ fontSize: 16, color: 'var(--text-2)' }}>$</span>
+                  <span style={{ fontSize: 52, fontWeight: 700, letterSpacing: '-0.03em', lineHeight: 1, color: 'var(--text)', fontVariantNumeric: 'tabular-nums' }}>{price}</span>
+                  <span style={{ fontSize: 14, color: 'var(--text-2)' }}>/ month</span>
+                </div>
+                {billing === 'yearly' && plan.monthly > 0 && (
+                  <div style={{ fontSize: 12, color: 'var(--text-3)', marginBottom: 18 }}>
+                    billed ${price * 12}/year · save ${(plan.monthly - plan.yearly) * 12}
+                  </div>
+                )}
 
-            <div className="mb-6">
-              <h2 className="text-xl font-bold text-white dark:text-gray-900 mb-1">{t('subscription.proName')}</h2>
-              <p className="text-sm text-gray-400 dark:text-gray-600">{t('subscription.proDesc')}</p>
-            </div>
-            <div className="flex items-end gap-1 mb-7">
-              <span className="text-5xl font-bold text-white dark:text-gray-900">
-                ${billing === 'yearly' ? yearlyMonthly : monthlyPrice}
-              </span>
-              <span className="text-sm text-gray-400 dark:text-gray-500 mb-2">{t('subscription.perMonth')}</span>
-            </div>
-            {billing === 'yearly' && (
-              <p className="text-xs text-indigo-400 dark:text-indigo-500 -mt-5 mb-6">
-                ${yearlyTotal}{t('subscription.perYear')} — billed annually
-              </p>
-            )}
-            <ul className="space-y-3 mb-7">
-              {PRO_FEATURES.map(key => (
-                <li key={key} className="flex items-center gap-3 text-sm text-gray-200 dark:text-gray-700">
-                  <Check size={14} className="text-indigo-400 dark:text-indigo-500 shrink-0" />
-                  {t(`subscription.${key}`)}
-                </li>
-              ))}
-            </ul>
-            <button
-              onClick={() => handleCheckout(billing)}
-              className="w-full py-3.5 rounded-xl text-sm font-bold bg-gradient-to-r from-indigo-500 to-violet-500 text-white hover:opacity-90 transition-opacity"
-            >
-              {t('subscription.proBtn')}
-            </button>
-          </div>
+                <ul style={{ listStyle: 'none', padding: 0, margin: '20px 0', display: 'grid', gap: 10 }}>
+                  {plan.features.map((f, i) => (
+                    <li key={i} style={{ display: 'flex', gap: 10, fontSize: 14, alignItems: 'flex-start', color: 'var(--text)' }}>
+                      <CheckIcon />
+                      <span>{f}</span>
+                    </li>
+                  ))}
+                </ul>
+
+                <button
+                  onClick={e => { e.stopPropagation(); if (plan.id !== 'starter') handleCheckout(billing) }}
+                  style={{
+                    width: '100%', padding: '14px 16px', borderRadius: 12, fontSize: 14, fontWeight: 600,
+                    background: plan.popular ? 'var(--accent)' : 'var(--bg-soft)',
+                    color: plan.popular ? 'var(--accent-fg)' : 'var(--text)',
+                    border: plan.popular ? 'none' : '1px solid var(--border-strong)',
+                    cursor: 'pointer', transition: 'background .15s',
+                    justifyContent: 'center', display: 'flex', alignItems: 'center',
+                  }}
+                >
+                  {plan.cta}
+                </button>
+              </div>
+            )
+          })}
         </div>
 
-        {/* Trust signals */}
-        <div className="flex flex-wrap items-center justify-center gap-6 mt-12 text-sm text-gray-400 dark:text-gray-600">
-          <span>✓ Cancel anytime</span>
-          <span>✓ Secure payment</span>
-          <span>✓ Instant access</span>
-          <span>✓ 7-day money-back</span>
+        {/* Trust row */}
+        <div style={{ display: 'flex', justifyContent: 'center', gap: 32, marginTop: 48, color: 'var(--text-2)', fontSize: 13 }}>
+          {['🔒 Stripe-encrypted', '✓ 7-day refund', '✕ Cancel anytime', '⚡ Instant access'].map(item => (
+            <span key={item}>{item}</span>
+          ))}
         </div>
       </div>
     </div>
