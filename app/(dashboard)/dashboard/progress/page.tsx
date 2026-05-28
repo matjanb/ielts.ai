@@ -224,8 +224,9 @@ export default function ProgressPage() {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center h-64">
-        <div className="w-5 h-5 rounded-full border-2 border-indigo-500 border-t-transparent animate-spin" />
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: 260 }}>
+        <div style={{ width: 20, height: 20, borderRadius: '50%', border: '2px solid var(--accent)', borderTopColor: 'transparent', animation: 'spin 0.8s linear infinite' }}/>
+        <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
       </div>
     )
   }
@@ -237,24 +238,45 @@ export default function ProgressPage() {
   ]
 
   return (
-    <div className="space-y-5">
+    <div style={{ padding: '8px 0', display: 'flex', flexDirection: 'column', gap: 20 }}>
+      {/* Header */}
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+        <div>
+          <h1 style={{ fontSize: 32, fontWeight: 700, letterSpacing: '-0.025em', margin: 0, color: 'var(--text)' }}>Progress</h1>
+          <p style={{ margin: '6px 0 0', fontSize: 15, color: 'var(--text-2)' }}>Your learning journey at a glance.</p>
+        </div>
+        <div style={{ display: 'flex', gap: 4, padding: 4, background: 'var(--bg-soft)', borderRadius: 999, border: '1px solid var(--border)' }}>
+          {['Week', 'Month', 'All time'].map((p, i) => (
+            <button key={p} onClick={() => {}} style={{
+              padding: '6px 14px', borderRadius: 999, fontSize: 12, fontWeight: 600, cursor: 'pointer',
+              background: i === 1 ? 'var(--bg-elev)' : 'transparent',
+              color: i === 1 ? 'var(--text)' : 'var(--text-2)',
+              border: 'none', boxShadow: i === 1 ? 'var(--shadow-sm)' : 'none',
+            }}>{p}</button>
+          ))}
+        </div>
+      </div>
+
       {/* Tab bar */}
-      <div className="flex gap-1 p-1 bg-gray-100 dark:bg-gray-800/60 rounded-xl w-fit">
+      <div style={{ display: 'flex', gap: 4, padding: 4, background: 'var(--bg-soft)', borderRadius: 12, width: 'fit-content', border: '1px solid var(--border)' }}>
         {TABS.map(tb => (
-          <button key={tb.key} onClick={() => setTab(tb.key)}
-            className={`px-4 py-1.5 rounded-lg text-sm font-medium transition-all ${
-              tab === tb.key
-                ? 'bg-white dark:bg-gray-700 text-gray-900 dark:text-white shadow-sm'
-                : 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300'
-            }`}>
+          <button key={tb.key} onClick={() => setTab(tb.key)} style={{
+            padding: '7px 16px', borderRadius: 8, fontSize: 13, fontWeight: 600, cursor: 'pointer',
+            background: tab === tb.key ? 'var(--bg-elev)' : 'transparent',
+            color: tab === tb.key ? 'var(--text)' : 'var(--text-2)',
+            border: 'none', boxShadow: tab === tb.key ? 'var(--shadow-sm)' : 'none',
+            transition: 'all .15s',
+          }}>
             {tb.label}
           </button>
         ))}
       </div>
 
-      {tab === 'overview' && <OverviewScreen data={data} t={t} />}
-      {tab === 'writing'  && <WritingScreen  data={data} />}
-      {tab === 'mocks'    && <MockScreen     data={data} />}
+      <div>
+        {tab === 'overview' && <OverviewScreen data={data} t={t} />}
+        {tab === 'writing'  && <WritingScreen  data={data} />}
+        {tab === 'mocks'    && <MockScreen     data={data} />}
+      </div>
     </div>
   )
 }
@@ -771,7 +793,7 @@ function KPICard({ label, value, sub, accent = false }: {
   return (
     <Card className="p-5">
       <p className="text-[11px] text-gray-400 uppercase tracking-[0.08em]">{label}</p>
-      <p className={`text-[36px] font-bold tracking-[-0.02em] tabular-nums leading-none mt-3 ${accent ? 'text-indigo-500' : 'text-gray-900 dark:text-white'}`}>
+      <p className={`text-[36px] font-bold tracking-[-0.02em] tabular-nums leading-none mt-3`} style={{ color: accent ? 'var(--accent)' : 'var(--text)' }}>
         {value}
       </p>
       <p className="text-[12px] text-gray-400 dark:text-gray-500 mt-2.5">{sub}</p>
