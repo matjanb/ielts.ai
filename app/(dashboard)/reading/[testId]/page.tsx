@@ -394,20 +394,21 @@ export default function ReadingTestPage() {
 
   return (
     <div className="flex flex-col h-[calc(100vh-80px)]">
-      {/* Top bar */}
-      <div className="flex items-center justify-between px-2 pb-3 shrink-0">
-        <div className="flex items-center gap-2 text-sm text-gray-400 dark:text-gray-500">
-          <span className="font-medium text-gray-700 dark:text-gray-300">{answeredCount}</span> / {totalQuestions} answered
+      {/* IELTS-style exam header */}
+      <div style={{ background: '#2b2b2b', color: '#fff', padding: '8px 16px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8, borderRadius: 8 }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 12, fontSize: 13, fontWeight: 700 }}>
+          <span style={{ background: '#ffcb05', color: '#000', padding: '3px 8px', borderRadius: 2, fontSize: 11 }}>IELTS</span>
+          ielts.camp · Practice Reading
+          <span style={{ fontSize: 11, opacity: 0.7, fontWeight: 400 }}>{test?.title ?? ''}</span>
         </div>
-        <Timer totalSeconds={3600} onExpire={handleTimeExpire} />
-        <button
-          onClick={handleSubmit}
-          disabled={submitting}
-          className="flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-semibold bg-blue-500 hover:bg-blue-400 text-white transition-colors disabled:opacity-60"
-        >
-          <Send size={13} strokeWidth={2} />
-          {submitting ? 'Submitting…' : 'Submit'}
-        </button>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
+          <span style={{ fontSize: 11, opacity: 0.7 }}>{answeredCount}/{totalQuestions} answered</span>
+          <Timer totalSeconds={3600} onExpire={handleTimeExpire} />
+          <button onClick={handleSubmit} disabled={submitting}
+            style={{ padding: '5px 14px', background: '#0066b3', color: '#fff', fontSize: 12, fontWeight: 700, borderRadius: 2, border: 'none', cursor: 'pointer', opacity: submitting ? 0.6 : 1 }}>
+            {submitting ? 'Submitting…' : 'Review & Submit'}
+          </button>
+        </div>
       </div>
 
       {/* Main content */}

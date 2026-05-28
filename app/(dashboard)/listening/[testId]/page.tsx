@@ -2221,23 +2221,25 @@ export default function ListeningTestPage() {
         </div>
       )}
 
-      {/* ── Sticky top bar: audio + timer + submit ── */}
-      <div className="sticky top-0 z-40 bg-white/95 dark:bg-[#08080f]/95 backdrop-blur-sm border-b border-gray-100 dark:border-gray-800 px-4 lg:px-6 py-3 flex items-center gap-4">
-        <AudioPlayer audioUrl={currentSection?.audio_url ?? null} autoPlay={started} />
-        <div className="shrink-0 flex items-center gap-3">
-          <span className="hidden sm:flex items-center gap-1 text-xs text-gray-400 tabular-nums">
-            <span className="text-gray-600 dark:text-gray-300 font-medium">{answeredCount}</span>
-            <span>/</span>
-            <span>{questions.length}</span>
-          </span>
+      {/* ── IELTS-style exam header ── */}
+      <div style={{ position: 'sticky', top: 0, zIndex: 40, background: '#2b2b2b', color: '#fff', padding: '8px 16px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10, fontWeight: 700, fontSize: 14 }}>
+            <span style={{ background: '#ffcb05', color: '#000', padding: '3px 8px', borderRadius: 2, fontSize: 11 }}>IELTS</span>
+            ielts.camp · Practice Listening
+          </div>
+          <span style={{ fontSize: 11, opacity: 0.6 }}>{test?.title ?? ''}</span>
+        </div>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+          <AudioPlayer audioUrl={currentSection?.audio_url ?? null} autoPlay={started} />
+          <span style={{ fontSize: 11, opacity: 0.7 }}>{answeredCount}/{questions.length} answered</span>
           <TestTimer totalSeconds={1800} onExpire={handleTimeExpire} />
           <button
             onClick={handleSubmit}
             disabled={submitting}
-            className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-semibold bg-emerald-600 hover:bg-emerald-500 text-white transition-colors disabled:opacity-60 shrink-0"
+            style={{ padding: '5px 14px', background: '#0066b3', color: '#fff', fontSize: 12, fontWeight: 700, borderRadius: 2, border: 'none', cursor: 'pointer', opacity: submitting ? 0.6 : 1 }}
           >
-            {submitting ? <Loader2 size={12} className="animate-spin" /> : <Send size={12} strokeWidth={2} />}
-            <span className="hidden sm:inline">{submitting ? t('listening.submitting') : t('listening.submitTest')}</span>
+            {submitting ? 'Submitting…' : t('listening.submitTest')}
           </button>
         </div>
       </div>
