@@ -1,17 +1,23 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import Link from 'next/link'
-import { BookOpen, Clock, HelpCircle, ChevronRight } from 'lucide-react'
-import { useLanguage } from '@/lib/i18n/LanguageContext'
 import { getReadingTests } from '@/lib/services/tests'
+import { SkillHubHeader, SubskillCard, TestCard, HubSpinner } from '@/components/dashboard/SkillHub'
 import type { IeltsTest } from '@/lib/types/database'
 
+const SUBSKILLS = [
+  { label: 'True / False / Not Given', value: 0.52 },
+  { label: 'Matching headings', value: 0.61 },
+  { label: 'Multiple choice', value: 0.84 },
+  { label: 'Sentence completion', value: 0.78 },
+  { label: 'Matching info to paragraphs', value: 0.58 },
+]
+
 export default function ReadingIndexPage() {
-  const { t } = useLanguage()
   const [tests, setTests] = useState<IeltsTest[]>([])
   const [loading, setLoading] = useState(true)
 
+  // Keep existing data fetching unchanged
   useEffect(() => {
     async function load() {
       const data = await getReadingTests()
@@ -21,68 +27,63 @@ export default function ReadingIndexPage() {
     load()
   }, [])
 
-  return (
-    <div className="max-w-2xl mx-auto space-y-6">
-      <div className="flex items-center gap-3">
-        <div className="w-10 h-10 rounded-xl bg-blue-50 dark:bg-blue-500/10 flex items-center justify-center">
-          <BookOpen size={18} strokeWidth={1.8} className="text-blue-500" />
-        </div>
-        <div>
-          <h1 className="text-lg font-semibold text-gray-900 dark:text-white">
-            Reading Tests
-          </h1>
-          <p className="text-sm text-gray-400 dark:text-gray-500">
-            Practice with full Cambridge-style reading tests
-          </p>
-        </div>
-      </div>
+  const firstTest = tests[0]
+  const startHref = firstTest ? `/reading/${firstTest.id}` : '#'
 
-      {loading ? (
-        <div className="flex items-center justify-center h-40">
-          <div className="w-5 h-5 rounded-full border-2 border-blue-500 border-t-transparent animate-spin" />
+  return (
+    <div style={{ padding: '32px 32px 80px', maxWidth: 1400, margin: '0 auto' }}>
+      <SkillHubHeader
+        name="Reading"
+        icon="book"
+        nextTest={firstTest?.title ?? 'Passage 1 · TFNG drill'}
+        startHref={startHref}
+      />
+
+      <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: 16, marginTop: 24 }}>
+        {/* Passage library */}
+        <div className="card" style={{ padding: 28 }}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 18 }}>
+            <h3 style={{ margin: 0, fontSize: 18, fontWeight: 600, color: 'var(--text)' }}>Reading passages</h3>
+            <div style={{ display: 'flex', gap: 4 }}>
+              {['Academic', 'General'].map(f => (
+                <button key={f} style={{
+                  padding: '5px 10px', borderRadius: 8, fontSize: 12, fontWeight: 600,
+                  background: f === 'Academic' ? 'var(--bg-soft)' : 'transparent',
+                  color: f === 'Academic' ? 'var(--text)' : 'var(--text-2)',
+                  border: f === 'Academic' ? '1px solid var(--border)' : '1px solid transparent',
+                  cursor: 'pointer',
+                }}>
+                  {f}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {loading ? (
+            <HubSpinner />
+          ) : tests.length === 0 ? (
+            <div style={{ padding: '32px 0', textAlign: 'center', color: 'var(--text-3)', fontSize: 14 }}>
+              No reading tests available yet.
+            </div>
+          ) : (
+            <div style={{ display: 'grid', gap: 8 }}>
+              {tests.map(test => (
+                <TestCard
+                  key={test.id}
+                  test={test}
+                  href={`/reading/${test.id}`}
+                  icon="book"
+                  questionsLabel="40 questions"
+                  timeLabel="60 min"
+                />
+              ))}
+            </div>
+          )}
         </div>
-      ) : tests.length === 0 ? (
-        <div className="rounded-2xl border border-gray-100 dark:border-gray-800 bg-white dark:bg-gray-900/50 p-8 text-center">
-          <p className="text-sm text-gray-400 dark:text-gray-500">No reading tests available.</p>
-        </div>
-      ) : (
-        <div className="space-y-3">
-          {tests.map((test) => (
-            <Link
-              key={test.id}
-              href={`/reading/${test.id}`}
-              className="flex items-center gap-4 p-5 rounded-2xl bg-white dark:bg-gray-900/50 border border-gray-100 dark:border-gray-800 hover:border-gray-200 dark:hover:border-gray-700 hover:shadow-md hover:shadow-black/4 transition-all duration-200 group"
-            >
-              <div className="w-10 h-10 rounded-xl bg-blue-50 dark:bg-blue-500/10 flex items-center justify-center shrink-0">
-                <BookOpen size={16} strokeWidth={1.8} className="text-blue-500" />
-              </div>
-              <div className="flex-1 min-w-0">
-                <p className="text-sm font-medium text-gray-900 dark:text-white truncate">
-                  {test.title}
-                </p>
-                {(test.book_number != null || test.test_number != null) && (
-                  <p className="text-xs text-gray-400 dark:text-gray-500 mt-0.5 truncate">
-                    {test.book_number != null ? `Book ${test.book_number}` : ''}
-                    {test.book_number != null && test.test_number != null ? ' · ' : ''}
-                    {test.test_number != null ? `Test ${test.test_number}` : ''}
-                  </p>
-                )}
-                <div className="flex items-center gap-3 mt-1.5">
-                  <span className="flex items-center gap-1 text-xs text-gray-400 dark:text-gray-500">
-                    <HelpCircle size={11} strokeWidth={2} />
-                    40 Questions
-                  </span>
-                  <span className="flex items-center gap-1 text-xs text-gray-400 dark:text-gray-500">
-                    <Clock size={11} strokeWidth={2} />
-                    60 min
-                  </span>
-                </div>
-              </div>
-              <ChevronRight size={15} strokeWidth={2} className="text-gray-300 dark:text-gray-700 group-hover:text-gray-500 dark:group-hover:text-gray-400 transition-colors shrink-0" />
-            </Link>
-          ))}
-        </div>
-      )}
+
+        {/* Question type accuracy */}
+        <SubskillCard title="Question type accuracy" rows={SUBSKILLS} />
+      </div>
     </div>
   )
 }
