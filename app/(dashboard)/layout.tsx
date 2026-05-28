@@ -300,7 +300,7 @@ function DashboardLayoutInner({ children }: { children: ReactNode }) {
       <main style={{
         marginLeft: pinned ? EXPANDED_W : RAIL_W,
         transition: 'margin-left .25s cubic-bezier(.2,.7,.2,1)',
-        minHeight: '100vh', display: 'flex', flexDirection: 'column',
+        minHeight: '100vh', height: '100vh', display: 'flex', flexDirection: 'column', overflow: 'hidden',
       }}>
         {/* Topbar */}
         <header style={{
@@ -377,8 +377,8 @@ function DashboardLayoutInner({ children }: { children: ReactNode }) {
           </div>
         </header>
 
-        {/* Page content */}
-        <div style={{ flex: 1 }}>
+        {/* Page content — flex column so exam pages can use flex:1 to fill height */}
+        <div style={{ flex: 1, display: 'flex', flexDirection: 'column', minHeight: 0 }}>
           {children}
         </div>
       </main>

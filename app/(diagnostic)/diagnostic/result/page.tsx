@@ -293,7 +293,7 @@ export default function DiagnosticResultPage() {
 
         {/* ── Speaking Analysis (if completed) ── */}
         {speakingData && (
-          <div className="bg-white dark:bg-gray-900/50 border border-gray-100 dark:border-gray-800 rounded-2xl p-6 animate-fade-in-up delay-250">
+          <div className="card rounded-2xl p-6 animate-fade-in-up delay-250">
             <div className="flex items-center gap-2 mb-4">
               <Mic size={15} strokeWidth={2} className="text-blue-500" />
               <h3 className="text-sm font-semibold text-gray-900 dark:text-white">Speaking Assessment</h3>
@@ -325,7 +325,7 @@ export default function DiagnosticResultPage() {
         {/* ── Strengths & Weaknesses ── */}
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 animate-fade-in-up delay-300">
           {/* Strengths */}
-          <div className="bg-white dark:bg-gray-900/50 border border-gray-100 dark:border-gray-800 rounded-2xl p-5">
+          <div className="card rounded-2xl p-5">
             <div className="flex items-center gap-2 mb-4">
               <CheckCircle2 size={15} strokeWidth={2} className="text-emerald-500" />
               <h3 className="text-sm font-semibold text-gray-900 dark:text-white">{t('diagnostic.resultStrengths')}</h3>
@@ -349,7 +349,7 @@ export default function DiagnosticResultPage() {
           </div>
 
           {/* Weaknesses */}
-          <div className="bg-white dark:bg-gray-900/50 border border-gray-100 dark:border-gray-800 rounded-2xl p-5">
+          <div className="card rounded-2xl p-5">
             <div className="flex items-center gap-2 mb-4">
               <AlertCircle size={15} strokeWidth={2} className="text-amber-500" />
               <h3 className="text-sm font-semibold text-gray-900 dark:text-white">{t('diagnostic.resultWeaknesses')}</h3>
@@ -372,7 +372,7 @@ export default function DiagnosticResultPage() {
         </div>
 
         {/* ── AI Study Plan ── */}
-        <div className="bg-white dark:bg-gray-900/50 border border-gray-100 dark:border-gray-800 rounded-2xl p-6 animate-fade-in-up delay-400">
+        <div className="card rounded-2xl p-6 animate-fade-in-up delay-400">
           <div className="flex items-center gap-2 mb-1">
             <Zap size={15} strokeWidth={2} className="text-indigo-500" />
             <h3 className="text-sm font-semibold text-gray-900 dark:text-white">{t('diagnostic.resultPlanTitle')}</h3>
@@ -417,7 +417,7 @@ export default function DiagnosticResultPage() {
         </div>
 
         {/* ── Weekly structure ── */}
-        <div className="bg-white dark:bg-gray-900/50 border border-gray-100 dark:border-gray-800 rounded-2xl p-6 animate-fade-in-up delay-500">
+        <div className="card rounded-2xl p-6 animate-fade-in-up delay-500">
           <div className="flex items-center gap-2 mb-5">
             <Calendar size={15} strokeWidth={2} className="text-indigo-500" />
             <h3 className="text-sm font-semibold text-gray-900 dark:text-white">{t('diagnostic.resultWeeklyTitle')}</h3>

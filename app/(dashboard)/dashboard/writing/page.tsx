@@ -121,7 +121,7 @@ export default function WritingPage() {
   }
 
   return (
-    <div style={{ margin: '-24px -32px -24px', display: 'flex', flexDirection: 'column', height: 'calc(100vh - 60px)' }}>
+    <div style={{ display: 'flex', flexDirection: 'column', flex: 1, minHeight: 0 }}>
 
       {/* IELTS dark header */}
       <div style={{ background: '#2b2b2b', color: '#fff', padding: '8px 16px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexShrink: 0 }}>

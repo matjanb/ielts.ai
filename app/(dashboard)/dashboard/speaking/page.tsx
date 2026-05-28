@@ -27,7 +27,7 @@ type Phase = 'ready' | 'live' | 'feedback'
 /* ── Ready screen (dark) ─────────────────────────────────────────────────── */
 function ReadyScreen({ onStart, t }: { onStart: () => void; t: (k: string) => string }) {
   return (
-    <div style={{ minHeight: '100vh', background: '#0e1011', color: '#f5f5f3', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 24, margin: '-24px -32px -24px' }}>
+    <div style={{ flex: 1, background: '#0e1011', color: '#f5f5f3', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 24 }}>
       <div className="animate-fade-up" style={{ maxWidth: 520, textAlign: 'center' }}>
         <div style={{ display: 'inline-flex', padding: 24, borderRadius: '50%', background: '#1a2a23', marginBottom: 24 }}>
           <svg width={48} height={48} viewBox="0 0 24 24" fill="none" stroke="#3aa278" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
@@ -148,7 +148,7 @@ function LiveExam({ part, setPart, topic, setTopic, transcript, setTranscript, l
   const wordCount = transcript.trim() ? transcript.trim().split(/\s+/).length : 0
 
   return (
-    <div style={{ minHeight: '100vh', background: '#0e1011', color: '#f5f5f3', display: 'flex', flexDirection: 'column', margin: '-24px -32px -24px' }}>
+    <div style={{ flex: 1, background: '#0e1011', color: '#f5f5f3', display: 'flex', flexDirection: 'column' }}>
       {/* Header */}
       <header style={{ padding: '14px 24px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', borderBottom: '1px solid #2a2c2e', flexShrink: 0 }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 18 }}>

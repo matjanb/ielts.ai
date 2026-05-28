@@ -85,7 +85,7 @@ function OnboardingContent() {
   const progress = (step / TOTAL_STEPS) * 100
 
   return (
-    <div className="min-h-screen bg-white dark:bg-[#06060f] flex flex-col">
+    <div className="min-h-screen bg-[var(--bg)] flex flex-col">
       {/* Top bar */}
       <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100 dark:border-gray-800/60">
         <Link href="/" className="flex items-center gap-2">

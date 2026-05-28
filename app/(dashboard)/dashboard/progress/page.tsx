@@ -402,7 +402,14 @@ export default function ProgressPage() {
     )
   }
 
-  const d = data!
+  if (!data) {
+    return (
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: 260 }}>
+        <p style={{ fontSize: 14, color: 'var(--text-3)' }}>Sign in to view your progress.</p>
+      </div>
+    )
+  }
+  const d = data
 
   return (
     <div style={{ padding: '32px 32px 80px', maxWidth: 1400, margin: '0 auto' }}>

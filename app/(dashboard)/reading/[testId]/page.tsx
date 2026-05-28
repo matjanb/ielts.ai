@@ -31,10 +31,13 @@ function Timer({ totalSeconds, onExpire }: { totalSeconds: number; onExpire: () 
   const urgent = seconds < 300
 
   return (
-    <div className={`flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold tabular-nums ${
-      urgent ? 'bg-red-50 dark:bg-red-500/10 text-red-600 dark:text-red-400' : 'bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300'
-    }`}>
-      <Clock size={14} strokeWidth={2} />
+    <div style={{
+      display: 'flex', alignItems: 'center', gap: 8,
+      padding: '5px 12px', borderRadius: 8, fontSize: 13, fontWeight: 600, fontVariantNumeric: 'tabular-nums',
+      background: urgent ? 'color-mix(in srgb, var(--danger) 12%, transparent)' : 'var(--bg-soft)',
+      color: urgent ? 'var(--danger)' : 'var(--text-2)',
+    }}>
+      <Clock size={13} strokeWidth={2} />
       {m}:{String(s).padStart(2, '0')} remaining
     </div>
   )
@@ -53,20 +56,24 @@ function ReadingQuestion({
 }) {
   const qText = question.question_text.replace(/^\[.*?\]\s*/, '')
 
+  const selectStyle: React.CSSProperties = {
+    padding: '6px 10px', borderRadius: 8, fontSize: 13,
+    border: '1px solid var(--border-strong)', background: 'var(--bg-elev)',
+    color: 'var(--text)', outline: 'none', cursor: 'pointer',
+  }
+
   if (question.question_type === 'true_false') {
     return (
-      <div className="flex items-start gap-3">
-        <select
-          value={answer}
-          onChange={e => onChange(e.target.value)}
-          className="shrink-0 px-3 py-1.5 rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-sm text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500/30 focus:border-blue-500 transition-all"
+      <div style={{ display: 'flex', alignItems: 'flex-start', gap: 12 }}>
+        <select value={answer} onChange={e => onChange(e.target.value)}
+          style={{ ...selectStyle, flexShrink: 0 }}
+          onFocus={e => (e.currentTarget.style.borderColor = 'var(--accent)')}
+          onBlur={e => (e.currentTarget.style.borderColor = 'var(--border-strong)')}
         >
           <option value="">Select</option>
-          <option value="YES">YES</option>
-          <option value="NO">NO</option>
-          <option value="NOT GIVEN">NOT GIVEN</option>
+          <option>YES</option><option>NO</option><option>NOT GIVEN</option>
         </select>
-        <p className="text-sm text-gray-800 dark:text-gray-200 leading-relaxed">{qText}</p>
+        <p style={{ fontSize: 14, color: 'var(--text)', lineHeight: 1.55, margin: 0 }}>{qText}</p>
       </div>
     )
   }
@@ -77,25 +84,27 @@ function ReadingQuestion({
     const optionMatches = text.match(/[A-D]\) [\s\S]+?(?=[A-D]\)|$)/g) ?? []
     const letters = ['A', 'B', 'C', 'D']
     return (
-      <div className="space-y-3">
-        <p className="text-sm text-gray-800 dark:text-gray-200 leading-relaxed font-medium">{questionPart}</p>
-        <div className="space-y-2">
-          {optionMatches.map((opt, i) => (
-            <button
-              key={i}
-              onClick={() => onChange(letters[i])}
-              className={`w-full text-left flex items-start gap-3 px-4 py-2.5 rounded-xl border text-sm transition-all ${
-                answer === letters[i]
-                  ? 'border-blue-500 bg-blue-50 dark:bg-blue-500/10 text-blue-800 dark:text-blue-200'
-                  : 'border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:border-blue-300'
-              }`}
-            >
-              <span className={`shrink-0 w-5 h-5 rounded-md flex items-center justify-center text-[10px] font-bold mt-0.5 ${
-                answer === letters[i] ? 'bg-blue-500 text-white' : 'bg-gray-200 dark:bg-gray-700 text-gray-500'
-              }`}>{letters[i]}</span>
-              <span>{opt.replace(/^[A-D]\)\s*/, '')}</span>
-            </button>
-          ))}
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+        <p style={{ fontSize: 14, color: 'var(--text)', fontWeight: 500, margin: 0, lineHeight: 1.5 }}>{questionPart}</p>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+          {optionMatches.map((opt, i) => {
+            const sel = answer === letters[i]
+            return (
+              <button key={i} onClick={() => onChange(letters[i])} style={{
+                width: '100%', textAlign: 'left', display: 'flex', alignItems: 'flex-start', gap: 10,
+                padding: '10px 14px', borderRadius: 10, fontSize: 14,
+                border: `1px solid ${sel ? 'var(--accent)' : 'var(--border)'}`,
+                background: sel ? 'var(--accent-soft)' : 'var(--bg-elev)',
+                color: sel ? 'var(--accent)' : 'var(--text)',
+                cursor: 'pointer', transition: 'all .15s',
+              }}>
+                <span style={{ flexShrink: 0, width: 20, height: 20, borderRadius: 6, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 10, fontWeight: 700, marginTop: 1, background: sel ? 'var(--accent)' : 'var(--bg-soft)', color: sel ? 'var(--accent-fg)' : 'var(--text-2)' }}>
+                  {letters[i]}
+                </span>
+                <span>{opt.replace(/^[A-D]\)\s*/, '')}</span>
+              </button>
+            )
+          })}
         </div>
       </div>
     )
@@ -105,12 +114,11 @@ function ReadingQuestion({
     const bracketMatch = question.question_text.match(/^\[(.+?)\]/)
     const allOptions = bracketMatch ? bracketMatch[1].match(/[A-H]=[^ ].*?(?= [A-H]=|\]|$)/g) ?? [] : []
     return (
-      <div className="space-y-3">
-        <p className="text-sm text-gray-800 dark:text-gray-200 leading-relaxed">{qText}</p>
-        <select
-          value={answer}
-          onChange={e => onChange(e.target.value)}
-          className="px-3 py-1.5 rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-sm text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500/30 focus:border-blue-500 transition-all"
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+        <p style={{ fontSize: 14, color: 'var(--text)', lineHeight: 1.55, margin: 0 }}>{qText}</p>
+        <select value={answer} onChange={e => onChange(e.target.value)} style={selectStyle}
+          onFocus={e => (e.currentTarget.style.borderColor = 'var(--accent)')}
+          onBlur={e => (e.currentTarget.style.borderColor = 'var(--border-strong)')}
         >
           <option value="">— Select —</option>
           {(allOptions.length > 0 ? allOptions.map(o => o.split('=')[0].trim()) : ['A','B','C','D','E','F','G','H']).map(l => {
@@ -124,21 +132,17 @@ function ReadingQuestion({
 
   // fill_blank
   return (
-    <div className="space-y-2">
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
       {question.image_url && (
-        <img
-          src={question.image_url}
-          alt="Question diagram"
-          className="w-full rounded-xl border border-gray-200 dark:border-gray-700"
-        />
+        <img src={question.image_url} alt="Question diagram"
+          style={{ width: '100%', borderRadius: 10, border: '1px solid var(--border)' }} />
       )}
-      <p className="text-sm text-gray-800 dark:text-gray-200 leading-relaxed">{qText}</p>
-      <input
-        type="text"
-        value={answer}
-        onChange={e => onChange(e.target.value)}
-        placeholder="Type your answer..."
-        className="w-full px-4 py-2.5 rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-sm text-gray-900 dark:text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500/30 focus:border-blue-500 transition-all"
+      <p style={{ fontSize: 14, color: 'var(--text)', lineHeight: 1.55, margin: 0 }}>{qText}</p>
+      <input type="text" value={answer} onChange={e => onChange(e.target.value)}
+        placeholder="Type your answer…"
+        style={{ padding: '9px 12px', borderRadius: 8, fontSize: 14, border: '1px solid var(--border-strong)', background: 'var(--bg-elev)', color: 'var(--text)', outline: 'none' }}
+        onFocus={e => (e.currentTarget.style.borderColor = 'var(--accent)')}
+        onBlur={e => (e.currentTarget.style.borderColor = 'var(--border-strong)')}
       />
     </div>
   )
@@ -152,37 +156,29 @@ function PassageText({ text }: { text: string }) {
   const lines = normalized.split('\n').filter(Boolean)
 
   return (
-    <div className="text-sm text-gray-700 dark:text-gray-300 leading-relaxed space-y-3">
+    <div style={{ fontSize: 14, color: 'var(--text)', lineHeight: 1.65, display: 'flex', flexDirection: 'column', gap: 10 }}>
       {lines.map((line, i) => {
         const trimmed = line.trim()
 
         if (i === 0 || i === 1) {
-          return (
-            <p key={i} className="font-bold text-gray-900 dark:text-white text-base">
-              {trimmed}
-            </p>
-          )
+          return <p key={i} style={{ fontWeight: 700, color: 'var(--text)', fontSize: 15, margin: 0 }}>{trimmed}</p>
         }
 
         if (hasParagraphs) {
           const match = trimmed.match(/^([A-H])\s{1,3}(.+)/)
           if (match) {
             return (
-              <div key={i} className="flex gap-3">
-                <span className="shrink-0 w-6 h-6 rounded-md bg-blue-100 dark:bg-blue-500/20 text-blue-600 dark:text-blue-400 flex items-center justify-center text-xs font-bold mt-0.5">
+              <div key={i} style={{ display: 'flex', gap: 10 }}>
+                <span style={{ flexShrink: 0, width: 22, height: 22, borderRadius: 6, background: 'var(--accent-soft)', color: 'var(--accent)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 11, fontWeight: 700, marginTop: 2 }}>
                   {match[1]}
                 </span>
-                <p className="flex-1">{match[2].trim()}</p>
+                <p style={{ flex: 1, margin: 0 }}>{match[2].trim()}</p>
               </div>
             )
           }
         }
 
-        return (
-          <p key={i} className="text-gray-500 dark:text-gray-400 italic">
-            {trimmed}
-          </p>
-        )
+        return <p key={i} style={{ color: 'var(--text-2)', fontStyle: 'italic', margin: 0 }}>{trimmed}</p>
       })}
     </div>
   )
@@ -399,7 +395,7 @@ export default function ReadingTestPage() {
   const questionGroups = groupQuestions(passageQuestions)
 
   return (
-    <div style={{ margin: '-24px -32px -24px', display: 'flex', flexDirection: 'column', height: 'calc(100vh - 60px)' }}>
+    <div style={{ display: 'flex', flexDirection: 'column', flex: 1, minHeight: 0 }}>
 
       {/* IELTS dark header */}
       <div style={{ background: '#2b2b2b', color: '#fff', padding: '8px 16px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexShrink: 0 }}>

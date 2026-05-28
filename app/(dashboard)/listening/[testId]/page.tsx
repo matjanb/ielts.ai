@@ -117,7 +117,7 @@ function AudioPlayer({
         /* Autoplay was blocked — show a prominent CTA in place of the normal play button */
         <button
           onClick={togglePlay}
-          className="shrink-0 flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-amber-500 hover:bg-amber-400 text-white text-xs font-semibold animate-pulse transition-colors"
+          className="shrink-0 flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-[var(--accent)] text-[var(--accent-fg)] text-xs font-semibold animate-pulse transition-colors"
         >
           <Play size={12} strokeWidth={2.5} />
           Click to start audio
@@ -125,7 +125,7 @@ function AudioPlayer({
       ) : (
         <button
           onClick={togglePlay}
-          className="shrink-0 w-8 h-8 rounded-xl bg-amber-500 hover:bg-amber-400 text-white flex items-center justify-center transition-colors"
+          className="shrink-0 w-8 h-8 rounded-xl bg-[var(--accent)] text-[var(--accent-fg)] flex items-center justify-center transition-colors"
         >
           {playing ? <Pause size={13} strokeWidth={2} /> : <Play size={13} strokeWidth={2} />}
         </button>
@@ -140,7 +140,7 @@ function AudioPlayer({
             max={duration || 1}
             value={progress}
             onChange={seek}
-            className="flex-1 h-1 accent-amber-500 cursor-pointer min-w-0"
+            className="flex-1 h-1 accent-[var(--accent)] cursor-pointer min-w-0"
           />
           <span className="text-[10px] text-gray-400 tabular-nums shrink-0 w-8">{fmt(duration)}</span>
         </div>
@@ -148,7 +148,7 @@ function AudioPlayer({
 
       <button
         onClick={cycleSpeed}
-        className="shrink-0 text-xs font-bold text-amber-600 dark:text-amber-400 bg-amber-50 dark:bg-amber-500/10 px-2 py-1 rounded-lg hover:bg-amber-100 dark:hover:bg-amber-500/20 transition-colors tabular-nums"
+        className="shrink-0 text-xs font-bold text-[var(--accent)] bg-[var(--accent-soft)] px-2 py-1 rounded-lg hover:bg-[var(--bg-soft)] transition-colors tabular-nums"
       >
         {speed}x
       </button>
@@ -184,13 +184,13 @@ function RadioQuestion({
 
   return (
     <div className="space-y-3">
-      <p className="text-sm font-medium text-gray-900 dark:text-white leading-relaxed">
-        <span className="font-bold text-gray-500 dark:text-gray-400 mr-2">{question.question_number}.</span>
+      <p className="text-sm font-medium text-[var(--text)] leading-relaxed">
+        <span className="font-bold text-[var(--text-2)] mr-2">{question.question_number}.</span>
         {question.question_text}
       </p>
 
       {singleImage && (
-        <div className="w-full overflow-hidden rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900">
+        <div className="w-full overflow-hidden rounded-xl border border-[var(--border)] bg-[var(--bg-soft)]">
           <Image
             src={singleImage}
             alt="Question image"
@@ -213,11 +213,11 @@ function RadioQuestion({
                 onClick={() => onChange(opt.value)}
                 className={`flex flex-col rounded-xl overflow-hidden border-2 transition-all duration-150 text-left ${
                   selected
-                    ? 'border-amber-500 shadow-lg shadow-amber-100/50 dark:shadow-amber-900/30'
-                    : 'border-gray-200 dark:border-gray-700 hover:border-amber-300 dark:hover:border-amber-600'
+                    ? 'border-[var(--accent)] shadow-[var(--shadow)]'
+                    : 'border-[var(--border)]'
                 }`}
               >
-                <div className="relative w-full aspect-[4/3] bg-gray-100 dark:bg-gray-800">
+                <div className="relative w-full aspect-[4/3] bg-[var(--bg-soft)]">
                   {imgUrl && (
                     <Image
                       src={imgUrl}
@@ -226,18 +226,18 @@ function RadioQuestion({
                       className="object-cover"
                     />
                   )}
-                  {selected && <div className="absolute inset-0 bg-amber-500/10" />}
+                  {selected && <div className="absolute inset-0 bg-[var(--accent-soft)]" />}
                 </div>
                 <div className={`flex items-center gap-2 px-3 py-2 ${
-                  selected ? 'bg-amber-50 dark:bg-amber-500/10' : 'bg-white dark:bg-gray-900/60'
+                  selected ? 'bg-[var(--accent-soft)]' : 'bg-[var(--bg-elev)]'
                 }`}>
                   <div className={`shrink-0 w-[18px] h-[18px] rounded-full border-2 flex items-center justify-center transition-all ${
-                    selected ? 'border-amber-500 bg-amber-500' : 'border-gray-300 dark:border-gray-600'
+                    selected ? 'border-[var(--accent)] bg-[var(--accent)]' : 'border-[var(--border-strong)]'
                   }`}>
                     {selected && <div className="w-[7px] h-[7px] rounded-full bg-white" />}
                   </div>
                   <span className={`text-sm font-bold ${
-                    selected ? 'text-amber-700 dark:text-amber-300' : 'text-gray-500 dark:text-gray-400'
+                    selected ? 'text-[var(--accent)]' : 'text-[var(--text-2)]'
                   }`}>
                     {opt.letter}
                   </span>
@@ -257,12 +257,12 @@ function RadioQuestion({
                 onClick={() => onChange(opt.value)}
                 className={`flex items-center gap-2 px-4 py-2 rounded-xl border-2 font-bold text-sm transition-all duration-150 ${
                   selected
-                    ? 'border-amber-500 bg-amber-50 dark:bg-amber-500/10 text-amber-700 dark:text-amber-300'
-                    : 'border-gray-200 dark:border-gray-700 text-gray-500 dark:text-gray-400 hover:border-amber-300 dark:hover:border-amber-600'
+                    ? 'border-[var(--accent)] bg-[var(--accent-soft)] text-[var(--accent)]'
+                    : 'border-[var(--border)] text-[var(--text-2)]'
                 }`}
               >
                 <div className={`shrink-0 w-[16px] h-[16px] rounded-full border-2 flex items-center justify-center transition-all ${
-                  selected ? 'border-amber-500 bg-amber-500' : 'border-gray-300 dark:border-gray-600'
+                  selected ? 'border-[var(--accent)] bg-[var(--accent)]' : 'border-[var(--border-strong)]'
                 }`}>
                   {selected && <div className="w-[6px] h-[6px] rounded-full bg-white" />}
                 </div>
@@ -283,15 +283,15 @@ function RadioQuestion({
               >
                 <div className={`shrink-0 mt-0.5 w-[18px] h-[18px] rounded-full border-2 flex items-center justify-center transition-all duration-150 ${
                   selected
-                    ? 'border-amber-500 bg-amber-500'
-                    : 'border-gray-300 dark:border-gray-600 group-hover:border-amber-400'
+                    ? 'border-[var(--accent)] bg-[var(--accent)]'
+                    : 'border-[var(--border-strong)]'
                 }`}>
                   {selected && <div className="w-[7px] h-[7px] rounded-full bg-white" />}
                 </div>
                 <span className={`text-sm leading-relaxed transition-colors ${
                   selected
-                    ? 'text-amber-900 dark:text-amber-200 font-medium'
-                    : 'text-gray-700 dark:text-gray-300 group-hover:text-gray-900 dark:group-hover:text-white'
+                    ? 'text-[var(--accent)] font-medium'
+                    : 'text-[var(--text)] group-hover:text-[var(--text)]'
                 }`}>
                   {opt.letter}. {opt.text}
                 </span>
@@ -421,10 +421,10 @@ function FormCard({
   const title = extractFormTitle(questions)
 
   return (
-    <div className="border-2 border-gray-700 dark:border-gray-400 bg-white dark:bg-gray-950 rounded-sm">
+    <div className="border-2 border-[var(--border-strong)] bg-[var(--bg-elev)] rounded-sm">
       {title && (
-        <div className="px-6 py-3 border-b-2 border-gray-700 dark:border-gray-400 text-center">
-          <span className="text-xs font-black uppercase tracking-widest text-gray-800 dark:text-gray-200">
+        <div className="px-6 py-3 border-b-2 border-[var(--border-strong)] text-center">
+          <span className="text-xs font-black uppercase tracking-widest text-[var(--text)]">
             {title}
           </span>
         </div>
@@ -436,24 +436,24 @@ function FormCard({
             <div key={q.id} className="flex items-start gap-3 sm:gap-5">
               {/* Label column */}
               <div className="flex items-center gap-1.5 min-w-[140px] sm:min-w-[180px] shrink-0">
-                <span className="shrink-0 w-5 h-5 rounded-full bg-teal-500/15 dark:bg-teal-500/20 text-teal-600 dark:text-teal-400 text-[9px] font-bold flex items-center justify-center border border-teal-400/25 dark:border-teal-500/30">
+                <span className="shrink-0 w-5 h-5 rounded-full bg-[var(--accent-soft)] text-[var(--accent)] text-[9px] font-bold flex items-center justify-center border border-[var(--border)]">
                   {q.question_number}
                 </span>
-                <span className="text-sm font-bold text-gray-800 dark:text-gray-200 leading-snug">
+                <span className="text-sm font-bold text-[var(--text)] leading-snug">
                   {label}
                 </span>
               </div>
               {/* Value column */}
-              <div className="flex-1 flex items-baseline flex-wrap gap-x-1 text-sm text-gray-800 dark:text-gray-200 leading-7">
+              <div className="flex-1 flex items-baseline flex-wrap gap-x-1 text-sm text-[var(--text)] leading-7">
                 {prefill && <span>{prefill}</span>}
                 <input
                   type="text"
                   value={answers[q.id] ?? ''}
                   onChange={e => onAnswer(q.id, e.target.value)}
-                  className="w-28 border-b-2 border-gray-700 dark:border-gray-400 bg-transparent focus:outline-none focus:border-amber-500 dark:focus:border-amber-400 text-sm text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-600 text-center transition-colors pb-0.5"
+                  className="w-28 border-b-2 border-[var(--border-strong)] bg-transparent focus:outline-none focus:border-[var(--accent)]  text-sm text-[var(--text)] placeholder-[var(--text-3)] text-center transition-colors pb-0.5"
                   placeholder="..."
                 />
-                {after && <span className="text-gray-600 dark:text-gray-400">{after}</span>}
+                {after && <span className="text-[var(--text-2)]">{after}</span>}
               </div>
             </div>
           )
@@ -477,8 +477,8 @@ function PassageBlock({
   onAnswer: (id: string, v: string) => void
 }) {
   return (
-    <div className="bg-white dark:bg-gray-900/50 rounded-xl border border-gray-200 dark:border-gray-700 p-5">
-      <p className="text-sm leading-9 text-gray-800 dark:text-gray-200">
+    <div className="bg-[var(--bg-elev)] rounded-xl border border-[var(--border)] p-5">
+      <p className="text-sm leading-9 text-[var(--text)]">
         {questions.map(q => {
           const passageText = q.passage_text ?? ''
           const parts = passageText.split('{{Q}}')
@@ -488,14 +488,14 @@ function PassageBlock({
             <span key={q.id}>
               {before}
               <span className="inline-flex items-baseline gap-0.5 mx-0.5">
-                <sup className="text-[9px] font-bold text-teal-600 dark:text-teal-400 leading-none">
+                <sup className="text-[9px] font-bold text-[var(--accent)] leading-none">
                   ({q.question_number})
                 </sup>
                 <input
                   type="text"
                   value={answers[q.id] ?? ''}
                   onChange={e => onAnswer(q.id, e.target.value)}
-                  className="w-28 px-1 pb-0.5 border-b-2 border-amber-400 dark:border-amber-500/70 bg-transparent focus:outline-none focus:border-amber-600 dark:focus:border-amber-400 text-sm text-gray-900 dark:text-white placeholder-gray-300 dark:placeholder-gray-600 text-center transition-colors"
+                  className="w-28 px-1 pb-0.5 border-b-2 border-[var(--accent)] bg-transparent focus:outline-none focus:border-[var(--accent)] text-sm text-[var(--text)] placeholder-[var(--text-3)] text-center transition-colors"
                   placeholder="..."
                 />
               </span>
@@ -520,7 +520,7 @@ function NotepadCard({
   onAnswer: (id: string, v: string) => void
 }) {
   return (
-    <div className="border-2 border-gray-700 dark:border-gray-400 bg-white dark:bg-gray-950 rounded-sm">
+    <div className="border-2 border-[var(--border-strong)] bg-[var(--bg-elev)] rounded-sm">
       <div className="px-5 py-4 space-y-3">
         {questions.map(q => {
           const text = q.question_text
@@ -530,9 +530,9 @@ function NotepadCard({
           return (
             <div
               key={q.id}
-              className="flex items-baseline flex-wrap gap-x-1 text-sm text-gray-800 dark:text-gray-200 leading-7"
+              className="flex items-baseline flex-wrap gap-x-1 text-sm text-[var(--text)] leading-7"
             >
-              <span className="font-bold text-gray-600 dark:text-gray-400 shrink-0 mr-0.5">
+              <span className="font-bold text-[var(--text-2)] shrink-0 mr-0.5">
                 ({q.question_number})
               </span>
               {before && <span>{before}</span>}
@@ -540,7 +540,7 @@ function NotepadCard({
                 type="text"
                 value={answers[q.id] ?? ''}
                 onChange={e => onAnswer(q.id, e.target.value)}
-                className="inline-block w-32 px-1 pb-0.5 border-b-2 border-gray-500 dark:border-gray-400 bg-transparent focus:outline-none focus:border-amber-500 dark:focus:border-amber-400 text-sm text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-600 text-center transition-colors"
+                className="inline-block w-32 px-1 pb-0.5 border-b-2 border-[var(--border-strong)] bg-transparent focus:outline-none focus:border-[var(--accent)]  text-sm text-[var(--text)] placeholder-[var(--text-3)] text-center transition-colors"
                 placeholder="..."
               />
               {after && <span>{after}</span>}
@@ -593,8 +593,8 @@ function StructuredBoxCard({
       const before = blankIdx >= 0 ? raw.slice(0, blankIdx) : raw
       const after = blankIdx >= 0 ? raw.slice(blankIdx + 3) : ''
       rowContent = (
-        <div className="flex items-baseline flex-wrap gap-x-1 text-sm text-gray-800 dark:text-gray-200 leading-7">
-          <span className="shrink-0 text-[10px] font-bold text-teal-600 dark:text-teal-400 mr-0.5">
+        <div className="flex items-baseline flex-wrap gap-x-1 text-sm text-[var(--text)] leading-7">
+          <span className="shrink-0 text-[10px] font-bold text-[var(--accent)] mr-0.5">
             ({q.question_number})
           </span>
           {before && <span>{before}</span>}
@@ -602,7 +602,7 @@ function StructuredBoxCard({
             type="text"
             value={answers[q.id] ?? ''}
             onChange={e => onAnswer(q.id, e.target.value)}
-            className="w-28 border-b-2 border-gray-500 dark:border-gray-400 bg-transparent focus:outline-none focus:border-amber-500 dark:focus:border-amber-400 text-sm text-gray-900 dark:text-white placeholder-gray-400 text-center transition-colors pb-0.5"
+            className="w-28 border-b-2 border-[var(--border-strong)] bg-transparent focus:outline-none focus:border-[var(--accent)]  text-sm text-[var(--text)] placeholder-[var(--text-3)] text-center transition-colors pb-0.5"
             placeholder="..."
           />
           {after && <span>{after}</span>}
@@ -610,7 +610,7 @@ function StructuredBoxCard({
       )
     } else {
       rowContent = (
-        <p className="text-sm text-gray-700 dark:text-gray-300 leading-relaxed">{raw}</p>
+        <p className="text-sm text-[var(--text)] leading-relaxed">{raw}</p>
       )
     }
 
@@ -627,7 +627,7 @@ function StructuredBoxCard({
   // Fallback when no sections definition (box_ref-only group with missing template)
   if (!sections) {
     return (
-      <div className="border-2 border-gray-700 dark:border-gray-400 bg-white dark:bg-gray-950 rounded-sm">
+      <div className="border-2 border-[var(--border-strong)] bg-[var(--bg-elev)] rounded-sm">
         <div className="px-5 py-4 space-y-3">
           {questions.filter(q => getOptionsObj(q)?.format !== 'box').map(q => {
             const text = q.question_text
@@ -635,11 +635,11 @@ function StructuredBoxCard({
             const before = blankIdx >= 0 ? text.slice(0, blankIdx) : text
             const after = blankIdx >= 0 ? text.slice(blankIdx + 3) : ''
             return (
-              <div key={q.id} className="flex items-baseline flex-wrap gap-x-1 text-sm text-gray-800 dark:text-gray-200 leading-7">
-                <span className="font-bold text-gray-600 dark:text-gray-400 shrink-0 mr-0.5">({q.question_number})</span>
+              <div key={q.id} className="flex items-baseline flex-wrap gap-x-1 text-sm text-[var(--text)] leading-7">
+                <span className="font-bold text-[var(--text-2)] shrink-0 mr-0.5">({q.question_number})</span>
                 {before && <span>{before}</span>}
                 <input type="text" value={answers[q.id] ?? ''} onChange={e => onAnswer(q.id, e.target.value)}
-                  className="inline-block w-32 px-1 pb-0.5 border-b-2 border-gray-500 dark:border-gray-400 bg-transparent focus:outline-none focus:border-amber-500 dark:focus:border-amber-400 text-sm text-gray-900 dark:text-white placeholder-gray-400 text-center transition-colors"
+                  className="inline-block w-32 px-1 pb-0.5 border-b-2 border-[var(--border-strong)] bg-transparent focus:outline-none focus:border-[var(--accent)]  text-sm text-[var(--text)] placeholder-[var(--text-3)] text-center transition-colors"
                   placeholder="..." />
                 {after && <span>{after}</span>}
               </div>
@@ -651,17 +651,17 @@ function StructuredBoxCard({
   }
 
   return (
-    <div className="border-2 border-gray-400 dark:border-gray-500 bg-white dark:bg-gray-950 rounded-sm">
+    <div className="border-2 border-[var(--border-strong)] bg-[var(--bg-elev)] rounded-sm">
       {title && (
-        <div className="px-5 py-3 border-b-2 border-gray-400 dark:border-gray-500">
-          <span className="text-sm font-bold italic text-gray-800 dark:text-gray-200">{title}</span>
+        <div className="px-5 py-3 border-b-2 border-[var(--border-strong)]">
+          <span className="text-sm font-bold italic text-[var(--text)]">{title}</span>
         </div>
       )}
       <div className="px-5 py-4 space-y-5">
         {sections.map((section, si) => (
           <div key={si} className="space-y-2">
             {section.title && (
-              <p className="text-[10px] font-black uppercase tracking-widest text-gray-500 dark:text-gray-400 mt-2 mb-1 pb-1 border-b border-gray-200 dark:border-gray-700">
+              <p className="text-[10px] font-black uppercase tracking-widest text-[var(--text-2)] mt-2 mb-1 pb-1 border-b border-[var(--border)]">
                 {section.title}
               </p>
             )}
@@ -691,7 +691,7 @@ function StructuredBoxCard({
             {/* Subsections */}
             {section.subsections?.map((sub, ssi) => (
               <div key={ssi} className="space-y-1 mt-2">
-                <p className="text-[10px] font-black uppercase tracking-widest text-gray-400 dark:text-gray-500 mb-1">
+                <p className="text-[10px] font-black uppercase tracking-widest text-[var(--text-3)] mb-1">
                   {sub.subtitle}
                 </p>
                 <div className="space-y-1">
@@ -736,7 +736,7 @@ function TwoColFormCard({
     }
 
     return (
-      <div className="border-2 border-gray-400 dark:border-gray-500 rounded-sm overflow-hidden divide-y-2 divide-gray-300 dark:divide-gray-600">
+      <div className="border-2 border-[var(--border-strong)] rounded-sm overflow-hidden divide-y-2 divide-[var(--border)]">
         {personOrder.map(person => {
           const qs = byPerson.get(person)!
           const staticRows = FORM_STATIC_ROWS[person] ?? []
@@ -751,29 +751,29 @@ function TwoColFormCard({
           }
           return (
             <div key={person}>
-              <div className="bg-gray-200 dark:bg-gray-700 px-4 py-2 border-b border-gray-300 dark:border-gray-600">
-                <span className="text-xs font-black uppercase tracking-widest text-gray-800 dark:text-gray-200">
+              <div className="bg-[var(--bg-soft)] px-4 py-2 border-b border-[var(--border-strong)]">
+                <span className="text-xs font-black uppercase tracking-widest text-[var(--text)]">
                   {person}
                 </span>
               </div>
-              <div className="divide-y divide-gray-200 dark:divide-gray-700">
+              <div className="divide-y divide-[var(--border)]">
                 {rows.map((row, i) =>
                   row.type === 'static' ? (
-                    <div key={`s-${i}`} className="grid grid-cols-2 divide-x divide-gray-200 dark:divide-gray-700">
-                      <div className="px-4 py-2.5 text-sm text-gray-600 dark:text-gray-400">{row.label}</div>
-                      <div className="px-4 py-2.5 text-sm italic text-gray-500 dark:text-gray-400">{row.value}</div>
+                    <div key={`s-${i}`} className="grid grid-cols-2 divide-x divide-[var(--border)]">
+                      <div className="px-4 py-2.5 text-sm text-[var(--text-2)]">{row.label}</div>
+                      <div className="px-4 py-2.5 text-sm italic text-[var(--text-2)]">{row.value}</div>
                     </div>
                   ) : (
-                    <div key={row.q.id} className="grid grid-cols-2 divide-x divide-gray-200 dark:divide-gray-700">
-                      <div className="px-4 py-2.5 text-sm text-gray-700 dark:text-gray-300">
+                    <div key={row.q.id} className="grid grid-cols-2 divide-x divide-[var(--border)]">
+                      <div className="px-4 py-2.5 text-sm text-[var(--text)]">
                         {(getOptionsObj(row.q)?.label as string) ?? row.q.question_text}
                       </div>
                       <div className="px-4 py-2.5 flex items-center gap-1.5 flex-wrap">
-                        <sup className="text-[10px] font-bold text-teal-600 dark:text-teal-400 shrink-0">
+                        <sup className="text-[10px] font-bold text-[var(--accent)] shrink-0">
                           ({row.q.question_number})
                         </sup>
                         {(getOptionsObj(row.q)?.prefill as string | undefined) && (
-                          <span className="text-sm font-semibold text-gray-700 dark:text-gray-300">
+                          <span className="text-sm font-semibold text-[var(--text)]">
                             {getOptionsObj(row.q)?.prefill as string}
                           </span>
                         )}
@@ -781,7 +781,7 @@ function TwoColFormCard({
                           type="text"
                           value={answers[row.q.id] ?? ''}
                           onChange={e => onAnswer(row.q.id, e.target.value)}
-                          className="flex-1 min-w-0 border-b-2 border-gray-400 dark:border-gray-500 bg-transparent focus:outline-none focus:border-amber-500 dark:focus:border-amber-400 text-sm text-gray-900 dark:text-white placeholder-gray-400 text-center transition-colors pb-0.5"
+                          className="flex-1 min-w-0 border-b-2 border-[var(--border-strong)] bg-transparent focus:outline-none focus:border-[var(--accent)]  text-sm text-[var(--text)] placeholder-[var(--text-3)] text-center transition-colors pb-0.5"
                           placeholder="..."
                         />
                       </div>
@@ -803,34 +803,34 @@ function TwoColFormCard({
     : undefined
 
   return (
-    <div className="border-2 border-gray-400 dark:border-gray-500 rounded-sm overflow-hidden">
+    <div className="border-2 border-[var(--border-strong)] rounded-sm overflow-hidden">
       {formTitle && (
-        <div className="bg-gray-200 dark:bg-gray-700 px-4 py-2 border-b border-gray-300 dark:border-gray-600">
-          <span className="text-xs font-black uppercase tracking-widest text-gray-800 dark:text-gray-200">
+        <div className="bg-[var(--bg-soft)] px-4 py-2 border-b border-[var(--border-strong)]">
+          <span className="text-xs font-black uppercase tracking-widest text-[var(--text)]">
             {formTitle}
           </span>
         </div>
       )}
-      <div className="divide-y divide-gray-200 dark:divide-gray-700">
+      <div className="divide-y divide-[var(--border)]">
         {questions.map(q => {
           const opts = (getOptionsObj(q) ?? {}) as Record<string, unknown>
           const label = (opts.label as string) ?? q.question_text
           const prefill = opts.prefill as string | undefined
           return (
-            <div key={q.id} className="grid grid-cols-2 divide-x divide-gray-200 dark:divide-gray-700">
-              <div className="px-4 py-2.5 text-sm text-gray-700 dark:text-gray-300">{label}</div>
+            <div key={q.id} className="grid grid-cols-2 divide-x divide-[var(--border)]">
+              <div className="px-4 py-2.5 text-sm text-[var(--text)]">{label}</div>
               <div className="px-4 py-2.5 flex items-center gap-1.5 flex-wrap">
-                <sup className="text-[10px] font-bold text-teal-600 dark:text-teal-400 shrink-0">
+                <sup className="text-[10px] font-bold text-[var(--accent)] shrink-0">
                   ({q.question_number})
                 </sup>
                 {prefill && (
-                  <span className="text-sm font-semibold text-gray-700 dark:text-gray-300">{prefill}</span>
+                  <span className="text-sm font-semibold text-[var(--text)]">{prefill}</span>
                 )}
                 <input
                   type="text"
                   value={answers[q.id] ?? ''}
                   onChange={e => onAnswer(q.id, e.target.value)}
-                  className="flex-1 min-w-0 border-b-2 border-gray-400 dark:border-gray-500 bg-transparent focus:outline-none focus:border-amber-500 dark:focus:border-amber-400 text-sm text-gray-900 dark:text-white placeholder-gray-400 text-center transition-colors pb-0.5"
+                  className="flex-1 min-w-0 border-b-2 border-[var(--border-strong)] bg-transparent focus:outline-none focus:border-[var(--accent)]  text-sm text-[var(--text)] placeholder-[var(--text-3)] text-center transition-colors pb-0.5"
                   placeholder="..."
                 />
               </div>
@@ -860,10 +860,10 @@ function BoxCard({
   const imageRight = (opts?.image_position as string) === 'right'
 
   return (
-    <div className="border-2 border-gray-400 dark:border-gray-500 bg-white dark:bg-gray-950 rounded-sm">
+    <div className="border-2 border-[var(--border-strong)] bg-[var(--bg-elev)] rounded-sm">
       {title && (
-        <div className="px-5 py-3 border-b-2 border-gray-400 dark:border-gray-500">
-          <span className="text-sm font-bold italic text-gray-800 dark:text-gray-200">{title}</span>
+        <div className="px-5 py-3 border-b-2 border-[var(--border-strong)]">
+          <span className="text-sm font-bold italic text-[var(--text)]">{title}</span>
         </div>
       )}
       <div className={`flex gap-4 p-5 ${imageRight ? 'flex-row' : 'flex-col'}`}>
@@ -878,12 +878,12 @@ function BoxCard({
             return (
               <div key={q.id}>
                 {subtitle && (
-                  <p className="text-[10px] font-black uppercase tracking-widest text-gray-500 dark:text-gray-400 mt-3 mb-1 pb-1 border-b border-gray-200 dark:border-gray-700">
+                  <p className="text-[10px] font-black uppercase tracking-widest text-[var(--text-2)] mt-3 mb-1 pb-1 border-b border-[var(--border)]">
                     {subtitle}
                   </p>
                 )}
-                <div className="flex items-baseline flex-wrap gap-x-1 text-sm text-gray-800 dark:text-gray-200 leading-7">
-                  <span className="shrink-0 text-[10px] font-bold text-teal-600 dark:text-teal-400 mr-0.5">
+                <div className="flex items-baseline flex-wrap gap-x-1 text-sm text-[var(--text)] leading-7">
+                  <span className="shrink-0 text-[10px] font-bold text-[var(--accent)] mr-0.5">
                     ({q.question_number})
                   </span>
                   {before && <span>{before}</span>}
@@ -891,7 +891,7 @@ function BoxCard({
                     type="text"
                     value={answers[q.id] ?? ''}
                     onChange={e => onAnswer(q.id, e.target.value)}
-                    className="w-28 border-b-2 border-gray-500 dark:border-gray-400 bg-transparent focus:outline-none focus:border-amber-500 dark:focus:border-amber-400 text-sm text-gray-900 dark:text-white placeholder-gray-400 text-center transition-colors pb-0.5"
+                    className="w-28 border-b-2 border-[var(--border-strong)] bg-transparent focus:outline-none focus:border-[var(--accent)]  text-sm text-[var(--text)] placeholder-[var(--text-3)] text-center transition-colors pb-0.5"
                     placeholder="..."
                   />
                   {after && <span>{after}</span>}
@@ -953,12 +953,12 @@ function TableCard({
       return (
         <span className="inline-flex items-baseline flex-wrap gap-x-1">
           {prefix && <span>{prefix}</span>}
-          <sup className="text-[10px] font-bold text-teal-600 dark:text-teal-400">({question.question_number})</sup>
+          <sup className="text-[10px] font-bold text-[var(--accent)]">({question.question_number})</sup>
           <input
             type="text"
             value={answers[question.id] ?? ''}
             onChange={e => onAnswer(question.id, e.target.value)}
-            className="w-24 border-b-2 border-gray-500 dark:border-gray-400 bg-transparent focus:outline-none focus:border-amber-500 dark:focus:border-amber-400 text-sm text-gray-900 dark:text-white placeholder-gray-400 text-center transition-colors pb-0.5 align-baseline"
+            className="w-24 border-b-2 border-[var(--border-strong)] bg-transparent focus:outline-none focus:border-[var(--accent)]  text-sm text-[var(--text)] placeholder-[var(--text-3)] text-center transition-colors pb-0.5 align-baseline"
             placeholder="..."
           />
           {suffix && <span>{suffix}</span>}
@@ -967,21 +967,21 @@ function TableCard({
     }
 
     return (
-      <div className="border-2 border-gray-400 dark:border-gray-500 rounded-sm overflow-x-auto">
+      <div className="border-2 border-[var(--border-strong)] rounded-sm overflow-x-auto">
         {tableTitle && (
-          <div className="px-5 py-3 border-b-2 border-gray-400 dark:border-gray-500 text-center">
-            <span className="text-xs font-black uppercase tracking-widest text-gray-800 dark:text-gray-200">
+          <div className="px-5 py-3 border-b-2 border-[var(--border-strong)] text-center">
+            <span className="text-xs font-black uppercase tracking-widest text-[var(--text)]">
               {tableTitle}
             </span>
           </div>
         )}
         <table className="w-full min-w-[480px] border-collapse">
           <thead>
-            <tr className="bg-gray-100 dark:bg-gray-800/60">
+            <tr className="bg-[var(--bg-soft)]/60">
               {colHeaders.map((header, i) => (
                 <th
                   key={i}
-                  className={`px-3 py-2 text-[10px] font-black uppercase tracking-widest text-gray-600 dark:text-gray-400 text-left border-b border-gray-400 dark:border-gray-500 ${i < colHeaders.length - 1 ? 'border-r border-gray-400 dark:border-gray-500' : ''}`}
+                  className={`px-3 py-2 text-[10px] font-black uppercase tracking-widest text-[var(--text-2)] text-left border-b border-[var(--border-strong)] ${i < colHeaders.length - 1 ? 'border-r border-[var(--border-strong)]' : ''}`}
                 >
                   {header}
                 </th>
@@ -990,11 +990,11 @@ function TableCard({
           </thead>
           <tbody>
             {tableRows.map((row, rowIndex) => (
-              <tr key={rowIndex} className={rowIndex < tableRows.length - 1 ? 'border-b border-gray-200 dark:border-gray-700' : ''}>
+              <tr key={rowIndex} className={rowIndex < tableRows.length - 1 ? 'border-b border-[var(--border)]' : ''}>
                 {colHeaders.map((col, colIndex) => (
                   <td
                     key={col}
-                    className={`px-3 py-2.5 text-sm text-gray-700 dark:text-gray-300 ${colIndex < colHeaders.length - 1 ? 'border-r border-gray-200 dark:border-gray-700' : ''}`}
+                    className={`px-3 py-2.5 text-sm text-[var(--text)] ${colIndex < colHeaders.length - 1 ? 'border-r border-[var(--border)]' : ''}`}
                   >
                     {renderCellContent(row[col] ?? '')}
                   </td>
@@ -1115,7 +1115,7 @@ function TableCard({
           type="text"
           value={answers[q.id] ?? ''}
           onChange={e => onAnswer(q.id, e.target.value)}
-          className="mx-1 inline-block w-24 border-b-2 border-gray-500 dark:border-gray-400 bg-transparent focus:outline-none focus:border-amber-500 dark:focus:border-amber-400 text-sm text-gray-900 dark:text-white placeholder-gray-400 text-center transition-colors pb-0.5 align-baseline"
+          className="mx-1 inline-block w-24 border-b-2 border-[var(--border-strong)] bg-transparent focus:outline-none focus:border-[var(--accent)]  text-sm text-[var(--text)] placeholder-[var(--text-3)] text-center transition-colors pb-0.5 align-baseline"
           placeholder="..."
         />
       )
@@ -1127,7 +1127,7 @@ function TableCard({
 
       if (!q) {
         return (
-          <div className="px-3 py-3 text-sm leading-7 text-gray-700 dark:text-gray-300 whitespace-pre-line">
+          <div className="px-3 py-3 text-sm leading-7 text-[var(--text)] whitespace-pre-line">
             {text}
           </div>
         )
@@ -1140,9 +1140,9 @@ function TableCard({
         const before = text.slice(0, match.index)
         const after = text.slice(match.index + match[0].length)
         return (
-          <div className="px-3 py-3 text-sm leading-7 text-gray-800 dark:text-gray-200 whitespace-pre-line">
+          <div className="px-3 py-3 text-sm leading-7 text-[var(--text)] whitespace-pre-line">
             {before}
-            <sup className="text-[10px] font-bold text-teal-600 dark:text-teal-400">
+            <sup className="text-[10px] font-bold text-[var(--accent)]">
               ({q.question_number})
             </sup>
             {renderInput(q)}
@@ -1152,8 +1152,8 @@ function TableCard({
       }
 
       return (
-        <div className="px-3 py-3 flex items-baseline flex-wrap gap-x-1 text-sm text-gray-800 dark:text-gray-200 leading-7">
-          <sup className="text-[10px] font-bold text-teal-600 dark:text-teal-400 shrink-0">
+        <div className="px-3 py-3 flex items-baseline flex-wrap gap-x-1 text-sm text-[var(--text)] leading-7">
+          <sup className="text-[10px] font-bold text-[var(--accent)] shrink-0">
             ({q.question_number})
           </sup>
           {cell.prefix && <span>{cell.prefix}</span>}
@@ -1164,28 +1164,28 @@ function TableCard({
     }
 
     return (
-      <div className="border-2 border-gray-400 dark:border-gray-500 rounded-sm overflow-x-auto">
+      <div className="border-2 border-[var(--border-strong)] rounded-sm overflow-x-auto">
         <div className="min-w-[760px]">
           {tableTitle && (
-            <div className="px-5 py-3 border-b-2 border-gray-400 dark:border-gray-500 text-center">
-              <span className="text-xs font-black uppercase tracking-widest text-gray-800 dark:text-gray-200">
+            <div className="px-5 py-3 border-b-2 border-[var(--border-strong)] text-center">
+              <span className="text-xs font-black uppercase tracking-widest text-[var(--text)]">
                 {tableTitle}
               </span>
             </div>
           )}
-          <div className="grid grid-cols-4 divide-x divide-gray-400 dark:divide-gray-500 bg-gray-100 dark:bg-gray-800/60 border-b border-gray-400 dark:border-gray-500">
+          <div className="grid grid-cols-4 divide-x divide-[var(--border-strong)] bg-[var(--bg-soft)]/60 border-b border-[var(--border-strong)]">
             {headers.map((header, index) => (
               <div
                 key={`${header}-${index}`}
-                className="px-3 py-2 text-[10px] font-black uppercase tracking-widest text-gray-600 dark:text-gray-400"
+                className="px-3 py-2 text-[10px] font-black uppercase tracking-widest text-[var(--text-2)]"
               >
                 {header}
               </div>
             ))}
           </div>
-          <div className="divide-y divide-gray-200 dark:divide-gray-700">
+          <div className="divide-y divide-[var(--border)]">
             {rows.map((row, rowIndex) => (
-              <div key={rowIndex} className="grid grid-cols-4 divide-x divide-gray-200 dark:divide-gray-700">
+              <div key={rowIndex} className="grid grid-cols-4 divide-x divide-[var(--border)]">
                 {columns.map(col => (
                   <div key={col}>{renderFourColCell(row[col])}</div>
                 ))}
@@ -1245,13 +1245,13 @@ function TableCard({
     if (!cell) return <div className="px-4 py-3" />
     if (cell.type === 'static') {
       return (
-        <div className="px-4 py-3 text-sm text-gray-700 dark:text-gray-300">{cell.text}</div>
+        <div className="px-4 py-3 text-sm text-[var(--text)]">{cell.text}</div>
       )
     }
     const { q, prefix, suffix } = cell
     return (
-      <div className="px-4 py-3 flex items-baseline flex-wrap gap-x-1 text-sm text-gray-800 dark:text-gray-200 leading-7">
-        <sup className="text-[10px] font-bold text-teal-600 dark:text-teal-400 shrink-0">
+      <div className="px-4 py-3 flex items-baseline flex-wrap gap-x-1 text-sm text-[var(--text)] leading-7">
+        <sup className="text-[10px] font-bold text-[var(--accent)] shrink-0">
           ({q.question_number})
         </sup>
         {prefix && <span>{prefix}</span>}
@@ -1259,7 +1259,7 @@ function TableCard({
           type="text"
           value={answers[q.id] ?? ''}
           onChange={e => onAnswer(q.id, e.target.value)}
-          className="w-28 border-b-2 border-gray-500 dark:border-gray-400 bg-transparent focus:outline-none focus:border-amber-500 dark:focus:border-amber-400 text-sm text-gray-900 dark:text-white placeholder-gray-400 text-center transition-colors pb-0.5"
+          className="w-28 border-b-2 border-[var(--border-strong)] bg-transparent focus:outline-none focus:border-[var(--accent)]  text-sm text-[var(--text)] placeholder-[var(--text-3)] text-center transition-colors pb-0.5"
           placeholder="..."
         />
         {suffix && <span>{suffix}</span>}
@@ -1268,27 +1268,27 @@ function TableCard({
   }
 
   return (
-    <div className="border-2 border-gray-400 dark:border-gray-500 rounded-sm overflow-hidden">
+    <div className="border-2 border-[var(--border-strong)] rounded-sm overflow-hidden">
       {tableTitle && (
-        <div className="px-5 py-3 border-b-2 border-gray-400 dark:border-gray-500 text-center">
-          <span className="text-xs font-black uppercase tracking-widest text-gray-800 dark:text-gray-200">
+        <div className="px-5 py-3 border-b-2 border-[var(--border-strong)] text-center">
+          <span className="text-xs font-black uppercase tracking-widest text-[var(--text)]">
             {tableTitle}
           </span>
         </div>
       )}
       {(colLeft || colRight) && (
-        <div className="grid grid-cols-2 divide-x divide-gray-400 dark:divide-gray-500 bg-gray-100 dark:bg-gray-800/60 border-b border-gray-400 dark:border-gray-500">
-          <div className="px-4 py-2 text-[10px] font-black uppercase tracking-widest text-gray-600 dark:text-gray-400">
+        <div className="grid grid-cols-2 divide-x divide-[var(--border-strong)] bg-[var(--bg-soft)]/60 border-b border-[var(--border-strong)]">
+          <div className="px-4 py-2 text-[10px] font-black uppercase tracking-widest text-[var(--text-2)]">
             {colLeft}
           </div>
-          <div className="px-4 py-2 text-[10px] font-black uppercase tracking-widest text-gray-600 dark:text-gray-400">
+          <div className="px-4 py-2 text-[10px] font-black uppercase tracking-widest text-[var(--text-2)]">
             {colRight}
           </div>
         </div>
       )}
-      <div className="divide-y divide-gray-200 dark:divide-gray-700">
+      <div className="divide-y divide-[var(--border)]">
         {rows.map((row, i) => (
-          <div key={i} className="grid grid-cols-2 divide-x divide-gray-200 dark:divide-gray-700">
+          <div key={i} className="grid grid-cols-2 divide-x divide-[var(--border)]">
             {renderCell(row.left)}
             {renderCell(row.right)}
           </div>
@@ -1327,16 +1327,16 @@ function DiagramTableCard({
           const after = blankIdx >= 0 ? raw.slice(blankIdx + 3) : ''
           return (
             <div key={q.id} className="space-y-1">
-              <div className="text-[10px] font-bold text-teal-600 dark:text-teal-400">({q.question_number})</div>
-              {before && <p className="text-xs text-gray-600 dark:text-gray-400 leading-snug">{before}</p>}
+              <div className="text-[10px] font-bold text-[var(--accent)]">({q.question_number})</div>
+              {before && <p className="text-xs text-[var(--text-2)] leading-snug">{before}</p>}
               <input
                 type="text"
                 value={answers[q.id] ?? ''}
                 onChange={e => onAnswer(q.id, e.target.value)}
-                className="w-full border-b-2 border-gray-500 dark:border-gray-400 bg-transparent focus:outline-none focus:border-amber-500 dark:focus:border-amber-400 text-sm text-gray-900 dark:text-white placeholder-gray-400 text-center transition-colors pb-0.5"
+                className="w-full border-b-2 border-[var(--border-strong)] bg-transparent focus:outline-none focus:border-[var(--accent)]  text-sm text-[var(--text)] placeholder-[var(--text-3)] text-center transition-colors pb-0.5"
                 placeholder="..."
               />
-              {after && <p className="text-xs text-gray-600 dark:text-gray-400 leading-snug">{after}</p>}
+              {after && <p className="text-xs text-[var(--text-2)] leading-snug">{after}</p>}
             </div>
           )
         })}
@@ -1345,30 +1345,30 @@ function DiagramTableCard({
   }
 
   return (
-    <div className="border-2 border-gray-400 dark:border-gray-500 rounded-sm overflow-hidden">
+    <div className="border-2 border-[var(--border-strong)] rounded-sm overflow-hidden">
       {diagramTitle && (
-        <div className="px-5 py-3 border-b-2 border-gray-400 dark:border-gray-500 text-center">
-          <span className="text-sm font-bold italic text-gray-800 dark:text-gray-200">{diagramTitle}</span>
+        <div className="px-5 py-3 border-b-2 border-[var(--border-strong)] text-center">
+          <span className="text-sm font-bold italic text-[var(--text)]">{diagramTitle}</span>
         </div>
       )}
-      <div className="grid grid-cols-3 divide-x divide-gray-300 dark:divide-gray-600">
-        <div className="bg-gray-200 dark:bg-gray-800/80">
-          <div className="px-3 py-2 border-b border-gray-300 dark:border-gray-600 text-center">
-            <span className="text-[10px] font-black uppercase tracking-widest text-gray-700 dark:text-gray-300">ENTRANCE</span>
+      <div className="grid grid-cols-3 divide-x divide-[var(--border)]">
+        <div className="bg-[var(--bg-soft)]">
+          <div className="px-3 py-2 border-b border-[var(--border-strong)] text-center">
+            <span className="text-[10px] font-black uppercase tracking-widest text-[var(--text)]">ENTRANCE</span>
           </div>
           <ZoneQuestions qs={entrance} />
         </div>
-        <div className="bg-gray-50 dark:bg-gray-900/50">
-          <div className="px-3 py-2 border-b border-gray-300 dark:border-gray-600 flex items-center justify-between">
-            <span className="text-gray-400 dark:text-gray-600 text-sm">←</span>
-            <span className="text-[10px] font-black uppercase tracking-widest text-gray-700 dark:text-gray-300">AISLE</span>
-            <span className="text-gray-400 dark:text-gray-600 text-sm">→</span>
+        <div className="bg-[var(--bg-soft)]/50">
+          <div className="px-3 py-2 border-b border-[var(--border-strong)] flex items-center justify-between">
+            <span className="text-[var(--text-3)] text-sm">←</span>
+            <span className="text-[10px] font-black uppercase tracking-widest text-[var(--text)]">AISLE</span>
+            <span className="text-[var(--text-3)] text-sm">→</span>
           </div>
           <ZoneQuestions qs={aisle} />
         </div>
-        <div className="bg-white dark:bg-gray-950">
-          <div className="px-3 py-2 border-b border-gray-300 dark:border-gray-600 text-center">
-            <span className="text-[10px] font-black uppercase tracking-widest text-gray-700 dark:text-gray-300">EXIT</span>
+        <div className="bg-[var(--bg-elev)]">
+          <div className="px-3 py-2 border-b border-[var(--border-strong)] text-center">
+            <span className="text-[10px] font-black uppercase tracking-widest text-[var(--text)]">EXIT</span>
           </div>
           <ZoneQuestions qs={exit} />
         </div>
@@ -1412,13 +1412,13 @@ function MultiBoxCard({
   }
 
   return (
-    <div className="border-2 border-gray-300 dark:border-gray-600 rounded-xl overflow-hidden">
-      <div className="px-4 py-2.5 bg-gray-50 dark:bg-gray-800/60 border-b border-gray-200 dark:border-gray-700 flex items-start justify-between gap-3">
-        <p className="text-xs text-gray-600 dark:text-gray-400 leading-relaxed">{mainQ.question_text}</p>
+    <div className="border-2 border-[var(--border-strong)] rounded-xl overflow-hidden">
+      <div className="px-4 py-2.5 bg-[var(--bg-soft)] border-b border-[var(--border)] flex items-start justify-between gap-3">
+        <p className="text-xs text-[var(--text-2)] leading-relaxed">{mainQ.question_text}</p>
         <span className={`shrink-0 text-xs font-bold tabular-nums px-2 py-0.5 rounded-full ${
           selectedCount === selectCount
-            ? 'bg-emerald-100 dark:bg-emerald-500/20 text-emerald-700 dark:text-emerald-400'
-            : 'bg-indigo-100 dark:bg-indigo-500/20 text-indigo-700 dark:text-indigo-400'
+            ? 'bg-[var(--accent-soft)] text-[var(--accent)]'
+            : 'bg-[var(--accent-soft)] text-[var(--accent)]'
         }`}>
           {selectedCount}/{selectCount}
         </span>
@@ -1448,14 +1448,14 @@ function MultiBoxCard({
                 disabled={isDisabled}
                 className={`flex items-center gap-3 px-3 py-2 rounded-lg border-2 text-left transition-all duration-150 ${
                   isSelected
-                    ? 'border-indigo-500 bg-indigo-50 dark:bg-indigo-500/10'
+                    ? 'border-[var(--accent)] bg-[var(--accent-soft)]'
                     : isDisabled
-                    ? 'border-gray-200 dark:border-gray-700 opacity-40 cursor-not-allowed'
-                    : 'border-gray-200 dark:border-gray-700 hover:border-indigo-300 dark:hover:border-indigo-600'
+                    ? 'border-[var(--border)] opacity-40 cursor-not-allowed'
+                    : 'border-[var(--border)] hover:border-indigo-300 dark:hover:border-indigo-600'
                 }`}
               >
                 <div className={`shrink-0 w-4 h-4 rounded border-2 flex items-center justify-center transition-all ${
-                  isSelected ? 'bg-indigo-500 border-indigo-500' : 'border-gray-400 dark:border-gray-500'
+                  isSelected ? 'bg-indigo-500 border-indigo-500' : 'border-[var(--border-strong)]'
                 }`}>
                   {isSelected && (
                     <svg viewBox="0 0 10 8" className="w-2.5 h-2">
@@ -1463,10 +1463,10 @@ function MultiBoxCard({
                     </svg>
                   )}
                 </div>
-                <span className={`text-xs font-black w-4 shrink-0 ${isSelected ? 'text-indigo-700 dark:text-indigo-300' : 'text-gray-400 dark:text-gray-500'}`}>
+                <span className={`text-xs font-black w-4 shrink-0 ${isSelected ? 'text-[var(--accent)]' : 'text-[var(--text-3)]'}`}>
                   {letter}
                 </span>
-                <span className={`text-sm ${isSelected ? 'text-indigo-900 dark:text-indigo-100 font-medium' : 'text-gray-700 dark:text-gray-300'}`}>
+                <span className={`text-sm ${isSelected ? 'text-[var(--accent)] font-medium' : 'text-[var(--text)]'}`}>
                   {text}
                 </span>
               </button>
@@ -1494,15 +1494,15 @@ function DiagramLabelsCard({
   const imageUrl = questions[0].image_url
 
   return (
-    <div className="border-2 border-gray-400 dark:border-gray-500 bg-white dark:bg-gray-950 rounded-sm overflow-hidden">
-      <div className="px-5 py-3 border-b-2 border-gray-400 dark:border-gray-500">
-        <span className="text-sm font-bold italic text-gray-800 dark:text-gray-200">
+    <div className="border-2 border-[var(--border-strong)] bg-[var(--bg-elev)] rounded-sm overflow-hidden">
+      <div className="px-5 py-3 border-b-2 border-[var(--border-strong)]">
+        <span className="text-sm font-bold italic text-[var(--text)]">
           Label the diagram — {title}
         </span>
       </div>
       <div className="flex gap-0">
         {/* Left: diagram image at 60% */}
-        <div className="w-[60%] border-r-2 border-gray-400 dark:border-gray-500 p-3 flex items-start justify-center bg-gray-50 dark:bg-gray-900/40">
+        <div className="w-[60%] border-r-2 border-[var(--border-strong)] p-3 flex items-start justify-center bg-[var(--bg-soft)]/40">
           {imageUrl ? (
             <Image
               src={imageUrl}
@@ -1527,8 +1527,8 @@ function DiagramLabelsCard({
             const after = blankIdx >= 0 ? raw.slice(blankIdx + 3).trim() : ''
             return (
               <div key={q.id} className="space-y-1">
-                <div className="flex items-baseline flex-wrap gap-x-1 text-sm text-gray-800 dark:text-gray-200">
-                  <span className="shrink-0 text-[10px] font-bold text-teal-600 dark:text-teal-400">
+                <div className="flex items-baseline flex-wrap gap-x-1 text-sm text-[var(--text)]">
+                  <span className="shrink-0 text-[10px] font-bold text-[var(--accent)]">
                     ({q.question_number})
                   </span>
                   {before && <span className="font-semibold">{before}</span>}
@@ -1536,13 +1536,13 @@ function DiagramLabelsCard({
                     type="text"
                     value={answers[q.id] ?? ''}
                     onChange={e => onAnswer(q.id, e.target.value)}
-                    className="w-full border-b-2 border-gray-500 dark:border-gray-400 bg-transparent focus:outline-none focus:border-amber-500 dark:focus:border-amber-400 text-sm text-gray-900 dark:text-white placeholder-gray-400 text-center transition-colors pb-0.5"
+                    className="w-full border-b-2 border-[var(--border-strong)] bg-transparent focus:outline-none focus:border-[var(--accent)]  text-sm text-[var(--text)] placeholder-[var(--text-3)] text-center transition-colors pb-0.5"
                     placeholder="..."
                   />
                   {after && <span>{after}</span>}
                 </div>
                 {hint && (
-                  <p className="text-[10px] italic text-gray-400 dark:text-gray-500 leading-tight pl-4">{hint}</p>
+                  <p className="text-[10px] italic text-[var(--text-3)] leading-tight pl-4">{hint}</p>
                 )}
               </div>
             )
@@ -1579,24 +1579,24 @@ function DiagramCard({
   function DiagramBox({ q }: { q: QuestionWithSection }) {
     const { level, hint } = parseDiagramBox(q)
     return (
-      <div className="flex-1 border-2 border-gray-400 dark:border-gray-500 rounded-lg p-3 text-center space-y-2">
-        <div className="text-[10px] font-bold text-teal-600 dark:text-teal-400">({q.question_number})</div>
+      <div className="flex-1 border-2 border-[var(--border-strong)] rounded-lg p-3 text-center space-y-2">
+        <div className="text-[10px] font-bold text-[var(--accent)]">({q.question_number})</div>
         <input
           type="text"
           value={answers[q.id] ?? ''}
           onChange={e => onAnswer(q.id, e.target.value)}
-          className="w-full border-b-2 border-gray-500 dark:border-gray-400 bg-transparent focus:outline-none focus:border-amber-500 dark:focus:border-amber-400 text-sm text-gray-900 dark:text-white placeholder-gray-400 text-center transition-colors pb-0.5"
+          className="w-full border-b-2 border-[var(--border-strong)] bg-transparent focus:outline-none focus:border-[var(--accent)]  text-sm text-[var(--text)] placeholder-[var(--text-3)] text-center transition-colors pb-0.5"
           placeholder="..."
         />
-        {level && <p className="text-[10px] text-gray-500 dark:text-gray-400 leading-tight">{level}</p>}
-        {hint && <p className="text-[10px] text-gray-400 dark:text-gray-500 leading-tight">({hint})</p>}
+        {level && <p className="text-[10px] text-[var(--text-2)] leading-tight">{level}</p>}
+        {hint && <p className="text-[10px] text-[var(--text-3)] leading-tight">({hint})</p>}
       </div>
     )
   }
 
   return (
-    <div className="border-2 border-gray-400 dark:border-gray-500 bg-white dark:bg-gray-950 rounded-sm p-4">
-      {title && <p className="text-sm font-bold italic text-gray-700 dark:text-gray-300 mb-4">{title}</p>}
+    <div className="border-2 border-[var(--border-strong)] bg-[var(--bg-elev)] rounded-sm p-4">
+      {title && <p className="text-sm font-bold italic text-[var(--text)] mb-4">{title}</p>}
       <div className="flex items-center gap-3 sm:gap-5">
         {questions[0] && <DiagramBox q={questions[0]} />}
         {imageUrl && (
@@ -1650,20 +1650,20 @@ function MultiSelectBlock({
   }
 
   return (
-    <div className="border-2 border-gray-300 dark:border-gray-600 rounded-xl overflow-hidden">
+    <div className="border-2 border-[var(--border-strong)] rounded-xl overflow-hidden">
       {/* Instruction bar */}
-      <div className="px-4 py-2.5 bg-gray-50 dark:bg-gray-800/60 border-b border-gray-200 dark:border-gray-700 flex items-start justify-between gap-3">
-        <p className="text-xs text-gray-600 dark:text-gray-400 leading-relaxed">{instruction}</p>
+      <div className="px-4 py-2.5 bg-[var(--bg-soft)] border-b border-[var(--border)] flex items-start justify-between gap-3">
+        <p className="text-xs text-[var(--text-2)] leading-relaxed">{instruction}</p>
         <span className={`shrink-0 text-xs font-bold tabular-nums px-2 py-0.5 rounded-full ${
           selectedCount === maxSelect
-            ? 'bg-emerald-100 dark:bg-emerald-500/20 text-emerald-700 dark:text-emerald-400'
-            : 'bg-amber-100 dark:bg-amber-500/20 text-amber-700 dark:text-amber-400'
+            ? 'bg-[var(--accent-soft)] text-[var(--accent)]'
+            : 'bg-[var(--accent-soft)] text-[var(--accent)]'
         }`}>
           {selectedCount}/{maxSelect}
         </span>
       </div>
       {/* Option rows */}
-      <div className="divide-y divide-gray-100 dark:divide-gray-800">
+      <div className="divide-y divide-[var(--border)]">
         {options.map(opt => {
           const isSelected = selected.includes(opt)
           const isDisabled = !isSelected && selectedCount >= maxSelect
@@ -1678,17 +1678,17 @@ function MultiSelectBlock({
               disabled={isDisabled}
               className={`w-full flex items-center gap-3 px-4 py-2.5 text-left transition-all duration-150 ${
                 isSelected
-                  ? 'bg-amber-50 dark:bg-amber-500/10'
+                  ? 'bg-[var(--accent-soft)]'
                   : isDisabled
                   ? 'opacity-40 cursor-not-allowed'
-                  : 'hover:bg-gray-50 dark:hover:bg-gray-800/40'
+                  : 'hover:bg-[var(--bg-soft)]'
               }`}
             >
               {/* Checkbox */}
               <div className={`shrink-0 w-4 h-4 rounded border-2 flex items-center justify-center transition-all ${
                 isSelected
-                  ? 'bg-amber-500 border-amber-500'
-                  : 'border-gray-400 dark:border-gray-500'
+                  ? 'bg-[var(--accent)] border-[var(--accent)]'
+                  : 'border-[var(--border-strong)]'
               }`}>
                 {isSelected && (
                   <svg viewBox="0 0 10 8" className="w-2.5 h-2">
@@ -1698,15 +1698,15 @@ function MultiSelectBlock({
               </div>
               {/* Letter badge */}
               <span className={`shrink-0 w-5 text-xs font-black text-center ${
-                isSelected ? 'text-amber-700 dark:text-amber-300' : 'text-gray-400 dark:text-gray-500'
+                isSelected ? 'text-[var(--accent)]' : 'text-[var(--text-3)]'
               }`}>
                 {letter}
               </span>
               {/* Description */}
               <span className={`text-sm ${
                 isSelected
-                  ? 'text-amber-900 dark:text-amber-100 font-medium'
-                  : 'text-gray-700 dark:text-gray-300'
+                  ? 'text-[var(--accent-fg)] font-medium'
+                  : 'text-[var(--text)]'
               }`}>
                 {text}
               </span>
@@ -1743,13 +1743,13 @@ function MapMatchingCard({
   const getLabel = (q: QuestionWithSection) => labelMap.get(q.question_number) ?? q.question_text
 
   return (
-    <div className="border-2 border-gray-400 dark:border-gray-500 bg-white dark:bg-gray-950 rounded-sm overflow-hidden">
-      <div className="px-5 py-3 border-b-2 border-gray-400 dark:border-gray-500 flex items-center justify-between">
-        <span className="text-sm font-bold italic text-gray-800 dark:text-gray-200">{mapTitle}</span>
-        <span className="text-[10px] text-gray-400 dark:text-gray-500 italic">{hint}</span>
+    <div className="border-2 border-[var(--border-strong)] bg-[var(--bg-elev)] rounded-sm overflow-hidden">
+      <div className="px-5 py-3 border-b-2 border-[var(--border-strong)] flex items-center justify-between">
+        <span className="text-sm font-bold italic text-[var(--text)]">{mapTitle}</span>
+        <span className="text-[10px] text-[var(--text-3)] italic">{hint}</span>
       </div>
       {imageUrl && (
-        <div className="p-3 border-b border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900/40">
+        <div className="p-3 border-b border-[var(--border)] bg-[var(--bg-soft)]/40">
           <Image
             src={imageUrl}
             alt={mapTitle}
@@ -1760,18 +1760,18 @@ function MapMatchingCard({
           />
         </div>
       )}
-      <div className="divide-y divide-gray-100 dark:divide-gray-800">
+      <div className="divide-y divide-[var(--border)]">
         {questions.map(q => (
           <div key={q.id} className="flex items-center px-5 py-2.5 gap-3">
-            <span className="shrink-0 text-[10px] font-bold text-teal-600 dark:text-teal-400 w-5 text-right">
+            <span className="shrink-0 text-[10px] font-bold text-[var(--accent)] w-5 text-right">
               {q.question_number}
             </span>
-            <span className="flex-1 text-sm text-gray-700 dark:text-gray-300">{getLabel(q)}</span>
+            <span className="flex-1 text-sm text-[var(--text)]">{getLabel(q)}</span>
             <input
               type="text"
               value={answers[q.id] ?? ''}
               onChange={e => onAnswer(q.id, e.target.value.toUpperCase().slice(0, 1))}
-              className="w-10 border-b-2 border-gray-500 dark:border-gray-400 bg-transparent focus:outline-none focus:border-amber-500 dark:focus:border-amber-400 text-sm text-gray-900 dark:text-white placeholder-gray-400 text-center transition-colors pb-0.5 uppercase font-bold"
+              className="w-10 border-b-2 border-[var(--border-strong)] bg-transparent focus:outline-none focus:border-[var(--accent)]  text-sm text-[var(--text)] placeholder-[var(--text-3)] text-center transition-colors pb-0.5 uppercase font-bold"
               placeholder="_"
               maxLength={1}
             />
@@ -1805,32 +1805,32 @@ function MatchingPoolCard({
   return (
     <div className="space-y-3">
       {/* Pool options reference box */}
-      <div className="border-2 border-gray-400 dark:border-gray-500 rounded-sm overflow-hidden">
-        <div className="px-4 py-2 bg-gray-100 dark:bg-gray-800/60 border-b border-gray-300 dark:border-gray-600">
-          <span className="text-xs font-black uppercase tracking-widest text-gray-700 dark:text-gray-300">{poolTitle}</span>
+      <div className="border-2 border-[var(--border-strong)] rounded-sm overflow-hidden">
+        <div className="px-4 py-2 bg-[var(--bg-soft)]/60 border-b border-[var(--border-strong)]">
+          <span className="text-xs font-black uppercase tracking-widest text-[var(--text)]">{poolTitle}</span>
         </div>
-        <div className="divide-y divide-gray-100 dark:divide-gray-800">
+        <div className="divide-y divide-[var(--border)]">
           {poolLetters.map(letter => (
             <div key={letter} className="flex items-start gap-3 px-4 py-2">
-              <span className="shrink-0 w-5 text-xs font-black text-gray-500 dark:text-gray-400 pt-0.5">{letter}</span>
-              <span className="text-sm text-gray-700 dark:text-gray-300 leading-snug">{pool[letter]}</span>
+              <span className="shrink-0 w-5 text-xs font-black text-[var(--text-2)] pt-0.5">{letter}</span>
+              <span className="text-sm text-[var(--text)] leading-snug">{pool[letter]}</span>
             </div>
           ))}
         </div>
       </div>
       {/* Question rows */}
-      <div className="border-2 border-gray-400 dark:border-gray-500 rounded-sm overflow-hidden divide-y divide-gray-100 dark:divide-gray-800">
+      <div className="border-2 border-[var(--border-strong)] rounded-sm overflow-hidden divide-y divide-[var(--border)]">
         {questions.map(q => (
           <div key={q.id} className="flex items-center px-5 py-2.5 gap-3">
-            <span className="shrink-0 text-[10px] font-bold text-teal-600 dark:text-teal-400 w-5 text-right">
+            <span className="shrink-0 text-[10px] font-bold text-[var(--accent)] w-5 text-right">
               {q.question_number}
             </span>
-            <span className="flex-1 text-sm text-gray-700 dark:text-gray-300">{q.question_text}</span>
+            <span className="flex-1 text-sm text-[var(--text)]">{q.question_text}</span>
             <input
               type="text"
               value={answers[q.id] ?? ''}
               onChange={e => onAnswer(q.id, e.target.value.toUpperCase().slice(0, 1))}
-              className="w-10 border-b-2 border-gray-500 dark:border-gray-400 bg-transparent focus:outline-none focus:border-amber-500 dark:focus:border-amber-400 text-sm text-gray-900 dark:text-white placeholder-gray-400 text-center transition-colors pb-0.5 uppercase font-bold"
+              className="w-10 border-b-2 border-[var(--border-strong)] bg-transparent focus:outline-none focus:border-[var(--accent)]  text-sm text-[var(--text)] placeholder-[var(--text-3)] text-center transition-colors pb-0.5 uppercase font-bold"
               placeholder="_"
               maxLength={1}
             />
@@ -2186,7 +2186,7 @@ export default function ListeningTestPage() {
   const answeredCount = Object.values(answers).filter(Boolean).length
 
   return (
-    <div style={{ margin: '-24px -32px -24px', minHeight: '100vh', background: 'var(--bg)' }}>
+    <div style={{ display: 'flex', flexDirection: 'column', flex: 1, minHeight: 0 }}>
 
       {/* ── Section transition toast ── */}
       {sectionToast && (

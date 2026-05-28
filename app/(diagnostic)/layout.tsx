@@ -2,30 +2,30 @@ import Link from 'next/link'
 import { ThemeProvider } from '@/components/providers/ThemeProvider'
 import { LanguageProvider } from '@/lib/i18n/LanguageContext'
 import { ThemeToggle } from '@/components/ui/ThemeToggle'
-import { LanguageSwitcher } from '@/components/ui/LanguageSwitcher'
 import type { ReactNode } from 'react'
 
 export default function DiagnosticLayout({ children }: { children: ReactNode }) {
   return (
     <ThemeProvider>
       <LanguageProvider>
-        <div className="min-h-screen bg-white dark:bg-[#06060f] flex flex-col">
+        <div style={{ minHeight: '100vh', background: 'var(--bg)', display: 'flex', flexDirection: 'column' }}>
           {/* Top bar */}
-          <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100 dark:border-gray-800/60">
-            <Link href="/" className="flex items-center gap-2">
-              <div className="w-7 h-7 rounded-lg bg-gradient-to-br from-indigo-500 to-violet-600 flex items-center justify-center">
-                <span className="text-white text-xs font-bold">i</span>
-              </div>
-              <span className="text-sm font-semibold text-gray-900 dark:text-white">IELTS Camp</span>
+          <header style={{
+            display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+            padding: '16px 32px', borderBottom: '1px solid var(--border)',
+          }}>
+            <Link href="/" style={{ display: 'inline-flex', alignItems: 'center', gap: 8, fontWeight: 700, letterSpacing: '-0.02em', fontSize: 15, color: 'var(--text)', textDecoration: 'none' }}>
+              <svg width={20} height={20} viewBox="0 0 24 24" fill="none">
+                <path d="M4 19L10 5l3 7 2.5-4L20 19" stroke="var(--accent)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                <circle cx="20" cy="6" r="2" fill="var(--accent)"/>
+              </svg>
+              ielts<span style={{ color: 'var(--accent)' }}>.</span>camp
             </Link>
-            <div className="flex items-center gap-1">
-              <LanguageSwitcher />
-              <ThemeToggle />
-            </div>
-          </div>
+            <ThemeToggle />
+          </header>
 
           {/* Content */}
-          <div className="flex-1 flex flex-col">
+          <div style={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
             {children}
           </div>
         </div>

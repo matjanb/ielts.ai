@@ -366,7 +366,7 @@ function SpeakingQuestion({
       )}
 
       {result!.overview && (
-        <div className="bg-white dark:bg-gray-900/50 border border-gray-100 dark:border-gray-800 rounded-2xl p-4">
+        <div className="card rounded-2xl p-4">
           <p className="text-xs font-semibold text-gray-400 dark:text-gray-500 mb-2">
             {t('diagnostic.speakingFeedbackOverview' as Parameters<typeof t>[0])}
           </p>

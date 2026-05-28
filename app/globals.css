@@ -27,9 +27,12 @@
   --shadow-sm: 0 1px 2px rgba(20,22,24,0.04), 0 0 0 1px rgba(20,22,24,0.04);
   --shadow: 0 1px 2px rgba(20,22,24,0.04), 0 8px 24px -8px rgba(20,22,24,0.08);
   --shadow-lg: 0 1px 2px rgba(20,22,24,0.04), 0 24px 48px -16px rgba(20,22,24,0.12);
-  --font-sans: var(--font-sans, "Manrope", -apple-system, BlinkMacSystemFont, system-ui, sans-serif);
-  --font-display: var(--font-display, "Newsreader", serif);
-  --font-mono: var(--font-mono, "JetBrains Mono", ui-monospace, monospace);
+  /* Font stacks — Next.js injects --font-sans / --font-display / --font-mono via
+     the variable="" prop in layout.tsx. These fallbacks fire only if those vars
+     aren't injected (e.g. SSR before hydration). */
+  --font-sans-stack: "Manrope", -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
+  --font-display-stack: "Newsreader", "Georgia", serif;
+  --font-mono-stack: "JetBrains Mono", ui-monospace, "SF Mono", monospace;
 }
 
 .dark {
@@ -56,7 +59,8 @@
 html { scroll-behavior: smooth; }
 
 body {
-  font-family: var(--font-sans);
+  /* var(--font-sans) is injected by Next.js font optimization; fall back to stack */
+  font-family: var(--font-sans, var(--font-sans-stack));
   background: var(--bg);
   color: var(--text);
   font-size: 15px;
@@ -123,14 +127,29 @@ input, textarea, select { font: inherit; color: inherit; }
 
 /* ── Serif / mono helpers ────────────────────────────────── */
 .font-serif {
-  font-family: var(--font-display);
+  font-family: var(--font-display, var(--font-display-stack));
   font-style: italic;
   font-weight: 400;
   letter-spacing: -0.01em;
 }
 .font-mono-custom {
-  font-family: var(--font-mono);
+  font-family: var(--font-mono, var(--font-mono-stack));
 }
+
+/* ── Input ───────────────────────────────────────────────── */
+.input {
+  width: 100%;
+  padding: 11px 14px;
+  border-radius: 8px;
+  font-size: 14px;
+  font: inherit;
+  border: 1px solid var(--border-strong);
+  background: var(--bg-elev);
+  color: var(--text);
+  outline: none;
+  transition: border-color .15s;
+}
+.input:focus { border-color: var(--accent); }
 
 /* ── Card ────────────────────────────────────────────────── */
 .card {
