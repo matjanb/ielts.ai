@@ -192,22 +192,23 @@ function PassageText({ text }: { text: string }) {
 
 function StartScreen({ test, onStart }: { test: IeltsTest; onStart: () => void }) {
   return (
-    <div className="max-w-lg mx-auto">
-      <div className="bg-white dark:bg-gray-900/60 rounded-3xl border border-gray-100 dark:border-gray-800 p-10 text-center">
-        <div className="w-14 h-14 rounded-2xl bg-blue-50 dark:bg-blue-500/10 flex items-center justify-center mx-auto mb-6">
-          <BookOpen size={24} strokeWidth={1.8} className="text-blue-500" />
+    <div style={{ maxWidth: 480, margin: '0 auto' }}>
+      <div className="card" style={{ padding: 40, textAlign: 'center', boxShadow: 'var(--shadow-lg)' }}>
+        <div style={{ width: 56, height: 56, borderRadius: 16, background: 'var(--accent-soft)', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 20px' }}>
+          <BookOpen size={24} strokeWidth={1.8} style={{ color: 'var(--accent)' }} />
         </div>
-        <h1 className="text-xl font-bold text-gray-900 dark:text-white mb-2">{test.title}</h1>
-        <p className="text-sm text-gray-400 dark:text-gray-500 mb-8">40 questions · 60 minutes · 3 passages</p>
-        <div className="grid grid-cols-3 gap-3 mb-8">
+        <span style={{ display: 'inline-block', fontSize: 10, fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase', color: 'var(--accent)', background: 'var(--accent-soft)', padding: '3px 10px', borderRadius: 999, marginBottom: 14 }}>Reading</span>
+        <h1 style={{ fontSize: 20, fontWeight: 700, color: 'var(--text)', marginBottom: 8 }}>{test.title}</h1>
+        <p style={{ fontSize: 14, color: 'var(--text-2)', marginBottom: 28 }}>40 questions · 60 minutes · 3 passages</p>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 10, marginBottom: 28 }}>
           {[{ value: '40', label: 'Questions' }, { value: '60', label: 'Minutes' }, { value: '3', label: 'Passages' }].map(({ value, label }) => (
-            <div key={label} className="bg-gray-50 dark:bg-gray-800/60 rounded-xl py-3">
-              <div className="text-lg font-bold text-gray-900 dark:text-white">{value}</div>
-              <div className="text-xs text-gray-400 mt-0.5">{label}</div>
+            <div key={label} style={{ padding: '12px 8px', background: 'var(--bg-soft)', borderRadius: 10, textAlign: 'center' }}>
+              <div style={{ fontSize: 18, fontWeight: 700, color: 'var(--text)', fontVariantNumeric: 'tabular-nums' }}>{value}</div>
+              <div style={{ fontSize: 11, color: 'var(--text-3)', marginTop: 2 }}>{label}</div>
             </div>
           ))}
         </div>
-        <button onClick={onStart} className="w-full py-3.5 rounded-2xl font-semibold text-sm bg-blue-500 hover:bg-blue-400 text-white transition-colors">
+        <button onClick={onStart} style={{ width: '100%', padding: '13px', borderRadius: 12, fontSize: 14, fontWeight: 700, background: 'var(--accent)', color: 'var(--accent-fg)', border: 'none', cursor: 'pointer' }}>
           Start Test
         </button>
       </div>
@@ -348,11 +349,16 @@ export default function ReadingTestPage() {
     router.push(`/reading/${testId}/results?score=${totalCorrect}&band=${band}&sections=${encodeURIComponent(JSON.stringify(sectionCorrect))}&attempt=${attemptId ?? ''}`)
   }
 
-  if (loading) return <div className="flex items-center justify-center h-64"><div className="text-sm text-gray-400">{t('common.loading')}</div></div>
+  if (loading) return (
+    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: 260 }}>
+      <div style={{ width: 20, height: 20, borderRadius: '50%', border: '2px solid var(--accent)', borderTopColor: 'transparent', animation: 'spin .8s linear infinite' }}/>
+      <style>{`@keyframes spin{to{transform:rotate(360deg)}}`}</style>
+    </div>
+  )
   if (error || !test) return (
-    <div className="flex flex-col items-center justify-center h-64 gap-3">
-      <div className="text-sm text-red-500">{error ?? 'Test not found'}</div>
-      <button onClick={() => router.back()} className="text-sm text-blue-500 hover:underline">{t('common.back')}</button>
+    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: 260, gap: 12 }}>
+      <div style={{ fontSize: 14, color: 'var(--danger)' }}>{error ?? 'Test not found'}</div>
+      <button onClick={() => router.back()} style={{ fontSize: 13, color: 'var(--accent)', background: 'none', border: 'none', cursor: 'pointer' }}>{t('common.back')}</button>
     </div>
   )
 
@@ -393,9 +399,10 @@ export default function ReadingTestPage() {
   const questionGroups = groupQuestions(passageQuestions)
 
   return (
-    <div className="flex flex-col h-[calc(100vh-80px)]">
-      {/* IELTS-style exam header */}
-      <div style={{ background: '#2b2b2b', color: '#fff', padding: '8px 16px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8, borderRadius: 8 }}>
+    <div style={{ margin: '-24px -32px -24px', display: 'flex', flexDirection: 'column', height: 'calc(100vh - 60px)' }}>
+
+      {/* IELTS dark header */}
+      <div style={{ background: '#2b2b2b', color: '#fff', padding: '8px 16px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexShrink: 0 }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 12, fontSize: 13, fontWeight: 700 }}>
           <span style={{ background: '#ffcb05', color: '#000', padding: '3px 8px', borderRadius: 2, fontSize: 11 }}>IELTS</span>
           ielts.camp · Practice Reading
@@ -411,51 +418,54 @@ export default function ReadingTestPage() {
         </div>
       </div>
 
-      {/* Main content */}
-      <div className="flex gap-0 flex-1 min-h-0" ref={containerRef}>
-        <div style={{ width: `${leftWidth}%` }} className="bg-white dark:bg-gray-900/50 rounded-2xl border border-gray-100 dark:border-gray-800 flex flex-col min-w-0 mr-1">
-          <div className="px-6 py-4 border-b border-gray-100 dark:border-gray-800 shrink-0">
-            <div className="text-xs font-bold uppercase tracking-widest text-blue-500 mb-0.5">Reading Passage {activePassage}</div>
-            <h2 className="text-base font-bold text-gray-900 dark:text-white">{currentPassage?.title}</h2>
+      {/* Split pane */}
+      <div style={{ display: 'flex', flex: 1, minHeight: 0 }} ref={containerRef}>
+        {/* Passage (left) */}
+        <div style={{ width: `${leftWidth}%`, display: 'flex', flexDirection: 'column', minWidth: 0, background: 'var(--bg-elev)', borderRight: '2px solid var(--border)' }}>
+          <div style={{ padding: '16px 24px', borderBottom: '1px solid var(--border)', flexShrink: 0 }}>
+            <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: '0.08em', textTransform: 'uppercase', color: 'var(--accent)', marginBottom: 4 }}>
+              Reading Passage {activePassage}
+            </div>
+            <h2 style={{ fontSize: 15, fontWeight: 700, margin: 0, color: 'var(--text)' }}>{currentPassage?.title}</h2>
           </div>
-          <div className="flex-1 overflow-y-auto px-6 py-4">
+          <div style={{ flex: 1, overflowY: 'auto', padding: '16px 24px' }}>
             <PassageText text={passageText} />
           </div>
         </div>
 
-        <div
-          className="w-2 cursor-col-resize flex items-center justify-center group shrink-0"
-          onMouseDown={startResize}
-        >
-          <div className="w-1 h-16 rounded-full bg-gray-200 dark:bg-gray-700 group-hover:bg-blue-400 transition-colors" />
+        {/* Drag divider */}
+        <div onMouseDown={startResize} style={{ width: 6, background: 'var(--border)', cursor: 'col-resize', flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+          <div style={{ width: 3, height: 40, borderRadius: 999, background: 'var(--border-strong)' }}/>
         </div>
 
-        <div style={{ width: `${100 - leftWidth}%` }} className="bg-white dark:bg-gray-900/50 rounded-2xl border border-gray-100 dark:border-gray-800 flex flex-col ml-1">
-          <div className="flex-1 overflow-y-auto px-5 py-4 space-y-6">
+        {/* Questions (right) */}
+        <div style={{ width: `${100 - leftWidth}%`, display: 'flex', flexDirection: 'column', minWidth: 0, background: 'var(--bg-elev)' }}>
+          <div style={{ flex: 1, overflowY: 'auto', padding: '20px 24px', display: 'flex', flexDirection: 'column', gap: 24 }}>
             {questionGroups.map((group, gi) => (
               <div key={gi}>
-                <div className="text-xs font-bold text-blue-500 uppercase tracking-widest mb-3 pb-2 border-b border-gray-100 dark:border-gray-800">
+                <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: '0.08em', textTransform: 'uppercase', color: 'var(--accent)', marginBottom: 10, paddingBottom: 8, borderBottom: '1px solid var(--border)' }}>
                   {group.label}
                 </div>
-                <div className="space-y-5">
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 18 }}>
                   {group.questions.map(q => (
-                    <div key={q.id} className={`rounded-xl p-4 border transition-all ${
-                      activeQuestion === q.id
-                        ? 'border-blue-200 dark:border-blue-500/30 bg-blue-50/50 dark:bg-blue-500/5'
-                        : 'border-transparent'
-                    }`} onClick={() => setActiveQuestion(q.id)}>
-                      <div className="flex items-center gap-2 mb-2">
-                        <span className={`w-6 h-6 rounded-lg flex items-center justify-center text-xs font-bold shrink-0 ${
-                          answers[q.id]
-                            ? 'bg-emerald-100 dark:bg-emerald-500/20 text-emerald-700 dark:text-emerald-400'
-                            : 'bg-gray-100 dark:bg-gray-800 text-gray-500'
-                        }`}>{q.question_number}</span>
+                    <div key={q.id}
+                      onClick={() => setActiveQuestion(q.id)}
+                      style={{
+                        padding: '14px 16px', borderRadius: 10, border: `1px solid ${activeQuestion === q.id ? 'var(--accent)' : 'transparent'}`,
+                        background: activeQuestion === q.id ? 'var(--accent-soft)' : 'transparent',
+                        cursor: 'pointer', transition: 'all .15s',
+                      }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8 }}>
+                        <span style={{
+                          width: 22, height: 22, borderRadius: 6, display: 'flex', alignItems: 'center', justifyContent: 'center',
+                          fontSize: 11, fontWeight: 700, flexShrink: 0,
+                          background: answers[q.id] ? 'var(--accent)' : 'var(--bg-soft)',
+                          color: answers[q.id] ? 'var(--accent-fg)' : 'var(--text-3)',
+                        }}>
+                          {q.question_number}
+                        </span>
                       </div>
-                      <ReadingQuestion
-                        question={q}
-                        answer={answers[q.id] ?? ''}
-                        onChange={v => setAnswer(q.id, v)}
-                      />
+                      <ReadingQuestion question={q} answer={answers[q.id] ?? ''} onChange={v => setAnswer(q.id, v)} />
                     </div>
                   ))}
                 </div>
@@ -465,43 +475,36 @@ export default function ReadingTestPage() {
         </div>
       </div>
 
-      {/* Bottom — Passage navigation */}
-      <div className="flex items-center justify-between pt-3 shrink-0">
-        <button
-          onClick={() => setActivePassage(p => Math.max(1, p - 1))}
-          disabled={activePassage === 1}
-          className="flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-medium text-gray-500 dark:text-gray-400 disabled:opacity-30 hover:bg-gray-100 dark:hover:bg-white/5 transition-all"
-        >
-          <ChevronLeft size={15} strokeWidth={2} /> Previous Passage
+      {/* Passage navigation bottom bar */}
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '10px 16px', borderTop: '1px solid var(--border)', background: 'var(--bg-elev)', flexShrink: 0 }}>
+        <button onClick={() => setActivePassage(p => Math.max(1, p - 1))} disabled={activePassage === 1}
+          style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '7px 14px', borderRadius: 8, fontSize: 13, fontWeight: 500, color: 'var(--text-2)', background: 'none', border: '1px solid var(--border)', cursor: 'pointer', opacity: activePassage === 1 ? 0.3 : 1 }}>
+          <ChevronLeft size={14} strokeWidth={2} /> Previous
         </button>
 
-        <div className="flex gap-2">
+        <div style={{ display: 'flex', gap: 8 }}>
           {sections.map(sec => {
             const secQs = questions.filter(q => q.sectionNumber === sec.section_number)
             const answered = secQs.filter(q => answers[q.id]).length
+            const active = activePassage === sec.section_number
             return (
-              <button
-                key={sec.id}
-                onClick={() => setActivePassage(sec.section_number)}
-                className={`flex flex-col items-center px-5 py-2 rounded-xl text-sm font-semibold transition-all ${
-                  activePassage === sec.section_number
-                    ? 'bg-blue-500 text-white'
-                    : 'bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-700'
-                }`}
-              >
-                <span>Part {sec.section_number}</span>
-                <span className="text-[10px] opacity-70">{answered} of {secQs.length}</span>
+              <button key={sec.id} onClick={() => setActivePassage(sec.section_number)} style={{
+                display: 'flex', flexDirection: 'column', alignItems: 'center',
+                padding: '7px 20px', borderRadius: 8, fontSize: 13, fontWeight: 600,
+                background: active ? 'var(--accent)' : 'var(--bg-soft)',
+                color: active ? 'var(--accent-fg)' : 'var(--text-2)',
+                border: 'none', cursor: 'pointer', transition: 'all .15s',
+              }}>
+                <span>Passage {sec.section_number}</span>
+                <span style={{ fontSize: 10, opacity: 0.7 }}>{answered}/{secQs.length}</span>
               </button>
             )
           })}
         </div>
 
-        <button
-          onClick={() => setActivePassage(p => Math.min(sections.length, p + 1))}
-          disabled={activePassage === sections.length}
-          className="flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-medium text-gray-500 dark:text-gray-400 disabled:opacity-30 hover:bg-gray-100 dark:hover:bg-white/5 transition-all"
-        >
-          Next Passage <ChevronRight size={15} strokeWidth={2} />
+        <button onClick={() => setActivePassage(p => Math.min(sections.length, p + 1))} disabled={activePassage === sections.length}
+          style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '7px 14px', borderRadius: 8, fontSize: 13, fontWeight: 500, color: 'var(--text-2)', background: 'none', border: '1px solid var(--border)', cursor: 'pointer', opacity: activePassage === sections.length ? 0.3 : 1 }}>
+          Next <ChevronRight size={14} strokeWidth={2} />
         </button>
       </div>
     </div>

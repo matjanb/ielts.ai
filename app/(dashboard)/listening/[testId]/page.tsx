@@ -1939,57 +1939,11 @@ function groupByType(qs: QuestionWithSection[]) {
 
 // ── Start Screen ──────────────────────────────────────────────────────────────
 
-function StartScreen({
-  test,
-  sections,
-  questionCount,
-  starting,
-  onStart,
-  t,
-}: {
-  test: IeltsTest
-  sections: TestSection[]
-  questionCount: number
-  starting: boolean
-  onStart: () => void
-  t: (k: string) => string
+function StartScreen({ test, sections, questionCount, starting, onStart, t }: {
+  test: IeltsTest; sections: TestSection[]; questionCount: number; starting: boolean; onStart: () => void; t: (k: string) => string
 }) {
-  return (
-    <div className="max-w-lg mx-auto">
-      <div className="bg-white dark:bg-gray-900/60 rounded-3xl border border-gray-100 dark:border-gray-800 p-10 text-center">
-        <div className="w-14 h-14 rounded-2xl bg-amber-50 dark:bg-amber-500/10 flex items-center justify-center mx-auto mb-5">
-          <Clock size={24} strokeWidth={1.8} className="text-amber-500" />
-        </div>
-        <span className="inline-block text-[10px] font-bold uppercase tracking-widest text-amber-600 dark:text-amber-400 bg-amber-100 dark:bg-amber-500/15 px-3 py-1 rounded-full mb-3">
-          Listening
-        </span>
-        <h1 className="text-xl font-bold text-gray-900 dark:text-white mb-2">{test.title}</h1>
-        <p className="text-sm text-gray-400 dark:text-gray-500 mb-8 leading-relaxed">
-          {t('listening.startSubtitle')}
-        </p>
-        <div className="grid grid-cols-3 gap-3 mb-8">
-          {[
-            { value: String(questionCount), label: t('listening.questions') },
-            { value: '30', label: 'min' },
-            { value: String(sections.length || 4), label: 'sections' },
-          ].map(({ value, label }) => (
-            <div key={label} className="bg-gray-50 dark:bg-gray-800/60 rounded-xl py-3">
-              <div className="text-lg font-bold text-gray-900 dark:text-white">{value}</div>
-              <div className="text-xs text-gray-400 mt-0.5">{label}</div>
-            </div>
-          ))}
-        </div>
-        <button
-          onClick={onStart}
-          disabled={starting}
-          className="w-full py-3.5 rounded-2xl font-semibold text-sm bg-amber-500 hover:bg-amber-400 text-white transition-colors disabled:opacity-70 flex items-center justify-center gap-2"
-        >
-          {starting && <Loader2 size={15} className="animate-spin" />}
-          {starting ? 'Starting…' : t('listening.startTest')}
-        </button>
-      </div>
-    </div>
-  )
+  // Kept for legacy fallback — main render now inlines this logic
+  return null
 }
 
 // ── Main Page ─────────────────────────────────────────────────────────────────
@@ -2148,26 +2102,24 @@ export default function ListeningTestPage() {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center h-64">
-        <Loader2 size={20} className="animate-spin text-amber-500" />
-        <span className="ml-2 text-sm text-gray-400">{t('common.loading')}</span>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: 260 }}>
+        <div style={{ width: 20, height: 20, borderRadius: '50%', border: '2px solid var(--accent)', borderTopColor: 'transparent', animation: 'spin .8s linear infinite' }}/>
+        <style>{`@keyframes spin{to{transform:rotate(360deg)}}`}</style>
       </div>
     )
   }
 
   if (loadError || !test) {
     return (
-      <div className="max-w-lg mx-auto">
-        <div className="bg-white dark:bg-gray-900/60 rounded-3xl border border-red-200 dark:border-red-800/60 p-8 text-center">
-          <div className="w-12 h-12 rounded-2xl bg-red-50 dark:bg-red-500/10 flex items-center justify-center mx-auto mb-4">
-            <AlertCircle size={20} className="text-red-500" />
+      <div style={{ maxWidth: 480, margin: '0 auto' }}>
+        <div className="card" style={{ padding: 36, textAlign: 'center', boxShadow: 'var(--shadow-lg)' }}>
+          <div style={{ width: 44, height: 44, borderRadius: 12, background: 'color-mix(in srgb, var(--danger) 12%, transparent)', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 16px' }}>
+            <AlertCircle size={20} style={{ color: 'var(--danger)' }} />
           </div>
-          <p className="text-sm font-semibold text-red-600 dark:text-red-400 mb-2">Failed to load test</p>
-          <p className="text-xs text-gray-500 dark:text-gray-400 mb-6 font-mono break-all">
-            {loadError ?? 'Test not found'}
-          </p>
-          <button onClick={() => router.back()} className="text-sm text-indigo-500 hover:underline">
-            {t('common.back')}
+          <p style={{ fontSize: 14, fontWeight: 600, color: 'var(--danger)', marginBottom: 8 }}>Failed to load test</p>
+          <p style={{ fontSize: 12, color: 'var(--text-3)', marginBottom: 20, fontFamily: 'var(--font-mono)' }}>{loadError ?? 'Test not found'}</p>
+          <button onClick={() => router.back()} style={{ fontSize: 13, color: 'var(--accent)', background: 'none', border: 'none', cursor: 'pointer' }}>
+            ← {t('common.back')}
           </button>
         </div>
       </div>
@@ -2176,28 +2128,53 @@ export default function ListeningTestPage() {
 
   if (!started) {
     return (
-      <StartScreen
-        test={test}
-        sections={sections}
-        questionCount={questions.length}
-        starting={starting}
-        onStart={handleStart}
-        t={t}
-      />
+      <div style={{ maxWidth: 480, margin: '0 auto' }}>
+        <div className="card" style={{ padding: 40, textAlign: 'center', boxShadow: 'var(--shadow-lg)' }}>
+          <div style={{ width: 56, height: 56, borderRadius: 16, background: 'var(--accent-soft)', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 20px' }}>
+            <svg width={26} height={26} viewBox="0 0 24 24" fill="none" stroke="var(--accent)" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M3 18v-6a9 9 0 0 1 18 0v6"/><path d="M21 19a2 2 0 0 1-2 2h-1v-6h3z"/><path d="M3 19a2 2 0 0 0 2 2h1v-6H3z"/>
+            </svg>
+          </div>
+          <span style={{ display: 'inline-block', fontSize: 10, fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase', color: 'var(--accent)', background: 'var(--accent-soft)', padding: '3px 10px', borderRadius: 999, marginBottom: 14 }}>
+            Listening
+          </span>
+          <h1 style={{ fontSize: 20, fontWeight: 700, color: 'var(--text)', marginBottom: 8 }}>{test.title}</h1>
+          <p style={{ fontSize: 14, color: 'var(--text-2)', marginBottom: 28, lineHeight: 1.55 }}>{t('listening.startSubtitle')}</p>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 10, marginBottom: 28 }}>
+            {[
+              { value: String(questions.length), label: t('listening.questions') },
+              { value: '30', label: 'min' },
+              { value: String(sections.length || 4), label: 'sections' },
+            ].map(({ value, label }) => (
+              <div key={label} style={{ padding: '12px 8px', background: 'var(--bg-soft)', borderRadius: 10, textAlign: 'center' }}>
+                <div style={{ fontSize: 18, fontWeight: 700, color: 'var(--text)', fontVariantNumeric: 'tabular-nums' }}>{value}</div>
+                <div style={{ fontSize: 11, color: 'var(--text-3)', marginTop: 2 }}>{label}</div>
+              </div>
+            ))}
+          </div>
+          <button onClick={handleStart} disabled={starting} style={{
+            width: '100%', padding: '13px', borderRadius: 12, fontSize: 14, fontWeight: 700,
+            background: 'var(--accent)', color: 'var(--accent-fg)', border: 'none',
+            cursor: starting ? 'not-allowed' : 'pointer', opacity: starting ? 0.6 : 1,
+            display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
+          }}>
+            {starting && <Loader2 size={15} className="animate-spin"/>}
+            {starting ? 'Starting…' : t('listening.startTest')}
+          </button>
+        </div>
+      </div>
     )
   }
 
   if (questions.length === 0) {
     return (
-      <div className="max-w-lg mx-auto">
-        <div className="bg-white dark:bg-gray-900/60 rounded-3xl border border-amber-200 dark:border-amber-800/40 p-8 text-center">
-          <AlertCircle size={20} className="text-amber-500 mx-auto mb-4" />
-          <p className="text-sm text-gray-600 dark:text-gray-300 mb-4">
+      <div style={{ maxWidth: 480, margin: '0 auto' }}>
+        <div className="card" style={{ padding: 36, textAlign: 'center' }}>
+          <AlertCircle size={20} style={{ color: 'var(--warn)', margin: '0 auto 16px', display: 'block' }} />
+          <p style={{ fontSize: 14, color: 'var(--text-2)', marginBottom: 16 }}>
             No questions found. The database migration and seed may not have been applied yet.
           </p>
-          <button onClick={() => setStarted(false)} className="text-sm text-amber-500 hover:underline">
-            ← Back
-          </button>
+          <button onClick={() => setStarted(false)} style={{ fontSize: 13, color: 'var(--accent)', background: 'none', border: 'none', cursor: 'pointer' }}>← Back</button>
         </div>
       </div>
     )
@@ -2209,19 +2186,18 @@ export default function ListeningTestPage() {
   const answeredCount = Object.values(answers).filter(Boolean).length
 
   return (
-    // Bleed to edges of the dashboard main padding so top/bottom bars span full width
-    <div className="-mx-6 -mt-6 -mb-6 lg:-mx-8 lg:-mt-8 lg:-mb-8">
+    <div style={{ margin: '-24px -32px -24px', minHeight: '100vh', background: 'var(--bg)' }}>
 
       {/* ── Section transition toast ── */}
       {sectionToast && (
-        <div className="sticky top-0 z-50 flex justify-center pointer-events-none">
-          <div className="mt-1 px-4 py-1.5 rounded-full bg-amber-500 text-white text-xs font-semibold shadow-lg animate-fade-in">
+        <div style={{ position: 'sticky', top: 0, zIndex: 50, display: 'flex', justifyContent: 'center', pointerEvents: 'none' }}>
+          <div style={{ marginTop: 6, padding: '5px 16px', borderRadius: 999, background: 'var(--accent)', color: 'var(--accent-fg)', fontSize: 12, fontWeight: 600, boxShadow: 'var(--shadow-lg)' }}>
             🎧 {sectionToast}
           </div>
         </div>
       )}
 
-      {/* ── IELTS-style exam header ── */}
+      {/* ── IELTS dark exam header ── */}
       <div style={{ position: 'sticky', top: 0, zIndex: 40, background: '#2b2b2b', color: '#fff', padding: '8px 16px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 10, fontWeight: 700, fontSize: 14 }}>
@@ -2234,149 +2210,78 @@ export default function ListeningTestPage() {
           <AudioPlayer audioUrl={currentSection?.audio_url ?? null} autoPlay={started} />
           <span style={{ fontSize: 11, opacity: 0.7 }}>{answeredCount}/{questions.length} answered</span>
           <TestTimer totalSeconds={1800} onExpire={handleTimeExpire} />
-          <button
-            onClick={handleSubmit}
-            disabled={submitting}
-            style={{ padding: '5px 14px', background: '#0066b3', color: '#fff', fontSize: 12, fontWeight: 700, borderRadius: 2, border: 'none', cursor: 'pointer', opacity: submitting ? 0.6 : 1 }}
-          >
+          <button onClick={handleSubmit} disabled={submitting}
+            style={{ padding: '5px 14px', background: '#0066b3', color: '#fff', fontSize: 12, fontWeight: 700, borderRadius: 2, border: 'none', cursor: 'pointer', opacity: submitting ? 0.6 : 1 }}>
             {submitting ? 'Submitting…' : t('listening.submitTest')}
           </button>
         </div>
       </div>
 
       {/* ── Main scrollable content ── */}
-      <div className="px-4 sm:px-8 lg:px-12 py-8 pb-24">
-        <div className="max-w-2xl mx-auto space-y-8">
+      <div style={{ padding: '32px 48px 120px', maxWidth: 800, margin: '0 auto' }}>
 
-          {/* Section header */}
-          <div>
-            <div className="flex items-center gap-2 mb-2">
-              <span className="text-[10px] font-bold uppercase tracking-widest text-amber-500 bg-amber-50 dark:bg-amber-500/10 px-2.5 py-1 rounded-full">
-                Part {currentSection?.section_number}
-              </span>
-            </div>
-            <h2 className="text-lg font-semibold text-gray-900 dark:text-white">
-              {currentSection?.title}
-            </h2>
-            {currentSection?.instructions && (
-              <p className="text-sm text-gray-500 dark:text-gray-400 mt-2 leading-relaxed">
-                {currentSection.instructions}
-              </p>
-            )}
+        {/* Section header */}
+        <div style={{ marginBottom: 32 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8 }}>
+            <span style={{ fontSize: 10, fontWeight: 700, letterSpacing: '0.08em', textTransform: 'uppercase', color: 'var(--accent)', background: 'var(--accent-soft)', padding: '3px 10px', borderRadius: 999 }}>
+              Part {currentSection?.section_number}
+            </span>
           </div>
+          <h2 style={{ fontSize: 18, fontWeight: 600, color: 'var(--text)', margin: '0 0 6px' }}>{currentSection?.title}</h2>
+          {currentSection?.instructions && (
+            <p style={{ fontSize: 14, color: 'var(--text-2)', lineHeight: 1.55, margin: 0 }}>{currentSection.instructions}</p>
+          )}
+        </div>
 
-          {/* Questions grouped by kind: mc → radio, form → paper form card, inline → teal-circle fill-blank */}
+        {/* Question groups */}
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 32 }}>
           {groups.map((group, gi) => {
             const first = group.items[0].question_number
             const last = group.items[group.items.length - 1].question_number
             const rangeLabel = first === last ? `Question ${first}` : `Questions ${first}–${last}`
             return (
-              <div key={gi} className="space-y-4">
-                {/* Group range header — Cambridge IELTS style */}
-                <div>
-                  <p className="text-lg font-bold italic text-gray-800 dark:text-gray-200 mb-2">
-                    {rangeLabel}
-                  </p>
-                  <div className="border-t border-gray-300 dark:border-gray-700" />
+              <div key={gi}>
+                <div style={{ marginBottom: 12 }}>
+                  <p style={{ fontSize: 16, fontWeight: 700, fontStyle: 'italic', color: 'var(--text)', margin: '0 0 8px' }}>{rangeLabel}</p>
+                  <div style={{ height: 1, background: 'var(--border)' }}/>
                 </div>
 
                 {group.kind === 'mc' ? (
-                  <div className="space-y-8">
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 32 }}>
                     {group.items
                       .filter(q => getOptionsObj(q)?.format !== 'multi_ref')
                       .map(q => (
-                        <RadioQuestion
-                          key={q.id}
-                          question={q}
-                          answer={answers[q.id] ?? ''}
-                          onChange={v => setAnswer(q.id, v)}
-                        />
+                        <RadioQuestion key={q.id} question={q} answer={answers[q.id] ?? ''} onChange={v => setAnswer(q.id, v)} />
                       ))}
                   </div>
                 ) : group.kind === 'multiselect' ? (
-                  <MultiSelectBlock
-                    questions={group.items}
-                    answers={answers}
-                    onAnswer={setAnswer}
-                  />
+                  <MultiSelectBlock questions={group.items} answers={answers} onAnswer={setAnswer} />
                 ) : group.kind === 'form' ? (
-                  <FormCard
-                    questions={group.items}
-                    answers={answers}
-                    onAnswer={setAnswer}
-                  />
+                  <FormCard questions={group.items} answers={answers} onAnswer={setAnswer} />
                 ) : group.kind === 'passage' ? (
-                  <PassageBlock
-                    questions={group.items}
-                    answers={answers}
-                    onAnswer={setAnswer}
-                  />
+                  <PassageBlock questions={group.items} answers={answers} onAnswer={setAnswer} />
                 ) : group.kind === 'twoColForm' ? (
-                  <TwoColFormCard
-                    questions={group.items}
-                    answers={answers}
-                    onAnswer={setAnswer}
-                  />
+                  <TwoColFormCard questions={group.items} answers={answers} onAnswer={setAnswer} />
                 ) : group.kind === 'structuredBox' ? (
-                  <StructuredBoxCard
-                    questions={group.items}
-                    answers={answers}
-                    onAnswer={setAnswer}
-                  />
+                  <StructuredBoxCard questions={group.items} answers={answers} onAnswer={setAnswer} />
                 ) : group.kind === 'box' ? (
-                  <BoxCard
-                    questions={group.items}
-                    answers={answers}
-                    onAnswer={setAnswer}
-                  />
+                  <BoxCard questions={group.items} answers={answers} onAnswer={setAnswer} />
                 ) : group.kind === 'multiBox' ? (
-                  <MultiBoxCard
-                    questions={group.items}
-                    answers={answers}
-                    onAnswer={setAnswer}
-                  />
+                  <MultiBoxCard questions={group.items} answers={answers} onAnswer={setAnswer} />
                 ) : group.kind === 'diagram' ? (
-                  <DiagramCard
-                    questions={group.items}
-                    answers={answers}
-                    onAnswer={setAnswer}
-                  />
+                  <DiagramCard questions={group.items} answers={answers} onAnswer={setAnswer} />
                 ) : group.kind === 'table' ? (
-                  <TableCard
-                    questions={group.items}
-                    answers={answers}
-                    onAnswer={setAnswer}
-                  />
+                  <TableCard questions={group.items} answers={answers} onAnswer={setAnswer} />
                 ) : group.kind === 'diagramTable' ? (
-                  <DiagramTableCard
-                    questions={group.items}
-                    answers={answers}
-                    onAnswer={setAnswer}
-                  />
+                  <DiagramTableCard questions={group.items} answers={answers} onAnswer={setAnswer} />
                 ) : group.kind === 'diagramLabels' ? (
-                  <DiagramLabelsCard
-                    questions={group.items}
-                    answers={answers}
-                    onAnswer={setAnswer}
-                  />
+                  <DiagramLabelsCard questions={group.items} answers={answers} onAnswer={setAnswer} />
                 ) : group.kind === 'mapMatching' ? (
-                  <MapMatchingCard
-                    questions={group.items}
-                    answers={answers}
-                    onAnswer={setAnswer}
-                  />
+                  <MapMatchingCard questions={group.items} answers={answers} onAnswer={setAnswer} />
                 ) : group.kind === 'matchingPool' ? (
-                  <MatchingPoolCard
-                    questions={group.items}
-                    answers={answers}
-                    onAnswer={setAnswer}
-                  />
+                  <MatchingPoolCard questions={group.items} answers={answers} onAnswer={setAnswer} />
                 ) : (
-                  <NotepadCard
-                    questions={group.items}
-                    answers={answers}
-                    onAnswer={setAnswer}
-                  />
+                  <NotepadCard questions={group.items} answers={answers} onAnswer={setAnswer} />
                 )}
               </div>
             )
@@ -2384,36 +2289,31 @@ export default function ListeningTestPage() {
         </div>
       </div>
 
-      {/* ── Fixed bottom section tabs ── */}
-      <div className="fixed bottom-0 left-0 right-0 lg:left-[216px] z-40 bg-white/95 dark:bg-[#08080f]/95 backdrop-blur-sm border-t border-gray-100 dark:border-gray-800">
-        <div className="flex">
+      {/* ── Fixed bottom section nav ── */}
+      <div style={{
+        position: 'fixed', bottom: 0, left: 0, right: 0, zIndex: 40,
+        background: 'color-mix(in srgb, var(--bg-elev) 92%, transparent)',
+        backdropFilter: 'blur(20px)',
+        borderTop: '1px solid var(--border)',
+      }}>
+        <div style={{ display: 'flex' }}>
           {sections.map((s, i) => {
             const sqs = questions.filter(q => q.sectionNumber === s.section_number)
             const done = sqs.filter(q => answers[q.id]).length
             const allDone = done === sqs.length && sqs.length > 0
             const active = i === currentSectionIdx
             return (
-              <button
-                key={s.id}
-                onClick={() => setCurrentSectionIdx(i)}
-                className={`flex-1 flex flex-col items-center py-3 px-2 border-t-2 transition-all duration-150 ${
-                  active
-                    ? 'border-amber-500 bg-amber-50/50 dark:bg-amber-500/8'
-                    : 'border-transparent hover:bg-gray-50 dark:hover:bg-white/4'
-                }`}
-              >
-                <span className={`text-xs font-bold ${
-                  active ? 'text-amber-600 dark:text-amber-400' : 'text-gray-600 dark:text-gray-400'
-                }`}>
+              <button key={s.id} onClick={() => setCurrentSectionIdx(i)} style={{
+                flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center',
+                padding: '12px 8px',
+                borderTop: `2px solid ${active ? 'var(--accent)' : 'transparent'}`,
+                background: active ? 'var(--accent-soft)' : 'transparent',
+                cursor: 'pointer', transition: 'all .15s',
+              }}>
+                <span style={{ fontSize: 12, fontWeight: 700, color: active ? 'var(--accent)' : 'var(--text-2)' }}>
                   Part {s.section_number}
                 </span>
-                <span className={`text-[10px] mt-0.5 tabular-nums ${
-                  allDone
-                    ? 'text-emerald-500 dark:text-emerald-400'
-                    : active
-                    ? 'text-amber-500/70'
-                    : 'text-gray-400 dark:text-gray-600'
-                }`}>
+                <span style={{ fontSize: 10, marginTop: 2, fontVariantNumeric: 'tabular-nums', color: allDone ? 'var(--accent)' : active ? 'color-mix(in srgb, var(--accent) 60%, transparent)' : 'var(--text-3)' }}>
                   {done}/{sqs.length}
                 </span>
               </button>

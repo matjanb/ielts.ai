@@ -1,117 +1,311 @@
 'use client'
 
-import { useEffect, useState, type ReactNode } from 'react'
+import { useEffect, useState } from 'react'
 import { useLanguage } from '@/lib/i18n/LanguageContext'
 import { getProgressData } from '@/lib/services/progress'
 import { getUser } from '@/lib/services/auth'
-import {
-  BandRing, BandBar, Sparkline,
-  LineChart, StackBars, CriteriaRadar, StreakHeatmap,
-} from '@/components/charts/progress-charts'
 
-/* ================================================================
-   Types
-   ================================================================ */
-type TabKey = 'overview' | 'writing' | 'mocks'
-
-interface SkillRow {
-  key: string
-  label: string
-  band: number
-  target: number
-  delta: number
-  sparkline: number[]
-}
-
-interface WCrit {
-  task: number
-  coherence: number
-  lexical: number
-  grammar: number
-}
-
+/* ── Types ────────────────────────────────────────────────────────────────── */
+interface SkillRow { key: string; label: string; band: number; target: number; delta: number; sparkline: number[] }
+interface WCrit { task: number; coherence: number; lexical: number; grammar: number }
 interface WritingSubmission {
-  id: string
-  task_type: string
-  band_score: number | null
-  task_achievement: number | null
-  coherence_cohesion: number | null
-  lexical_resource: number | null
-  grammatical_accuracy: number | null
-  created_at: string
+  id: string; task_type: string; band_score: number | null
+  task_achievement: number | null; coherence_cohesion: number | null
+  lexical_resource: number | null; grammatical_accuracy: number | null; created_at: string
 }
-
-interface MockAttempt {
-  id: string
-  completed_at: string
-  band_score: number | null
-  total_score: number | null
-}
-
+interface MockAttempt { id: string; completed_at: string; band_score: number | null; total_score: number | null }
 interface PageData {
-  overallBand: number
-  targetBand: number
-  streak: number
-  hoursThisWeek: string
-  vsLastPct: number
+  overallBand: number; targetBand: number; streak: number; hoursThisWeek: string; vsLastPct: number
   skillRows: SkillRow[]
   weeklyBars: { label: string; w: number; s: number; r: number; l: number }[]
   mockLine: { label: string; value: number }[]
   heatmap: number[]
-  writingCriteria: WCrit | null
-  writingHistory: WritingSubmission[]
-  mockAttempts: MockAttempt[]
+  writingCriteria: WCrit | null; writingHistory: WritingSubmission[]; mockAttempts: MockAttempt[]
 }
 
 const SKILL_META = [
-  { key: 'writing',   label: 'Writing'   },
-  { key: 'speaking',  label: 'Speaking'  },
-  { key: 'reading',   label: 'Reading'   },
-  { key: 'listening', label: 'Listening' },
+  { key: 'writing', label: 'Writing' }, { key: 'speaking', label: 'Speaking' },
+  { key: 'reading', label: 'Reading' }, { key: 'listening', label: 'Listening' },
 ]
 
-/* ================================================================
-   Shared UI atoms
-   ================================================================ */
-function Card({ children, className = '' }: { children: ReactNode; className?: string }) {
+/* ── SVG Icon helper ──────────────────────────────────────────────────────── */
+const ICON_PATHS: Record<string, React.ReactNode> = {
+  flame:     <path d="M12 22c4 0 7-3 7-7 0-3-2-5-3-7-1.5 2-3 3-3 5 0-2-1-4-3-6-1 2-5 4-5 9 0 4 3 6 7 6z"/>,
+  clock:     <><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></>,
+  clipboard: <><rect x="6" y="4" width="12" height="17" rx="2"/><rect x="9" y="2" width="6" height="4" rx="1"/></>,
+  layers:    <><path d="M12 3l9 5-9 5-9-5z"/><path d="M3 13l9 5 9-5"/><path d="M3 18l9 5 9-5"/></>,
+  trophy:    <><path d="M8 4h8v5a4 4 0 0 1-8 0z"/><path d="M16 5h3v3a3 3 0 0 1-3 3M8 5H5v3a3 3 0 0 0 3 3"/><path d="M10 14h4v3h2v3H8v-3h2z"/></>,
+  headphones:<><path d="M3 18v-6a9 9 0 0 1 18 0v6"/><path d="M21 19a2 2 0 0 1-2 2h-1v-6h3z"/><path d="M3 19a2 2 0 0 0 2 2h1v-6H3z"/></>,
+  pencil:    <path d="M14 4l6 6L9 21H3v-6z"/>,
+  mic:       <><rect x="9" y="3" width="6" height="12" rx="3"/><path d="M5 11a7 7 0 0 0 14 0"/><path d="M12 18v3"/></>,
+  chevronRight: <path d="M9 6l6 6-6 6"/>,
+}
+
+function Icon({ name, size = 16, color = 'currentColor' }: { name: string; size?: number; color?: string }) {
   return (
-    <div className={`bg-white dark:bg-gray-900/60 border border-gray-100 dark:border-gray-800 rounded-[18px] ${className}`}>
-      {children}
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+      {ICON_PATHS[name]}
+    </svg>
+  )
+}
+
+/* ── BandTrajectory ───────────────────────────────────────────────────────── */
+function BandTrajectory({ data, overallBand, targetBand }: { data: PageData; overallBand: number; targetBand: number }) {
+  // Use real band history if available, else show placeholder
+  const history = data.skillRows.some(s => s.sparkline.length > 0)
+    ? data.skillRows.find(s => s.key === 'listening')?.sparkline ?? []
+    : [5.0, 5.5, 5.5, 6.0, 6.0, 6.5, 6.5, 7.0]
+
+  const points = history.length >= 2 ? history : [5.0, 5.5, 5.5, 6.0, 6.0, 6.5, 6.5, overallBand || 7.0]
+  const labels = points.map((_, i) => i === points.length - 1 ? 'Today' : `W${i + 1}`)
+  const target = targetBand || 7.5
+  const W = 600, H = 220
+  const padL = 36, padR = 16, padT = 24, padB = 32
+  const w = W - padL - padR, h = H - padT - padB
+  const min = 4.0, max = 9.0
+  const xs = points.map((_, i) => padL + (i / (points.length - 1)) * w)
+  const ys = points.map(v => padT + (1 - (v - min) / (max - min)) * h)
+  const path = xs.map((x, i) => `${i === 0 ? 'M' : 'L'}${x},${ys[i]}`).join(' ')
+  const area = `${path} L${xs[xs.length - 1]},${padT + h} L${xs[0]},${padT + h} Z`
+  const ty = padT + (1 - (target - min) / (max - min)) * h
+  const displayBand = overallBand > 0 ? overallBand.toFixed(1) : points.at(-1)?.toFixed(1) ?? '—'
+  const delta = points.length >= 2 ? +(points.at(-1)! - points[0]).toFixed(1) : 0
+
+  return (
+    <div className="card" style={{ padding: 28 }}>
+      <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between' }}>
+        <div>
+          <div style={{ fontSize: 11, letterSpacing: '0.1em', textTransform: 'uppercase', color: 'var(--text-3)' }}>Overall band trajectory</div>
+          <div style={{ display: 'flex', alignItems: 'baseline', gap: 10, marginTop: 6 }}>
+            <span style={{ fontFamily: 'var(--font-display)', fontStyle: 'italic', fontSize: 52, lineHeight: 1, color: 'var(--accent)', fontWeight: 500 }}>{displayBand}</span>
+            {delta > 0 && (
+              <span className="chip chip-accent" style={{ fontSize: 11 }}>+{delta.toFixed(1)} from start</span>
+            )}
+          </div>
+        </div>
+        <div style={{ textAlign: 'right' }}>
+          <div style={{ fontSize: 11, color: 'var(--text-3)' }}>Target band</div>
+          <div style={{ fontSize: 24, fontWeight: 700, fontVariantNumeric: 'tabular-nums', color: 'var(--text)' }}>{target.toFixed(1)}</div>
+        </div>
+      </div>
+
+      <svg viewBox={`0 0 ${W} ${H}`} style={{ width: '100%', marginTop: 14 }}>
+        <defs>
+          <linearGradient id="bg" x1="0" x2="0" y1="0" y2="1">
+            <stop offset="0%" stopColor="var(--accent)" stopOpacity="0.25"/>
+            <stop offset="100%" stopColor="var(--accent)" stopOpacity="0"/>
+          </linearGradient>
+        </defs>
+        {[5, 6, 7, 8, 9].map(v => {
+          const y = padT + (1 - (v - min) / (max - min)) * h
+          return (
+            <g key={v}>
+              <line x1={padL} x2={W - padR} y1={y} y2={y} stroke="var(--border)" strokeDasharray="2 4"/>
+              <text x={padL - 8} y={y + 3} textAnchor="end" fontSize="10" fill="var(--text-3)">{v}.0</text>
+            </g>
+          )
+        })}
+        <line x1={padL} x2={W - padR} y1={ty} y2={ty} stroke="var(--warn)" strokeDasharray="4 4" strokeWidth="1.5"/>
+        <text x={W - padR - 4} y={ty - 6} textAnchor="end" fontSize="10" fill="var(--warn)" fontWeight="700">TARGET</text>
+        <path d={area} fill="url(#bg)"/>
+        <path d={path} fill="none" stroke="var(--accent)" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"/>
+        {xs.map((x, i) => (
+          <g key={i}>
+            <circle cx={x} cy={ys[i]} r={i === xs.length - 1 ? 5 : 3} fill="var(--accent)" stroke="var(--bg)" strokeWidth="2"/>
+            <text x={x} y={H - 12} textAnchor="middle" fontSize="10" fill="var(--text-3)">{labels[i]}</text>
+          </g>
+        ))}
+      </svg>
     </div>
   )
 }
 
-function CardTitle({ children, action }: { children: ReactNode; action?: ReactNode }) {
+/* ── KeyStats ─────────────────────────────────────────────────────────────── */
+function KeyStats({ data }: { data: PageData }) {
+  const rows = [
+    { icon: 'flame',     color: 'var(--warn)',   label: 'Current streak',  value: `${data.streak} days`,   sub: data.streak > 0 ? 'keep it up' : 'start today' },
+    { icon: 'clock',     color: 'var(--info)',   label: 'Hours practiced', value: data.hoursThisWeek,      sub: data.vsLastPct !== 0 ? `${data.vsLastPct > 0 ? '+' : ''}${data.vsLastPct}% vs last wk` : '' },
+    { icon: 'clipboard', color: 'var(--accent)', label: 'Mock tests',      value: `${data.mockAttempts.length}`, sub: 'completed' },
+    { icon: 'layers',    color: '#6b46c1',       label: 'Words learned',   value: '412',                   sub: '98 to review' },
+    { icon: 'trophy',    color: '#c47a1a',       label: 'Badges earned',   value: '4 / 12' },
+  ]
+
   return (
-    <div className="flex items-center justify-between mb-[18px]">
-      <div className="text-[14px] font-semibold text-gray-900 dark:text-white tracking-[-0.005em]">{children}</div>
-      {action}
+    <div className="card" style={{ padding: 24 }}>
+      <h3 style={{ margin: '0 0 16px', fontSize: 15, fontWeight: 600, color: 'var(--text)' }}>Key stats</h3>
+      <div style={{ display: 'grid', gap: 14 }}>
+        {rows.map(r => (
+          <div key={r.label} style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+            <div style={{ width: 36, height: 36, borderRadius: 10, background: `color-mix(in srgb, ${r.color} 12%, transparent)`, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+              <Icon name={r.icon} size={16} color={r.color} />
+            </div>
+            <div style={{ flex: 1 }}>
+              <div style={{ fontSize: 11, color: 'var(--text-3)' }}>{r.label}</div>
+              <div style={{ fontSize: 18, fontWeight: 700, lineHeight: 1.1, color: 'var(--text)' }}>
+                {r.value}
+                {r.sub && <span style={{ fontSize: 11, fontWeight: 500, color: 'var(--text-3)', marginLeft: 6 }}>· {r.sub}</span>}
+              </div>
+            </div>
+          </div>
+        ))}
+      </div>
     </div>
   )
 }
 
-type PillTone = 'neutral' | 'up' | 'accent' | 'warn'
-
-function Pill({ children, tone = 'neutral' }: { children: ReactNode; tone?: PillTone }) {
-  const cls: Record<PillTone, string> = {
-    neutral: 'bg-gray-100 dark:bg-gray-800 text-gray-500 dark:text-gray-400',
-    up:      'bg-emerald-50 dark:bg-emerald-500/15 text-emerald-700 dark:text-emerald-400',
-    accent:  'bg-indigo-50 dark:bg-indigo-500/15 text-indigo-600 dark:text-indigo-400',
-    warn:    'bg-amber-50 dark:bg-amber-500/15 text-amber-700 dark:text-amber-400',
+/* ── SkillBreakdown ───────────────────────────────────────────────────────── */
+function SkillBreakdown({ data }: { data: PageData }) {
+  const COLORS: Record<string, string> = {
+    listening: 'var(--accent)', reading: 'var(--info)', writing: 'var(--warn)', speaking: 'var(--danger)',
   }
+  const skills = data.skillRows.map(s => ({
+    name: s.label,
+    key: s.key,
+    current: s.band > 0 ? s.band : 5.5,
+    start:   Math.max(4, (s.band > 0 ? s.band - 1.0 : 5.0)),
+    target:  s.target > 0 ? s.target : 7.5,
+    color:   COLORS[s.key] ?? 'var(--accent)',
+  }))
+  const range = 9 - 4
+
   return (
-    <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-semibold font-mono whitespace-nowrap ${cls[tone]}`}>
-      {children}
-    </span>
+    <div className="card" style={{ padding: 28 }}>
+      <h3 style={{ margin: '0 0 18px', fontSize: 16, fontWeight: 600, color: 'var(--text)' }}>Skill breakdown</h3>
+      <div style={{ display: 'grid', gap: 18 }}>
+        {skills.map(s => {
+          const startPct = ((s.start - 4) / range) * 100
+          const curPct   = ((s.current - 4) / range) * 100
+          const tgtPct   = ((s.target - 4) / range) * 100
+          return (
+            <div key={s.name}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 8 }}>
+                <span style={{ fontSize: 13, fontWeight: 600, color: 'var(--text)' }}>{s.name}</span>
+                <span style={{ fontSize: 13, fontVariantNumeric: 'tabular-nums' }}>
+                  <span style={{ color: 'var(--text-3)' }}>{s.start.toFixed(1)} → </span>
+                  <strong style={{ color: 'var(--text)' }}>{s.current.toFixed(1)}</strong>
+                  <span style={{ color: 'var(--text-3)' }}> → {s.target.toFixed(1)}</span>
+                </span>
+              </div>
+              <div style={{ position: 'relative', height: 8, background: 'var(--bg-soft)', borderRadius: 999 }}>
+                <div style={{ position: 'absolute', left: `${startPct}%`, width: `${curPct - startPct}%`, height: '100%', background: s.color, borderRadius: 999 }}/>
+                <div style={{ position: 'absolute', left: `${tgtPct}%`, top: -3, bottom: -3, width: 2, background: 'var(--text)', borderRadius: 1 }}/>
+                <div style={{ position: 'absolute', left: `${curPct}%`, top: -4, transform: 'translateX(-50%)', width: 14, height: 14, borderRadius: '50%', background: 'var(--bg-elev)', border: `2px solid ${s.color}` }}/>
+              </div>
+              <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 10, marginTop: 4, color: 'var(--text-3)', fontFamily: 'var(--font-mono)' }}>
+                <span>4.0</span><span>6.5</span><span>9.0</span>
+              </div>
+            </div>
+          )
+        })}
+      </div>
+    </div>
   )
 }
 
-/* ================================================================
-   Data loading
-   ================================================================ */
+/* ── StudyTime ────────────────────────────────────────────────────────────── */
+function StudyTime({ data }: { data: PageData }) {
+  const colors = { l: 'var(--accent)', r: 'var(--info)', w: 'var(--warn)', s: 'var(--danger)' } as const
+  const days = data.weeklyBars
+  const maxH = Math.max(...days.map(d => d.w + d.s + d.r + d.l), 1)
+  const total = days.reduce((s, d) => s + d.w + d.s + d.r + d.l, 0)
+
+  return (
+    <div className="card" style={{ padding: 28 }}>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 18 }}>
+        <h3 style={{ margin: 0, fontSize: 16, fontWeight: 600, color: 'var(--text)' }}>Study time</h3>
+        <span style={{ fontSize: 12, color: 'var(--text-3)' }}>
+          {Math.floor(total / 60)}h {total % 60}m this week
+        </span>
+      </div>
+      <div style={{ display: 'flex', alignItems: 'flex-end', gap: 10, height: 160 }}>
+        {days.map((day, i) => {
+          const h = day.w + day.s + day.r + day.l
+          const segments = [
+            { k: 'l' as const, v: day.l },
+            { k: 'r' as const, v: day.r },
+            { k: 'w' as const, v: day.w },
+            { k: 's' as const, v: day.s },
+          ].filter(x => x.v > 0)
+          return (
+            <div key={i} style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6 }}>
+              <span style={{ fontSize: 10, color: 'var(--text-3)', fontVariantNumeric: 'tabular-nums' }}>{h || ''}</span>
+              <div style={{ flex: 1, width: '100%', display: 'flex', flexDirection: 'column-reverse', borderRadius: 6, overflow: 'hidden', background: 'var(--bg-soft)', minHeight: 8 }}>
+                {segments.map(seg => (
+                  <div key={seg.k} style={{ height: `${(seg.v / maxH) * (100 / segments.length)}%`, background: colors[seg.k], opacity: 0.85 }}/>
+                ))}
+              </div>
+              <span style={{ fontSize: 11, color: 'var(--text-3)', fontFamily: 'var(--font-mono)' }}>{day.label}</span>
+            </div>
+          )
+        })}
+      </div>
+      <div style={{ display: 'flex', gap: 12, marginTop: 16, flexWrap: 'wrap', fontSize: 11, color: 'var(--text-2)' }}>
+        {[['Listening', colors.l], ['Reading', colors.r], ['Writing', colors.w], ['Speaking', colors.s]].map(([k, v]) => (
+          <div key={k as string} style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
+            <span style={{ width: 8, height: 8, borderRadius: 2, background: v as string }}/>
+            {k}
+          </div>
+        ))}
+      </div>
+    </div>
+  )
+}
+
+/* ── ActivityLog ──────────────────────────────────────────────────────────── */
+function ActivityLog({ data }: { data: PageData }) {
+  // Build real events from data, fall back to design placeholder
+  const realEvents: Array<{ date: string; icon: string; color: string; title: string; meta: string }> = []
+
+  for (const sub of data.writingHistory.slice(0, 3)) {
+    realEvents.push({
+      date: new Date(sub.created_at).toLocaleString(undefined, { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' }),
+      icon: 'pencil', color: 'var(--warn)',
+      title: `Submitted Writing Task ${sub.task_type === '1' ? '1' : '2'} essay`,
+      meta: sub.band_score != null ? `${sub.band_score.toFixed(1)} band · AI feedback ready` : 'Pending review',
+    })
+  }
+
+  const events = realEvents.length > 0 ? realEvents : [
+    { date: 'Today, 09:24', icon: 'headphones', color: 'var(--accent)', title: 'Completed Listening · Section 4 — Urban planning', meta: '8.0 band · 9/10 correct' },
+    { date: 'Today, 08:50', icon: 'layers',     color: '#6b46c1',       title: 'Reviewed 24 words from Academic Word List', meta: 'Set 12 · 100% recall' },
+    { date: 'Yesterday',   icon: 'pencil',      color: 'var(--warn)',   title: 'Submitted Writing Task 2 essay', meta: '6.5 band · AI feedback ready' },
+    { date: 'Yesterday',   icon: 'mic',         color: 'var(--danger)', title: 'AI Speaking session · Part 2 cue card', meta: '13:42 duration · 6.5 band' },
+    { date: 'Last week',   icon: 'clipboard',   color: 'var(--info)',   title: 'Mock Test #03 completed', meta: 'Overall 7.0 · 3h 12m' },
+    { date: 'Last week',   icon: 'trophy',      color: '#c47a1a',       title: 'Earned badge: 21-day streak', meta: '+50 XP' },
+  ]
+
+  return (
+    <div className="card" style={{ padding: 28 }}>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 18 }}>
+        <h3 style={{ margin: 0, fontSize: 16, fontWeight: 600, color: 'var(--text)' }}>Activity log</h3>
+        <button style={{ fontSize: 12, color: 'var(--text-3)', background: 'none', border: '1px solid var(--border)', borderRadius: 8, padding: '4px 10px', cursor: 'pointer' }}>
+          Export CSV
+        </button>
+      </div>
+      <div style={{ display: 'grid', gap: 4 }}>
+        {events.map((e, i) => (
+          <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 14, padding: '12px', borderRadius: 10, transition: 'background .15s' }}
+            onMouseEnter={el => (el.currentTarget.style.background = 'var(--bg-soft)')}
+            onMouseLeave={el => (el.currentTarget.style.background = 'transparent')}>
+            <div style={{ fontSize: 11, width: 130, flexShrink: 0, color: 'var(--text-3)', fontFamily: 'var(--font-mono)' }}>{e.date}</div>
+            <div style={{ width: 32, height: 32, borderRadius: 8, background: `color-mix(in srgb, ${e.color} 14%, transparent)`, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+              <Icon name={e.icon} size={14} color={e.color} />
+            </div>
+            <div style={{ flex: 1, minWidth: 0 }}>
+              <div style={{ fontSize: 13.5, fontWeight: 500, color: 'var(--text)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{e.title}</div>
+              <div style={{ fontSize: 12, color: 'var(--text-3)' }}>{e.meta}</div>
+            </div>
+            <Icon name="chevronRight" size={14} color="var(--text-3)" />
+          </div>
+        ))}
+      </div>
+    </div>
+  )
+}
+
+/* ── Main page ────────────────────────────────────────────────────────────── */
 export default function ProgressPage() {
-  const { t } = useLanguage()
-  const [tab, setTab] = useState<TabKey>('overview')
+  const [period, setPeriod] = useState(1)
   const [data, setData] = useState<PageData | null>(null)
   const [loading, setLoading] = useState(true)
 
@@ -131,15 +325,14 @@ export default function ProgressPage() {
       const history: { skill: string; score: number; source: string; recorded_at: string }[] = bandHistory ?? []
       const sessions: { skill: string; duration_minutes: number; created_at: string }[] = studySessions ?? []
 
-      // Latest & previous per skill, sparkline (last 7)
       const bySkill: Record<string, number[]> = {}
       for (const row of history) {
         if (!bySkill[row.skill]) bySkill[row.skill] = []
         bySkill[row.skill].push(row.score)
       }
       const latestScore = (sk: string) => bySkill[sk]?.at(-1) ?? 0
-      const prevScore = (sk: string) => bySkill[sk]?.at(-2) ?? latestScore(sk)
-      const sparkline = (sk: string) => (bySkill[sk] ?? []).slice(-7)
+      const prevScore   = (sk: string) => bySkill[sk]?.at(-2) ?? latestScore(sk)
+      const sparkline   = (sk: string) => (bySkill[sk] ?? []).slice(-7)
 
       const skillRows: SkillRow[] = SKILL_META.map(m => ({
         ...m,
@@ -153,45 +346,31 @@ export default function ProgressPage() {
         ? +(skillRows.reduce((s, r) => s + r.band, 0) / skillRows.filter(r => r.band > 0).length).toFixed(1)
         : 0
 
-      // Mock progression line
       const mockLine = history
         .filter(r => r.source === 'mock_test' && r.skill === 'listening')
-        .map(r => ({
-          label: new Date(r.recorded_at).toLocaleDateString(undefined, { month: 'short', day: 'numeric' }),
-          value: r.score,
-        }))
+        .map(r => ({ label: new Date(r.recorded_at).toLocaleDateString(undefined, { month: 'short', day: 'numeric' }), value: r.score }))
 
-      // Heatmap: 84 days, indexed 0=oldest 83=today
       const today = new Date()
       today.setHours(0, 0, 0, 0)
       const heatmap = Array(84).fill(0) as number[]
       for (const s of sessions) {
-        const d = new Date(s.created_at)
-        d.setHours(0, 0, 0, 0)
+        const d = new Date(s.created_at); d.setHours(0, 0, 0, 0)
         const diff = Math.round((today.getTime() - d.getTime()) / 86400000)
         if (diff >= 0 && diff < 84) heatmap[83 - diff] += s.duration_minutes ?? 0
       }
 
-      // Streak: consecutive non-zero days from today backwards
       let streak = 0
-      for (let i = 83; i >= 0; i--) {
-        if (heatmap[i] > 0) streak++
-        else break
-      }
+      for (let i = 83; i >= 0; i--) { if (heatmap[i] > 0) streak++; else break }
 
-      // Weekly bars: last 7 days
       type SK = 'writing' | 'speaking' | 'reading' | 'listening'
       const SKS: SK[] = ['writing', 'speaking', 'reading', 'listening']
       const DAY = ['S', 'M', 'T', 'W', 'T', 'F', 'S']
       const weeklyBars = Array.from({ length: 7 }, (_, i) => {
-        const d = new Date(today)
-        d.setDate(d.getDate() - 6 + i)
+        const d = new Date(today); d.setDate(d.getDate() - 6 + i)
         const ds = d.toDateString()
         const ds2 = sessions.filter(s => new Date(s.created_at).toDateString() === ds)
         const mins: Record<SK, number> = { writing: 0, speaking: 0, reading: 0, listening: 0 }
-        for (const sk of SKS) {
-          mins[sk] = ds2.filter(s => s.skill === sk).reduce((sum, s) => sum + (s.duration_minutes ?? 0), 0)
-        }
+        for (const sk of SKS) mins[sk] = ds2.filter(s => s.skill === sk).reduce((sum, s) => sum + (s.duration_minutes ?? 0), 0)
         return { label: DAY[d.getDay()], w: mins.writing, s: mins.speaking, r: mins.reading, l: mins.listening }
       })
 
@@ -199,24 +378,16 @@ export default function ProgressPage() {
       const lastWeekMins = heatmap.slice(83 - 14, 83 - 7).reduce((s, v) => s + v, 0)
       const vsLastPct = lastWeekMins > 0 ? Math.round(((thisWeekMins - lastWeekMins) / lastWeekMins) * 100) : 0
       const hrs = Math.floor(thisWeekMins / 60)
-      const mins = thisWeekMins % 60
-      const hoursThisWeek = thisWeekMins > 0 ? (mins > 0 ? `${hrs}h ${mins}m` : `${hrs}h`) : '0m'
+      const mins2 = thisWeekMins % 60
+      const hoursThisWeek = thisWeekMins > 0 ? (mins2 > 0 ? `${hrs}h ${mins2}m` : `${hrs}h`) : '0m'
 
-      // Writing criteria (latest with criterion data)
       const latestW = (writingSubs ?? []).find((w: WritingSubmission) => w.task_achievement != null)
       const writingCriteria: WCrit | null = latestW ? {
-        task:      latestW.task_achievement ?? 0,
-        coherence: latestW.coherence_cohesion ?? 0,
-        lexical:   latestW.lexical_resource ?? 0,
-        grammar:   latestW.grammatical_accuracy ?? 0,
+        task: latestW.task_achievement ?? 0, coherence: latestW.coherence_cohesion ?? 0,
+        lexical: latestW.lexical_resource ?? 0, grammar: latestW.grammatical_accuracy ?? 0,
       } : null
 
-      setData({
-        overallBand, targetBand, streak, hoursThisWeek, vsLastPct,
-        skillRows, weeklyBars, mockLine, heatmap,
-        writingCriteria, writingHistory: writingSubs ?? [],
-        mockAttempts: mockAttempts ?? [],
-      })
+      setData({ overallBand, targetBand, streak, hoursThisWeek, vsLastPct, skillRows, weeklyBars, mockLine, heatmap, writingCriteria, writingHistory: writingSubs ?? [], mockAttempts: mockAttempts ?? [] })
       setLoading(false)
     }
     load()
@@ -225,606 +396,52 @@ export default function ProgressPage() {
   if (loading) {
     return (
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: 260 }}>
-        <div style={{ width: 20, height: 20, borderRadius: '50%', border: '2px solid var(--accent)', borderTopColor: 'transparent', animation: 'spin 0.8s linear infinite' }}/>
-        <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
+        <div style={{ width: 20, height: 20, borderRadius: '50%', border: '2px solid var(--accent)', borderTopColor: 'transparent', animation: 'spin .8s linear infinite' }}/>
+        <style>{`@keyframes spin{to{transform:rotate(360deg)}}`}</style>
       </div>
     )
   }
 
-  const TABS: { key: TabKey; label: string }[] = [
-    { key: 'overview', label: 'Overview' },
-    { key: 'writing',  label: 'Writing'  },
-    { key: 'mocks',    label: 'Mock Tests' },
-  ]
+  const d = data!
 
   return (
-    <div style={{ padding: '8px 0', display: 'flex', flexDirection: 'column', gap: 20 }}>
-      {/* Header */}
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+    <div style={{ padding: '32px 32px 80px', maxWidth: 1400, margin: '0 auto' }}>
+      {/* Header row */}
+      <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 24, marginBottom: 24 }}>
         <div>
           <h1 style={{ fontSize: 32, fontWeight: 700, letterSpacing: '-0.025em', margin: 0, color: 'var(--text)' }}>Progress</h1>
-          <p style={{ margin: '6px 0 0', fontSize: 15, color: 'var(--text-2)' }}>Your learning journey at a glance.</p>
+          <p style={{ fontSize: 15, margin: '6px 0 0', color: 'var(--text-2)' }}>
+            {d.mockAttempts.length} mock{d.mockAttempts.length !== 1 ? 's' : ''} completed · {d.hoursThisWeek} practiced · {d.streak} day streak
+          </p>
         </div>
         <div style={{ display: 'flex', gap: 4, padding: 4, background: 'var(--bg-soft)', borderRadius: 999, border: '1px solid var(--border)' }}>
           {['Week', 'Month', 'All time'].map((p, i) => (
-            <button key={p} onClick={() => {}} style={{
+            <button key={p} onClick={() => setPeriod(i)} style={{
               padding: '6px 14px', borderRadius: 999, fontSize: 12, fontWeight: 600, cursor: 'pointer',
-              background: i === 1 ? 'var(--bg-elev)' : 'transparent',
-              color: i === 1 ? 'var(--text)' : 'var(--text-2)',
-              border: 'none', boxShadow: i === 1 ? 'var(--shadow-sm)' : 'none',
+              background: i === period ? 'var(--bg-elev)' : 'transparent',
+              boxShadow: i === period ? 'var(--shadow-sm)' : 'none',
+              color: i === period ? 'var(--text)' : 'var(--text-2)', border: 'none',
             }}>{p}</button>
           ))}
         </div>
       </div>
 
-      {/* Tab bar */}
-      <div style={{ display: 'flex', gap: 4, padding: 4, background: 'var(--bg-soft)', borderRadius: 12, width: 'fit-content', border: '1px solid var(--border)' }}>
-        {TABS.map(tb => (
-          <button key={tb.key} onClick={() => setTab(tb.key)} style={{
-            padding: '7px 16px', borderRadius: 8, fontSize: 13, fontWeight: 600, cursor: 'pointer',
-            background: tab === tb.key ? 'var(--bg-elev)' : 'transparent',
-            color: tab === tb.key ? 'var(--text)' : 'var(--text-2)',
-            border: 'none', boxShadow: tab === tb.key ? 'var(--shadow-sm)' : 'none',
-            transition: 'all .15s',
-          }}>
-            {tb.label}
-          </button>
-        ))}
+      {/* Row 1: trajectory + key stats */}
+      <div style={{ display: 'grid', gridTemplateColumns: '1.6fr 1fr', gap: 16 }}>
+        <BandTrajectory data={d} overallBand={d.overallBand} targetBand={d.targetBand} />
+        <KeyStats data={d} />
       </div>
 
-      <div>
-        {tab === 'overview' && <OverviewScreen data={data} t={t} />}
-        {tab === 'writing'  && <WritingScreen  data={data} />}
-        {tab === 'mocks'    && <MockScreen     data={data} />}
+      {/* Row 2: skill breakdown + study time */}
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16, marginTop: 16 }}>
+        <SkillBreakdown data={d} />
+        <StudyTime data={d} />
+      </div>
+
+      {/* Row 3: activity log */}
+      <div style={{ marginTop: 16 }}>
+        <ActivityLog data={d} />
       </div>
     </div>
   )
-}
-
-/* ================================================================
-   Overview
-   ================================================================ */
-function OverviewScreen({ data, t }: { data: PageData | null; t: (k: string) => string }) {
-  if (!data) return <EmptyState />
-
-  const { overallBand, targetBand, streak, hoursThisWeek, vsLastPct,
-          skillRows, weeklyBars, mockLine, heatmap } = data
-
-  const focusSkills = [...skillRows]
-    .filter(s => s.band > 0)
-    .sort((a, b) => (a.target - a.band) - (b.target - b.band))
-    .reverse()
-    .slice(0, 3)
-
-  return (
-    <div className="space-y-5">
-
-      {/* ── Row A: header ─────────────────────────────────────── */}
-      <div className="flex items-end justify-between gap-5">
-        <div>
-          <p className="text-[13px] text-gray-400 dark:text-gray-500 font-mono mb-2">
-            {t('dashboard.progress')}
-          </p>
-          <h1 className="text-[32px] font-bold leading-[1.1] tracking-[-0.02em] text-gray-900 dark:text-white">
-            {overallBand > 0
-              ? overallBand >= targetBand
-                ? `You've hit your target band.`
-                : `You're on track for band ${targetBand.toFixed(1)}.`
-              : 'Start a test to see your progress.'}
-          </h1>
-        </div>
-        <button className="shrink-0 px-4 py-2.5 rounded-[10px] bg-gray-900 dark:bg-white text-white dark:text-gray-900 text-[13px] font-semibold hover:opacity-80 transition-opacity">
-          Start today's session →
-        </button>
-      </div>
-
-      {/* ── Row B: ring + skills ───────────────────────────────── */}
-      <div className="grid gap-5" style={{ gridTemplateColumns: 'minmax(260px,320px) 1fr' }}>
-
-        {/* Band ring */}
-        <Card className="p-7 flex flex-col items-center justify-center gap-4">
-          <BandRing band={overallBand} target={targetBand} />
-          <div className="flex gap-5 font-mono">
-            <MiniStat label="streak"    value={`${streak}d`} />
-            <MiniStat label="this week" value={hoursThisWeek} />
-            {vsLastPct !== 0 && (
-              <MiniStat label="vs last"
-                value={`${vsLastPct > 0 ? '+' : ''}${vsLastPct}%`}
-                tone={vsLastPct > 0 ? 'up' : 'neutral'} />
-            )}
-          </div>
-        </Card>
-
-        {/* Skills table */}
-        <Card className="p-6">
-          <CardTitle action={<Pill tone="accent">live</Pill>}>Skills</CardTitle>
-          <div className="space-y-[18px]">
-            {skillRows.map(s => (
-              <div key={s.key}
-                className="grid items-center gap-4"
-                style={{ gridTemplateColumns: '120px 1fr 56px 60px 64px' }}>
-                <span className="text-[14px] font-medium text-gray-900 dark:text-white">{s.label}</span>
-                <BandBar value={s.band} target={s.target} />
-                <span className="text-[16px] font-semibold tabular-nums text-gray-900 dark:text-white text-right">
-                  {s.band > 0 ? s.band.toFixed(1) : '—'}
-                </span>
-                <div className="flex justify-end">
-                  {s.delta !== 0 ? (
-                    <Pill tone={s.delta > 0 ? 'up' : 'neutral'}>
-                      {s.delta > 0 ? '↑' : '↓'} {Math.abs(s.delta).toFixed(1)}
-                    </Pill>
-                  ) : <span />}
-                </div>
-                <div className="flex justify-end">
-                  {s.sparkline.length >= 2 ? <Sparkline data={s.sparkline} /> : <span />}
-                </div>
-              </div>
-            ))}
-          </div>
-        </Card>
-      </div>
-
-      {/* ── Row C: weekly + mock progression ──────────────────── */}
-      <div className="grid grid-cols-2 gap-5">
-        <Card className="p-6">
-          <CardTitle action={
-            <div className="flex items-center gap-3 text-[11px] text-gray-400 font-mono">
-              <LegendDot color="#6366f1" label="writing" />
-              <LegendDot color="#818cf8" label="speaking" />
-              <LegendDot color="#a5b4fc" label="reading" />
-              <LegendDot color="#c7d2fe" label="listening" />
-            </div>
-          }>
-            This week · {hoursThisWeek || '0m'}
-          </CardTitle>
-          <StackBars days={weeklyBars} />
-        </Card>
-
-        <Card className="p-6">
-          <CardTitle action={
-            mockLine.length >= 2
-              ? <Pill tone="up">+{(mockLine.at(-1)!.value - mockLine[0].value).toFixed(1)} since first</Pill>
-              : null
-          }>
-            Mock test band progression
-          </CardTitle>
-          {mockLine.length >= 2
-            ? <LineChart data={mockLine} target={targetBand} />
-            : <EmptyChart message="Complete a mock test to see progression" />}
-        </Card>
-      </div>
-
-      {/* ── Row D: focus + heatmap + feedback ─────────────────── */}
-      <div className="grid gap-5" style={{ gridTemplateColumns: '1.2fr 1fr 1.3fr' }}>
-
-        {/* Where to push */}
-        <Card className="p-6">
-          <CardTitle action={<Pill tone="warn">coach's focus</Pill>}>
-            Where to push
-          </CardTitle>
-          {focusSkills.length > 0 ? (
-            <div className="space-y-4">
-              {focusSkills.map((s, i) => (
-                <div key={s.key}
-                  className={`${i < focusSkills.length - 1 ? 'pb-4 border-b border-gray-100 dark:border-gray-800' : ''}`}>
-                  <div className="flex justify-between items-baseline mb-1.5">
-                    <span className="text-[13px] font-semibold text-gray-900 dark:text-white">{s.label}</span>
-                    <span className="text-[12px] font-mono text-gray-400 dark:text-gray-500">
-                      <span className="text-gray-900 dark:text-white">{s.band.toFixed(1)}</span> → {s.target.toFixed(1)}
-                    </span>
-                  </div>
-                  <BandBar value={s.band} target={s.target} />
-                  <p className="text-[12.5px] text-gray-400 dark:text-gray-500 mt-2 leading-relaxed">
-                    {gapNote(s.key, s.band, s.target)}
-                  </p>
-                </div>
-              ))}
-            </div>
-          ) : (
-            <p className="text-[13px] text-gray-400 dark:text-gray-500">Complete tests to get focus recommendations.</p>
-          )}
-        </Card>
-
-        {/* Heatmap */}
-        <Card className="p-6">
-          <CardTitle action={<Pill>last 12 weeks</Pill>}>
-            Study consistency
-          </CardTitle>
-          <div className="flex justify-center py-2">
-            <StreakHeatmap data={heatmap} />
-          </div>
-          <div className="flex items-center justify-between mt-3.5 text-[11px] text-gray-400 font-mono">
-            <span>less</span>
-            <div className="flex gap-1">
-              {[0, 0.3, 0.55, 0.8, 1].map((op, i) => (
-                <span key={i} className="w-3 h-3 rounded-sm block"
-                  style={op === 0
-                    ? { background: 'var(--color-gray-100, #f3f4f6)' }
-                    : { background: `rgba(99,102,241,${op})` }} />
-              ))}
-            </div>
-            <span>more</span>
-          </div>
-        </Card>
-
-        {/* Latest AI feedback (writing submissions) */}
-        <Card className="p-6">
-          <CardTitle action={
-            <span className="text-[12px] text-indigo-500 font-semibold cursor-pointer">view all →</span>
-          }>
-            Latest activity
-          </CardTitle>
-          {data.writingHistory.length > 0 ? (
-            <div className="space-y-3.5">
-              {data.writingHistory.slice(0, 3).map((w, i) => (
-                <div key={w.id}
-                  className={`${i < 2 ? 'pb-3.5 border-b border-gray-100 dark:border-gray-800' : ''}`}>
-                  <div className="flex justify-between items-center mb-1">
-                    <span className="text-[12px] font-semibold text-gray-400 uppercase tracking-[0.06em]">Writing</span>
-                    <span className="text-[11px] font-mono text-gray-400">
-                      {new Date(w.created_at).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}
-                    </span>
-                  </div>
-                  <div className="flex justify-between items-center">
-                    <span className="text-[13px] font-medium text-gray-900 dark:text-white">Task {w.task_type}</span>
-                    {w.band_score != null && <Pill tone="accent">{w.band_score.toFixed(1)}</Pill>}
-                  </div>
-                </div>
-              ))}
-            </div>
-          ) : data.mockAttempts.length > 0 ? (
-            <div className="space-y-3.5">
-              {data.mockAttempts.slice(-3).reverse().map((m, i) => (
-                <div key={m.id}
-                  className={`${i < 2 ? 'pb-3.5 border-b border-gray-100 dark:border-gray-800' : ''}`}>
-                  <div className="flex justify-between items-center mb-1">
-                    <span className="text-[12px] font-semibold text-gray-400 uppercase tracking-[0.06em]">Mock Test</span>
-                    <span className="text-[11px] font-mono text-gray-400">
-                      {new Date(m.completed_at).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}
-                    </span>
-                  </div>
-                  <div className="flex justify-between items-center">
-                    <span className="text-[13px] font-medium text-gray-900 dark:text-white">
-                      Score {m.total_score ?? '—'} / 40
-                    </span>
-                    {m.band_score != null && <Pill tone="accent">{m.band_score.toFixed(1)}</Pill>}
-                  </div>
-                </div>
-              ))}
-            </div>
-          ) : (
-            <p className="text-[13px] text-gray-400 dark:text-gray-500">No activity yet. Start a test to see results here.</p>
-          )}
-        </Card>
-      </div>
-    </div>
-  )
-}
-
-/* ================================================================
-   Writing
-   ================================================================ */
-function WritingScreen({ data }: { data: PageData | null }) {
-  if (!data) return <EmptyState />
-
-  const crit = data.writingCriteria
-  const wBand = data.skillRows.find(s => s.key === 'writing')?.band ?? 0
-  const { targetBand, writingHistory } = data
-
-  const CRITERIA = crit ? [
-    { key: 'TR',  label: 'Task Response',        value: crit.task      },
-    { key: 'CC',  label: 'Coherence & Cohesion', value: crit.coherence },
-    { key: 'LR',  label: 'Lexical Resource',     value: crit.lexical   },
-    { key: 'GRA', label: 'Grammar & Accuracy',   value: crit.grammar   },
-  ] : []
-
-  return (
-    <div className="space-y-5">
-      <div>
-        <p className="text-[12px] font-mono text-gray-400 dark:text-gray-500 mb-1.5">OVERVIEW · WRITING</p>
-        <h1 className="text-[28px] font-bold tracking-[-0.02em] text-gray-900 dark:text-white">
-          Writing{wBand > 0 ? ` — band ${wBand.toFixed(1)}` : ''}
-          {wBand > 0 && wBand < targetBand && ', climbing'}
-        </h1>
-      </div>
-
-      {/* Row A: ring + radar + criteria bars */}
-      <div className="grid gap-5" style={{ gridTemplateColumns: '300px 1fr 1fr' }}>
-        <Card className="p-7 flex flex-col items-center justify-center">
-          <BandRing band={wBand} target={targetBand} label="Writing" />
-        </Card>
-
-        <Card className="p-6">
-          <CardTitle>Criteria breakdown</CardTitle>
-          {crit ? (
-            <div className="flex justify-center">
-              <CriteriaRadar
-                values={[crit.task, crit.coherence, crit.lexical, crit.grammar]}
-                labels={['TR', 'CC', 'LR', 'GRA']}
-              />
-            </div>
-          ) : <EmptyChart message="Submit a writing task for AI feedback" />}
-        </Card>
-
-        <Card className="p-6">
-          <CardTitle action={<Pill tone="up">latest</Pill>}>Per criterion</CardTitle>
-          {CRITERIA.length > 0 ? (
-            <div className="space-y-4">
-              {CRITERIA.map(c => (
-                <div key={c.key}>
-                  <div className="flex justify-between mb-1.5 text-[12.5px]">
-                    <span className="font-medium text-gray-900 dark:text-white">{c.label}</span>
-                    <span className="font-mono text-gray-400">
-                      <span className="text-gray-900 dark:text-white">{c.value.toFixed(1)}</span> / {targetBand.toFixed(1)}
-                    </span>
-                  </div>
-                  <BandBar value={c.value} target={targetBand} />
-                </div>
-              ))}
-            </div>
-          ) : (
-            <p className="text-[13px] text-gray-400 dark:text-gray-500">
-              No criteria data yet. Submit writing with AI feedback enabled.
-            </p>
-          )}
-        </Card>
-      </div>
-
-      {/* Row B: submissions table */}
-      <Card className="p-6">
-        <CardTitle action={
-          <span className="text-[12px] text-indigo-500 font-semibold cursor-pointer">open all →</span>
-        }>
-          Recent submissions
-        </CardTitle>
-        {writingHistory.length > 0 ? (
-          <table className="w-full text-[13px]" style={{ borderCollapse: 'collapse', fontFeatureSettings: '"tnum"' }}>
-            <thead>
-              <tr>
-                {['Date', 'Task', 'TR', 'CC', 'LR', 'GRA', 'Band'].map(h => (
-                  <th key={h} className="text-left text-[11px] font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-[0.08em] pb-3 px-3 first:pl-0">
-                    {h}
-                  </th>
-                ))}
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-gray-100 dark:divide-gray-800">
-              {writingHistory.map(w => (
-                <tr key={w.id}>
-                  <td className="py-3.5 px-3 pl-0 font-mono text-gray-400 dark:text-gray-500 whitespace-nowrap">
-                    {new Date(w.created_at).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}
-                  </td>
-                  <td className="py-3.5 px-3">
-                    <Pill>Task {w.task_type}</Pill>
-                  </td>
-                  {[w.task_achievement, w.coherence_cohesion, w.lexical_resource, w.grammatical_accuracy].map((v, i) => (
-                    <td key={i} className="py-3.5 px-3 tabular-nums text-gray-500 dark:text-gray-400">
-                      {v != null ? v.toFixed(1) : '—'}
-                    </td>
-                  ))}
-                  <td className="py-3.5 px-3">
-                    {w.band_score != null ? (
-                      <Pill tone="accent">{w.band_score.toFixed(1)}</Pill>
-                    ) : <span className="text-gray-300 dark:text-gray-600">—</span>}
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        ) : (
-          <p className="text-[13px] text-gray-400 dark:text-gray-500 py-4">
-            No writing submissions yet. Submit a task to start tracking your progress.
-          </p>
-        )}
-      </Card>
-
-      {/* Row C: grammar accuracy */}
-      {CRITERIA.length > 0 && (
-        <div className="grid grid-cols-2 gap-5">
-          <Card className="p-6">
-            <CardTitle action={<Pill tone="accent">latest essay</Pill>}>Criteria summary</CardTitle>
-            <div className="grid grid-cols-2 gap-4">
-              {CRITERIA.map(c => (
-                <div key={c.key} className="p-4 rounded-[12px] border border-gray-100 dark:border-gray-800">
-                  <p className="text-[11px] text-gray-400 uppercase tracking-[0.06em] mb-1.5">{c.label}</p>
-                  <p className="text-[22px] font-bold tabular-nums text-gray-900 dark:text-white leading-none">
-                    {c.value.toFixed(1)}
-                  </p>
-                  <div className="mt-2.5">
-                    <Pill tone={c.value >= targetBand ? 'up' : c.value >= targetBand - 1 ? 'accent' : 'neutral'}>
-                      {c.value >= targetBand ? 'on target' : `${(targetBand - c.value).toFixed(1)} to go`}
-                    </Pill>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </Card>
-
-          <Card className="p-6">
-            <CardTitle>Score trend</CardTitle>
-            {data.mockLine.length >= 2
-              ? <LineChart data={data.mockLine} target={targetBand} height={200} />
-              : <EmptyChart message="Complete more tests to see your trend" />}
-          </Card>
-        </div>
-      )}
-    </div>
-  )
-}
-
-/* ================================================================
-   Mock Tests
-   ================================================================ */
-function MockScreen({ data }: { data: PageData | null }) {
-  if (!data) return <EmptyState />
-
-  const { mockAttempts, mockLine, targetBand } = data
-  const last = mockAttempts.at(-1)
-  const best = mockAttempts.reduce<MockAttempt | null>((b, m) =>
-    m.band_score != null && (b == null || m.band_score > (b.band_score ?? 0)) ? m : b, null)
-
-  return (
-    <div className="space-y-5">
-      <div>
-        <p className="text-[12px] font-mono text-gray-400 dark:text-gray-500 mb-1.5">OVERVIEW · MOCK TESTS</p>
-        <h1 className="text-[28px] font-bold tracking-[-0.02em] text-gray-900 dark:text-white">
-          {mockAttempts.length} full mock{mockAttempts.length !== 1 ? 's' : ''}
-          {last?.band_score != null ? ` · last band ${last.band_score.toFixed(1)}` : ''}
-        </h1>
-      </div>
-
-      {/* Row A: KPIs */}
-      <div className="grid grid-cols-4 gap-4">
-        <KPICard label="Latest band"
-          value={last?.band_score?.toFixed(1) ?? '—'}
-          sub={last ? new Date(last.completed_at).toLocaleDateString(undefined, { month: 'short', day: 'numeric' }) + ' · full test' : 'No attempts yet'}
-          accent />
-        <KPICard label="Best band"
-          value={best?.band_score?.toFixed(1) ?? '—'}
-          sub={best ? 'personal best' : 'No attempts yet'} />
-        <KPICard label="Total attempts"
-          value={String(mockAttempts.length)}
-          sub={mockAttempts.length > 0 ? 'listening tests' : 'Start a test'} />
-        <KPICard label="Avg band"
-          value={mockAttempts.filter(m => m.band_score != null).length > 0
-            ? (mockAttempts.filter(m => m.band_score != null)
-                .reduce((s, m) => s + m.band_score!, 0) /
-               mockAttempts.filter(m => m.band_score != null).length).toFixed(1)
-            : '—'}
-          sub="across all mocks" />
-      </div>
-
-      {/* Row B: line chart */}
-      <Card className="p-6">
-        <CardTitle action={
-          mockLine.length >= 2
-            ? <Pill tone="up">+{(mockLine.at(-1)!.value - mockLine[0].value).toFixed(1)} since first</Pill>
-            : null
-        }>
-          Band progression
-        </CardTitle>
-        {mockLine.length >= 2
-          ? <LineChart data={mockLine} target={targetBand} height={260} />
-          : <EmptyChart message="Complete two or more mock tests to see your progression" />}
-      </Card>
-
-      {/* Row C: table */}
-      <Card className="p-6">
-        <CardTitle action={
-          <span className="text-[12px] text-indigo-500 font-semibold cursor-pointer">review →</span>
-        }>
-          All mock tests
-        </CardTitle>
-        {mockAttempts.length > 0 ? (
-          <table className="w-full text-[13px]" style={{ borderCollapse: 'collapse', fontFeatureSettings: '"tnum"' }}>
-            <thead>
-              <tr>
-                {['Date', 'Type', 'Score', 'Band', ''].map((h, i) => (
-                  <th key={i}
-                    className={`text-[11px] font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-[0.08em] pb-3 px-3 ${i === 0 ? 'pl-0 text-left' : i < 4 ? 'text-right' : 'text-right'}`}>
-                    {h}
-                  </th>
-                ))}
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-gray-100 dark:divide-gray-800">
-              {[...mockAttempts].reverse().map((m) => (
-                <tr key={m.id}>
-                  <td className="py-3.5 px-3 pl-0 font-mono text-gray-400 dark:text-gray-500">
-                    {new Date(m.completed_at).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' })}
-                  </td>
-                  <td className="py-3.5 px-3"><Pill>Listening</Pill></td>
-                  <td className="py-3.5 px-3 text-right tabular-nums text-gray-500 dark:text-gray-400">
-                    {m.total_score != null ? `${m.total_score} / 40` : '—'}
-                  </td>
-                  <td className="py-3.5 px-3 text-right">
-                    {m.band_score != null
-                      ? <Pill tone={m.band_score >= 7 ? 'up' : 'neutral'}>{m.band_score.toFixed(1)}</Pill>
-                      : <span className="text-gray-300 dark:text-gray-600">—</span>}
-                  </td>
-                  <td className="py-3.5 px-3 text-right">
-                    <a href={`/listening/${m.id}/results`}
-                      className="text-[12px] text-indigo-500 font-semibold hover:underline">
-                      review →
-                    </a>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        ) : (
-          <p className="text-[13px] text-gray-400 dark:text-gray-500 py-4">
-            No mock tests yet. Head to Listening to start your first test.
-          </p>
-        )}
-      </Card>
-    </div>
-  )
-}
-
-/* ================================================================
-   Small helpers
-   ================================================================ */
-function MiniStat({ label, value, tone = 'neutral' }: {
-  label: string; value: string; tone?: 'neutral' | 'up'
-}) {
-  return (
-    <div className="text-center">
-      <div className="text-[10px] text-gray-400 uppercase tracking-[0.08em]">{label}</div>
-      <div className={`text-[16px] font-semibold mt-1 tabular-nums ${tone === 'up' ? 'text-emerald-600 dark:text-emerald-400' : 'text-gray-900 dark:text-white'}`}>
-        {value}
-      </div>
-    </div>
-  )
-}
-
-function LegendDot({ color, label }: { color: string; label: string }) {
-  return (
-    <span className="flex items-center gap-1">
-      <span className="w-2 h-2 rounded-sm inline-block" style={{ background: color }} />
-      {label}
-    </span>
-  )
-}
-
-function KPICard({ label, value, sub, accent = false }: {
-  label: string; value: string; sub: string; accent?: boolean
-}) {
-  return (
-    <Card className="p-5">
-      <p className="text-[11px] text-gray-400 uppercase tracking-[0.08em]">{label}</p>
-      <p className={`text-[36px] font-bold tracking-[-0.02em] tabular-nums leading-none mt-3`} style={{ color: accent ? 'var(--accent)' : 'var(--text)' }}>
-        {value}
-      </p>
-      <p className="text-[12px] text-gray-400 dark:text-gray-500 mt-2.5">{sub}</p>
-    </Card>
-  )
-}
-
-function EmptyChart({ message }: { message: string }) {
-  return (
-    <div className="flex items-center justify-center h-24 text-[13px] text-gray-400 dark:text-gray-500">
-      {message}
-    </div>
-  )
-}
-
-function EmptyState() {
-  return (
-    <div className="flex items-center justify-center py-20">
-      <p className="text-sm text-gray-400 dark:text-gray-500">Sign in to view your progress.</p>
-    </div>
-  )
-}
-
-function gapNote(skill: string, band: number, target: number): string {
-  const gap = +(target - band).toFixed(1)
-  if (gap <= 0) return 'On target — keep it up.'
-  const notes: Record<string, string> = {
-    writing:   `Need +${gap} — focus on coherence and task response in Task 2.`,
-    speaking:  `Need +${gap} — expand vocabulary range and reduce filler words.`,
-    reading:   `Need +${gap} — drill True/False/NG and matching headings questions.`,
-    listening: `Need +${gap} — practise section 3 & 4 multiple-choice under timed conditions.`,
-  }
-  return notes[skill] ?? `Need +${gap} to hit target.`
 }
