@@ -166,7 +166,7 @@ export default function VocabularyPage() {
   if (studying) return <FlashcardSession onClose={() => setStudying(false)} />
 
   return (
-    <div style={{ padding: '32px 32px 80px', maxWidth: 1400, margin: '0 auto' }}>
+    <div style={{ padding: '32px 32px 80px' }}>
       {/* Header */}
       <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 24 }}>
         <div>

@@ -64,7 +64,7 @@ export default function SettingsPage() {
   }
 
   return (
-    <div className="max-w-2xl mx-auto space-y-6">
+    <div className="space-y-6">
       <div>
         <h1 className="text-2xl font-bold text-[var(--text)] mb-1">{t('dashboard.settings')}</h1>
         <p className="text-sm text-[var(--text-2)]">Manage your profile, preferences, and subscription.</p>

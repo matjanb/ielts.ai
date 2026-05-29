@@ -22,9 +22,11 @@ const SPEEDS = [0.75, 1, 1.25, 1.5]
 function AudioPlayer({
   audioUrl,
   autoPlay = false,
+  sectionLabel,
 }: {
   audioUrl: string | null
   autoPlay?: boolean
+  sectionLabel?: string
 }) {
   const audioRef = useRef<HTMLAudioElement | null>(null)
   const [playing, setPlaying] = useState(false)
@@ -99,59 +101,50 @@ function AudioPlayer({
     return `${Math.floor(s / 60)}:${String(Math.floor(s % 60)).padStart(2, '0')}`
   }
 
-  if (!audioUrl) {
-    return (
-      <div className="flex items-center gap-2 text-xs text-[var(--text-3)]">
-        <Volume2 size={13} />
-        No audio
-      </div>
-    )
-  }
+  const pct = duration > 0 ? (progress / duration) * 100 : 0
 
+  // Official IELTS-style gray audio strip (full width, below the dark header)
   return (
-    <div className="flex items-center gap-3 flex-1 min-w-0">
+    <div style={{ background: '#dcdcdc', borderBottom: '1px solid #aaa', padding: '10px 16px', display: 'flex', alignItems: 'center', gap: 14, flexShrink: 0 }}>
       {/* eslint-disable-next-line jsx-a11y/media-has-caption */}
-      <audio ref={audioRef} src={audioUrl} preload="auto" />
+      {audioUrl && <audio ref={audioRef} src={audioUrl} preload="auto" />}
 
-      {autoPlayBlocked ? (
-        /* Autoplay was blocked — show a prominent CTA in place of the normal play button */
-        <button
-          onClick={togglePlay}
-          className="shrink-0 flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-[var(--accent)] text-[var(--accent-fg)] text-xs font-semibold animate-pulse transition-colors"
-        >
-          <Play size={12} strokeWidth={2.5} />
-          Click to start audio
-        </button>
-      ) : (
-        <button
-          onClick={togglePlay}
-          className="shrink-0 w-8 h-8 rounded-xl bg-[var(--accent)] text-[var(--accent-fg)] flex items-center justify-center transition-colors"
-        >
-          {playing ? <Pause size={13} strokeWidth={2} /> : <Play size={13} strokeWidth={2} />}
-        </button>
-      )}
-
-      {!autoPlayBlocked && (
-        <div className="flex-1 min-w-0 flex items-center gap-2">
-          <span className="text-[10px] text-[var(--text-3)] tabular-nums shrink-0 w-8 text-right">{fmt(progress)}</span>
-          <input
-            type="range"
-            min={0}
-            max={duration || 1}
-            value={progress}
-            onChange={seek}
-            className="flex-1 h-1 accent-[var(--accent)] cursor-pointer min-w-0"
-          />
-          <span className="text-[10px] text-[var(--text-3)] tabular-nums shrink-0 w-8">{fmt(duration)}</span>
+      {!audioUrl ? (
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 13, color: '#555' }}>
+          <Volume2 size={16} stroke="#333" /> No audio for this section
         </div>
+      ) : (
+        <>
+          <button onClick={togglePlay} style={{
+            width: 32, height: 32, borderRadius: 16, background: '#fff', border: '1px solid #888',
+            display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', flexShrink: 0,
+            animation: autoPlayBlocked ? 'pulse 1.2s ease-in-out infinite' : 'none',
+          }}>
+            {playing ? <Pause size={14} stroke="#000" /> : <Play size={14} stroke="#000" />}
+          </button>
+          <Volume2 size={16} stroke="#333" style={{ flexShrink: 0 }} />
+          <input
+            type="range" min={0} max={duration || 1} value={progress} onChange={seek}
+            style={{ flex: 1, minWidth: 0, height: 6, accentColor: '#0066b3', cursor: 'pointer' }}
+            aria-label="Audio progress"
+          />
+          <span style={{ fontFamily: 'var(--font-mono)', fontSize: 12, color: '#333', flexShrink: 0 }}>
+            {fmt(progress)} / {fmt(duration)}
+          </span>
+          <button onClick={cycleSpeed} style={{
+            fontSize: 12, fontWeight: 700, color: '#0066b3', background: '#fff', border: '1px solid #888',
+            padding: '2px 8px', borderRadius: 2, cursor: 'pointer', fontVariantNumeric: 'tabular-nums', flexShrink: 0,
+          }}>
+            {speed}x
+          </button>
+          {sectionLabel && (
+            <span style={{ fontSize: 12, color: '#333', padding: '2px 8px', background: '#fff2a8', borderRadius: 2, fontWeight: 600, flexShrink: 0 }}>
+              {sectionLabel}
+            </span>
+          )}
+        </>
       )}
-
-      <button
-        onClick={cycleSpeed}
-        className="shrink-0 text-xs font-bold text-[var(--accent)] bg-[var(--accent-soft)] px-2 py-1 rounded-lg hover:bg-[var(--bg-soft)] transition-colors tabular-nums"
-      >
-        {speed}x
-      </button>
+      <style>{`@keyframes pulse { 0%,100% { opacity: 1 } 50% { opacity: 0.45 } }`}</style>
     </div>
   )
 }
@@ -2211,7 +2204,6 @@ export default function ListeningTestPage() {
           <span style={{ fontSize: 11, opacity: 0.6 }}>{test?.title ?? ''}</span>
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-          <AudioPlayer audioUrl={currentSection?.audio_url ?? null} autoPlay={started} />
           <span style={{ fontSize: 11, opacity: 0.7 }}>{answeredCount}/{questions.length} answered</span>
           <TestTimer totalSeconds={1800} onExpire={handleTimeExpire} />
           <button onClick={handleSubmit} disabled={submitting}
@@ -2221,8 +2213,16 @@ export default function ListeningTestPage() {
         </div>
       </div>
 
+      {/* ── IELTS gray audio strip ── */}
+      <AudioPlayer
+        audioUrl={currentSection?.audio_url ?? null}
+        autoPlay={started}
+        sectionLabel={`Section ${currentSection?.section_number ?? 1} of ${sections.length || 4}`}
+      />
+
       {/* ── Main scrollable content ── */}
-      <div style={{ padding: '32px 48px 120px', maxWidth: 800, margin: '0 auto' }}>
+      <div style={{ flex: 1, overflowY: 'auto', padding: '32px 48px 120px' }}>
+        <div style={{ maxWidth: 800, margin: '0 auto' }}>
 
         {/* Section header */}
         <div style={{ marginBottom: 32 }}>
@@ -2290,6 +2290,7 @@ export default function ListeningTestPage() {
               </div>
             )
           })}
+        </div>
         </div>
       </div>
 

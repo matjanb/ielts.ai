@@ -71,7 +71,7 @@ export default function MockTestsPage() {
   }, [])
 
   return (
-    <div style={{ padding: '32px 32px 80px', maxWidth: 1400, margin: '0 auto' }}>
+    <div style={{ padding: '32px 32px 80px' }}>
       {/* Hub header */}
       <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 24 }}>
         <div>

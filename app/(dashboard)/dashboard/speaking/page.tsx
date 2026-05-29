@@ -63,7 +63,7 @@ function ReadyScreen({ onStart, t }: { onStart: () => void; t: (k: string) => st
 /* ── Feedback screen ─────────────────────────────────────────────────────── */
 function FeedbackScreen({ result, onBack }: { result: FeedbackResult; onBack: () => void }) {
   return (
-    <div style={{ padding: '32px 32px 80px', maxWidth: 900, margin: '0 auto' }}>
+    <div style={{ padding: '32px 32px 80px' }}>
       <button onClick={onBack} style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 13, fontWeight: 600, color: 'var(--text-2)', background: 'none', border: '1px solid var(--border)', borderRadius: 8, padding: '6px 12px', cursor: 'pointer', marginBottom: 20 }}>
         <svg width={13} height={13} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M19 12H5M11 19l-7-7 7-7"/></svg>
         Back to Speaking

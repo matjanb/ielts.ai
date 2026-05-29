@@ -26,7 +26,7 @@ export default function ReadingIndexPage() {
   const startHref = firstTest ? `/reading/${firstTest.id}` : '#'
 
   return (
-    <div style={{ padding: '32px 32px 80px', maxWidth: 1400, margin: '0 auto' }}>
+    <div style={{ padding: '32px 32px 80px' }}>
       <SkillHubHeader
         name="Reading"
         icon="book"

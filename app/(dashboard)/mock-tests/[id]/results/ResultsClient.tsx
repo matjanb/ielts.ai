@@ -14,8 +14,7 @@ function ResultsContent({ id }: { id: string }) {
   const graded  = parseInt(params.get('graded')    ?? String(total))
   const pct     = total > 0 ? Math.round((correct / total) * 100) : 0
 
-  const color   = score >= 7 ? 'text-[var(--accent)]' : score >= 6 ? 'text-amber-500' : 'text-red-500'
-  const bgColor = score >= 7 ? 'bg-emerald-50 dark:bg-emerald-500/10' : score >= 6 ? 'bg-amber-50 dark:bg-amber-500/10' : 'bg-red-50 dark:bg-red-500/10'
+  const accent  = score >= 7 ? 'var(--accent)' : score >= 6 ? 'var(--warn)' : 'var(--danger)'
 
   // Reading is auto-graded from the sample questions.
   // Writing, Speaking, and Listening are essays in the sample test — not auto-gradeable.
@@ -28,14 +27,14 @@ function ResultsContent({ id }: { id: string }) {
   ]
 
   return (
-    <div className="max-w-2xl mx-auto space-y-6">
+    <div className="space-y-6">
       {/* Overall score card */}
-      <div className={`rounded-3xl ${bgColor} border border-[var(--border)] p-8 text-center`}>
+      <div className="card p-8 text-center" style={{ background: `color-mix(in srgb, ${accent} 10%, var(--bg-elev))` }}>
         <div className="flex justify-center mb-4">
-          <Trophy size={36} className={color} />
+          <Trophy size={36} style={{ color: accent }} />
         </div>
         <h1 className="text-lg font-semibold text-[var(--text-2)] mb-2">{t('mockTest.testComplete')}</h1>
-        <div className={`text-8xl font-bold tracking-tight mb-2 ${color}`}>{score}</div>
+        <div className="text-8xl font-bold tracking-tight mb-2" style={{ color: accent }}>{score}</div>
         <p className="text-sm text-[var(--text-2)]">{t('mockTest.overallScore')}</p>
         <div className="flex items-center justify-center gap-4 mt-6 text-sm">
           <div className="flex items-center gap-1.5 text-[var(--text-2)]">

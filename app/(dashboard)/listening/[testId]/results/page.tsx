@@ -63,7 +63,7 @@ export default function ListeningResultsPage() {
   const bandColor = band >= 7 ? 'var(--accent)' : band >= 6 ? 'var(--info)' : band >= 5 ? 'var(--warn)' : 'var(--danger)'
 
   return (
-    <div style={{ padding: '32px 32px 80px', maxWidth: 900, margin: '0 auto' }}>
+    <div style={{ padding: '32px 32px 80px' }}>
 
       {/* Header */}
       <div style={{ textAlign: 'center', marginBottom: 32 }}>

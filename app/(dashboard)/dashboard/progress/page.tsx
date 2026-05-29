@@ -183,9 +183,12 @@ function SkillBreakdown({ data }: { data: PageData }) {
       ) : (
       <div style={{ display: 'grid', gap: 18 }}>
         {skills.map(s => {
-          const startPct = ((s.start - 4) / range) * 100
-          const curPct   = ((s.current - 4) / range) * 100
-          const tgtPct   = ((s.target - 4) / range) * 100
+          const clamp = (v: number) => Math.max(0, Math.min(100, ((v - 4) / range) * 100))
+          const startPct = clamp(s.start)
+          const curPct   = clamp(s.current)
+          const tgtPct   = clamp(s.target)
+          const fillLeft  = Math.min(startPct, curPct)
+          const fillWidth = Math.abs(curPct - startPct)
           return (
             <div key={s.name}>
               <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 8 }}>
@@ -196,10 +199,10 @@ function SkillBreakdown({ data }: { data: PageData }) {
                   <span style={{ color: 'var(--text-3)' }}> → {s.target.toFixed(1)}</span>
                 </span>
               </div>
-              <div style={{ position: 'relative', height: 8, background: 'var(--bg-soft)', borderRadius: 999 }}>
-                <div style={{ position: 'absolute', left: `${startPct}%`, width: `${curPct - startPct}%`, height: '100%', background: s.color, borderRadius: 999 }}/>
+              <div style={{ position: 'relative', height: 8, background: 'var(--bg-soft)', borderRadius: 999, overflow: 'visible' }}>
+                <div style={{ position: 'absolute', left: `${fillLeft}%`, width: `${fillWidth}%`, height: '100%', background: s.color, borderRadius: 999 }}/>
                 <div style={{ position: 'absolute', left: `${tgtPct}%`, top: -3, bottom: -3, width: 2, background: 'var(--text)', borderRadius: 1 }}/>
-                <div style={{ position: 'absolute', left: `${curPct}%`, top: -4, transform: 'translateX(-50%)', width: 14, height: 14, borderRadius: '50%', background: 'var(--bg-elev)', border: `2px solid ${s.color}` }}/>
+                <div style={{ position: 'absolute', left: `clamp(7px, ${curPct}%, calc(100% - 7px))`, top: -4, transform: 'translateX(-50%)', width: 14, height: 14, borderRadius: '50%', background: 'var(--bg-elev)', border: `2px solid ${s.color}` }}/>
               </div>
               <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 10, marginTop: 4, color: 'var(--text-3)', fontFamily: 'var(--font-mono)' }}>
                 <span>4.0</span><span>6.5</span><span>9.0</span>
@@ -425,7 +428,7 @@ export default function ProgressPage() {
   const d = data
 
   return (
-    <div style={{ padding: '32px 32px 80px', maxWidth: 1400, margin: '0 auto' }}>
+    <div style={{ padding: '32px 32px 80px' }}>
       {/* Header row */}
       <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 24, marginBottom: 24 }}>
         <div>

@@ -28,7 +28,7 @@ export default function ListeningIndexPage() {
   const startHref = firstTest ? `/listening/${firstTest.id}` : '#'
 
   return (
-    <div style={{ padding: '32px 32px 80px', maxWidth: 1400, margin: '0 auto' }}>
+    <div style={{ padding: '32px 32px 80px' }}>
       <SkillHubHeader
         name="Listening"
         icon="headphones"

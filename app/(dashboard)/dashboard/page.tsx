@@ -352,7 +352,7 @@ export default function DashboardPage() {
   const skills = ['listening', 'reading', 'writing', 'speaking'].filter(s => scores[s] != null)
 
   return (
-    <div style={{ padding: '32px 32px 80px', maxWidth: 1400, margin: '0 auto' }}>
+    <div style={{ padding: '32px 32px 80px' }}>
       {/* Greeting */}
       <div style={{ marginBottom: 28 }}>
         <h1 style={{ fontSize: 32, letterSpacing: '-0.025em', margin: 0, fontWeight: 700, color: 'var(--text)' }}>
