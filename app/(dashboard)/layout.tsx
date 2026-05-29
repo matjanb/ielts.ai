@@ -377,8 +377,8 @@ function DashboardLayoutInner({ children }: { children: ReactNode }) {
           </div>
         </header>
 
-        {/* Page content — flex column so exam pages can use flex:1 to fill height */}
-        <div style={{ flex: 1, display: 'flex', flexDirection: 'column', minHeight: 0 }}>
+        {/* Page content — scrolls for normal pages; exam pages use flex:1 to fill */}
+        <div style={{ flex: 1, display: 'flex', flexDirection: 'column', minHeight: 0, overflowY: 'auto' }}>
           {children}
         </div>
       </main>
