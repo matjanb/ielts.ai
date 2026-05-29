@@ -7,7 +7,7 @@ export function FinalCTA() {
   const { t } = useLanguage()
 
   return (
-    <section id="pricing" style={{ padding: '80px 32px' }}>
+    <section style={{ padding: '80px 32px' }}>
       <div style={{
         maxWidth: 880, margin: '0 auto', padding: '60px 48px',
         background: 'var(--accent)', color: 'var(--accent-fg)',

@@ -4,7 +4,7 @@ import Link from 'next/link'
 
 export function Footer() {
   return (
-    <footer id="schools" style={{ borderTop: '1px solid var(--border)', padding: '32px' }}>
+    <footer style={{ borderTop: '1px solid var(--border)', padding: '32px' }}>
       <div style={{ maxWidth: 1080, margin: '0 auto', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
         {/* Logo */}
         <Link href="/" style={{ display: 'inline-flex', alignItems: 'center', gap: 8, fontWeight: 700, letterSpacing: '-0.02em', fontSize: 15 }}>
