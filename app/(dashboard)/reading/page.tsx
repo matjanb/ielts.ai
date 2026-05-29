@@ -1,27 +1,22 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { getReadingTests } from '@/lib/services/tests'
+import { getReadingTests, getSubskillAccuracy, type SubskillStat } from '@/lib/services/tests'
+import { getUser } from '@/lib/services/auth'
 import { SkillHubHeader, SubskillCard, TestCard, HubSpinner } from '@/components/dashboard/SkillHub'
 import type { IeltsTest } from '@/lib/types/database'
 
-const SUBSKILLS = [
-  { label: 'True / False / Not Given', value: 0.52 },
-  { label: 'Matching headings', value: 0.61 },
-  { label: 'Multiple choice', value: 0.84 },
-  { label: 'Sentence completion', value: 0.78 },
-  { label: 'Matching info to paragraphs', value: 0.58 },
-]
-
 export default function ReadingIndexPage() {
   const [tests, setTests] = useState<IeltsTest[]>([])
+  const [subskills, setSubskills] = useState<SubskillStat[]>([])
   const [loading, setLoading] = useState(true)
 
-  // Keep existing data fetching unchanged
   useEffect(() => {
     async function load() {
       const data = await getReadingTests()
       setTests(data)
+      const { user } = await getUser()
+      if (user) setSubskills(await getSubskillAccuracy(user.id, 'reading'))
       setLoading(false)
     }
     load()
@@ -81,8 +76,20 @@ export default function ReadingIndexPage() {
           )}
         </div>
 
-        {/* Question type accuracy */}
-        <SubskillCard title="Question type accuracy" rows={SUBSKILLS} />
+        {/* Question type accuracy — real data from completed attempts */}
+        {subskills.length > 0 ? (
+          <SubskillCard
+            title="Question type accuracy"
+            rows={subskills.map(s => ({ label: s.label, value: s.accuracy }))}
+          />
+        ) : (
+          <div className="card" style={{ padding: 24 }}>
+            <h3 style={{ margin: '0 0 14px', fontSize: 15, fontWeight: 600, color: 'var(--text)' }}>Question type accuracy</h3>
+            <p style={{ fontSize: 13, color: 'var(--text-3)', lineHeight: 1.5, margin: 0 }}>
+              Complete a reading test to see your accuracy broken down by question type (True/False/NG, matching, etc.).
+            </p>
+          </div>
+        )}
       </div>
     </div>
   )

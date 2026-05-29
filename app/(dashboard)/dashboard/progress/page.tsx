@@ -6,7 +6,7 @@ import { getProgressData } from '@/lib/services/progress'
 import { getUser } from '@/lib/services/auth'
 
 /* ── Types ────────────────────────────────────────────────────────────────── */
-interface SkillRow { key: string; label: string; band: number; target: number; delta: number; sparkline: number[] }
+interface SkillRow { key: string; label: string; band: number; start: number; target: number; delta: number; sparkline: number[] }
 interface WCrit { task: number; coherence: number; lexical: number; grammar: number }
 interface WritingSubmission {
   id: string; task_type: string; band_score: number | null
@@ -122,12 +122,14 @@ function BandTrajectory({ data, overallBand, targetBand }: { data: PageData; ove
 
 /* ── KeyStats ─────────────────────────────────────────────────────────────── */
 function KeyStats({ data }: { data: PageData }) {
+  const bestBand = Math.max(0, ...data.skillRows.map(s => s.band))
+  const essaysGraded = data.writingHistory.length
   const rows = [
-    { icon: 'flame',     color: 'var(--warn)',   label: 'Current streak',  value: `${data.streak} days`,   sub: data.streak > 0 ? 'keep it up' : 'start today' },
-    { icon: 'clock',     color: 'var(--info)',   label: 'Hours practiced', value: data.hoursThisWeek,      sub: data.vsLastPct !== 0 ? `${data.vsLastPct > 0 ? '+' : ''}${data.vsLastPct}% vs last wk` : '' },
+    { icon: 'flame',     color: 'var(--warn)',   label: 'Current streak',  value: data.streak > 0 ? `${data.streak} ${data.streak === 1 ? 'day' : 'days'}` : '—', sub: data.streak > 0 ? 'keep it up' : 'start today' },
+    { icon: 'clock',     color: 'var(--info)',   label: 'Hours practiced', value: data.hoursThisWeek,      sub: data.vsLastPct !== 0 ? `${data.vsLastPct > 0 ? '+' : ''}${data.vsLastPct}% vs last wk` : 'this week' },
     { icon: 'clipboard', color: 'var(--accent)', label: 'Mock tests',      value: `${data.mockAttempts.length}`, sub: 'completed' },
-    { icon: 'layers',    color: '#6b46c1',       label: 'Words learned',   value: '412',                   sub: '98 to review' },
-    { icon: 'trophy',    color: '#c47a1a',       label: 'Badges earned',   value: '4 / 12' },
+    { icon: 'pencil',    color: '#6b46c1',       label: 'Essays graded',   value: `${essaysGraded}`,       sub: essaysGraded > 0 ? 'AI feedback' : 'none yet' },
+    { icon: 'trophy',    color: '#c47a1a',       label: 'Best band',       value: bestBand > 0 ? bestBand.toFixed(1) : '—', sub: bestBand > 0 ? 'across skills' : '' },
   ]
 
   return (
@@ -158,19 +160,27 @@ function SkillBreakdown({ data }: { data: PageData }) {
   const COLORS: Record<string, string> = {
     listening: 'var(--accent)', reading: 'var(--info)', writing: 'var(--warn)', speaking: 'var(--danger)',
   }
-  const skills = data.skillRows.map(s => ({
-    name: s.label,
-    key: s.key,
-    current: s.band > 0 ? s.band : 5.5,
-    start:   Math.max(4, (s.band > 0 ? s.band - 1.0 : 5.0)),
-    target:  s.target > 0 ? s.target : 7.5,
-    color:   COLORS[s.key] ?? 'var(--accent)',
-  }))
+  // Only show skills the user has actually attempted (real band data)
+  const skills = data.skillRows
+    .filter(s => s.band > 0)
+    .map(s => ({
+      name: s.label,
+      key: s.key,
+      current: s.band,
+      start:   s.start > 0 ? s.start : s.band,
+      target:  s.target > 0 ? s.target : 7.5,
+      color:   COLORS[s.key] ?? 'var(--accent)',
+    }))
   const range = 9 - 4
 
   return (
     <div className="card" style={{ padding: 28 }}>
       <h3 style={{ margin: '0 0 18px', fontSize: 16, fontWeight: 600, color: 'var(--text)' }}>Skill breakdown</h3>
+      {skills.length === 0 ? (
+        <p style={{ fontSize: 13, color: 'var(--text-3)', lineHeight: 1.5, margin: 0 }}>
+          Complete tests and submissions to see your band progress per skill.
+        </p>
+      ) : (
       <div style={{ display: 'grid', gap: 18 }}>
         {skills.map(s => {
           const startPct = ((s.start - 4) / range) * 100
@@ -198,6 +208,7 @@ function SkillBreakdown({ data }: { data: PageData }) {
           )
         })}
       </div>
+      )}
     </div>
   )
 }
@@ -332,11 +343,13 @@ export default function ProgressPage() {
       }
       const latestScore = (sk: string) => bySkill[sk]?.at(-1) ?? 0
       const prevScore   = (sk: string) => bySkill[sk]?.at(-2) ?? latestScore(sk)
+      const firstScore  = (sk: string) => bySkill[sk]?.[0] ?? latestScore(sk)
       const sparkline   = (sk: string) => (bySkill[sk] ?? []).slice(-7)
 
       const skillRows: SkillRow[] = SKILL_META.map(m => ({
         ...m,
         band:  latestScore(m.key),
+        start: firstScore(m.key),
         target: targetBand,
         delta: +(latestScore(m.key) - prevScore(m.key)).toFixed(1),
         sparkline: sparkline(m.key),

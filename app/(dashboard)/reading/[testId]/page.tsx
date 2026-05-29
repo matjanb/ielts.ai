@@ -6,7 +6,7 @@ import { Send, Clock, BookOpen, ChevronLeft, ChevronRight } from 'lucide-react'
 import { useLanguage } from '@/lib/i18n/LanguageContext'
 import type { IeltsTest, TestSection, Question } from '@/lib/types/database'
 import { getTestById, getSectionsByTestId, getQuestionsBySectionIds } from '@/lib/services/tests'
-import { createAttempt, saveAnswer as saveAnswerService, saveAnswerWithResult, completeAttempt, saveBandScoreHistory } from '@/lib/services/attempts'
+import { createAttempt, saveAnswer as saveAnswerService, saveAnswerWithResult, completeAttempt, saveBandScoreHistory, logStudySession } from '@/lib/services/attempts'
 import { getUser } from '@/lib/services/auth'
 
 type QuestionWithSection = Question & { sectionNumber: number; sectionTitle: string; passageText: string }
@@ -233,6 +233,7 @@ export default function ReadingTestPage() {
   const [activeQuestion, setActiveQuestion] = useState<string | null>(null)
 
   const containerRef = useRef<HTMLDivElement>(null)
+  const startedAtRef = useRef<number | null>(null)
   const [leftWidth, setLeftWidth] = useState(50)
   const isResizing = useRef(false)
 
@@ -288,6 +289,7 @@ export default function ReadingTestPage() {
       const id = await createAttempt(user.id, testId)
       if (id) setAttemptId(id)
     } catch { /* no-op */ }
+    startedAtRef.current = Date.now()
     setStarted(true)
   }
 
@@ -338,7 +340,11 @@ export default function ReadingTestPage() {
       try {
         await completeAttempt(attemptId, totalCorrect, band, sectionCorrect)
         const { user } = await getUser()
-        if (user) await saveBandScoreHistory(user.id, 'reading', band, attemptId)
+        if (user) {
+          await saveBandScoreHistory(user.id, 'reading', band, attemptId)
+          const mins = startedAtRef.current ? (Date.now() - startedAtRef.current) / 60000 : 60
+          await logStudySession(user.id, 'reading', mins, 'mock_test')
+        }
       } catch { /* silent */ }
     }
 

@@ -175,12 +175,9 @@ function StreakCard({ streak }: { streak: number }) {
 }
 
 // ── Calendar heatmap ──────────────────────────────────────────────────────────
-function CalendarStrip() {
-  const cell = (w: number, d: number) => {
-    const i = w * 7 + d
-    const x = ((i * 37) % 11)
-    return x < 2 ? 0 : x < 5 ? 1 : x < 8 ? 2 : 3
-  }
+function CalendarStrip({ heatmap }: { heatmap: number[] }) {
+  // heatmap: 84 levels (0-3), index 0 = 12 weeks ago, 83 = today
+  const cell = (w: number, d: number) => heatmap[w * 7 + d] ?? 0
   return (
     <div className="card" style={{ padding: 24 }}>
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 }}>
@@ -274,6 +271,8 @@ export default function DashboardPage() {
   const { t } = useLanguage()
   const [profile, setProfile]         = useState<Profile | null>(null)
   const [scores, setScores]           = useState<Record<string, number>>({})
+  const [deltas, setDeltas]           = useState<Record<string, number>>({})
+  const [heatmap, setHeatmap]         = useState<number[]>([])
   const [recentItems, setRecentItems] = useState<Array<{ label: string; score: number | null; href: string; skill: string }>>([])
   const [streak, setStreak]           = useState(0)
   const [loading, setLoading]         = useState(true)
@@ -289,12 +288,30 @@ export default function DashboardPage() {
       const dashData = await getDashboardData(user.id)
       setProfile(dashData.profile)
 
-      // Build latest score per skill
+      // Build latest score + real delta per skill (bandHistory is recorded_at DESC)
       const latest: Record<string, number> = {}
+      const perSkill: Record<string, number[]> = {}
       for (const row of (dashData.bandHistory ?? [])) {
         if (!latest[row.skill]) latest[row.skill] = row.score
+        ;(perSkill[row.skill] ??= []).push(row.score)
       }
       setScores(latest)
+      const d: Record<string, number> = {}
+      for (const sk of Object.keys(perSkill)) {
+        const arr = perSkill[sk]
+        d[sk] = arr.length >= 2 ? +(arr[0] - arr[1]).toFixed(1) : 0
+      }
+      setDeltas(d)
+
+      // Real 84-day (12-week) activity heatmap from study sessions
+      const today = new Date(); today.setHours(0, 0, 0, 0)
+      const mins = Array(84).fill(0) as number[]
+      for (const s of (dashData.studySessions ?? [])) {
+        const day = new Date(s.created_at); day.setHours(0, 0, 0, 0)
+        const diff = Math.round((today.getTime() - day.getTime()) / 86400000)
+        if (diff >= 0 && diff < 84) mins[83 - diff] += s.duration_minutes ?? 0
+      }
+      setHeatmap(mins.map(m => (m === 0 ? 0 : m < 20 ? 1 : m < 45 ? 2 : 3)))
 
       // Recent items from writing + speaking submissions
       const items = [
@@ -359,7 +376,7 @@ export default function DashboardPage() {
       {skills.length > 0 && (
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 14, marginBottom: 16 }}>
           {skills.map(skill => (
-            <SkillTile key={skill} skill={skill} score={scores[skill]} delta={0.5} />
+            <SkillTile key={skill} skill={skill} score={scores[skill]} delta={deltas[skill] ?? 0} />
           ))}
         </div>
       )}
@@ -367,7 +384,7 @@ export default function DashboardPage() {
       {/* Bottom grid */}
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
         <StreakCard streak={streak} />
-        <CalendarStrip />
+        <CalendarStrip heatmap={heatmap} />
       </div>
 
       {/* Upgrade nudge */}

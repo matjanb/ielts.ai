@@ -2,28 +2,23 @@
 
 import { useEffect, useState } from 'react'
 import { useLanguage } from '@/lib/i18n/LanguageContext'
-import { getListeningTests } from '@/lib/services/tests'
+import { getListeningTests, getSubskillAccuracy, type SubskillStat } from '@/lib/services/tests'
+import { getUser } from '@/lib/services/auth'
 import { SkillHubHeader, SubskillCard, TestCard, HubSpinner } from '@/components/dashboard/SkillHub'
 import type { IeltsTest } from '@/lib/types/database'
-
-const SUBSKILLS = [
-  { label: 'Multiple choice', value: 0.82 },
-  { label: 'Form / note completion', value: 0.74 },
-  { label: 'Matching', value: 0.65 },
-  { label: 'Plan / map / diagram', value: 0.48 },
-  { label: 'Sentence completion', value: 0.78 },
-]
 
 export default function ListeningIndexPage() {
   const { t } = useLanguage()
   const [tests, setTests] = useState<IeltsTest[]>([])
+  const [subskills, setSubskills] = useState<SubskillStat[]>([])
   const [loading, setLoading] = useState(true)
 
-  // Keep existing data fetching unchanged
   useEffect(() => {
     async function load() {
       const data = await getListeningTests()
       setTests(data)
+      const { user } = await getUser()
+      if (user) setSubskills(await getSubskillAccuracy(user.id, 'listening'))
       setLoading(false)
     }
     load()
@@ -83,8 +78,20 @@ export default function ListeningIndexPage() {
           )}
         </div>
 
-        {/* Subskill performance */}
-        <SubskillCard title="Subskill performance" rows={SUBSKILLS} />
+        {/* Subskill performance — real data from completed attempts */}
+        {subskills.length > 0 ? (
+          <SubskillCard
+            title="Question type accuracy"
+            rows={subskills.map(s => ({ label: s.label, value: s.accuracy }))}
+          />
+        ) : (
+          <div className="card" style={{ padding: 24 }}>
+            <h3 style={{ margin: '0 0 14px', fontSize: 15, fontWeight: 600, color: 'var(--text)' }}>Question type accuracy</h3>
+            <p style={{ fontSize: 13, color: 'var(--text-3)', lineHeight: 1.5, margin: 0 }}>
+              Complete a listening test to see your accuracy broken down by question type.
+            </p>
+          </div>
+        )}
       </div>
     </div>
   )

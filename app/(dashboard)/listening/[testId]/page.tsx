@@ -10,7 +10,7 @@ import { listeningRawToBand } from '@/lib/utils/bandScore'
 import { isAnswerCorrect } from '@/lib/utils/answerChecking'
 import type { IeltsTest, TestSection, Question } from '@/lib/types/database'
 import { getTestById, getSectionsByTestId, getQuestionsBySectionIds } from '@/lib/services/tests'
-import { createAttempt, saveAnswer as saveAnswerService, saveAnswerWithResult, completeAttempt, saveBandScoreHistory } from '@/lib/services/attempts'
+import { createAttempt, saveAnswer as saveAnswerService, saveAnswerWithResult, completeAttempt, saveBandScoreHistory, logStudySession } from '@/lib/services/attempts'
 import { getUser } from '@/lib/services/auth'
 
 type QuestionWithSection = Question & { sectionNumber: number; sectionTitle: string }
@@ -1967,6 +1967,7 @@ export default function ListeningTestPage() {
   const [loadError, setLoadError] = useState<string | null>(null)
   const [sectionToast, setSectionToast] = useState<string | null>(null)
   const toastTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const startedAtRef = useRef<number | null>(null)
 
   // Load test data on mount
   useEffect(() => {
@@ -2038,6 +2039,7 @@ export default function ListeningTestPage() {
         if (id) setAttemptId(id)
       }
     } catch { /* attempt creation is optional */ }
+    startedAtRef.current = Date.now()
     setStarting(false)
     setStarted(true)
   }
@@ -2088,6 +2090,8 @@ export default function ListeningTestPage() {
         const { user } = await getUser()
         if (user) {
           await saveBandScoreHistory(user.id, 'listening', band, attemptId)
+          const mins = startedAtRef.current ? (Date.now() - startedAtRef.current) / 60000 : 30
+          await logStudySession(user.id, 'listening', mins, 'mock_test')
         }
       } catch { /* silent */ }
     }

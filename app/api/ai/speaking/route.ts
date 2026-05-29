@@ -115,6 +115,14 @@ Return JSON:
       source_id: submission?.id ?? null,
     })
 
+    // Log study session so streak & study-time reflect real usage
+    await admin.from('study_sessions').insert({
+      user_id:          user.id,
+      skill:            'speaking',
+      activity_type:    'practice',
+      duration_minutes: part === 2 ? 8 : 5,
+    })
+
     await recordUsage(user.id, 'speaking')
 
     return NextResponse.json({

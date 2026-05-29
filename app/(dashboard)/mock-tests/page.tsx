@@ -1,8 +1,11 @@
 'use client'
 
 import Link from 'next/link'
+import { useEffect, useState } from 'react'
 import { useLanguage } from '@/lib/i18n/LanguageContext'
 import { SAMPLE_TEST_META } from '@/lib/data/sampleTest'
+import { getDashboardData } from '@/lib/services/progress'
+import { getUser } from '@/lib/services/auth'
 
 // Keep existing test data unchanged
 const TESTS = [
@@ -12,18 +15,8 @@ const TESTS = [
   { ...SAMPLE_TEST_META, id: 'sample-test-4', title: 'IELTS General Training Test 1', test_type: 'general' as const, free: false },
 ]
 
-const PREVIOUS_MOCKS = [
-  { date: 'May 17', id: 'Mock #03', overall: 7.0, l: 7.5, r: 6.5, w: 6.5, s: 7.0 },
-  { date: 'May 03', id: 'Mock #02', overall: 6.5, l: 7.0, r: 6.0, w: 6.0, s: 6.5 },
-  { date: 'Apr 19', id: 'Mock #01', overall: 6.0, l: 6.5, r: 5.5, w: 6.0, s: 6.0 },
-]
-
-function BandPill({ v }: { v: number }) {
-  return (
-    <div style={{ padding: '3px 8px', borderRadius: 6, fontSize: 12, fontWeight: 700, background: 'var(--bg-soft)', textAlign: 'center', letterSpacing: '-0.01em', color: 'var(--text)', fontVariantNumeric: 'tabular-nums', minWidth: 36 }}>
-      {v.toFixed(1)}
-    </div>
-  )
+const SKILL_LABELS: Record<string, string> = {
+  listening: 'Listening', reading: 'Reading', writing: 'Writing', speaking: 'Speaking',
 }
 
 function LockIcon() {
@@ -36,6 +29,46 @@ function LockIcon() {
 
 export default function MockTestsPage() {
   const { t } = useLanguage()
+  const [previousMocks, setPreviousMocks] = useState<Array<{ date: string; band: number }>>([])
+  const [readiness, setReadiness] = useState<number | null>(null)
+  const [weakSkills, setWeakSkills] = useState<Array<{ skill: string; band: number }>>([])
+
+  useEffect(() => {
+    async function load() {
+      const { user } = await getUser()
+      if (!user) return
+      const d = await getDashboardData(user.id)
+
+      // Previous mocks — real completed attempts with a band score
+      const mocks = (d.attempts ?? [])
+        .filter((a: any) => a.band_score != null && a.completed_at)
+        .slice(0, 5)
+        .map((a: any) => ({
+          date: new Date(a.completed_at).toLocaleDateString(undefined, { month: 'short', day: 'numeric' }),
+          band: a.band_score as number,
+        }))
+      setPreviousMocks(mocks)
+
+      // Latest band per skill (bandHistory is recorded_at DESC)
+      const latest: Record<string, number> = {}
+      for (const row of (d.bandHistory ?? [])) {
+        if (latest[row.skill] == null && row.skill !== 'overall') latest[row.skill] = row.score
+      }
+      const skillEntries = Object.entries(latest)
+      if (skillEntries.length > 0) {
+        const avg = skillEntries.reduce((s, [, v]) => s + v, 0) / skillEntries.length
+        const target = d.profile?.target_band_score ?? 7.5
+        setReadiness(Math.min(100, Math.round((avg / target) * 100)))
+        setWeakSkills(
+          skillEntries
+            .map(([skill, band]) => ({ skill, band }))
+            .sort((a, b) => a.band - b.band)
+            .slice(0, 3)
+        )
+      }
+    }
+    load()
+  }, [])
 
   return (
     <div style={{ padding: '32px 32px 80px', maxWidth: 1400, margin: '0 auto' }}>
@@ -135,23 +168,26 @@ export default function MockTestsPage() {
             ))}
           </div>
 
-          {/* Previous mocks */}
+          {/* Previous mocks — real completed attempts */}
           <div style={{ marginTop: 28, paddingTop: 24, borderTop: '1px solid var(--border)' }}>
-            <h3 style={{ margin: '0 0 16px', fontSize: 16, fontWeight: 600, color: 'var(--text)' }}>Previous mocks</h3>
-            <div style={{ display: 'grid', gap: 4 }}>
-              {PREVIOUS_MOCKS.map((m, i) => (
-                <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '12px 0', borderTop: i === 0 ? 'none' : '1px solid var(--border)' }}>
-                  <div style={{ fontSize: 11, color: 'var(--text-3)', fontFamily: 'var(--font-mono)', width: 56 }}>{m.date}</div>
-                  <div style={{ fontSize: 14, fontWeight: 600, color: 'var(--text)', flex: 1 }}>{m.id}</div>
-                  <div style={{ display: 'flex', gap: 4 }}>
-                    {[m.l, m.r, m.w, m.s].map((v, j) => <BandPill key={j} v={v} />)}
+            <h3 style={{ margin: '0 0 16px', fontSize: 16, fontWeight: 600, color: 'var(--text)' }}>Previous attempts</h3>
+            {previousMocks.length === 0 ? (
+              <p style={{ fontSize: 13, color: 'var(--text-3)', lineHeight: 1.5, margin: 0 }}>
+                No completed tests yet. Finish a test to track your band history here.
+              </p>
+            ) : (
+              <div style={{ display: 'grid', gap: 4 }}>
+                {previousMocks.map((m, i) => (
+                  <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '12px 0', borderTop: i === 0 ? 'none' : '1px solid var(--border)' }}>
+                    <div style={{ fontSize: 11, color: 'var(--text-3)', fontFamily: 'var(--font-mono)', width: 56 }}>{m.date}</div>
+                    <div style={{ fontSize: 14, fontWeight: 600, color: 'var(--text)', flex: 1 }}>Test attempt</div>
+                    <div style={{ width: 36, height: 36, borderRadius: 10, background: 'var(--accent-soft)', color: 'var(--accent)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontFamily: 'var(--font-display)', fontStyle: 'italic', fontSize: 16, fontWeight: 700 }}>
+                      {m.band.toFixed(1)}
+                    </div>
                   </div>
-                  <div style={{ width: 36, height: 36, borderRadius: 10, background: 'var(--accent-soft)', color: 'var(--accent)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontFamily: 'var(--font-display)', fontStyle: 'italic', fontSize: 16, fontWeight: 700 }}>
-                    {m.overall.toFixed(1)}
-                  </div>
-                </div>
-              ))}
-            </div>
+                ))}
+              </div>
+            )}
           </div>
         </div>
 
@@ -163,31 +199,37 @@ export default function MockTestsPage() {
             </svg>
             <span style={{ fontSize: 11, fontWeight: 700, letterSpacing: '0.08em', color: 'var(--warn)' }}>EXAM-DAY READINESS</span>
           </div>
-          <div style={{ fontFamily: 'var(--font-display)', fontStyle: 'italic', fontSize: 60, lineHeight: 0.9, color: 'var(--accent)', fontWeight: 500 }}>78%</div>
+          <div style={{ fontFamily: 'var(--font-display)', fontStyle: 'italic', fontSize: 60, lineHeight: 0.9, color: 'var(--accent)', fontWeight: 500 }}>
+            {readiness != null ? `${readiness}%` : '—'}
+          </div>
           <div style={{ fontSize: 13, color: 'var(--text-2)', marginTop: 8 }}>
-            Based on last 3 mocks · target 90%+ before exam day
+            {readiness != null
+              ? 'Latest band average vs your target band'
+              : 'Complete a test to estimate exam readiness'}
           </div>
           <div style={{ marginTop: 18, height: 8, borderRadius: 999, background: 'var(--bg-soft)', overflow: 'hidden' }}>
-            <div style={{ width: '78%', height: '100%', background: 'linear-gradient(90deg, var(--accent), var(--warn))' }}/>
+            <div style={{ width: `${readiness ?? 0}%`, height: '100%', background: 'linear-gradient(90deg, var(--accent), var(--warn))', transition: 'width .6s' }}/>
           </div>
 
-          <div style={{ marginTop: 24, paddingTop: 18, borderTop: '1px dashed var(--border)' }}>
-            <div style={{ fontSize: 11, letterSpacing: '0.08em', color: 'var(--text-3)', marginBottom: 12 }}>WHAT TO IMPROVE</div>
-            {[
-              { icon: 'pencil', text: 'Writing Task 2 — Grammatical range' },
-              { icon: 'mic', text: 'Speaking — Less common vocabulary in Part 3' },
-              { icon: 'book', text: 'Reading — True/False/Not Given drill' },
-            ].map((item, i) => (
-              <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 10, fontSize: 13, color: 'var(--text)' }}>
-                <svg width={14} height={14} viewBox="0 0 24 24" fill="none" stroke="var(--warn)" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-                  {item.icon === 'pencil' && <path d="M14 4l6 6L9 21H3v-6z"/>}
-                  {item.icon === 'mic' && <><rect x="9" y="3" width="6" height="12" rx="3"/><path d="M5 11a7 7 0 0 0 14 0"/><path d="M12 18v3"/></>}
-                  {item.icon === 'book' && <><path d="M4 4h7a3 3 0 0 1 3 3v13"/><path d="M20 4h-7a3 3 0 0 0-3 3"/><path d="M4 4v15a1 1 0 0 0 1 1h15"/></>}
-                </svg>
-                {item.text}
-              </div>
-            ))}
-          </div>
+          {weakSkills.length > 0 && (
+            <div style={{ marginTop: 24, paddingTop: 18, borderTop: '1px dashed var(--border)' }}>
+              <div style={{ fontSize: 11, letterSpacing: '0.08em', color: 'var(--text-3)', marginBottom: 12 }}>WEAKEST SKILLS</div>
+              {weakSkills.map((s, i) => (
+                <div key={i} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10, marginBottom: 10, fontSize: 13, color: 'var(--text)' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                    <svg width={14} height={14} viewBox="0 0 24 24" fill="none" stroke="var(--warn)" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+                      {s.skill === 'writing' && <path d="M14 4l6 6L9 21H3v-6z"/>}
+                      {s.skill === 'speaking' && <><rect x="9" y="3" width="6" height="12" rx="3"/><path d="M5 11a7 7 0 0 0 14 0"/><path d="M12 18v3"/></>}
+                      {s.skill === 'reading' && <><path d="M4 4h7a3 3 0 0 1 3 3v13"/><path d="M20 4h-7a3 3 0 0 0-3 3"/><path d="M4 4v15a1 1 0 0 0 1 1h15"/></>}
+                      {s.skill === 'listening' && <><path d="M3 18v-6a9 9 0 0 1 18 0v6"/><path d="M21 19a2 2 0 0 1-2 2h-1v-6h3z"/><path d="M3 19a2 2 0 0 0 2 2h1v-6H3z"/></>}
+                    </svg>
+                    {SKILL_LABELS[s.skill] ?? s.skill}
+                  </div>
+                  <span style={{ fontWeight: 700, fontVariantNumeric: 'tabular-nums', color: 'var(--text-2)' }}>{s.band.toFixed(1)}</span>
+                </div>
+              ))}
+            </div>
+          )}
         </div>
       </div>
     </div>
