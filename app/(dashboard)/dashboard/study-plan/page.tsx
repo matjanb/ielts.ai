@@ -62,7 +62,7 @@ export default function StudyPlanPage() {
   if (loading) {
     return (
       <div className="flex items-center justify-center h-64">
-        <div className="w-5 h-5 rounded-full border-2 border-indigo-500 border-t-transparent animate-spin" />
+        <div className="w-5 h-5 rounded-full border-2 border-[var(--accent)] border-t-transparent animate-spin" />
       </div>
     )
   }
@@ -73,8 +73,8 @@ export default function StudyPlanPage() {
     <div className="max-w-3xl mx-auto space-y-6">
       <div className="flex items-start justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900 dark:text-white mb-1">{t('dashboard.studyPlan')}</h1>
-          <p className="text-sm text-gray-500 dark:text-gray-400">
+          <h1 className="text-2xl font-bold text-[var(--text)] mb-1">{t('dashboard.studyPlan')}</h1>
+          <p className="text-sm text-[var(--text-2)]">
             {plan ? `${plan.weeks_duration}-week plan targeting Band ${plan.target_band}.` : 'Generate a personalised study plan based on your onboarding goals.'}
           </p>
         </div>
@@ -93,7 +93,7 @@ export default function StudyPlanPage() {
       </div>
 
       {error && (
-        <div className="flex items-start gap-2.5 px-4 py-3 rounded-xl bg-red-50 dark:bg-red-500/10 border border-red-200 dark:border-red-500/20 text-sm text-red-600 dark:text-red-400">
+        <div className="flex items-start gap-2.5 px-4 py-3 rounded-xl text-sm text-[var(--danger)]">
           <AlertCircle size={15} className="shrink-0 mt-0.5" />
           {error}
         </div>
@@ -107,9 +107,9 @@ export default function StudyPlanPage() {
             { label: 'Daily Study', value: `${plan.daily_minutes} min` },
             { label: 'Focus', value: plan.focus_skills.join(', ') || 'All skills' },
           ].map(({ label, value }) => (
-            <div key={label} className="px-4 py-2.5 rounded-xl bg-white dark:bg-gray-900/60 border border-gray-100 dark:border-gray-800">
-              <div className="text-xs text-gray-500 dark:text-gray-400">{label}</div>
-              <div className="text-sm font-semibold text-gray-900 dark:text-white capitalize">{value}</div>
+            <div key={label} className="card px-4 py-2.5 rounded-xl">
+              <div className="text-xs text-[var(--text-2)]">{label}</div>
+              <div className="text-sm font-semibold text-[var(--text)] capitalize">{value}</div>
             </div>
           ))}
         </div>
@@ -118,30 +118,30 @@ export default function StudyPlanPage() {
       {weeks.length > 0 ? (
         <div className="space-y-2">
           {weeks.map(week => (
-            <div key={week.week} className="rounded-2xl bg-white dark:bg-gray-900/60 border border-gray-100 dark:border-gray-800 overflow-hidden">
+            <div key={week.week} className="card overflow-hidden">
               <button
                 onClick={() => setExpanded(expanded === week.week ? null : week.week)}
                 className="w-full flex items-center justify-between px-5 py-4 text-left"
               >
                 <div className="flex items-center gap-3">
-                  <div className="w-7 h-7 rounded-lg bg-indigo-50 dark:bg-indigo-500/10 flex items-center justify-center text-xs font-bold text-indigo-600 dark:text-indigo-400">
+                  <div className="w-7 h-7 rounded-lg bg-[var(--accent-soft)] flex items-center justify-center text-xs font-bold text-[var(--accent)]">
                     {week.week}
                   </div>
                   <div>
-                    <div className="text-sm font-semibold text-gray-900 dark:text-white">Week {week.week}</div>
-                    {week.theme && <div className="text-xs text-gray-500 dark:text-gray-400">{week.theme}</div>}
+                    <div className="text-sm font-semibold text-[var(--text)]">Week {week.week}</div>
+                    {week.theme && <div className="text-xs text-[var(--text-2)]">{week.theme}</div>}
                   </div>
                 </div>
                 {expanded === week.week
-                  ? <ChevronDown size={15} className="text-gray-400" />
-                  : <ChevronRight size={15} className="text-gray-400" />
+                  ? <ChevronDown size={15} style={{ color: "var(--text-3)" }} />
+                  : <ChevronRight size={15} style={{ color: "var(--text-3)" }} />
                 }
               </button>
               {expanded === week.week && week.tasks?.length > 0 && (
-                <div className="px-5 pb-4 border-t border-gray-50 dark:border-gray-800/80 pt-3 space-y-2">
+                <div className="px-5 pb-4 border-t border-[var(--border)] pt-3 space-y-2">
                   {week.tasks.map((task, i) => (
-                    <div key={i} className="flex items-start gap-2.5 text-sm text-gray-600 dark:text-gray-400">
-                      <div className="w-1.5 h-1.5 rounded-full bg-indigo-400 mt-1.5 shrink-0" />
+                    <div key={i} className="flex items-start gap-2.5 text-sm text-[var(--text-2)]">
+                      <div className="w-1.5 h-1.5 rounded-full bg-[var(--accent)] mt-1.5 shrink-0" />
                       {task}
                     </div>
                   ))}
@@ -152,11 +152,11 @@ export default function StudyPlanPage() {
         </div>
       ) : !plan ? (
         <div className="text-center py-20">
-          <div className="w-14 h-14 rounded-2xl bg-indigo-50 dark:bg-indigo-500/10 flex items-center justify-center mx-auto mb-4">
-            <BrainCircuit size={24} className="text-indigo-500" strokeWidth={1.5} />
+          <div className="w-14 h-14 rounded-2xl bg-[var(--accent-soft)] flex items-center justify-center mx-auto mb-4">
+            <BrainCircuit size={24} className="text-[var(--accent)]" strokeWidth={1.5} />
           </div>
-          <h3 className="text-sm font-semibold text-gray-900 dark:text-white mb-1">No study plan yet</h3>
-          <p className="text-sm text-gray-400 dark:text-gray-500 mb-5 max-w-xs mx-auto">
+          <h3 className="text-sm font-semibold text-[var(--text)] mb-1">No study plan yet</h3>
+          <p className="text-sm text-[var(--text-3)] mb-5 max-w-xs mx-auto">
             Complete your onboarding first, then generate a personalised plan.
           </p>
           <button

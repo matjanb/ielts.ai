@@ -101,7 +101,7 @@ function AudioPlayer({
 
   if (!audioUrl) {
     return (
-      <div className="flex items-center gap-2 text-xs text-gray-400">
+      <div className="flex items-center gap-2 text-xs text-[var(--text-3)]">
         <Volume2 size={13} />
         No audio
       </div>
@@ -133,7 +133,7 @@ function AudioPlayer({
 
       {!autoPlayBlocked && (
         <div className="flex-1 min-w-0 flex items-center gap-2">
-          <span className="text-[10px] text-gray-400 tabular-nums shrink-0 w-8 text-right">{fmt(progress)}</span>
+          <span className="text-[10px] text-[var(--text-3)] tabular-nums shrink-0 w-8 text-right">{fmt(progress)}</span>
           <input
             type="range"
             min={0}
@@ -142,7 +142,7 @@ function AudioPlayer({
             onChange={seek}
             className="flex-1 h-1 accent-[var(--accent)] cursor-pointer min-w-0"
           />
-          <span className="text-[10px] text-gray-400 tabular-nums shrink-0 w-8">{fmt(duration)}</span>
+          <span className="text-[10px] text-[var(--text-3)] tabular-nums shrink-0 w-8">{fmt(duration)}</span>
         </div>
       )}
 
@@ -1513,7 +1513,7 @@ function DiagramLabelsCard({
               unoptimized
             />
           ) : (
-            <div className="w-full h-40 flex items-center justify-center text-xs text-gray-400">No image</div>
+            <div className="w-full h-40 flex items-center justify-center text-xs text-[var(--text-3)]">No image</div>
           )}
         </div>
         {/* Right: label inputs at 40% */}

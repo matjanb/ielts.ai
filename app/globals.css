@@ -183,3 +183,22 @@ input, textarea, select { font: inherit; color: inherit; }
   stroke: var(--accent);
   transition: stroke-dashoffset 0.6s cubic-bezier(0.4, 0, 0.2, 1);
 }
+
+/* ── Button primitives ───────────────────────────────────── */
+.btn-primary {
+  background: var(--accent);
+  color: var(--accent-fg);
+  transition: background .15s ease, transform .15s ease;
+}
+.btn-primary:hover {
+  background: var(--accent-hover);
+  transform: translateY(-1px);
+}
+.btn-primary:active {
+  transform: translateY(0);
+}
+
+/* ── Gradient text (legacy landing) ─────────────────────── */
+.gradient-text {
+  color: var(--accent);
+}
