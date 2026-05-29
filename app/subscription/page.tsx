@@ -14,30 +14,13 @@ async function handleCheckout(plan: 'monthly' | 'yearly') {
 
 const PLANS = [
   {
-    id: 'starter',
-    name: 'Starter',
-    monthly: 0,
-    yearly: 0,
-    tag: 'Try it free',
-    features: [
-      'Diagnostic & placement test',
-      '1 full mock exam',
-      'Limited vocabulary decks',
-      '3 AI writing reviews/mo',
-      'Community access',
-    ],
-    cta: 'Continue free',
-    popular: false,
-    elite: false,
-  },
-  {
     id: 'pro',
     name: 'Pro',
     monthly: 19,
     yearly: 14,
     tag: 'Most popular',
     features: [
-      'Everything in Starter',
+      'Diagnostic & placement test',
       'Unlimited mock exams',
       'AI Writing examiner (Task 1 + 2)',
       'AI Speaking examiner (live)',
@@ -130,7 +113,7 @@ function SubscriptionContent() {
         </div>
 
         {/* Plan cards */}
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 16 }}>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 16, maxWidth: 760, margin: '0 auto' }}>
           {PLANS.map(plan => {
             const price = billing === 'monthly' ? plan.monthly : plan.yearly
             const isSelected = selected === plan.id
@@ -199,7 +182,7 @@ function SubscriptionContent() {
                 </ul>
 
                 <button
-                  onClick={e => { e.stopPropagation(); if (plan.id !== 'starter') handleCheckout(billing) }}
+                  onClick={e => { e.stopPropagation(); handleCheckout(billing) }}
                   style={{
                     width: '100%', padding: '14px 16px', borderRadius: 12, fontSize: 14, fontWeight: 600,
                     background: plan.popular ? 'var(--accent)' : 'var(--bg-soft)',

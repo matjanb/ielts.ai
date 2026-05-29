@@ -7,11 +7,6 @@ import { useLanguage } from '@/lib/i18n/LanguageContext'
 
 const TIERS = [
   {
-    nameKey: 'starterName', priceKey: 'starterPrice', descKey: 'starterDesc',
-    featureKeys: ['starterF1','starterF2','starterF3','starterF4','starterF5'],
-    ctaKey: 'startFree', href: '/diagnostic/start', popular: false, annualMultiplier: null,
-  },
-  {
     nameKey: 'proName', priceKey: 'proPrice', descKey: 'proDesc',
     featureKeys: ['proF1','proF2','proF3','proF4','proF5','proF6'],
     ctaKey: 'choosePlan', href: '/diagnostic/start', popular: true, annualMultiplier: 0.7,
@@ -68,7 +63,7 @@ export function Pricing() {
         </div>
 
         {/* Tiers */}
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 16 }}>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 16, maxWidth: 720, margin: '0 auto' }}>
           {TIERS.map(({ nameKey, priceKey, descKey, featureKeys, ctaKey, href, popular, annualMultiplier }) => {
             const basePrice = parseInt(t(`pricing.${priceKey}`))
             const displayPrice = annual && annualMultiplier ? Math.round(basePrice * annualMultiplier) : basePrice
