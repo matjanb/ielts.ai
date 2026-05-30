@@ -12,6 +12,7 @@ import { NotificationsPanel } from '@/components/ui/NotificationsPanel'
 import { SettingsModal } from '@/components/ui/SettingsModal'
 import { ProfileModal } from '@/components/ui/ProfileModal'
 import { signOut, getUser } from '@/lib/services/auth'
+import { getNotifications, type NotifItem } from '@/lib/services/notifications'
 import type { ReactNode } from 'react'
 
 const RAIL_W = 56
@@ -43,6 +44,7 @@ const ICON_PATHS: Record<string, React.ReactNode> = {
   settings:   <><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1A1.7 1.7 0 0 0 4.6 9a1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></>,
   dots:       <><circle cx="5" cy="12" r="1.5"/><circle cx="12" cy="12" r="1.5"/><circle cx="19" cy="12" r="1.5"/></>,
   bookmark:   <path d="M6 3h12v18l-6-4-6 4z"/>,
+  'bookmark-filled': <path d="M6 3h12v18l-6-4-6 4z" fill="currentColor" stroke="currentColor"/>,
   bell:       <><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10 21a2 2 0 0 0 4 0"/></>,
   sun:        <><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></>,
   moon:       <path d="M21 13A9 9 0 1 1 11 3a7 7 0 0 0 10 10z"/>,
@@ -73,6 +75,7 @@ function DashboardLayoutInner({ children }: { children: ReactNode }) {
     return localStorage.getItem('sidebar-pinned') === 'true'
   })
   const hoverTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const userMenuRef = useRef<HTMLDivElement>(null)
 
   // Overlays
   const [paletteOpen, setPaletteOpen] = useState(false)
@@ -86,14 +89,34 @@ function DashboardLayoutInner({ children }: { children: ReactNode }) {
   const [userEmail, setUserEmail] = useState('')
   const [userInitials, setUserInitials] = useState('U')
 
+  // Notifications
+  const [notifications, setNotifications] = useState<NotifItem[]>([])
+  const [notifLastSeen, setNotifLastSeen] = useState<string | null>(() => {
+    if (typeof window === 'undefined') return null
+    return localStorage.getItem('notifs-last-seen')
+  })
+
   useEffect(() => {
-    getUser().then(({ user }) => {
+    getUser().then(async ({ user }) => {
       if (!user) return
       const name = user.user_metadata?.full_name ?? user.email ?? 'User'
       setUserName(name)
       setUserEmail(user.email ?? '')
       setUserInitials(name.split(' ').map((n: string) => n[0]).join('').slice(0, 2).toUpperCase())
+      try {
+        setNotifications(await getNotifications(user.id))
+      } catch { /* notifications are best-effort */ }
     })
+  }, [])
+
+  const unreadCount = notifications.filter(n =>
+    new Date(n.time).getTime() > (notifLastSeen ? new Date(notifLastSeen).getTime() : 0)
+  ).length
+
+  const markAllNotifsRead = useCallback(() => {
+    const now = new Date().toISOString()
+    localStorage.setItem('notifs-last-seen', now)
+    setNotifLastSeen(now)
   }, [])
 
   // Persist pin
@@ -129,6 +152,25 @@ function DashboardLayoutInner({ children }: { children: ReactNode }) {
     window.addEventListener('keydown', handler)
     return () => window.removeEventListener('keydown', handler)
   }, [])
+
+  // Close user menu on outside-click or Escape
+  useEffect(() => {
+    if (!userMenuOpen) return
+    const onClick = (e: MouseEvent) => {
+      if (userMenuRef.current && !userMenuRef.current.contains(e.target as Node)) {
+        setUserMenuOpen(false)
+      }
+    }
+    const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') setUserMenuOpen(false) }
+    const t = setTimeout(() => document.addEventListener('mousedown', onClick), 0)
+    document.addEventListener('keydown', onKey)
+    return () => {
+      clearTimeout(t)
+      document.removeEventListener('mousedown', onClick)
+      document.removeEventListener('keydown', onKey)
+    }
+  }, [userMenuOpen])
+
 
   const handleSignOut = async () => {
     await signOut()
@@ -188,10 +230,13 @@ function DashboardLayoutInner({ children }: { children: ReactNode }) {
             )}
           </Link>
           {expanded && (
-            <button onClick={togglePin} style={{ padding: 6, color: pinned ? 'var(--accent)' : 'var(--text-3)', flexShrink: 0 }}
-              title={pinned ? 'Unpin sidebar' : 'Pin sidebar'}>
-              <NavIcon name="bookmark" size={14} color={pinned ? 'var(--accent)' : 'var(--text-3)'} strokeWidth={pinned ? 0 : 1.8}
-                // @ts-ignore — fill via style
+            <button onClick={togglePin} aria-label={pinned ? 'Unpin sidebar' : 'Pin sidebar'} title={pinned ? 'Unpin sidebar' : 'Pin sidebar'}
+              style={{ padding: 6, color: pinned ? 'var(--accent)' : 'var(--text-3)', flexShrink: 0, background: 'transparent', border: 'none', cursor: 'pointer' }}>
+              <NavIcon
+                name={pinned ? 'bookmark-filled' : 'bookmark'}
+                size={14}
+                color={pinned ? 'var(--accent)' : 'var(--text-3)'}
+                strokeWidth={1.8}
               />
             </button>
           )}
@@ -231,7 +276,7 @@ function DashboardLayoutInner({ children }: { children: ReactNode }) {
         </nav>
 
         {/* User footer */}
-        <div style={{ padding: 8, borderTop: expanded ? '1px solid var(--border)' : 'none', position: 'relative', flexShrink: 0 }}>
+        <div ref={userMenuRef} style={{ padding: 8, borderTop: expanded ? '1px solid var(--border)' : 'none', position: 'relative', flexShrink: 0 }}>
           <button
             onClick={() => setUserMenuOpen(o => !o)}
             style={{
@@ -263,12 +308,18 @@ function DashboardLayoutInner({ children }: { children: ReactNode }) {
             )}
           </button>
 
-          {/* User dropdown */}
+          {/* User dropdown — position:fixed so it escapes the aside's overflow:hidden
+              and stays readable even when the sidebar is collapsed to the 56px rail. */}
           {userMenuOpen && (
             <div className="card animate-fade-in" style={{
-              position: 'absolute', bottom: 'calc(100% + 6px)', left: 8, right: 8,
-              padding: 6, zIndex: 60, boxShadow: 'var(--shadow-lg)',
+              position: 'fixed', bottom: 72, left: 12,
+              width: 220, padding: 6, zIndex: 60, boxShadow: 'var(--shadow-lg)',
             }}>
+              {/* User header (mirrors what the avatar button shows when expanded) */}
+              <div style={{ padding: '8px 10px 10px', borderBottom: '1px solid var(--border)', marginBottom: 4 }}>
+                <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--text)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{userName}</div>
+                {userEmail && <div style={{ fontSize: 11, color: 'var(--text-3)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{userEmail}</div>}
+              </div>
               {[
                 { icon: 'user', label: 'Profile', action: () => { setProfileOpen(true); setUserMenuOpen(false) } },
                 { icon: 'settings', label: 'Settings', action: () => { setSettingsOpen(true); setUserMenuOpen(false) } },
@@ -281,7 +332,8 @@ function DashboardLayoutInner({ children }: { children: ReactNode }) {
                     display: 'flex', alignItems: 'center', gap: 10, width: '100%',
                     padding: '8px 10px', borderRadius: 8, fontSize: 13,
                     color: item.danger ? 'var(--danger)' : 'var(--text)',
-                    background: 'transparent', transition: 'background .1s',
+                    background: 'transparent', border: 'none', cursor: 'pointer', textAlign: 'left',
+                    transition: 'background .1s',
                   }}
                   onMouseEnter={e => (e.currentTarget.style.background = 'var(--bg-soft)')}
                   onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}
@@ -345,14 +397,25 @@ function DashboardLayoutInner({ children }: { children: ReactNode }) {
             <div style={{ position: 'relative' }}>
               <button
                 onClick={() => setNotifOpen(o => !o)}
+                aria-label={`Notifications${unreadCount > 0 ? ` (${unreadCount} unread)` : ''}`}
                 style={{ width: 34, height: 34, display: 'flex', alignItems: 'center', justifyContent: 'center', borderRadius: 8, color: 'var(--text-2)', position: 'relative', transition: 'background .15s' }}
                 onMouseEnter={e => (e.currentTarget.style.background = 'var(--bg-soft)')}
                 onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}
               >
                 <NavIcon name="bell" size={16} />
-                <span style={{ position: 'absolute', top: 6, right: 6, width: 7, height: 7, borderRadius: '50%', background: 'var(--danger)', border: '1.5px solid var(--bg)' }}/>
+                {unreadCount > 0 && (
+                  unreadCount > 9
+                    ? <span style={{ position: 'absolute', top: 3, right: 0, minWidth: 16, height: 14, padding: '0 4px', borderRadius: 7, background: 'var(--danger)', color: '#fff', fontSize: 9, fontWeight: 700, display: 'flex', alignItems: 'center', justifyContent: 'center', border: '1.5px solid var(--bg)', fontVariantNumeric: 'tabular-nums' }}>9+</span>
+                    : <span style={{ position: 'absolute', top: 4, right: 4, minWidth: 14, height: 14, padding: '0 3px', borderRadius: 7, background: 'var(--danger)', color: '#fff', fontSize: 9, fontWeight: 700, display: 'flex', alignItems: 'center', justifyContent: 'center', border: '1.5px solid var(--bg)', fontVariantNumeric: 'tabular-nums' }}>{unreadCount}</span>
+                )}
               </button>
-              <NotificationsPanel open={notifOpen} onClose={() => setNotifOpen(false)} />
+              <NotificationsPanel
+                open={notifOpen}
+                onClose={() => setNotifOpen(false)}
+                items={notifications}
+                lastSeen={notifLastSeen}
+                onMarkAllRead={markAllNotifsRead}
+              />
             </div>
 
             {/* Theme toggle */}
