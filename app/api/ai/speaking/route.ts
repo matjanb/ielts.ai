@@ -108,6 +108,15 @@ export async function POST(request: NextRequest) {
 
 ${SPEAKING_RUBRIC}
 
+SPEAKING BAND ANCHORS (apply strictly):
+- Band 2: barely communicates; mostly isolated words, long pauses, breakdowns.
+- Band 3: only simple, short responses; frequent breakdowns; very limited range; answers do not develop.
+- Band 4: conveys basic meaning on familiar topics, but answers are short, error-prone and underdeveloped, with frequent grammatical and lexical mistakes.
+- Band 5: keeps simple exchanges going with some flexibility, but limited range and frequent errors; little complex language.
+- Band 6: generally effective communication, some complex language and reasonable development despite noticeable errors.
+- Band 7+: fluent, flexible and largely accurate, with well-developed answers.
+A test of very short, repetitive, error-heavy one-line answers is band 3 — not 4 or 5.
+
 ${assessScope} The input is a transcript only (no audio is available), so judge fluency from hesitation/repetition markers and sentence flow in the text, and judge pronunciation conservatively per the text-only note in the descriptors — never invent a confident pronunciation band. For each criterion (fluency = Fluency & Coherence, lexical = Lexical Resource, grammar = Grammatical Range & Accuracy, pronunciation) award a band and cite evidence. Do not average the criteria yourself.`,
         },
         {

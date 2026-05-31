@@ -1,9 +1,9 @@
 // IELTS band-score arithmetic, shared by the writing & speaking graders.
 
-/** Clamp a single criterion band to the realistic AI-gradeable range and 0.5 steps. */
+/** Clamp a single criterion band to the valid IELTS range (1–9) in 0.5 steps. */
 export function clampBand(n: number): number {
   if (!Number.isFinite(n)) return 5
-  return Math.round(Math.min(9, Math.max(3, n)) * 2) / 2
+  return Math.round(Math.min(9, Math.max(1, n)) * 2) / 2
 }
 
 /**
