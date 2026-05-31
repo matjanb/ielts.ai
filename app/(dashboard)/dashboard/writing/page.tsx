@@ -72,9 +72,24 @@ export default function WritingPage() {
     document.execCommand(command, false)
   }
 
-  function handleCut()   { editorRef.current?.focus(); document.execCommand('cut') }
-  function handleCopy()  { editorRef.current?.focus(); document.execCommand('copy') }
-  function handlePaste() { editorRef.current?.focus(); document.execCommand('paste') }
+  function handleCut()  { editorRef.current?.focus(); document.execCommand('cut') }
+  function handleCopy() { editorRef.current?.focus(); document.execCommand('copy') }
+
+  async function handlePaste() {
+    editorRef.current?.focus()
+    try {
+      const text = await navigator.clipboard.readText()
+      const selection = window.getSelection()
+      if (!selection?.rangeCount) return
+      const range = selection.getRangeAt(0)
+      range.deleteContents()
+      range.insertNode(document.createTextNode(text))
+      range.collapse(false)
+      selection.removeAllRanges()
+      selection.addRange(range)
+      handleEditorInput()
+    } catch { /* clipboard access denied — do nothing */ }
+  }
 
   // Existing API logic — unchanged
   async function handleSubmit() {
