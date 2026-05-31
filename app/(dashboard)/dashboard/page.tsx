@@ -55,12 +55,13 @@ function Ring({ value, size = 56, stroke = 5, label }: { value: number; size?: n
 
 // ── Band predictor arc ─────────────────────────────────────────────────────────
 function BandPredictor({ current = 0, target = 7.5 }: { current: number; target: number }) {
+  const { t } = useLanguage()
   const min = 4, max = 9
   const pct = current > 0 ? (current - min) / (max - min) : 0
   const targetPct = (target - min) / (max - min)
   return (
     <div className="card" style={{ padding: 28 }}>
-      <div style={{ fontSize: 11, letterSpacing: '0.1em', textTransform: 'uppercase', color: 'var(--text-3)' }}>Predicted band</div>
+      <div style={{ fontSize: 11, letterSpacing: '0.1em', textTransform: 'uppercase', color: 'var(--text-3)' }}>{t('dash.predictedBand')}</div>
       <div style={{ display: 'flex', alignItems: 'baseline', gap: 10, marginTop: 8 }}>
         <span style={{ fontFamily: 'var(--font-display)', fontStyle: 'italic', fontSize: 68, lineHeight: 0.9, color: 'var(--accent)', fontWeight: 500 }}>
           {current > 0 ? current.toFixed(1) : '—'}
@@ -109,8 +110,10 @@ const SKILL_HREFS: Record<string, string> = {
 }
 
 function SkillTile({ skill, score, delta }: { skill: string; score: number; delta: number }) {
+  const { t } = useLanguage()
   const sparkData = [score - 1.5, score - 1.2, score - 0.8, score - 0.4, score]
   const isPos = delta >= 0
+  const skillLabel = t('dash.skill' + skill.charAt(0).toUpperCase() + skill.slice(1))
   return (
     <Link href={SKILL_HREFS[skill] ?? '/dashboard'} style={{ textDecoration: 'none' }}>
       <div className="card" style={{ padding: 20, position: 'relative', overflow: 'hidden', transition: 'transform .2s' }}
@@ -124,7 +127,7 @@ function SkillTile({ skill, score, delta }: { skill: string; score: number; delt
                 {SKILL_ICONS[skill]}
               </svg>
             </div>
-            <span style={{ fontSize: 13, fontWeight: 600, color: 'var(--text)', textTransform: 'capitalize' }}>{skill}</span>
+            <span style={{ fontSize: 13, fontWeight: 600, color: 'var(--text)' }}>{skillLabel}</span>
           </div>
           {delta !== 0 && (
             <span style={{ fontSize: 11, fontWeight: 600, padding: '2px 7px', borderRadius: 999, background: 'var(--accent-soft)', color: 'var(--accent)' }}>
@@ -143,6 +146,7 @@ function SkillTile({ skill, score, delta }: { skill: string; score: number; delt
 
 // ── Streak card ────────────────────────────────────────────────────────────────
 function StreakCard({ streak }: { streak: number }) {
+  const { t } = useLanguage()
   return (
     <div className="card" style={{ padding: 22 }}>
       <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
@@ -152,10 +156,10 @@ function StreakCard({ streak }: { streak: number }) {
           </svg>
         </div>
         <div>
-          <div style={{ fontSize: 11, color: 'var(--text-3)', letterSpacing: '0.08em' }}>CURRENT STREAK</div>
+          <div style={{ fontSize: 11, color: 'var(--text-3)', letterSpacing: '0.08em' }}>{t('dash.currentStreak')}</div>
           <div style={{ display: 'flex', alignItems: 'baseline', gap: 6, marginTop: 2 }}>
             <span style={{ fontSize: 28, fontWeight: 700, fontVariantNumeric: 'tabular-nums', color: 'var(--text)' }}>{streak}</span>
-            <span style={{ fontSize: 13, color: 'var(--text-2)' }}>days</span>
+            <span style={{ fontSize: 13, color: 'var(--text-2)' }}>{t('dash.days')}</span>
           </div>
         </div>
       </div>
@@ -176,18 +180,19 @@ function StreakCard({ streak }: { streak: number }) {
 
 // ── Calendar heatmap ──────────────────────────────────────────────────────────
 function CalendarStrip({ heatmap }: { heatmap: number[] }) {
+  const { t } = useLanguage()
   // heatmap: 84 levels (0-3), index 0 = 12 weeks ago, 83 = today
   const cell = (w: number, d: number) => heatmap[w * 7 + d] ?? 0
   return (
     <div className="card" style={{ padding: 24 }}>
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 }}>
-        <h3 style={{ margin: 0, fontSize: 15, fontWeight: 600, color: 'var(--text)' }}>Practice activity</h3>
+        <h3 style={{ margin: 0, fontSize: 15, fontWeight: 600, color: 'var(--text)' }}>{t('dash.practiceActivity')}</h3>
         <div style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 11, color: 'var(--text-2)' }}>
-          <span>Less</span>
+          <span>{t('dash.less')}</span>
           {[0,1,2,3].map(l => (
             <div key={l} style={{ width: 11, height: 11, borderRadius: 3, background: l === 0 ? 'var(--bg-soft)' : `color-mix(in srgb, var(--accent) ${20 + l*25}%, transparent)` }}/>
           ))}
-          <span>More</span>
+          <span>{t('dash.more')}</span>
         </div>
       </div>
       <div style={{ display: 'flex', gap: 3 }}>
@@ -206,7 +211,7 @@ function CalendarStrip({ heatmap }: { heatmap: number[] }) {
         ))}
       </div>
       <div style={{ marginTop: 12, display: 'flex', justifyContent: 'space-between', fontSize: 10, color: 'var(--text-3)', fontFamily: 'var(--font-mono)' }}>
-        <span>12 weeks ago</span><span>today</span>
+        <span>{t('dash.weeksAgo')}</span><span>{t('dash.today')}</span>
       </div>
     </div>
   )
@@ -214,19 +219,20 @@ function CalendarStrip({ heatmap }: { heatmap: number[] }) {
 
 // ── Today card ─────────────────────────────────────────────────────────────────
 function TodayCard({ recentItems }: { recentItems: Array<{ label: string; score: number | null; href: string; skill: string }> }) {
+  const { t } = useLanguage()
   const sessions = recentItems.length > 0 ? recentItems : [
-    { label: 'Listening practice', score: null, href: '/listening', skill: 'listening' },
-    { label: 'Writing Task 2', score: null, href: '/dashboard/writing', skill: 'writing' },
-    { label: 'Vocabulary review', score: null, href: '/vocabulary', skill: 'overall' },
+    { label: t('dash.listeningPractice'), score: null, href: '/listening', skill: 'listening' },
+    { label: t('dash.writingTask2'), score: null, href: '/dashboard/writing', skill: 'writing' },
+    { label: t('dash.vocabReview'), score: null, href: '/vocabulary', skill: 'overall' },
   ]
 
   return (
     <div className="card" style={{ padding: 28 }}>
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 20 }}>
         <div>
-          <div style={{ fontSize: 11, letterSpacing: '0.1em', textTransform: 'uppercase', color: 'var(--text-3)' }}>Today's plan</div>
+          <div style={{ fontSize: 11, letterSpacing: '0.1em', textTransform: 'uppercase', color: 'var(--text-3)' }}>{t('dash.todayPlan')}</div>
           <h2 style={{ fontSize: 20, margin: '6px 0 0', fontWeight: 600, letterSpacing: '-0.015em', color: 'var(--text)' }}>
-            {sessions.length} session{sessions.length !== 1 ? 's' : ''} queued
+            {sessions.length} {t('dash.sessionsQueued')}
           </h2>
         </div>
         <Ring value={0} size={52} stroke={4} />
@@ -251,7 +257,7 @@ function TodayCard({ recentItems }: { recentItems: Array<{ label: string; score:
               </div>
               <div style={{ flex: 1 }}>
                 <div style={{ fontSize: 14, fontWeight: 500, color: 'var(--text)' }}>{s.label}</div>
-                {s.score != null && <div style={{ fontSize: 12, color: 'var(--text-3)' }}>Last: {s.score.toFixed(1)}</div>}
+                {s.score != null && <div style={{ fontSize: 12, color: 'var(--text-3)' }}>{t('dash.last')}: {s.score.toFixed(1)}</div>}
               </div>
               {i === 0 && (
                 <svg width={14} height={14} viewBox="0 0 24 24" fill="none" stroke="var(--accent)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -278,7 +284,7 @@ export default function DashboardPage() {
   const [loading, setLoading]         = useState(true)
 
   const hour = new Date().getHours()
-  const greetingTime = hour < 6 ? 'Late night' : hour < 12 ? 'Good morning' : hour < 18 ? 'Good afternoon' : 'Good evening'
+  const greetingTime = hour < 6 ? t('dash.greetingNight') : hour < 12 ? t('dash.greetingMorning') : hour < 18 ? t('dash.greetingAfternoon') : t('dash.greetingEvening')
 
   useEffect(() => {
     async function load() {
@@ -315,14 +321,14 @@ export default function DashboardPage() {
 
       // Recent items from writing + speaking submissions
       const items = [
-        ...dashData.writingSubmissions.slice(0, 2).map((w: any) => ({
-          label: `Writing Task ${w.task_type === '1' ? '1' : '2'}`,
+        ...dashData.writingSubmissions.slice(0, 2).map((w) => ({
+          label: `${t('dash.writingTask')} ${w.task_type === '1' ? '1' : '2'}`,
           score: w.band_score,
           href: '/dashboard/writing',
           skill: 'writing',
         })),
-        ...dashData.speakingSubmissions.slice(0, 1).map((s: any) => ({
-          label: `Speaking Part ${s.part}`,
+        ...dashData.speakingSubmissions.slice(0, 1).map((s) => ({
+          label: `${t('dash.speakingPart')} ${s.part}`,
           score: s.band_score,
           href: '/dashboard/speaking',
           skill: 'speaking',
@@ -335,7 +341,7 @@ export default function DashboardPage() {
       setLoading(false)
     }
     load()
-  }, [])
+  }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
   if (loading) {
     return (
@@ -346,7 +352,7 @@ export default function DashboardPage() {
     )
   }
 
-  const name = profile?.full_name?.split(' ')[0] ?? 'there'
+  const name = profile?.full_name?.split(' ')[0] ?? t('dash.there')
   const overall = scores['overall'] ?? 0
   const target = profile?.target_band_score ?? 7.5
   const skills = ['listening', 'reading', 'writing', 'speaking'].filter(s => scores[s] != null)
@@ -360,9 +366,9 @@ export default function DashboardPage() {
           <span style={{ fontFamily: 'var(--font-display)', fontStyle: 'italic', color: 'var(--accent)' }}>{name}.</span>
         </h1>
         <p style={{ margin: '6px 0 0', fontSize: 15, color: 'var(--text-2)' }}>
-          Target Band{' '}
+          {t('dash.targetBand')}{' '}
           <span style={{ color: 'var(--accent)', fontWeight: 600 }}>{typeof target === 'number' ? target.toFixed(1) : target}</span>
-          {streak > 0 && <> · <span style={{ color: 'var(--warn)', fontWeight: 600 }}>🔥 {streak} day streak</span></>}
+          {streak > 0 && <> · <span style={{ color: 'var(--warn)', fontWeight: 600 }}>🔥 {streak} {t('dash.dayStreak')}</span></>}
         </p>
       </div>
 
