@@ -114,10 +114,134 @@ export async function getWritingPrompts(): Promise<WritingPrompt[]> {
 
 // Human-readable labels per DB question_type
 const QTYPE_LABELS: Record<string, string> = {
-  multiple_choice: 'Multiple choice',
-  true_false:      'True / False / Not Given',
-  matching:        'Matching',
-  fill_blank:      'Sentence / form completion',
+  multiple_choice:   'Multiple choice',
+  true_false:        'True / False / Not Given',
+  matching:          'Matching',
+  matching_headings: 'Matching headings',
+  fill_blank:        'Sentence / form completion',
+}
+
+export function questionTypeLabel(type: string): string {
+  return QTYPE_LABELS[type] ?? type
+}
+
+export type Difficulty = 'easy' | 'medium' | 'hard'
+
+export interface PracticeFilters {
+  /** Question types available for this skill, with how many questions exist. */
+  types: { type: string; label: string; count: number }[]
+  /** count[type][difficulty] — drives which difficulty chips are live per type. */
+  countByTypeDifficulty: Record<string, Partial<Record<Difficulty, number>>>
+}
+
+/**
+ * Which question types and difficulties actually exist for a skill — so the
+ * drill config only ever offers real options (no empty/fabricated filters).
+ */
+export async function getPracticeFilters(skill: 'listening' | 'reading'): Promise<PracticeFilters> {
+  const supabase = db()
+
+  const { data: tests } = await supabase.from('tests').select('id').eq('type', skill)
+  const testIds = (tests ?? []).map((t: any) => t.id)
+  if (testIds.length === 0) return { types: [], countByTypeDifficulty: {} }
+
+  const { data: sections } = await supabase
+    .from('test_sections').select('id, difficulty').in('test_id', testIds)
+  const diffBySection = new Map<string, Difficulty | null>(
+    (sections ?? []).map((s: any) => [s.id, s.difficulty ?? null]),
+  )
+  const sectionIds = (sections ?? []).map((s: any) => s.id)
+  if (sectionIds.length === 0) return { types: [], countByTypeDifficulty: {} }
+
+  const { data: questions } = await supabase
+    .from('questions').select('section_id, question_type').in('section_id', sectionIds)
+
+  const total: Record<string, number> = {}
+  const matrix: Record<string, Partial<Record<Difficulty, number>>> = {}
+  for (const q of (questions ?? []) as any[]) {
+    if (q.question_type === 'essay') continue
+    total[q.question_type] = (total[q.question_type] ?? 0) + 1
+    const diff = diffBySection.get(q.section_id)
+    if (diff) {
+      matrix[q.question_type] ??= {}
+      matrix[q.question_type][diff] = (matrix[q.question_type][diff] ?? 0) + 1
+    }
+  }
+
+  const types = Object.entries(total)
+    .map(([type, count]) => ({ type, label: questionTypeLabel(type), count }))
+    .sort((a, b) => b.count - a.count)
+
+  return { types, countByTypeDifficulty: matrix }
+}
+
+export interface PracticeGroup {
+  sectionId: string
+  title: string
+  /** Reading passage body (sections store it in `instructions`). */
+  passage: string | null
+  audioUrl: string | null
+  difficulty: Difficulty | null
+  questions: Question[]
+}
+
+/**
+ * Build a focused drill: every question of `questionType` for the skill, at the
+ * chosen difficulty ('any' = all), grouped under its source passage/audio section
+ * (needed for context), sections shuffled, capped to roughly `limit` questions.
+ */
+export async function getPracticeSet(opts: {
+  skill: 'listening' | 'reading'
+  questionType: string
+  difficulty: Difficulty | 'any'
+  limit: number
+}): Promise<PracticeGroup[]> {
+  const supabase = db()
+
+  const { data: tests } = await supabase.from('tests').select('id').eq('type', opts.skill)
+  const testIds = (tests ?? []).map((t: any) => t.id)
+  if (testIds.length === 0) return []
+
+  let sectionsQuery = supabase
+    .from('test_sections')
+    .select('id, title, instructions, audio_url, difficulty')
+    .in('test_id', testIds)
+  if (opts.difficulty !== 'any') sectionsQuery = sectionsQuery.eq('difficulty', opts.difficulty)
+  const { data: sections } = await sectionsQuery
+  const sectionList = (sections ?? []) as any[]
+  if (sectionList.length === 0) return []
+
+  const questions = await getQuestionsBySectionIds(sectionList.map(s => s.id))
+  const bySection = new Map<string, Question[]>()
+  for (const q of questions) {
+    if (q.question_type !== opts.questionType) continue
+    if (!bySection.has(q.section_id)) bySection.set(q.section_id, [])
+    bySection.get(q.section_id)!.push(q)
+  }
+
+  // shuffle sections that actually have matching questions
+  const usable = sectionList.filter(s => bySection.has(s.id))
+  for (let i = usable.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1))
+    ;[usable[i], usable[j]] = [usable[j], usable[i]]
+  }
+
+  const groups: PracticeGroup[] = []
+  let count = 0
+  for (const s of usable) {
+    if (count >= opts.limit) break
+    const qs = bySection.get(s.id)!
+    groups.push({
+      sectionId: s.id,
+      title: s.title,
+      passage: opts.skill === 'reading' ? (s.instructions ?? null) : null,
+      audioUrl: s.audio_url ?? null,
+      difficulty: s.difficulty ?? null,
+      questions: qs,
+    })
+    count += qs.length
+  }
+  return groups
 }
 
 export interface SubskillStat { type: string; label: string; correct: number; total: number; accuracy: number }

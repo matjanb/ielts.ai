@@ -377,6 +377,8 @@ export interface Database {
           instructions: string | null
           audio_url: string | null
           audio_duration: number | null
+          difficulty: 'easy' | 'medium' | 'hard' | null
+          topic: string | null
         }
         Insert: {
           id?: string
@@ -386,12 +388,16 @@ export interface Database {
           instructions?: string | null
           audio_url?: string | null
           audio_duration?: number | null
+          difficulty?: 'easy' | 'medium' | 'hard' | null
+          topic?: string | null
         }
         Update: {
           title?: string
           instructions?: string | null
           audio_url?: string | null
           audio_duration?: number | null
+          difficulty?: 'easy' | 'medium' | 'hard' | null
+          topic?: string | null
         }
       }
 

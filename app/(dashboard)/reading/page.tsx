@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react'
 import { getReadingTests, getSubskillAccuracy, type SubskillStat } from '@/lib/services/tests'
 import { getUser } from '@/lib/services/auth'
 import { SkillHubHeader, SubskillCard, TestCard, HubSpinner } from '@/components/dashboard/SkillHub'
+import { PracticeBanner } from '@/components/practice/PracticeBanner'
 import type { IeltsTest } from '@/lib/types/database'
 
 export default function ReadingIndexPage() {
@@ -33,6 +34,8 @@ export default function ReadingIndexPage() {
         nextTest={firstTest?.title ?? 'Passage 1 · TFNG drill'}
         startHref={startHref}
       />
+
+      <PracticeBanner skill="reading" />
 
       <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: 16, marginTop: 24 }}>
         {/* Passage library */}

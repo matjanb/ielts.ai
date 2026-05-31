@@ -5,6 +5,7 @@ import { useLanguage } from '@/lib/i18n/LanguageContext'
 import { getListeningTests, getSubskillAccuracy, type SubskillStat } from '@/lib/services/tests'
 import { getUser } from '@/lib/services/auth'
 import { SkillHubHeader, SubskillCard, TestCard, HubSpinner } from '@/components/dashboard/SkillHub'
+import { PracticeBanner } from '@/components/practice/PracticeBanner'
 import type { IeltsTest } from '@/lib/types/database'
 
 export default function ListeningIndexPage() {
@@ -35,6 +36,8 @@ export default function ListeningIndexPage() {
         nextTest={firstTest?.title ?? 'Section 1'}
         startHref={startHref}
       />
+
+      <PracticeBanner skill="listening" />
 
       <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: 16, marginTop: 24 }}>
         {/* Practice library */}
