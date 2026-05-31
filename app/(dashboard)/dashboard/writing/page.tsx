@@ -16,16 +16,20 @@ interface FeedbackResult {
 
 /* ── Main page — keep ALL existing API logic ─────────────────────────────── */
 export default function WritingPage() {
-  const { t } = useLanguage()
+  const { t: _t } = useLanguage()
   const [taskType, setTaskType] = useState<'1' | '2'>('2')
   const [promptIdx, setPromptIdx] = useState(0)
-  const [contents, setContents] = useState<Record<'1' | '2', string>>({ '1': '', '2': '' })
-  const content = contents[taskType]
-  const setContent = (val: string) => setContents(prev => ({ ...prev, [taskType]: val }))
+
+  // HTML per task (for the editor) + plain text per task (for word count / API)
+  const [htmlContents, setHtmlContents] = useState<Record<'1' | '2', string>>({ '1': '', '2': '' })
+  const [plainTexts, setPlainTexts]     = useState<Record<'1' | '2', string>>({ '1': '', '2': '' })
+  const content  = plainTexts[taskType]   // used for word count and API submission
+
   const [loading, setLoading]   = useState(false)
   const [result, setResult]     = useState<FeedbackResult | null>(null)
   const [error, setError]       = useState('')
-  const [submitted, setSubmitted] = useState(false)
+
+  const editorRef = useRef<HTMLDivElement>(null)
 
   // Writing prompts come from the seeded writing tests (tests/test_sections/questions).
   const [allPrompts, setAllPrompts] = useState<WritingPrompt[]>([])
@@ -38,66 +42,44 @@ export default function WritingPage() {
       .finally(() => setPromptsLoading(false))
   }, [])
 
+  // Restore saved HTML when switching task types
+  useEffect(() => {
+    if (editorRef.current) {
+      editorRef.current.innerHTML = htmlContents[taskType]
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [taskType])
+
   const prompts = useMemo(() => allPrompts.filter(p => p.taskType === taskType), [allPrompts, taskType])
   const currentPrompt = prompts[promptIdx] ?? null
   const wordCount = content.trim() ? content.trim().split(/\s+/).filter(Boolean).length : 0
   const minWords  = currentPrompt?.minWords ?? (taskType === '1' ? 150 : 250)
-  const minutes   = currentPrompt?.minutes ?? (taskType === '1' ? 20 : 40)
-
-  const textareaRef = useRef<HTMLTextAreaElement>(null)
+  const minutes   = currentPrompt?.minutes  ?? (taskType === '1' ? 20  : 40)
 
   function handleTaskTypeChange(type: '1' | '2') {
-    setTaskType(type); setPromptIdx(0); setResult(null); setError(''); setSubmitted(false)
+    setTaskType(type); setPromptIdx(0); setResult(null); setError('')
   }
 
-  function applyFormat(marker: string) {
-    const el = textareaRef.current
+  function handleEditorInput() {
+    const el = editorRef.current
     if (!el) return
-    const start = el.selectionStart
-    const end = el.selectionEnd
-    if (start === end) { el.focus(); return }
-    const selected = content.slice(start, end)
-    const newContent = content.slice(0, start) + marker + selected + marker + content.slice(end)
-    setContent(newContent)
-    setTimeout(() => {
-      el.selectionStart = start + marker.length
-      el.selectionEnd = end + marker.length
-      el.focus()
-    }, 0)
+    setHtmlContents(prev => ({ ...prev, [taskType]: el.innerHTML }))
+    setPlainTexts(prev   => ({ ...prev, [taskType]: el.innerText }))
   }
 
-  async function handleCut() {
-    const el = textareaRef.current
-    if (!el) return
-    const start = el.selectionStart
-    const end = el.selectionEnd
-    if (start === end) return
-    await navigator.clipboard.writeText(content.slice(start, end))
-    setContent(content.slice(0, start) + content.slice(end))
-    setTimeout(() => { el.selectionStart = start; el.selectionEnd = start; el.focus() }, 0)
+  function applyFormat(command: 'bold' | 'italic' | 'underline') {
+    editorRef.current?.focus()
+    document.execCommand(command, false)
   }
 
-  async function handleCopy() {
-    const el = textareaRef.current
-    if (!el) return
-    await navigator.clipboard.writeText(content.slice(el.selectionStart, el.selectionEnd))
-    el.focus()
-  }
-
-  async function handlePaste() {
-    const el = textareaRef.current
-    if (!el) return
-    const text = await navigator.clipboard.readText()
-    const start = el.selectionStart
-    const end = el.selectionEnd
-    setContent(content.slice(0, start) + text + content.slice(end))
-    setTimeout(() => { el.selectionStart = start + text.length; el.selectionEnd = start + text.length; el.focus() }, 0)
-  }
+  function handleCut()   { editorRef.current?.focus(); document.execCommand('cut') }
+  function handleCopy()  { editorRef.current?.focus(); document.execCommand('copy') }
+  function handlePaste() { editorRef.current?.focus(); document.execCommand('paste') }
 
   // Existing API logic — unchanged
   async function handleSubmit() {
     if (wordCount < 50 || !currentPrompt) return
-    setError(''); setResult(null); setLoading(true); setSubmitted(true)
+    setError(''); setResult(null); setLoading(true)
     try {
       const res = await fetch('/api/ai/writing', {
         method: 'POST',
@@ -113,6 +95,13 @@ export default function WritingPage() {
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', flex: 1, minHeight: 0 }}>
+      <style>{`
+        .writing-editor:empty::before {
+          content: attr(data-placeholder);
+          color: var(--text-3);
+          pointer-events: none;
+        }
+      `}</style>
 
       {/* IELTS dark header */}
       <div style={{ background: '#2b2b2b', color: '#fff', padding: '8px 16px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexShrink: 0 }}>
@@ -160,7 +149,7 @@ export default function WritingPage() {
           {/* Prompt selector — only when more than one sample exists for this task */}
           {prompts.length > 1 && (
             <div style={{ display: 'flex', gap: 6, marginBottom: 16 }}>
-              {prompts.map((p, i) => (
+              {prompts.map((_p, i) => (
                 <button key={i} onClick={() => { setPromptIdx(i); setResult(null) }} style={{
                   padding: '4px 10px', borderRadius: 6, fontSize: 11, fontWeight: 600,
                   background: promptIdx === i ? 'var(--accent-soft)' : 'var(--bg-soft)',
@@ -214,11 +203,9 @@ export default function WritingPage() {
           {/* Toolbar */}
           <div style={{ padding: '10px 16px', background: 'var(--bg-soft)', borderBottom: '1px solid var(--border)', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexShrink: 0 }}>
             <div style={{ display: 'flex', gap: 4 }}>
-              {([['B', '**'], ['I', '*'], ['U', '__']] as const).map(([f, marker]) => (
-                <button key={f} onClick={() => applyFormat(marker)} style={{ padding: '3px 9px', fontSize: 12, fontWeight: f === 'B' ? 700 : 400, fontStyle: f === 'I' ? 'italic' : 'normal', textDecoration: f === 'U' ? 'underline' : 'none', background: 'var(--bg-elev)', border: '1px solid var(--border)', borderRadius: 4, cursor: 'pointer', color: 'var(--text)' }}>
-                  {f}
-                </button>
-              ))}
+              <button onClick={() => applyFormat('bold')}      style={{ padding: '3px 9px', fontSize: 12, fontWeight: 700, background: 'var(--bg-elev)', border: '1px solid var(--border)', borderRadius: 4, cursor: 'pointer', color: 'var(--text)' }}>B</button>
+              <button onClick={() => applyFormat('italic')}    style={{ padding: '3px 9px', fontSize: 12, fontStyle: 'italic', background: 'var(--bg-elev)', border: '1px solid var(--border)', borderRadius: 4, cursor: 'pointer', color: 'var(--text)' }}>I</button>
+              <button onClick={() => applyFormat('underline')} style={{ padding: '3px 9px', fontSize: 12, textDecoration: 'underline', background: 'var(--bg-elev)', border: '1px solid var(--border)', borderRadius: 4, cursor: 'pointer', color: 'var(--text)' }}>U</button>
               <div style={{ width: 1, background: 'var(--border)', margin: '0 4px' }}/>
               <button onClick={handleCut}   style={{ padding: '3px 9px', fontSize: 11, background: 'var(--bg-elev)', border: '1px solid var(--border)', borderRadius: 4, cursor: 'pointer', color: 'var(--text)' }}>Cut</button>
               <button onClick={handleCopy}  style={{ padding: '3px 9px', fontSize: 11, background: 'var(--bg-elev)', border: '1px solid var(--border)', borderRadius: 4, cursor: 'pointer', color: 'var(--text)' }}>Copy</button>
@@ -230,16 +217,19 @@ export default function WritingPage() {
             </div>
           </div>
 
-          {/* Textarea */}
-          <textarea
-            ref={textareaRef}
-            value={content}
-            onChange={e => setContent(e.target.value)}
-            placeholder="Start writing your response here…"
+          {/* Editor */}
+          <div
+            ref={editorRef}
+            className="writing-editor"
+            contentEditable
+            suppressContentEditableWarning
+            onInput={handleEditorInput}
+            data-placeholder="Start writing your response here…"
             style={{
-              flex: 1, padding: '20px 24px', border: 'none', outline: 'none', resize: 'none',
+              flex: 1, padding: '20px 24px', outline: 'none', overflow: 'auto',
               fontFamily: 'var(--font-sans)', fontSize: 15, lineHeight: 1.7,
               background: 'var(--bg-elev)', color: 'var(--text)',
+              whiteSpace: 'pre-wrap', wordBreak: 'break-word',
             }}
           />
 
@@ -270,10 +260,10 @@ export default function WritingPage() {
 
             <div style={{ marginTop: 20, display: 'grid', gap: 10 }}>
               {[
-                { k: 'Task response',      v: result.task_achievement },
+                { k: 'Task response',        v: result.task_achievement },
                 { k: 'Coherence & cohesion', v: result.coherence_cohesion },
-                { k: 'Lexical resource',   v: result.lexical_resource },
-                { k: 'Grammar',            v: result.grammatical_accuracy },
+                { k: 'Lexical resource',     v: result.lexical_resource },
+                { k: 'Grammar',              v: result.grammatical_accuracy },
               ].map(row => (
                 <div key={row.k} style={{ background: '#16191b', padding: 14, borderRadius: 10 }}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 6 }}>
