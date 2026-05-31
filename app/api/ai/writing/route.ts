@@ -123,6 +123,15 @@ Return JSON:
       source_id:  submission?.id ?? null,
     })
 
+    // Log study session so streak & study-time reflect real usage
+    // (~1 min per 25 words, min 5)
+    await admin.from('study_sessions').insert({
+      user_id:          user.id,
+      skill:            'writing',
+      activity_type:    'practice',
+      duration_minutes: Math.max(5, Math.round(wordCount / 25)),
+    })
+
     // Record usage
     await recordUsage(user.id, 'writing')
 

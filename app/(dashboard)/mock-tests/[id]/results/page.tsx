@@ -5,7 +5,7 @@ export default async function ResultsPage({ params }: { params: Promise<{ id: st
   const { id } = await params
 
   return (
-    <Suspense fallback={<div className="flex justify-center py-20"><div className="w-8 h-8 rounded-full border-2 border-indigo-500 border-t-transparent animate-spin" /></div>}>
+    <Suspense fallback={<div className="flex justify-center py-20"><div className="w-8 h-8 rounded-full border-2 border-[var(--accent)] border-t-transparent animate-spin" /></div>}>
       <ResultsClient id={id} />
     </Suspense>
   )

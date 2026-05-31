@@ -84,21 +84,21 @@ export default function TestPage({ params }: { params: { id: string } }) {
   if (!started) {
     return (
       <div className="max-w-lg mx-auto">
-        <div className="bg-white dark:bg-gray-900/60 rounded-3xl border border-gray-100 dark:border-gray-800 p-10 text-center">
-          <div className="w-14 h-14 rounded-2xl bg-indigo-50 dark:bg-indigo-500/10 flex items-center justify-center mx-auto mb-6">
-            <Clock size={24} strokeWidth={1.8} className="text-indigo-500" />
+        <div className="card p-10 text-center">
+          <div className="w-14 h-14 rounded-2xl bg-[var(--accent-soft)] flex items-center justify-center mx-auto mb-6">
+            <Clock size={24} strokeWidth={1.8} className="text-[var(--accent)]" />
           </div>
-          <h1 className="text-xl font-bold text-gray-900 dark:text-white mb-2">{SAMPLE_TEST_META.title}</h1>
-          <p className="text-sm text-gray-400 dark:text-gray-500 mb-8 leading-relaxed">{SAMPLE_TEST_META.description}</p>
+          <h1 className="text-xl font-bold text-[var(--text)] mb-2">{SAMPLE_TEST_META.title}</h1>
+          <p className="text-sm text-[var(--text-3)] mb-8 leading-relaxed">{SAMPLE_TEST_META.description}</p>
           <div className="grid grid-cols-3 gap-3 mb-8">
             {[
               { value: QUESTIONS.length, label: t('mockTest.questions') },
               { value: '160', label: 'min' },
               { value: '4', label: 'sections' },
             ].map(({ value, label }) => (
-              <div key={label} className="bg-gray-50 dark:bg-gray-800/60 rounded-xl py-3">
-                <div className="text-lg font-bold text-gray-900 dark:text-white">{value}</div>
-                <div className="text-xs text-gray-400 mt-0.5">{label}</div>
+              <div key={label} className="bg-[var(--bg-soft)] rounded-xl py-3">
+                <div className="text-lg font-bold text-[var(--text)]">{value}</div>
+                <div className="text-xs text-[var(--text-3)] mt-0.5">{label}</div>
               </div>
             ))}
           </div>
@@ -120,13 +120,13 @@ export default function TestPage({ params }: { params: { id: string } }) {
       {/* Top bar */}
       <div className="flex items-center justify-between py-1">
         <div className="flex items-center gap-2.5">
-          <span className={`text-xs font-semibold px-2.5 py-1 rounded-lg ${SECTION_COLORS[question.section] ?? 'bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400'}`}>
+          <span className={`text-xs font-semibold px-2.5 py-1 rounded-lg ${SECTION_COLORS[question.section] ?? 'bg-[var(--bg-soft)] text-[var(--text-2)]'}`}>
             {SECTION_LABELS[question.section] ?? question.section}
           </span>
-          <span className="text-sm text-gray-400 dark:text-gray-500">
+          <span className="text-sm text-[var(--text-3)]">
             {current + 1} / {QUESTIONS.length}
           </span>
-          <span className="text-xs text-gray-300 dark:text-gray-600">
+          <span className="text-xs text-[var(--text-3)]">
             · {answeredCount} {t('mockTest.questions').toLowerCase()} answered
           </span>
         </div>
@@ -145,7 +145,7 @@ export default function TestPage({ params }: { params: { id: string } }) {
         </div>
 
         {/* Question content */}
-        <div className="lg:col-span-3 bg-white dark:bg-gray-900/50 rounded-2xl border border-gray-100 dark:border-gray-800 p-7">
+        <div className="lg:col-span-3 card p-7">
           <QuestionRenderer
             question={question}
             answer={answers[current] ?? ''}
@@ -159,7 +159,7 @@ export default function TestPage({ params }: { params: { id: string } }) {
         <button
           onClick={() => setCurrent(c => Math.max(0, c - 1))}
           disabled={current === 0}
-          className="flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-medium text-gray-500 dark:text-gray-400 disabled:opacity-30 hover:text-gray-700 dark:hover:text-gray-300 hover:bg-gray-100 dark:hover:bg-white/5 transition-all"
+          className="flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-medium text-[var(--text-2)] disabled:opacity-30 hover:bg-[var(--bg-soft)] transition-all"
         >
           <ChevronLeft size={15} strokeWidth={2} />
           {t('mockTest.prevQuestion')}
@@ -177,7 +177,7 @@ export default function TestPage({ params }: { params: { id: string } }) {
           <button
             onClick={handleSubmit}
             disabled={submitting}
-            className="flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-semibold bg-emerald-600 hover:bg-emerald-500 text-white transition-colors disabled:opacity-60"
+            className="flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-semibold bg-[var(--accent)] hover:bg-[var(--accent-hover)] text-white transition-colors disabled:opacity-60"
           >
             <Send size={13} strokeWidth={2} />
             {submitting ? t('mockTest.submitting') : t('mockTest.submitTest')}

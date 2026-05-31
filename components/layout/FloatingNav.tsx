@@ -1,99 +1,147 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { Home, Sparkles, PlayCircle, CreditCard, HelpCircle } from 'lucide-react'
-import { ThemeToggle } from '@/components/ui/ThemeToggle'
-import { LanguageSwitcher } from '@/components/ui/LanguageSwitcher'
-import { useLanguage } from '@/lib/i18n/LanguageContext'
 import Link from 'next/link'
+import { useLanguage } from '@/lib/i18n/LanguageContext'
+import { LanguageSwitcher } from '@/components/ui/LanguageSwitcher'
+import { ThemeToggle } from '@/components/ui/ThemeToggle'
 
 const NAV_ITEMS = [
-  { id: 'home',     icon: Home,       key: 'home'       },
-  { id: 'features', icon: Sparkles,   key: 'features'   },
-  { id: 'how',      icon: PlayCircle, key: 'howItWorks' },
-  { id: 'pricing',  icon: CreditCard, key: 'pricing'    },
-  { id: 'faq',      icon: HelpCircle, key: 'faq'        },
+  { id: 'features', label: 'Skills' },
+  { id: 'how',      label: 'How it works' },
+  { id: 'pricing',  label: 'Pricing' },
+  { id: 'schools',  label: 'For schools' },
 ]
 
 export function FloatingNav() {
-  const [active, setActive] = useState('home')
-  const [visible, setVisible] = useState(true)
-  const [lastY, setLastY] = useState(0)
   const { t } = useLanguage()
+  const [visible, setVisible] = useState(false)
+  const [active, setActive] = useState('features')
 
   useEffect(() => {
-    function onScroll() {
+    const onScroll = () => {
       const y = window.scrollY
-      setVisible(y < lastY || y < 80)
-      setLastY(y)
+      setVisible(y > 360)
 
-      const sections = ['home', 'features', 'how', 'pricing', 'faq']
-      for (const id of [...sections].reverse()) {
-        const el = document.getElementById(id)
-        if (el && window.scrollY + 200 >= el.offsetTop) {
-          setActive(id)
-          break
+      let current = 'features'
+      for (const item of NAV_ITEMS) {
+        const el = document.getElementById(item.id)
+        if (el) {
+          const rect = el.getBoundingClientRect()
+          if (rect.top < window.innerHeight * 0.4) current = item.id
         }
       }
+      setActive(current)
     }
     window.addEventListener('scroll', onScroll, { passive: true })
+    onScroll()
     return () => window.removeEventListener('scroll', onScroll)
-  }, [lastY])
+  }, [])
 
-  function scrollTo(id: string) {
+  const jump = (id: string) => {
     const el = document.getElementById(id)
-    if (el) el.scrollIntoView({ behavior: 'smooth' })
-    setActive(id)
+    if (el) {
+      const top = el.getBoundingClientRect().top + window.scrollY - 80
+      window.scrollTo({ top, behavior: 'smooth' })
+    }
   }
 
   return (
     <>
       {/* Top-right controls */}
-      <div className="fixed top-4 right-4 z-50 flex items-center gap-2">
-        <div className="flex items-center bg-white/85 dark:bg-gray-900/85 backdrop-blur-xl border border-gray-200/60 dark:border-white/8 rounded-xl px-1 py-1 shadow-sm shadow-black/5 dark:shadow-black/30">
-          <LanguageSwitcher />
-          <ThemeToggle />
-        </div>
-        <Link
-          href="/login"
-          className="px-4 py-2 rounded-xl text-sm font-medium border border-gray-200/80 dark:border-white/10 text-gray-700 dark:text-gray-300 hover:border-indigo-400/60 hover:text-indigo-600 dark:hover:text-indigo-400 transition-all duration-150 hidden sm:block bg-white/85 dark:bg-gray-900/85 backdrop-blur-xl shadow-sm shadow-black/5"
-        >
-          {t('nav.login')}
-        </Link>
-        <Link
-          href="/diagnostic/start"
-          className="px-4 py-2 rounded-xl text-sm font-semibold btn-primary text-white hidden sm:block"
-        >
-          {t('nav.getStarted')}
-        </Link>
-      </div>
-
-      {/* Bottom floating nav */}
-      <nav
-        className={`fixed bottom-6 left-1/2 -translate-x-1/2 z-50 transition-all duration-300 ease-out ${
-          visible ? 'translate-y-0 opacity-100' : 'translate-y-20 opacity-0 pointer-events-none'
-        }`}
+      <header
+        style={{
+          position: 'sticky',
+          top: 0,
+          zIndex: 40,
+          backdropFilter: 'blur(20px) saturate(1.2)',
+          background: 'color-mix(in srgb, var(--bg) 80%, transparent)',
+          borderBottom: '1px solid color-mix(in srgb, var(--border) 60%, transparent)',
+        }}
       >
-        <div className="flex items-center gap-0.5 p-1.5 rounded-2xl bg-white/88 dark:bg-[#0c0c1d]/92 backdrop-blur-2xl border border-gray-200/50 dark:border-white/8 shadow-2xl shadow-black/10 dark:shadow-black/60">
-          {NAV_ITEMS.map(({ id, icon: Icon, key }) => {
-            const isActive = active === id
+        <div style={{ maxWidth: 1240, margin: '0 auto', padding: '14px 32px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+          {/* Logo */}
+          <Link href="/" style={{ display: 'inline-flex', alignItems: 'center', gap: 8, fontWeight: 700, letterSpacing: '-0.02em', fontSize: 16 }}>
+            <svg width={22} height={22} viewBox="0 0 24 24" fill="none">
+              <path d="M4 19L10 5l3 7 2.5-4L20 19" stroke="var(--accent)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+              <circle cx="20" cy="6" r="2" fill="var(--accent)"/>
+            </svg>
+            ielts<span style={{ color: 'var(--accent)' }}>.</span>camp
+          </Link>
+
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+            <ThemeToggle />
+            <LanguageSwitcher />
+            <Link href="/login" style={{
+              display: 'inline-flex', alignItems: 'center',
+              padding: '7px 14px', borderRadius: 'var(--radius)',
+              fontSize: 13, fontWeight: 600,
+              border: '1px solid var(--border-strong)',
+              color: 'var(--text)',
+              transition: 'background 0.15s',
+            }}
+            onMouseEnter={e => (e.currentTarget.style.background = 'var(--bg-soft)')}
+            onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}
+            >
+              {t('nav.login')}
+            </Link>
+            <Link href="/diagnostic/start" style={{
+              display: 'inline-flex', alignItems: 'center', gap: 6,
+              padding: '7px 14px', borderRadius: 'var(--radius)',
+              fontSize: 13, fontWeight: 600,
+              background: 'var(--accent)', color: 'var(--accent-fg)',
+              transition: 'background 0.15s, transform 0.15s',
+            }}
+            onMouseEnter={e => { e.currentTarget.style.background = 'var(--accent-hover)'; e.currentTarget.style.transform = 'translateY(-1px)'; }}
+            onMouseLeave={e => { e.currentTarget.style.background = 'var(--accent)'; e.currentTarget.style.transform = 'none'; }}
+            >
+              {t('nav.getStarted')}
+            </Link>
+          </div>
+        </div>
+      </header>
+
+      {/* Floating bottom pill nav */}
+      <div style={{
+        position: 'fixed',
+        bottom: 24,
+        left: '50%',
+        transform: `translateX(-50%) translateY(${visible ? 0 : 30}px)`,
+        opacity: visible ? 1 : 0,
+        pointerEvents: visible ? 'auto' : 'none',
+        zIndex: 50,
+        transition: 'transform 0.35s cubic-bezier(0.2,0.7,0.2,1), opacity 0.25s ease',
+      }}>
+        <nav style={{
+          display: 'flex', alignItems: 'center', gap: 2, padding: 6,
+          background: 'color-mix(in srgb, var(--bg-elev) 85%, transparent)',
+          backdropFilter: 'blur(20px) saturate(1.4)',
+          WebkitBackdropFilter: 'blur(20px) saturate(1.4)',
+          border: '1px solid var(--border)',
+          borderRadius: 999,
+          boxShadow: 'var(--shadow-lg)',
+        }}>
+          {NAV_ITEMS.map(item => {
+            const isActive = active === item.id
             return (
               <button
-                key={id}
-                onClick={() => scrollTo(id)}
-                className={`flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs font-medium transition-all duration-200 ${
-                  isActive
-                    ? 'bg-indigo-600 text-white shadow-sm shadow-indigo-600/25'
-                    : 'text-gray-500 dark:text-gray-400 hover:text-gray-800 dark:hover:text-white hover:bg-black/5 dark:hover:bg-white/8'
-                }`}
+                key={item.id}
+                onClick={() => jump(item.id)}
+                style={{
+                  padding: '9px 16px', borderRadius: 999,
+                  fontSize: 13.5, fontWeight: 500,
+                  color: isActive ? 'var(--accent-fg)' : 'var(--text)',
+                  background: isActive ? 'var(--accent)' : 'transparent',
+                  transition: 'background 0.2s, color 0.2s',
+                  whiteSpace: 'nowrap',
+                }}
               >
-                <Icon size={15} strokeWidth={isActive ? 2.5 : 1.8} />
-                <span className="hidden sm:inline">{t(`nav.${key}`)}</span>
+                {item.label}
               </button>
             )
           })}
-        </div>
-      </nav>
+        </nav>
+      </div>
     </>
   )
 }

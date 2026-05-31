@@ -6,6 +6,23 @@ function db() {
   return createClient() as any
 }
 
+/** Log a completed study activity so streak & study-time stats reflect real usage. */
+export async function logStudySession(
+  userId: string,
+  skill: string,
+  durationMinutes: number,
+  activityType = 'practice'
+) {
+  await db()
+    .from('study_sessions')
+    .insert({
+      user_id: userId,
+      skill,
+      activity_type: activityType,
+      duration_minutes: Math.max(1, Math.round(durationMinutes)),
+    })
+}
+
 export async function createAttempt(userId: string, testId: string): Promise<string | null> {
   const { data } = await db()
     .from('user_attempts')

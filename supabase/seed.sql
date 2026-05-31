@@ -4215,3 +4215,58 @@ VALUES (s4_id, 40, 'fill_blank', 'is worried about the consequences of children 
 RAISE NOTICE 'Cambridge IELTS 17 Test 2 inserted successfully. Test ID: %', t_id;
 
 END $$;
+-- ============================================================
+-- Seed: Cambridge IELTS 18 — Test 1 (Writing)
+-- Task 1: line graph (image in storage), Task 2: opinion essay
+-- ============================================================
+
+insert into tests (id, title, type, book_number, test_number, difficulty)
+values (
+  '11111111-0018-0001-0001-000000000001',
+  'Cambridge IELTS 18 — Test 1 (Writing)',
+  'writing', 18, 1, 'medium'
+) on conflict (id) do nothing;
+
+-- ── TASK 1 ───────────────────────────────────────────────────
+insert into test_sections (id, test_id, section_number, title, instructions)
+values (
+  '22222222-0018-0001-0001-000000000001',
+  '11111111-0018-0001-0001-000000000001',
+  1,
+  'Writing Task 1',
+  'You should spend about 20 minutes on this task.'
+) on conflict (id) do nothing;
+
+insert into questions (id, section_id, question_number, question_type, question_text, options, correct_answer, image_url, points)
+values (
+  '33333333-0018-0001-0001-000000000001',
+  '22222222-0018-0001-0001-000000000001', 1,
+  'essay',
+  E'The graph below gives information about the percentage of the population in four Asian countries living in cities from 1970 to 2020, with predictions for 2030 and 2040.\n\nSummarise the information by selecting and reporting the main features, and make comparisons where relevant.',
+  '{"task_type":"1","minutes":20,"min_words":150,"note":"Write at least 150 words."}',
+  null,
+  'https://vqyyoxfsitsdmmxecqka.supabase.co/storage/v1/object/public/question-images/C18%20writing%20test%201.png',
+  1
+) on conflict (id) do nothing;
+
+-- ── TASK 2 ───────────────────────────────────────────────────
+insert into test_sections (id, test_id, section_number, title, instructions)
+values (
+  '22222222-0018-0001-0001-000000000002',
+  '11111111-0018-0001-0001-000000000001',
+  2,
+  'Writing Task 2',
+  'You should spend about 40 minutes on this task.'
+) on conflict (id) do nothing;
+
+insert into questions (id, section_id, question_number, question_type, question_text, options, correct_answer, image_url, points)
+values (
+  '33333333-0018-0001-0001-000000000002',
+  '22222222-0018-0001-0001-000000000002', 1,
+  'essay',
+  E'The most important aim of science should be to improve people''s lives.\n\nTo what extent do you agree or disagree with this statement?',
+  '{"task_type":"2","minutes":40,"min_words":250,"note":"Give reasons for your answer and include any relevant examples from your own knowledge or experience.\n\nWrite at least 250 words."}',
+  null,
+  null,
+  1
+) on conflict (id) do nothing;

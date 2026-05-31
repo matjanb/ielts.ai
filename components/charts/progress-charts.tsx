@@ -38,9 +38,9 @@ export function BandRing({
           className="fill-gray-900 dark:fill-white" />
       </svg>
       <div className="absolute inset-0 flex flex-col items-center justify-center leading-none select-none">
-        <span className="text-[11px] font-medium text-gray-400 dark:text-gray-500 uppercase tracking-widest">{label}</span>
-        <span className="text-[44px] font-bold text-gray-900 dark:text-white mt-2 tabular-nums">{band.toFixed(1)}</span>
-        <span className="text-xs text-gray-400 dark:text-gray-500 mt-1.5">target {target.toFixed(1)}</span>
+        <span className="text-[11px] font-medium text-[var(--text-3)] uppercase tracking-widest">{label}</span>
+        <span className="text-[44px] font-bold text-[var(--text)] mt-2 tabular-nums">{band.toFixed(1)}</span>
+        <span className="text-xs text-[var(--text-3)] mt-1.5">target {target.toFixed(1)}</span>
       </div>
     </div>
   )
@@ -59,11 +59,11 @@ export function BandBar({
   const pct = (Math.min(value, max) / max) * 100
   const tPct = (Math.min(target, max) / max) * 100
   return (
-    <div className="relative h-2 rounded-full bg-gray-100 dark:bg-gray-800">
-      <div className="absolute inset-y-0 left-0 rounded-full bg-indigo-500"
-        style={{ width: `${pct}%` }} />
-      <div className="absolute w-0.5 bg-gray-900 dark:bg-white opacity-60"
-        style={{ left: `${tPct}%`, top: '-4px', bottom: '-4px', transform: 'translateX(-1px)' }} />
+    <div className="relative h-2 rounded-full bg-[var(--bg-soft)]">
+      <div className="absolute inset-y-0 left-0 rounded-full"
+        style={{ width: `${pct}%`, background: 'var(--accent)' }} />
+      <div className="absolute w-0.5 opacity-60"
+        style={{ left: `${tPct}%`, top: '-4px', bottom: '-4px', transform: 'translateX(-1px)', background: 'var(--text)' }} />
     </div>
   )
 }

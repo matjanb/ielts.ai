@@ -400,11 +400,11 @@ export interface Database {
           id: string
           section_id: string
           question_number: number
-          question_type: 'multiple_choice' | 'fill_blank' | 'matching' | 'true_false'
+          question_type: 'multiple_choice' | 'fill_blank' | 'matching' | 'true_false' | 'matching_headings' | 'essay'
           question_text: string
           image_url: string | null
           options: Json | null
-          correct_answer: string
+          correct_answer: string | null
           points: number
           passage_text: string | null
           passage_group: number | null
@@ -413,11 +413,11 @@ export interface Database {
           id?: string
           section_id: string
           question_number: number
-          question_type: 'multiple_choice' | 'fill_blank' | 'matching' | 'true_false'
+          question_type: 'multiple_choice' | 'fill_blank' | 'matching' | 'true_false' | 'matching_headings' | 'essay'
           question_text: string
           image_url?: string | null
           options?: Json | null
-          correct_answer: string
+          correct_answer?: string | null
           points?: number
           passage_text?: string | null
           passage_group?: number | null
@@ -426,7 +426,7 @@ export interface Database {
           question_text?: string
           image_url?: string | null
           options?: Json | null
-          correct_answer?: string
+          correct_answer?: string | null
           points?: number
           passage_text?: string | null
           passage_group?: number | null

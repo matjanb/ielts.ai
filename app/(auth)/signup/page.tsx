@@ -90,7 +90,7 @@ export default function SignupPage() {
   if (emailSent) {
     return (
       <div className="w-full max-w-md">
-        <div className="bg-white dark:bg-gray-900/60 rounded-3xl border border-gray-100 dark:border-gray-800 p-8 shadow-xl shadow-black/5 dark:shadow-black/30 text-center">
+        <div className="card text-center">
           <div className="flex items-center justify-center w-16 h-16 rounded-full bg-indigo-50 dark:bg-indigo-500/10 mx-auto mb-6">
             <Mail className="w-8 h-8 text-indigo-500" />
           </div>
@@ -129,7 +129,7 @@ export default function SignupPage() {
 
   return (
     <div className="w-full max-w-md">
-      <div className="bg-white dark:bg-gray-900/60 rounded-3xl border border-gray-100 dark:border-gray-800 p-8 shadow-xl shadow-black/5 dark:shadow-black/30">
+      <div className="card">
 
         {/* Header */}
         <div className="text-center mb-8">
@@ -158,21 +158,21 @@ export default function SignupPage() {
 
         {/* Divider */}
         <div className="flex items-center gap-3 mb-6">
-          <div className="flex-1 h-px bg-gray-200 dark:bg-gray-800" />
-          <span className="text-xs text-gray-400">{t('auth.orContinueWith')}</span>
-          <div className="flex-1 h-px bg-gray-200 dark:bg-gray-800" />
+          <div className="flex-1 h-px bg-[var(--border)]" />
+          <span className="text-xs text-[var(--text-3)]">{t('auth.orContinueWith')}</span>
+          <div className="flex-1 h-px bg-[var(--border)]" />
         </div>
 
         {/* Form */}
         <form onSubmit={handleSubmit} className="space-y-4">
           {error && (
-            <div className="px-4 py-3 rounded-xl bg-red-50 dark:bg-red-500/10 border border-red-200 dark:border-red-500/20 text-sm text-red-600 dark:text-red-400">
+            <div className="px-4 py-3 rounded-xl text-sm">
               {error}
             </div>
           )}
 
           <div>
-            <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1.5">
+            <label style={{ fontSize: 11, fontWeight: 600, color: "var(--text-3)", letterSpacing: "0.06em", display: "block", marginBottom: 6 }}>
               {t('auth.nameLabel')}
             </label>
             <input
@@ -180,13 +180,13 @@ export default function SignupPage() {
               value={name}
               onChange={e => setName(e.target.value)}
               required
-              className="w-full px-4 py-3 rounded-xl text-sm border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-500/40 focus:border-indigo-500 transition-all"
+              className="input"
               placeholder="Alex Johnson"
             />
           </div>
 
           <div>
-            <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1.5">
+            <label style={{ fontSize: 11, fontWeight: 600, color: "var(--text-3)", letterSpacing: "0.06em", display: "block", marginBottom: 6 }}>
               {t('auth.emailLabel')}
             </label>
             <input
@@ -194,13 +194,13 @@ export default function SignupPage() {
               value={email}
               onChange={e => setEmail(e.target.value)}
               required
-              className="w-full px-4 py-3 rounded-xl text-sm border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-500/40 focus:border-indigo-500 transition-all"
+              className="input"
               placeholder="you@example.com"
             />
           </div>
 
           <div>
-            <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1.5">
+            <label style={{ fontSize: 11, fontWeight: 600, color: "var(--text-3)", letterSpacing: "0.06em", display: "block", marginBottom: 6 }}>
               {t('auth.passwordLabel')}
             </label>
             <div className="relative">
@@ -210,13 +210,13 @@ export default function SignupPage() {
                 onChange={e => setPassword(e.target.value)}
                 required
                 minLength={8}
-                className="w-full px-4 py-3 pr-11 rounded-xl text-sm border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-500/40 focus:border-indigo-500 transition-all"
+                className="input" style={{ paddingRight: 44 }}
                 placeholder="Min. 8 characters"
               />
               <button
                 type="button"
                 onClick={() => setShowPassword(s => !s)}
-                className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-[var(--text-3)]"
               >
                 {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
               </button>
@@ -224,7 +224,7 @@ export default function SignupPage() {
           </div>
 
           <div>
-            <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1.5">
+            <label style={{ fontSize: 11, fontWeight: 600, color: "var(--text-3)", letterSpacing: "0.06em", display: "block", marginBottom: 6 }}>
               {t('auth.confirmPasswordLabel')}
             </label>
             <input
@@ -232,7 +232,7 @@ export default function SignupPage() {
               value={confirmPassword}
               onChange={e => setConfirmPassword(e.target.value)}
               required
-              className="w-full px-4 py-3 rounded-xl text-sm border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-500/40 focus:border-indigo-500 transition-all"
+              className="input"
               placeholder="••••••••"
             />
           </div>
@@ -247,7 +247,7 @@ export default function SignupPage() {
         </form>
 
         {/* Terms */}
-        <p className="text-center text-xs text-gray-400 dark:text-gray-500 mt-4">
+        <p className="text-center text-xs text-[var(--text-3)] dark:text-gray-500 mt-4">
           {t('auth.agreeToTerms')}{' '}
           <Link href="/terms" className="text-indigo-500 hover:underline">{t('auth.termsLink')}</Link>
           {' '}{t('auth.andWord')}{' '}

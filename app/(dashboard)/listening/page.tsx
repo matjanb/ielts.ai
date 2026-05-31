@@ -1,92 +1,98 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import Link from 'next/link'
-import { Headphones, Clock, HelpCircle, ChevronRight } from 'lucide-react'
 import { useLanguage } from '@/lib/i18n/LanguageContext'
-import { getListeningTests } from '@/lib/services/tests'
+import { getListeningTests, getSubskillAccuracy, type SubskillStat } from '@/lib/services/tests'
+import { getUser } from '@/lib/services/auth'
+import { SkillHubHeader, SubskillCard, TestCard, HubSpinner } from '@/components/dashboard/SkillHub'
 import type { IeltsTest } from '@/lib/types/database'
 
 export default function ListeningIndexPage() {
   const { t } = useLanguage()
   const [tests, setTests] = useState<IeltsTest[]>([])
+  const [subskills, setSubskills] = useState<SubskillStat[]>([])
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
     async function load() {
       const data = await getListeningTests()
       setTests(data)
+      const { user } = await getUser()
+      if (user) setSubskills(await getSubskillAccuracy(user.id, 'listening'))
       setLoading(false)
     }
     load()
   }, [])
 
-  return (
-    <div className="max-w-2xl mx-auto space-y-6">
-      {/* Header */}
-      <div className="flex items-center gap-3">
-        <div className="w-10 h-10 rounded-xl bg-amber-50 dark:bg-amber-500/10 flex items-center justify-center">
-          <Headphones size={18} strokeWidth={1.8} className="text-amber-500" />
-        </div>
-        <div>
-          <h1 className="text-lg font-semibold text-gray-900 dark:text-white">
-            {t('listening.title')}
-          </h1>
-          <p className="text-sm text-gray-400 dark:text-gray-500">
-            {t('listening.subtitle')}
-          </p>
-        </div>
-      </div>
+  const firstTest = tests[0]
+  const startHref = firstTest ? `/listening/${firstTest.id}` : '#'
 
-      {/* Test list */}
-      {loading ? (
-        <div className="flex items-center justify-center h-40">
-          <div className="w-5 h-5 rounded-full border-2 border-amber-500 border-t-transparent animate-spin" />
+  return (
+    <div style={{ padding: '32px 32px 80px' }}>
+      <SkillHubHeader
+        name="Listening"
+        icon="headphones"
+        nextTest={firstTest?.title ?? 'Section 1'}
+        startHref={startHref}
+      />
+
+      <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: 16, marginTop: 24 }}>
+        {/* Practice library */}
+        <div className="card" style={{ padding: 28 }}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 18 }}>
+            <h3 style={{ margin: 0, fontSize: 18, fontWeight: 600, color: 'var(--text)' }}>Practice library</h3>
+            <div style={{ display: 'flex', gap: 4 }}>
+              {['All', 'Cambridge 18', 'Cambridge 19'].map(f => (
+                <button key={f} style={{
+                  padding: '5px 10px', borderRadius: 8, fontSize: 12, fontWeight: 600,
+                  background: f === 'All' ? 'var(--bg-soft)' : 'transparent',
+                  color: f === 'All' ? 'var(--text)' : 'var(--text-2)',
+                  border: f === 'All' ? '1px solid var(--border)' : '1px solid transparent',
+                  cursor: 'pointer',
+                }}>
+                  {f}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {loading ? (
+            <HubSpinner />
+          ) : tests.length === 0 ? (
+            <div style={{ padding: '32px 0', textAlign: 'center', color: 'var(--text-3)', fontSize: 14 }}>
+              {t('listening.noTests')}
+            </div>
+          ) : (
+            <div style={{ display: 'grid', gap: 8 }}>
+              {tests.map(test => (
+                <TestCard
+                  key={test.id}
+                  test={test}
+                  href={`/listening/${test.id}`}
+                  icon="headphones"
+                  questionsLabel="40 questions"
+                  timeLabel={`30 ${t('listening.minutes')}`}
+                />
+              ))}
+            </div>
+          )}
         </div>
-      ) : tests.length === 0 ? (
-        <div className="rounded-2xl border border-gray-100 dark:border-gray-800 bg-white dark:bg-gray-900/50 p-8 text-center">
-          <p className="text-sm text-gray-400 dark:text-gray-500">
-            {t('listening.noTests')}
-          </p>
-        </div>
-      ) : (
-        <div className="space-y-3">
-          {tests.map((test) => (
-            <Link
-              key={test.id}
-              href={`/listening/${test.id}`}
-              className="flex items-center gap-4 p-5 rounded-2xl bg-white dark:bg-gray-900/50 border border-gray-100 dark:border-gray-800 hover:border-gray-200 dark:hover:border-gray-700 hover:shadow-md hover:shadow-black/4 transition-all duration-200 group"
-            >
-              <div className="w-10 h-10 rounded-xl bg-amber-50 dark:bg-amber-500/10 flex items-center justify-center shrink-0">
-                <Headphones size={16} strokeWidth={1.8} className="text-amber-500" />
-              </div>
-              <div className="flex-1 min-w-0">
-                <p className="text-sm font-medium text-gray-900 dark:text-white truncate">
-                  {test.title}
-                </p>
-                {(test.book_number != null || test.test_number != null) && (
-                  <p className="text-xs text-gray-400 dark:text-gray-500 mt-0.5 truncate">
-                    {test.book_number != null ? `Book ${test.book_number}` : ''}
-                    {test.book_number != null && test.test_number != null ? ' · ' : ''}
-                    {test.test_number != null ? `Test ${test.test_number}` : ''}
-                  </p>
-                )}
-                <div className="flex items-center gap-3 mt-1.5">
-                  <span className="flex items-center gap-1 text-xs text-gray-400 dark:text-gray-500">
-                    <HelpCircle size={11} strokeWidth={2} />
-                    40 {t('listening.questions')}
-                  </span>
-                  <span className="flex items-center gap-1 text-xs text-gray-400 dark:text-gray-500">
-                    <Clock size={11} strokeWidth={2} />
-                    30 {t('listening.minutes')}
-                  </span>
-                </div>
-              </div>
-              <ChevronRight size={15} strokeWidth={2} className="text-gray-300 dark:text-gray-700 group-hover:text-gray-500 dark:group-hover:text-gray-400 transition-colors shrink-0" />
-            </Link>
-          ))}
-        </div>
-      )}
+
+        {/* Subskill performance — real data from completed attempts */}
+        {subskills.length > 0 ? (
+          <SubskillCard
+            title="Question type accuracy"
+            rows={subskills.map(s => ({ label: s.label, value: s.accuracy }))}
+          />
+        ) : (
+          <div className="card" style={{ padding: 24 }}>
+            <h3 style={{ margin: '0 0 14px', fontSize: 15, fontWeight: 600, color: 'var(--text)' }}>Question type accuracy</h3>
+            <p style={{ fontSize: 13, color: 'var(--text-3)', lineHeight: 1.5, margin: 0 }}>
+              Complete a listening test to see your accuracy broken down by question type.
+            </p>
+          </div>
+        )}
+      </div>
     </div>
   )
 }

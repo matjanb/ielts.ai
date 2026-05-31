@@ -1,3 +1,9 @@
+/** Round any score to the nearest valid IELTS half-band (4.0–9.0). */
+export function snapToBand(score: number): number {
+  const clamped = Math.max(4.0, Math.min(9.0, score))
+  return Math.round(clamped * 2) / 2
+}
+
 export function listeningRawToBand(rawScore: number): number {
   if (rawScore >= 39) return 9.0
   if (rawScore >= 37) return 8.5
