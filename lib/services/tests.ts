@@ -51,6 +51,58 @@ export async function getReadingTests(): Promise<IeltsTest[]> {
   return data ?? []
 }
 
+export async function getWritingTests(): Promise<IeltsTest[]> {
+  const { data } = await db()
+    .from('tests')
+    .select('id, title, book_number, test_number, difficulty')
+    .eq('type', 'writing')
+    .order('created_at', { ascending: true })
+  return data ?? []
+}
+
+export async function getWritingPromptsForTest(testId: string): Promise<WritingPrompt[]> {
+  const supabase = db()
+
+  const { data: test } = await supabase
+    .from('tests')
+    .select('id, title')
+    .eq('id', testId)
+    .single()
+  if (!test) return []
+
+  const { data: sections } = await supabase
+    .from('test_sections')
+    .select('id, test_id, section_number, title')
+    .eq('test_id', testId)
+    .order('section_number')
+  const sectionIds = (sections ?? []).map((s: any) => s.id)
+  if (sectionIds.length === 0) return []
+
+  const { data: questions } = await supabase
+    .from('questions')
+    .select('section_id, question_text, options, image_url')
+    .in('section_id', sectionIds)
+    .eq('question_type', 'essay')
+    .order('question_number')
+
+  const sectionById = new Map<string, any>((sections ?? []).map((s: any) => [s.id, s]))
+
+  return (questions ?? []).map((q: any): WritingPrompt => {
+    const opts = (q.options ?? {}) as Record<string, unknown>
+    const taskType: '1' | '2' = String(opts.task_type) === '1' ? '1' : '2'
+    const section = sectionById.get(q.section_id)
+    return {
+      taskType,
+      title: section?.title ?? `Task ${taskType}`,
+      text: q.question_text,
+      note: typeof opts.note === 'string' ? opts.note : '',
+      minutes: typeof opts.minutes === 'number' ? opts.minutes : (taskType === '1' ? 20 : 40),
+      minWords: typeof opts.min_words === 'number' ? opts.min_words : (taskType === '1' ? 150 : 250),
+      imageUrl: q.image_url ?? null,
+    }
+  })
+}
+
 export interface WritingPrompt {
   taskType: '1' | '2'
   title: string
