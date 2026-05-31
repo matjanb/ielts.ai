@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useMemo } from 'react'
+import { useState, useEffect, useMemo, useRef } from 'react'
 import { Loader2 } from 'lucide-react'
 import { useLanguage } from '@/lib/i18n/LanguageContext'
 import { getWritingPrompts, type WritingPrompt } from '@/lib/services/tests'
@@ -44,8 +44,54 @@ export default function WritingPage() {
   const minWords  = currentPrompt?.minWords ?? (taskType === '1' ? 150 : 250)
   const minutes   = currentPrompt?.minutes ?? (taskType === '1' ? 20 : 40)
 
+  const textareaRef = useRef<HTMLTextAreaElement>(null)
+
   function handleTaskTypeChange(type: '1' | '2') {
     setTaskType(type); setPromptIdx(0); setResult(null); setError(''); setSubmitted(false)
+  }
+
+  function applyFormat(marker: string) {
+    const el = textareaRef.current
+    if (!el) return
+    const start = el.selectionStart
+    const end = el.selectionEnd
+    if (start === end) { el.focus(); return }
+    const selected = content.slice(start, end)
+    const newContent = content.slice(0, start) + marker + selected + marker + content.slice(end)
+    setContent(newContent)
+    setTimeout(() => {
+      el.selectionStart = start + marker.length
+      el.selectionEnd = end + marker.length
+      el.focus()
+    }, 0)
+  }
+
+  async function handleCut() {
+    const el = textareaRef.current
+    if (!el) return
+    const start = el.selectionStart
+    const end = el.selectionEnd
+    if (start === end) return
+    await navigator.clipboard.writeText(content.slice(start, end))
+    setContent(content.slice(0, start) + content.slice(end))
+    setTimeout(() => { el.selectionStart = start; el.selectionEnd = start; el.focus() }, 0)
+  }
+
+  async function handleCopy() {
+    const el = textareaRef.current
+    if (!el) return
+    await navigator.clipboard.writeText(content.slice(el.selectionStart, el.selectionEnd))
+    el.focus()
+  }
+
+  async function handlePaste() {
+    const el = textareaRef.current
+    if (!el) return
+    const text = await navigator.clipboard.readText()
+    const start = el.selectionStart
+    const end = el.selectionEnd
+    setContent(content.slice(0, start) + text + content.slice(end))
+    setTimeout(() => { el.selectionStart = start + text.length; el.selectionEnd = start + text.length; el.focus() }, 0)
   }
 
   // Existing API logic — unchanged
@@ -168,15 +214,15 @@ export default function WritingPage() {
           {/* Toolbar */}
           <div style={{ padding: '10px 16px', background: 'var(--bg-soft)', borderBottom: '1px solid var(--border)', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexShrink: 0 }}>
             <div style={{ display: 'flex', gap: 4 }}>
-              {['B', 'I', 'U'].map(f => (
-                <button key={f} style={{ padding: '3px 9px', fontSize: 12, fontWeight: f === 'B' ? 700 : 400, fontStyle: f === 'I' ? 'italic' : 'normal', textDecoration: f === 'U' ? 'underline' : 'none', background: 'var(--bg-elev)', border: '1px solid var(--border)', borderRadius: 4, cursor: 'pointer', color: 'var(--text)' }}>
+              {([['B', '**'], ['I', '*'], ['U', '__']] as const).map(([f, marker]) => (
+                <button key={f} onClick={() => applyFormat(marker)} style={{ padding: '3px 9px', fontSize: 12, fontWeight: f === 'B' ? 700 : 400, fontStyle: f === 'I' ? 'italic' : 'normal', textDecoration: f === 'U' ? 'underline' : 'none', background: 'var(--bg-elev)', border: '1px solid var(--border)', borderRadius: 4, cursor: 'pointer', color: 'var(--text)' }}>
                   {f}
                 </button>
               ))}
               <div style={{ width: 1, background: 'var(--border)', margin: '0 4px' }}/>
-              {['Cut', 'Copy', 'Paste'].map(a => (
-                <button key={a} style={{ padding: '3px 9px', fontSize: 11, background: 'var(--bg-elev)', border: '1px solid var(--border)', borderRadius: 4, cursor: 'pointer', color: 'var(--text)' }}>{a}</button>
-              ))}
+              <button onClick={handleCut}   style={{ padding: '3px 9px', fontSize: 11, background: 'var(--bg-elev)', border: '1px solid var(--border)', borderRadius: 4, cursor: 'pointer', color: 'var(--text)' }}>Cut</button>
+              <button onClick={handleCopy}  style={{ padding: '3px 9px', fontSize: 11, background: 'var(--bg-elev)', border: '1px solid var(--border)', borderRadius: 4, cursor: 'pointer', color: 'var(--text)' }}>Copy</button>
+              <button onClick={handlePaste} style={{ padding: '3px 9px', fontSize: 11, background: 'var(--bg-elev)', border: '1px solid var(--border)', borderRadius: 4, cursor: 'pointer', color: 'var(--text)' }}>Paste</button>
             </div>
             <div style={{ fontSize: 12, color: wordCount >= minWords ? 'var(--accent)' : 'var(--text-3)' }}>
               <strong style={{ color: wordCount >= minWords ? 'var(--accent)' : 'var(--danger)' }}>{wordCount}</strong>
@@ -186,6 +232,7 @@ export default function WritingPage() {
 
           {/* Textarea */}
           <textarea
+            ref={textareaRef}
             value={content}
             onChange={e => setContent(e.target.value)}
             placeholder="Start writing your response here…"
