@@ -2,6 +2,44 @@ import { NextRequest, NextResponse } from 'next/server'
 import openai from '@/lib/openai/client'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { getApiUser, canUseFeature, recordUsage, err } from '@/lib/api/helpers'
+import { SPEAKING_RUBRIC, EXAMINER_PERSONA } from '@/lib/ielts/rubrics'
+import { clampBand, overallBand } from '@/lib/ielts/band'
+
+const criterion = {
+  type: 'object', additionalProperties: false,
+  required: ['band', 'evidence'],
+  properties: {
+    band: { type: 'number', description: 'Band 1.0–9.0 in 0.5 steps' },
+    evidence: { type: 'string', description: 'Concrete evidence from the transcript justifying this band against the descriptor' },
+  },
+} as const
+
+const SPEAKING_SCHEMA = {
+  type: 'object', additionalProperties: false,
+  required: ['criteria', 'overview', 'strengths', 'improvements', 'next_band_tip', 'pronunciation_notes'],
+  properties: {
+    criteria: {
+      type: 'object', additionalProperties: false,
+      required: ['fluency', 'lexical', 'grammar', 'pronunciation'],
+      properties: { fluency: criterion, lexical: criterion, grammar: criterion, pronunciation: criterion },
+    },
+    overview: { type: 'string' },
+    strengths: { type: 'array', items: { type: 'string' } },
+    improvements: { type: 'array', items: { type: 'string' } },
+    next_band_tip: { type: 'string', description: 'The single most important change to reach the next half band' },
+    pronunciation_notes: { type: 'string', description: 'Notes on likely pronunciation, explicitly flagging that this is estimated from text only' },
+  },
+} as const
+
+interface CriterionResult { band: number; evidence: string }
+interface SpeakingResult {
+  criteria: { fluency: CriterionResult; lexical: CriterionResult; grammar: CriterionResult; pronunciation: CriterionResult }
+  overview: string
+  strengths: string[]
+  improvements: string[]
+  next_band_tip: string
+  pronunciation_notes: string
+}
 
 export async function POST(request: NextRequest) {
   const user = await getApiUser()
@@ -28,65 +66,55 @@ export async function POST(request: NextRequest) {
 
   try {
     const completion = await openai.chat.completions.create({
-      model: 'gpt-4o-mini',
-      response_format: { type: 'json_object' },
+      model: 'gpt-4o',
+      temperature: 0.2,
+      max_tokens: 1300,
+      response_format: {
+        type: 'json_schema',
+        json_schema: { name: 'ielts_speaking_assessment', strict: true, schema: SPEAKING_SCHEMA },
+      },
       messages: [
         {
           role: 'system',
-          content: `You are a certified IELTS examiner specialising in Speaking assessment.
-Evaluate the student's spoken response fairly and constructively.
-Return ONLY valid JSON. Band scores must be between 4.0 and 9.0, in increments of 0.5.
-Note: Pronunciation score is estimated from text patterns (hedging, fillers, vocabulary complexity).`,
+          content: `${EXAMINER_PERSONA}
+
+${SPEAKING_RUBRIC}
+
+Assess this IELTS Speaking Part ${part} response. The input is a transcript only (no audio is available), so judge fluency from hesitation/repetition markers and sentence flow in the text, and judge pronunciation conservatively per the text-only note in the descriptors — never invent a confident pronunciation band. For each criterion (fluency = Fluency & Coherence, lexical = Lexical Resource, grammar = Grammatical Range & Accuracy, pronunciation) award a band and cite evidence. Do not average the criteria yourself.`,
         },
         {
           role: 'user',
-          content: `IELTS Speaking Part ${part}
-Topic: ${topic}
+          content: `PART ${part} ${part === 2 ? 'CUE CARD' : 'QUESTION'}: ${topic}
 
-Student transcript:
-${transcript}
-
-Return JSON:
-{
-  "band_score": <number>,
-  "fluency_score": <number>,
-  "lexical_score": <number>,
-  "grammar_score": <number>,
-  "pronunciation_notes": "<brief notes on likely pronunciation patterns based on vocabulary and structure used>",
-  "feedback": {
-    "overview": "<2–3 sentence overall assessment>",
-    "strengths": ["<strength 1>", "<strength 2>"],
-    "improvements": ["<improvement with example>", "<another improvement>"]
-  }
-}`,
+CANDIDATE TRANSCRIPT:
+${transcript}`,
         },
       ],
-      max_tokens: 800,
-      temperature: 0.3,
     })
 
     const raw = completion.choices[0]?.message?.content ?? '{}'
-    const result = JSON.parse(raw) as {
-      band_score: number
-      fluency_score: number
-      lexical_score: number
-      grammar_score: number
-      pronunciation_notes: string
-      feedback: {
-        overview: string
-        strengths: string[]
-        improvements: string[]
-      }
-    }
+    const result = JSON.parse(raw) as SpeakingResult
 
-    const clamp = (n: number) => Math.round(Math.min(9, Math.max(4, n)) * 2) / 2
+    const fluency = clampBand(result.criteria.fluency.band)
+    const lexical = clampBand(result.criteria.lexical.band)
+    const grammar = clampBand(result.criteria.grammar.band)
+    const pronunciation = clampBand(result.criteria.pronunciation.band)
+    const band = overallBand([fluency, lexical, grammar, pronunciation])
 
     const scored = {
-      band_score:          clamp(result.band_score),
-      fluency_score:       clamp(result.fluency_score),
-      lexical_score:       clamp(result.lexical_score),
-      grammar_score:       clamp(result.grammar_score),
-      pronunciation_score: clamp((result.fluency_score + result.grammar_score) / 2),
+      band_score: band,
+      fluency_score: fluency,
+      lexical_score: lexical,
+      grammar_score: grammar,
+      pronunciation_score: pronunciation,
+    }
+
+    const feedback = {
+      overview: result.overview,
+      strengths: result.strengths,
+      improvements: result.improvements,
+      next_band_tip: result.next_band_tip,
+      criteria: result.criteria,
     }
 
     const admin = createAdminClient()
@@ -102,7 +130,7 @@ Return JSON:
         pronunciation_score: scored.pronunciation_score,
         lexical_score:       scored.lexical_score,
         grammar_score:       scored.grammar_score,
-        ai_feedback:         JSON.stringify({ notes: result.pronunciation_notes, ...result.feedback }),
+        ai_feedback:         JSON.stringify({ notes: result.pronunciation_notes, ...feedback }),
       })
       .select('id')
       .single()
@@ -115,7 +143,6 @@ Return JSON:
       source_id: submission?.id ?? null,
     })
 
-    // Log study session so streak & study-time reflect real usage
     await admin.from('study_sessions').insert({
       user_id:          user.id,
       skill:            'speaking',
@@ -128,7 +155,7 @@ Return JSON:
     return NextResponse.json({
       submission_id:       submission?.id,
       pronunciation_notes: result.pronunciation_notes,
-      feedback:            result.feedback,
+      feedback,
       ...scored,
     })
   } catch (e) {
