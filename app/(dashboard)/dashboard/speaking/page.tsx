@@ -1,8 +1,7 @@
 'use client'
 
-import { useState, useRef, useEffect } from 'react'
+import { useState, useRef, useEffect, useCallback } from 'react'
 import { Loader2 } from 'lucide-react'
-import { useLanguage } from '@/lib/i18n/LanguageContext'
 
 const SAMPLE_TOPICS: Record<1 | 2 | 3, string[]> = {
   1: ['Tell me about your hometown.', 'Do you enjoy cooking? Why or why not?', 'What kind of music do you like?'],
@@ -13,19 +12,27 @@ const SAMPLE_TOPICS: Record<1 | 2 | 3, string[]> = {
   3: ['How has technology changed the way people communicate in your country?', 'Do you think environmental problems are best solved by governments or individuals?'],
 }
 
+interface CriterionResult { band: number; evidence: string }
 interface FeedbackResult {
   band_score: number
   fluency_score: number
   lexical_score: number
   grammar_score: number
+  pronunciation_score: number
   pronunciation_notes: string
-  feedback: { overview: string; strengths: string[]; improvements: string[] }
+  feedback: {
+    overview: string
+    strengths: string[]
+    improvements: string[]
+    next_band_tip?: string
+    criteria?: { fluency: CriterionResult; lexical: CriterionResult; grammar: CriterionResult; pronunciation: CriterionResult }
+  }
 }
 
 type Phase = 'ready' | 'live' | 'feedback'
 
 /* ── Ready screen (dark) ─────────────────────────────────────────────────── */
-function ReadyScreen({ onStart, t }: { onStart: () => void; t: (k: string) => string }) {
+function ReadyScreen({ onStart }: { onStart: () => void }) {
   return (
     <div style={{ flex: 1, background: '#0e1011', color: '#f5f5f3', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 24 }}>
       <div className="animate-fade-up" style={{ maxWidth: 520, textAlign: 'center' }}>
@@ -36,7 +43,7 @@ function ReadyScreen({ onStart, t }: { onStart: () => void; t: (k: string) => st
         </div>
         <h1 style={{ fontSize: 42, fontWeight: 700, letterSpacing: '-0.025em', margin: '0 0 14px', color: '#f5f5f3' }}>Ready when you are</h1>
         <p style={{ fontSize: 15, color: '#a8a9a7', lineHeight: 1.55, margin: '0 0 32px' }}>
-          Find a quiet spot. Type your spoken response and receive instant AI feedback across all four official descriptors.
+          Find a quiet spot. Record your answer (or type it) and receive instant AI feedback across the official band descriptors.
         </p>
         <div style={{ display: 'grid', gap: 8, marginBottom: 32, textAlign: 'left' }}>
           {[
@@ -61,91 +68,178 @@ function ReadyScreen({ onStart, t }: { onStart: () => void; t: (k: string) => st
 }
 
 /* ── Feedback screen ─────────────────────────────────────────────────────── */
+const CRIT_META = [
+  { key: 'fluency' as const,       label: 'Fluency & coherence' },
+  { key: 'lexical' as const,       label: 'Lexical resource' },
+  { key: 'grammar' as const,       label: 'Grammatical range' },
+  { key: 'pronunciation' as const, label: 'Pronunciation' },
+]
+
 function FeedbackScreen({ result, onBack }: { result: FeedbackResult; onBack: () => void }) {
+  const scoreFor = { fluency: result.fluency_score, lexical: result.lexical_score, grammar: result.grammar_score, pronunciation: result.pronunciation_score }
+  const fb = result.feedback
+
   return (
-    <div style={{ padding: '32px 32px 80px' }}>
+    <div style={{ padding: '32px 32px 80px', maxWidth: 820, margin: '0 auto' }}>
       <button onClick={onBack} style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 13, fontWeight: 600, color: 'var(--text-2)', background: 'none', border: '1px solid var(--border)', borderRadius: 8, padding: '6px 12px', cursor: 'pointer', marginBottom: 20 }}>
         <svg width={13} height={13} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M19 12H5M11 19l-7-7 7-7"/></svg>
         Back to Speaking
       </button>
 
       <h1 style={{ fontSize: 34, letterSpacing: '-0.02em', margin: '0 0 6px', fontWeight: 700, color: 'var(--text)' }}>Speaking session complete</h1>
-      <p style={{ color: 'var(--text-2)', margin: '0 0 28px', fontSize: 15 }}>Transcribed and analysed against the official band descriptors.</p>
+      <p style={{ color: 'var(--text-2)', margin: '0 0 28px', fontSize: 15 }}>Assessed against the official band descriptors.</p>
 
-      {/* Overall band + criteria */}
-      <div className="card" style={{ padding: 32, display: 'grid', gridTemplateColumns: 'auto 1fr', gap: 32, alignItems: 'center', marginBottom: 16 }}>
-        <div style={{ textAlign: 'center' }}>
+      {/* Overall band + criteria with evidence */}
+      <div className="card" style={{ padding: 32, display: 'grid', gridTemplateColumns: 'auto 1fr', gap: 32, alignItems: 'start', marginBottom: 16 }}>
+        <div style={{ textAlign: 'center', paddingTop: 8 }}>
           <div style={{ fontSize: 11, letterSpacing: '0.1em', color: 'var(--text-3)', marginBottom: 8 }}>OVERALL BAND</div>
           <div style={{ fontFamily: 'var(--font-display)', fontStyle: 'italic', fontSize: 96, lineHeight: 1, color: 'var(--accent)', fontWeight: 500 }}>
             {result.band_score.toFixed(1)}
           </div>
         </div>
-        <div style={{ display: 'grid', gap: 12 }}>
-          {[
-            { k: 'Fluency & coherence', v: result.fluency_score },
-            { k: 'Lexical resource',    v: result.lexical_score },
-            { k: 'Grammatical range',   v: result.grammar_score },
-            { k: 'Pronunciation',       v: Math.min(9, result.band_score + 0.5) },
-          ].map(s => (
-            <div key={s.k}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 4 }}>
-                <span style={{ fontSize: 13, fontWeight: 600, color: 'var(--text)' }}>{s.k}</span>
-                <span style={{ fontSize: 13, fontWeight: 700, fontVariantNumeric: 'tabular-nums', color: 'var(--text)' }}>{s.v.toFixed(1)}</span>
+        <div style={{ display: 'grid', gap: 14 }}>
+          {CRIT_META.map(({ key, label }) => {
+            const v = scoreFor[key]
+            const evidence = fb.criteria?.[key]?.evidence
+            return (
+              <div key={key}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 4 }}>
+                  <span style={{ fontSize: 13, fontWeight: 600, color: 'var(--text)' }}>{label}</span>
+                  <span style={{ fontSize: 13, fontWeight: 700, fontVariantNumeric: 'tabular-nums', color: 'var(--text)' }}>{v.toFixed(1)}</span>
+                </div>
+                <div style={{ height: 4, background: 'var(--border)', borderRadius: 2 }}>
+                  <div style={{ width: `${(v / 9) * 100}%`, height: '100%', background: 'var(--accent)', borderRadius: 2 }}/>
+                </div>
+                {evidence && <p style={{ fontSize: 12, color: 'var(--text-3)', margin: '5px 0 0', lineHeight: 1.5 }}>{evidence}</p>}
+                {key === 'pronunciation' && result.pronunciation_notes && (
+                  <p style={{ fontSize: 12, color: 'var(--text-3)', margin: '5px 0 0', lineHeight: 1.5, fontStyle: 'italic' }}>{result.pronunciation_notes}</p>
+                )}
               </div>
-              <div style={{ height: 4, background: 'var(--border)', borderRadius: 2 }}>
-                <div style={{ width: `${(s.v / 9) * 100}%`, height: '100%', background: 'var(--accent)', borderRadius: 2 }}/>
-              </div>
-              {s.k === 'Pronunciation' && result.pronunciation_notes && (
-                <p style={{ fontSize: 11.5, color: 'var(--text-3)', margin: '4px 0 0', lineHeight: 1.5 }}>{result.pronunciation_notes}</p>
-              )}
-            </div>
-          ))}
+            )
+          })}
         </div>
       </div>
 
-      {/* Overview + before/after */}
-      {result.feedback.overview && (
+      {/* Overview */}
+      {fb.overview && (
         <div className="card" style={{ padding: 24, marginBottom: 16 }}>
-          <p style={{ fontSize: 14, lineHeight: 1.6, margin: 0, color: 'var(--text)' }}>{result.feedback.overview}</p>
+          <p style={{ fontSize: 14, lineHeight: 1.6, margin: 0, color: 'var(--text)' }}>{fb.overview}</p>
         </div>
       )}
 
-      <div className="card" style={{ padding: 28 }}>
-        <h3 style={{ margin: '0 0 14px', fontSize: 16, fontWeight: 600, color: 'var(--text)' }}>Sample improvement</h3>
-        <div style={{ padding: 14, background: 'var(--bg-soft)', borderRadius: 10, fontSize: 14, lineHeight: 1.65, marginBottom: 10 }}>
-          <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: '0.08em', color: 'var(--text-3)', marginBottom: 6 }}>YOU MIGHT SAY</div>
-          <p style={{ margin: 0, color: 'var(--text-2)', fontStyle: 'italic' }}>"{result.feedback.strengths[0] ?? 'Good structure and clear ideas.'}"</p>
-        </div>
-        {result.feedback.improvements.length > 0 && (
-          <div style={{ padding: 14, background: 'var(--accent-soft)', borderRadius: 10, fontSize: 14, lineHeight: 1.65 }}>
-            <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: '0.08em', color: 'var(--accent)', marginBottom: 6 }}>BAND-8 VERSION</div>
-            <p style={{ margin: 0, color: 'var(--text)' }}>"{result.feedback.improvements[0]}"</p>
+      {/* Strengths + improvements */}
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16, marginBottom: 16 }}>
+        {fb.strengths?.length > 0 && (
+          <div className="card" style={{ padding: 24 }}>
+            <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: '0.08em', color: 'var(--accent)', marginBottom: 12 }}>STRENGTHS</div>
+            {fb.strengths.map((s, i) => (
+              <div key={i} style={{ display: 'flex', gap: 8, fontSize: 13.5, lineHeight: 1.55, color: 'var(--text)', marginBottom: 8 }}>
+                <span style={{ color: 'var(--accent)' }}>✓</span><span>{s}</span>
+              </div>
+            ))}
+          </div>
+        )}
+        {fb.improvements?.length > 0 && (
+          <div className="card" style={{ padding: 24 }}>
+            <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: '0.08em', color: 'var(--warn)', marginBottom: 12 }}>WHAT TO IMPROVE</div>
+            {fb.improvements.map((s, i) => (
+              <div key={i} style={{ display: 'flex', gap: 8, fontSize: 13.5, lineHeight: 1.55, color: 'var(--text)', marginBottom: 8 }}>
+                <span style={{ color: 'var(--warn)' }}>→</span><span>{s}</span>
+              </div>
+            ))}
           </div>
         )}
       </div>
+
+      {/* Next band tip */}
+      {fb.next_band_tip && (
+        <div className="card" style={{ padding: 24, background: 'var(--accent-soft)', borderColor: 'transparent' }}>
+          <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: '0.08em', color: 'var(--accent)', marginBottom: 8 }}>TO REACH THE NEXT BAND</div>
+          <p style={{ fontSize: 14, lineHeight: 1.6, margin: 0, color: 'var(--text)' }}>{fb.next_band_tip}</p>
+        </div>
+      )}
     </div>
   )
 }
 
-/* ── Live exam (dark, always dark) ───────────────────────────────────────── */
+/* ── Live exam (always dark) ─────────────────────────────────────────────── */
+type RecState = 'idle' | 'recording' | 'transcribing'
+
 function LiveExam({ part, setPart, topic, setTopic, transcript, setTranscript, loading, error, onSubmit, onEndTest }: {
   part: 1 | 2 | 3; setPart: (p: 1 | 2 | 3) => void
   topic: string; setTopic: (t: string) => void
-  transcript: string; setTranscript: (t: string) => void
+  transcript: string; setTranscript: (updater: string | ((prev: string) => string)) => void
   loading: boolean; error: string; onSubmit: () => void; onEndTest: () => void
 }) {
   const [elapsed, setElapsed] = useState(0)
-  const [isRecording, setIsRecording] = useState(false)
-  const scrollRef = useRef<HTMLDivElement>(null)
+  const [recState, setRecState] = useState<RecState>('idle')
+  const [recSeconds, setRecSeconds] = useState(0)
+  const [micError, setMicError] = useState('')
+  const mediaRef = useRef<MediaRecorder | null>(null)
+  const chunksRef = useRef<Blob[]>([])
 
   useEffect(() => {
     const id = setInterval(() => setElapsed(s => s + 1), 1000)
     return () => clearInterval(id)
   }, [])
 
+  // recording timer (recSeconds is reset in startRecording)
+  useEffect(() => {
+    if (recState !== 'recording') return
+    const id = setInterval(() => setRecSeconds(s => s + 1), 1000)
+    return () => clearInterval(id)
+  }, [recState])
+
+  // stop tracks on unmount
+  useEffect(() => () => { mediaRef.current?.stream?.getTracks().forEach(t => t.stop()) }, [])
+
+  const startRecording = useCallback(async () => {
+    setMicError('')
+    if (typeof navigator === 'undefined' || !navigator.mediaDevices?.getUserMedia) {
+      setMicError('Recording is not supported in this browser — type your answer instead.')
+      return
+    }
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true })
+      const mr = new MediaRecorder(stream)
+      chunksRef.current = []
+      setRecSeconds(0)
+      mr.ondataavailable = e => { if (e.data.size > 0) chunksRef.current.push(e.data) }
+      mr.onstop = async () => {
+        stream.getTracks().forEach(t => t.stop())
+        const blob = new Blob(chunksRef.current, { type: mr.mimeType || 'audio/webm' })
+        if (blob.size === 0) { setRecState('idle'); return }
+        setRecState('transcribing')
+        try {
+          const fd = new FormData()
+          fd.append('audio', blob, 'speech.webm')
+          const res = await fetch('/api/ai/transcribe', { method: 'POST', body: fd })
+          const data = await res.json()
+          if (res.ok && data.transcript) {
+            setTranscript(prev => (prev.trim() ? prev.trim() + ' ' : '') + data.transcript)
+          } else {
+            setMicError(data.error ?? 'Could not transcribe — please try again or type your answer.')
+          }
+        } catch {
+          setMicError('Could not reach the transcription service.')
+        } finally {
+          setRecState('idle')
+        }
+      }
+      mr.start()
+      mediaRef.current = mr
+      setRecState('recording')
+    } catch {
+      setMicError('Microphone access denied. Type your answer instead.')
+    }
+  }, [setTranscript])
+
+  const stopRecording = useCallback(() => { mediaRef.current?.stop() }, [])
+
   const mm = String(Math.floor(elapsed / 60)).padStart(2, '0')
   const ss = String(elapsed % 60).padStart(2, '0')
   const wordCount = transcript.trim() ? transcript.trim().split(/\s+/).length : 0
+  const busy = loading || recState === 'transcribing'
 
   return (
     <div style={{ flex: 1, background: '#0e1011', color: '#f5f5f3', display: 'flex', flexDirection: 'column' }}>
@@ -167,7 +261,7 @@ function LiveExam({ part, setPart, topic, setTopic, transcript, setTranscript, l
       {/* Part selector */}
       <div style={{ padding: '12px 24px', borderBottom: '1px solid #2a2c2e', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 24, flexShrink: 0 }}>
         {([1, 2, 3] as const).map(p => (
-          <button key={p} onClick={() => { setPart(p); setTopic(SAMPLE_TOPICS[p][0]) }} style={{
+          <button key={p} onClick={() => setPart(p)} style={{
             display: 'flex', alignItems: 'center', gap: 8,
             padding: '6px 16px', borderRadius: 999,
             background: part === p ? '#1a2a23' : 'transparent',
@@ -212,7 +306,7 @@ function LiveExam({ part, setPart, topic, setTopic, transcript, setTranscript, l
       </div>
 
       {/* Transcript area */}
-      <div ref={scrollRef} style={{ flex: 1, padding: '0 24px', overflow: 'auto' }}>
+      <div style={{ flex: 1, padding: '0 24px', overflow: 'auto' }}>
         <div style={{ maxWidth: 720, margin: '0 auto' }}>
           <div style={{ fontSize: 10, color: '#666', letterSpacing: '0.08em', fontWeight: 600, marginBottom: 8 }}>
             YOUR RESPONSE — {wordCount} words
@@ -220,7 +314,7 @@ function LiveExam({ part, setPart, topic, setTopic, transcript, setTranscript, l
           <textarea
             value={transcript}
             onChange={e => setTranscript(e.target.value)}
-            placeholder="Type or paste your spoken response here…"
+            placeholder="Record your answer with the mic, or type it here…"
             style={{
               width: '100%', minHeight: 120, padding: '14px 16px',
               background: '#0e1011', border: '1px solid #2a2c2e', borderRadius: 14,
@@ -230,57 +324,69 @@ function LiveExam({ part, setPart, topic, setTopic, transcript, setTranscript, l
             onFocus={e => (e.currentTarget.style.borderColor = '#3aa278')}
             onBlur={e => (e.currentTarget.style.borderColor = '#2a2c2e')}
           />
-          {error && <div style={{ marginTop: 8, fontSize: 13, color: '#d97a64' }}>{error}</div>}
+          {(error || micError) && <div style={{ marginTop: 8, fontSize: 13, color: '#d97a64' }}>{error || micError}</div>}
         </div>
       </div>
 
       {/* Input bar */}
       <div style={{ padding: '16px 24px', borderTop: '1px solid #2a2c2e', background: '#16191b', flexShrink: 0 }}>
         <div style={{ maxWidth: 720, margin: '0 auto', display: 'flex', alignItems: 'center', gap: 12 }}>
-          <button onClick={() => setIsRecording(r => !r)} style={{
-            width: 52, height: 52, borderRadius: 26, flexShrink: 0,
-            background: isRecording ? '#d97a64' : '#3aa278',
-            display: 'flex', alignItems: 'center', justifyContent: 'center',
-            boxShadow: isRecording ? '0 0 0 8px rgba(217,122,100,0.2)' : 'none',
-            border: 'none', cursor: 'pointer', transition: 'all .2s',
-          }}>
-            <svg width={20} height={20} viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-              <rect x="9" y="3" width="6" height="12" rx="3"/><path d="M5 11a7 7 0 0 0 14 0"/><path d="M12 18v3"/>
-            </svg>
+          <button
+            onClick={recState === 'recording' ? stopRecording : startRecording}
+            disabled={recState === 'transcribing'}
+            aria-label={recState === 'recording' ? 'Stop recording' : 'Start recording'}
+            style={{
+              width: 52, height: 52, borderRadius: 26, flexShrink: 0,
+              background: recState === 'recording' ? '#d97a64' : recState === 'transcribing' ? '#26272a' : '#3aa278',
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              boxShadow: recState === 'recording' ? '0 0 0 8px rgba(217,122,100,0.2)' : 'none',
+              border: 'none', cursor: recState === 'transcribing' ? 'default' : 'pointer', transition: 'all .2s',
+            }}>
+            {recState === 'transcribing'
+              ? <Loader2 size={20} color="#888" className="animate-spin"/>
+              : recState === 'recording'
+                ? <svg width={18} height={18} viewBox="0 0 24 24" fill="white"><rect x="6" y="6" width="12" height="12" rx="2"/></svg>
+                : <svg width={20} height={20} viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><rect x="9" y="3" width="6" height="12" rx="3"/><path d="M5 11a7 7 0 0 0 14 0"/><path d="M12 18v3"/></svg>}
           </button>
-          {isRecording ? (
-            <div style={{ flex: 1, display: 'flex', alignItems: 'center', gap: 8 }}>
+
+          {recState === 'recording' ? (
+            <div style={{ flex: 1, display: 'flex', alignItems: 'center', gap: 10 }}>
               <div style={{ display: 'flex', gap: 2, alignItems: 'center', height: 36, flex: 1 }}>
                 {Array.from({ length: 32 }).map((_, i) => (
-                  <div key={i} style={{ flex: 1, background: '#3aa278', borderRadius: 1, height: `${8 + Math.abs(Math.sin(i * 0.7)) * 20}px`, opacity: 0.6 }}/>
+                  <div key={i} style={{ flex: 1, background: '#3aa278', borderRadius: 1, animation: `eq 0.9s ease-in-out ${i * 0.04}s infinite alternate`, height: 8 }}/>
                 ))}
               </div>
-              <span style={{ fontSize: 13, color: '#3aa278', fontFamily: 'var(--font-mono)' }}>Recording…</span>
-              <button onClick={() => setIsRecording(false)} style={{ padding: '6px 14px', background: '#3aa278', color: 'white', borderRadius: 8, fontSize: 12, fontWeight: 600, border: 'none', cursor: 'pointer' }}>Done</button>
+              <span style={{ fontSize: 13, color: '#3aa278', fontFamily: 'var(--font-mono)' }}>
+                {String(Math.floor(recSeconds / 60)).padStart(2, '0')}:{String(recSeconds % 60).padStart(2, '0')}
+              </span>
+              <button onClick={stopRecording} style={{ padding: '6px 14px', background: '#d97a64', color: 'white', borderRadius: 8, fontSize: 12, fontWeight: 600, border: 'none', cursor: 'pointer' }}>Stop</button>
             </div>
           ) : (
-            <button onClick={onSubmit} disabled={loading || wordCount < 20} style={{
+            <button onClick={onSubmit} disabled={busy || wordCount < 20} style={{
               flex: 1, padding: '12px', borderRadius: 10, fontSize: 14, fontWeight: 700,
-              background: loading || wordCount < 20 ? '#26272a' : '#3aa278',
-              color: loading || wordCount < 20 ? '#666' : '#fff',
-              border: 'none', cursor: loading || wordCount < 20 ? 'not-allowed' : 'pointer',
+              background: busy || wordCount < 20 ? '#26272a' : '#3aa278',
+              color: busy || wordCount < 20 ? '#666' : '#fff',
+              border: 'none', cursor: busy || wordCount < 20 ? 'not-allowed' : 'pointer',
               display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
             }}>
-              {loading ? <><Loader2 size={15} className="animate-spin"/> Analysing…</> : 'Submit for AI feedback'}
+              {recState === 'transcribing' ? <><Loader2 size={15} className="animate-spin"/> Transcribing…</>
+                : loading ? <><Loader2 size={15} className="animate-spin"/> Analysing…</>
+                : 'Submit for AI feedback'}
             </button>
           )}
         </div>
         <div style={{ textAlign: 'center', fontSize: 11, color: '#666', marginTop: 8 }}>
-          Tap mic to record (demo) · Type your response · Minimum 20 words
+          Tap the mic to record · or type your response · Minimum 20 words
         </div>
       </div>
+
+      <style>{`@keyframes eq { from { height: 6px; opacity: .5 } to { height: 30px; opacity: 1 } }`}</style>
     </div>
   )
 }
 
-/* ── Main page — keep ALL existing API logic ─────────────────────────────── */
+/* ── Main page ───────────────────────────────────────────────────────────── */
 export default function SpeakingPage() {
-  const { t } = useLanguage()
   const [phase, setPhase] = useState<Phase>('ready')
   const [part, setPart] = useState<1 | 2 | 3>(1)
   const [topic, setTopic] = useState(SAMPLE_TOPICS[1][0])
@@ -289,7 +395,6 @@ export default function SpeakingPage() {
   const [result, setResult] = useState<FeedbackResult | null>(null)
   const [error, setError] = useState('')
 
-  // Existing API logic — unchanged
   async function handleSubmit() {
     const wordCount = transcript.trim() ? transcript.trim().split(/\s+/).length : 0
     if (wordCount < 20) return
@@ -307,17 +412,22 @@ export default function SpeakingPage() {
     finally { setLoading(false) }
   }
 
-  if (phase === 'ready') return <ReadyScreen onStart={() => setPhase('live')} t={t} />
+  // Switching part resets the topic AND clears the previous answer.
+  function changePart(p: 1 | 2 | 3) {
+    setPart(p); setTopic(SAMPLE_TOPICS[p][0]); setTranscript(''); setError('')
+  }
+
+  if (phase === 'ready') return <ReadyScreen onStart={() => { setTranscript(''); setError(''); setPhase('live') }} />
   if (phase === 'feedback' && result) return <FeedbackScreen result={result} onBack={() => { setPhase('ready'); setTranscript(''); setResult(null) }} />
 
   return (
     <LiveExam
-      part={part} setPart={p => { setPart(p); setTopic(SAMPLE_TOPICS[p][0]) }}
+      part={part} setPart={changePart}
       topic={topic} setTopic={setTopic}
       transcript={transcript} setTranscript={setTranscript}
       loading={loading} error={error}
       onSubmit={handleSubmit}
-      onEndTest={() => setPhase('ready')}
+      onEndTest={() => { setPhase('ready'); setTranscript(''); setError('') }}
     />
   )
 }
