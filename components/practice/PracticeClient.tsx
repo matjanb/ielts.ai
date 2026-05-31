@@ -120,8 +120,9 @@ export function PracticeClient({ skill }: { skill: 'reading' | 'listening' }) {
             )}
           </div>
 
-          {/* Difficulty */}
-          {type && (
+          {/* Difficulty — only when the chosen type actually spans >1 level
+              (e.g. listening is uniformly 'medium', so it's hidden there). */}
+          {type && availDiffs.length >= 2 && (
             <div>
               <div style={{ fontSize: 12, fontWeight: 700, letterSpacing: '0.06em', textTransform: 'uppercase', color: 'var(--text-3)', marginBottom: 10 }}>Difficulty</div>
               <div style={{ display: 'flex', gap: 8 }}>
