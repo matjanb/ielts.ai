@@ -1,36 +1,9 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect, useMemo } from 'react'
 import { Loader2 } from 'lucide-react'
 import { useLanguage } from '@/lib/i18n/LanguageContext'
-
-/* ── Prompt data ─────────────────────────────────────────────────────────── */
-const SAMPLE_PROMPTS: Record<'1' | '2', { title: string; text: string; note: string }[]> = {
-  '1': [
-    {
-      title: 'Household Spending by Age Group',
-      text: 'The chart below shows the average percentages of household income spent on six categories of goods and services by people in three different age groups in the UK in 2018.\n\nSummarise the information by selecting and reporting the main features, and make comparisons where relevant.',
-      note: 'Write at least 150 words.',
-    },
-    {
-      title: 'Solar Panel Process',
-      text: 'The diagram below shows how solar panels convert sunlight into electricity for household use. Summarise the information by selecting and reporting the main features.',
-      note: 'Write at least 150 words.',
-    },
-  ],
-  '2': [
-    {
-      title: 'Universities: Academic vs Career Focus',
-      text: 'Some people believe that universities should focus on providing academic skills, while others think they should also prepare students for their future careers.\n\nDiscuss both views and give your own opinion.',
-      note: 'Give reasons for your answer and include any relevant examples from your own knowledge or experience.\n\nWrite at least 250 words.',
-    },
-    {
-      title: 'Living Alone',
-      text: 'In many countries, the number of people choosing to live alone is increasing. Do you think this is a positive or negative development?\n\nGive reasons for your answer and include any relevant examples from your own knowledge or experience.',
-      note: 'Write at least 250 words.',
-    },
-  ],
-}
+import { getWritingPrompts, type WritingPrompt } from '@/lib/services/tests'
 
 interface FeedbackResult {
   band_score: number
@@ -39,48 +12,6 @@ interface FeedbackResult {
   lexical_resource: number
   grammatical_accuracy: number
   feedback: { overview: string; strengths: string[]; improvements: string[]; rewritten_paragraph: string }
-}
-
-/* ── MockBarChart ────────────────────────────────────────────────────────── */
-function MockBarChart() {
-  const cats = ['Food', 'Housing', 'Transport', 'Leisure', 'Health', 'Other']
-  const groups = [
-    { name: '18–29', values: [12, 38, 16, 18, 5, 11], color: 'var(--info)' },
-    { name: '30–49', values: [15, 32, 14, 12, 8, 19], color: 'var(--accent)' },
-    { name: '50+',   values: [18, 26, 11, 9, 16, 20], color: 'var(--warn)' },
-  ]
-  return (
-    <div style={{ marginTop: 16, padding: 16, background: 'var(--bg-soft)', borderRadius: 8, border: '1px solid var(--border)' }}>
-      <div style={{ fontSize: 11, fontWeight: 700, textAlign: 'center', marginBottom: 12, color: 'var(--text-2)' }}>
-        Household spending by age group (% of income), UK 2018
-      </div>
-      <svg viewBox="0 0 400 180" style={{ width: '100%' }}>
-        {[0, 10, 20, 30, 40].map(v => (
-          <g key={v}>
-            <line x1="40" x2="400" y1={170 - v * 3.5} y2={170 - v * 3.5} stroke="var(--border)"/>
-            <text x="36" y={174 - v * 3.5} fontSize="9" fill="var(--text-3)" textAnchor="end">{v}%</text>
-          </g>
-        ))}
-        {cats.map((c, ci) => (
-          <g key={c}>
-            {groups.map((g, gi) => {
-              const h = g.values[ci] * 3.5
-              const x = 50 + ci * 58 + gi * 14
-              return <rect key={gi} x={x} y={170 - h} width={12} height={h} fill={g.color} opacity="0.85"/>
-            })}
-            <text x={50 + ci * 58 + 21} y={180} fontSize="9" fill="var(--text-3)" textAnchor="middle">{c}</text>
-          </g>
-        ))}
-      </svg>
-      <div style={{ display: 'flex', gap: 16, justifyContent: 'center', marginTop: 8, fontSize: 10, color: 'var(--text-2)' }}>
-        {groups.map(g => (
-          <div key={g.name} style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
-            <span style={{ width: 10, height: 10, background: g.color, display: 'inline-block' }}/>{g.name}
-          </div>
-        ))}
-      </div>
-    </div>
-  )
 }
 
 /* ── Main page — keep ALL existing API logic ─────────────────────────────── */
@@ -94,10 +25,22 @@ export default function WritingPage() {
   const [error, setError]       = useState('')
   const [submitted, setSubmitted] = useState(false)
 
-  const prompts = SAMPLE_PROMPTS[taskType]
-  const currentPrompt = prompts[promptIdx]
+  // Writing prompts come from the seeded writing tests (tests/test_sections/questions).
+  const [allPrompts, setAllPrompts] = useState<WritingPrompt[]>([])
+  const [promptsLoading, setPromptsLoading] = useState(true)
+
+  useEffect(() => {
+    getWritingPrompts()
+      .then(setAllPrompts)
+      .catch(() => setAllPrompts([]))
+      .finally(() => setPromptsLoading(false))
+  }, [])
+
+  const prompts = useMemo(() => allPrompts.filter(p => p.taskType === taskType), [allPrompts, taskType])
+  const currentPrompt = prompts[promptIdx] ?? null
   const wordCount = content.trim() ? content.trim().split(/\s+/).filter(Boolean).length : 0
-  const minWords  = taskType === '1' ? 150 : 250
+  const minWords  = currentPrompt?.minWords ?? (taskType === '1' ? 150 : 250)
+  const minutes   = currentPrompt?.minutes ?? (taskType === '1' ? 20 : 40)
 
   function handleTaskTypeChange(type: '1' | '2') {
     setTaskType(type); setPromptIdx(0); setResult(null); setError(''); setContent(''); setSubmitted(false)
@@ -105,7 +48,7 @@ export default function WritingPage() {
 
   // Existing API logic — unchanged
   async function handleSubmit() {
-    if (wordCount < 50) return
+    if (wordCount < 50 || !currentPrompt) return
     setError(''); setResult(null); setLoading(true); setSubmitted(true)
     try {
       const res = await fetch('/api/ai/writing', {
@@ -143,10 +86,10 @@ export default function WritingPage() {
           <span style={{ fontVariantNumeric: 'tabular-nums', color: wordCount >= minWords ? '#3aa278' : 'rgba(255,255,255,0.7)' }}>
             {wordCount} / {minWords} words
           </span>
-          <button onClick={handleSubmit} disabled={loading || wordCount < 50} style={{
+          <button onClick={handleSubmit} disabled={loading || wordCount < 50 || !currentPrompt} style={{
             padding: '5px 14px', background: '#0066b3', color: '#fff', fontSize: 12, fontWeight: 700,
-            borderRadius: 2, border: 'none', cursor: wordCount < 50 ? 'not-allowed' : 'pointer',
-            opacity: (loading || wordCount < 50) ? 0.6 : 1,
+            borderRadius: 2, border: 'none', cursor: (wordCount < 50 || !currentPrompt) ? 'not-allowed' : 'pointer',
+            opacity: (loading || wordCount < 50 || !currentPrompt) ? 0.6 : 1,
           }}>
             {loading ? 'Analysing…' : 'Submit for AI grading'}
           </button>
@@ -162,36 +105,59 @@ export default function WritingPage() {
             Writing Task {taskType}
           </div>
           <p style={{ fontSize: 12, color: 'var(--text-3)', marginBottom: 14 }}>
-            You should spend about {taskType === '1' ? '20' : '40'} minutes on this task.
+            You should spend about {minutes} minutes on this task.
           </p>
           <div style={{ height: 1, background: 'var(--border)', marginBottom: 16 }}/>
 
-          {/* Prompt selector */}
-          <div style={{ display: 'flex', gap: 6, marginBottom: 16 }}>
-            {prompts.map((p, i) => (
-              <button key={i} onClick={() => { setPromptIdx(i); setResult(null) }} style={{
-                padding: '4px 10px', borderRadius: 6, fontSize: 11, fontWeight: 600,
-                background: promptIdx === i ? 'var(--accent-soft)' : 'var(--bg-soft)',
-                color: promptIdx === i ? 'var(--accent)' : 'var(--text-2)',
-                border: `1px solid ${promptIdx === i ? 'var(--accent)' : 'var(--border)'}`,
-                cursor: 'pointer',
-              }}>
-                Sample {i + 1}
-              </button>
-            ))}
-          </div>
-
-          <p style={{ fontSize: 15, lineHeight: 1.65, fontWeight: 500, color: 'var(--text)', whiteSpace: 'pre-wrap', marginBottom: 16 }}>
-            {currentPrompt.text}
-          </p>
-          <p style={{ fontSize: 13, fontStyle: 'italic', color: 'var(--text-3)', whiteSpace: 'pre-wrap' }}>{currentPrompt.note}</p>
-
-          {taskType === '1' && <MockBarChart />}
-
-          {taskType === '2' && (
-            <div style={{ marginTop: 20, padding: 14, background: 'color-mix(in srgb, var(--warn) 8%, transparent)', border: '1px solid color-mix(in srgb, var(--warn) 30%, transparent)', borderRadius: 8, fontSize: 12, color: 'var(--text-2)' }}>
-              <strong>Question type:</strong> Discussion + opinion. Address both views with examples before stating your position.
+          {/* Prompt selector — only when more than one sample exists for this task */}
+          {prompts.length > 1 && (
+            <div style={{ display: 'flex', gap: 6, marginBottom: 16 }}>
+              {prompts.map((p, i) => (
+                <button key={i} onClick={() => { setPromptIdx(i); setResult(null) }} style={{
+                  padding: '4px 10px', borderRadius: 6, fontSize: 11, fontWeight: 600,
+                  background: promptIdx === i ? 'var(--accent-soft)' : 'var(--bg-soft)',
+                  color: promptIdx === i ? 'var(--accent)' : 'var(--text-2)',
+                  border: `1px solid ${promptIdx === i ? 'var(--accent)' : 'var(--border)'}`,
+                  cursor: 'pointer',
+                }}>
+                  Sample {i + 1}
+                </button>
+              ))}
             </div>
+          )}
+
+          {promptsLoading ? (
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8, color: 'var(--text-3)', fontSize: 13, padding: '20px 0' }}>
+              <Loader2 size={14} className="animate-spin" /> Loading task…
+            </div>
+          ) : !currentPrompt ? (
+            <div style={{ padding: '20px 0', color: 'var(--text-3)', fontSize: 13, lineHeight: 1.55 }}>
+              No Writing Task {taskType} prompt available yet.
+            </div>
+          ) : (
+            <>
+              <p style={{ fontSize: 15, lineHeight: 1.65, fontWeight: 500, color: 'var(--text)', whiteSpace: 'pre-wrap', marginBottom: 16 }}>
+                {currentPrompt.text}
+              </p>
+              {currentPrompt.note && (
+                <p style={{ fontSize: 13, fontStyle: 'italic', color: 'var(--text-3)', whiteSpace: 'pre-wrap' }}>{currentPrompt.note}</p>
+              )}
+
+              {currentPrompt.imageUrl && (
+                /* eslint-disable-next-line @next/next/no-img-element */
+                <img
+                  src={currentPrompt.imageUrl}
+                  alt={`Writing Task ${taskType} chart`}
+                  style={{ marginTop: 16, width: '100%', borderRadius: 8, border: '1px solid var(--border)', background: '#fff' }}
+                />
+              )}
+
+              {taskType === '2' && !currentPrompt.imageUrl && (
+                <div style={{ marginTop: 20, padding: 14, background: 'color-mix(in srgb, var(--warn) 8%, transparent)', border: '1px solid color-mix(in srgb, var(--warn) 30%, transparent)', borderRadius: 8, fontSize: 12, color: 'var(--text-2)' }}>
+                  <strong>Tip:</strong> State a clear position, support it with reasons and concrete examples, and keep your argument consistent throughout.
+                </div>
+              )}
+            </>
           )}
         </div>
 

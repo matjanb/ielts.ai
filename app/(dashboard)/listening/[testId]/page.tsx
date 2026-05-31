@@ -2064,7 +2064,7 @@ export default function ListeningTestPage() {
       if (!sectionCorrect[n]) sectionCorrect[n] = { correct: 0, total: 0 }
       sectionCorrect[n].total++
 
-      const correct = isAnswerCorrect(answers[q.id] ?? '', q.correct_answer)
+      const correct = isAnswerCorrect(answers[q.id] ?? '', q.correct_answer ?? '')
       if (correct) { totalCorrect++; sectionCorrect[n].correct++ }
 
       if (attemptId) {

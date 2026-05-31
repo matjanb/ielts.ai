@@ -318,7 +318,7 @@ export default function ReadingTestPage() {
       const n = q.sectionNumber
       if (!sectionCorrect[n]) sectionCorrect[n] = { correct: 0, total: 0 }
       sectionCorrect[n].total++
-      const isCorrect = (answers[q.id] ?? '').trim().toLowerCase() === q.correct_answer.trim().toLowerCase()
+      const isCorrect = (answers[q.id] ?? '').trim().toLowerCase() === (q.correct_answer ?? '').trim().toLowerCase()
       if (isCorrect) { totalCorrect++; sectionCorrect[n].correct++ }
       if (attemptId) {
         try {

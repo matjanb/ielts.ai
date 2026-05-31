@@ -149,7 +149,7 @@ export default function ListeningResultsPage() {
                 <div>
                   {qs.map((q, i) => {
                     const userAns = userAnswers[q.id] ?? ''
-                    const isCorrect = isAnswerCorrect(userAns, q.correct_answer)
+                    const isCorrect = isAnswerCorrect(userAns, q.correct_answer ?? '')
                     return (
                       <div key={q.id} style={{ padding: '14px 20px', borderTop: i === 0 ? 'none' : '1px solid var(--border)', display: 'flex', alignItems: 'flex-start', gap: 12 }}>
                         <div style={{ flexShrink: 0, marginTop: 1 }}>
