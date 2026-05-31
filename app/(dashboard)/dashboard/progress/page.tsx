@@ -267,35 +267,44 @@ function StudyTime({ data }: { data: PageData }) {
 
 /* ── ActivityLog ──────────────────────────────────────────────────────────── */
 function ActivityLog({ data }: { data: PageData }) {
-  // Build real events from data, fall back to design placeholder
-  const realEvents: Array<{ date: string; icon: string; color: string; title: string; meta: string }> = []
-
-  for (const sub of data.writingHistory.slice(0, 3)) {
-    realEvents.push({
-      date: new Date(sub.created_at).toLocaleString(undefined, { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' }),
+  // Build the feed purely from the user's real activity — writing submissions and
+  // completed mock tests — newest first. No fabricated placeholders.
+  const events = [
+    ...data.writingHistory.map(sub => ({
+      ts: new Date(sub.created_at).getTime(),
       icon: 'pencil', color: 'var(--warn)',
       title: `Submitted Writing Task ${sub.task_type === '1' ? '1' : '2'} essay`,
       meta: sub.band_score != null ? `${sub.band_score.toFixed(1)} band · AI feedback ready` : 'Pending review',
-    })
-  }
-
-  const events = realEvents.length > 0 ? realEvents : [
-    { date: 'Today, 09:24', icon: 'headphones', color: 'var(--accent)', title: 'Completed Listening · Section 4 — Urban planning', meta: '8.0 band · 9/10 correct' },
-    { date: 'Today, 08:50', icon: 'layers',     color: '#6b46c1',       title: 'Reviewed 24 words from Academic Word List', meta: 'Set 12 · 100% recall' },
-    { date: 'Yesterday',   icon: 'pencil',      color: 'var(--warn)',   title: 'Submitted Writing Task 2 essay', meta: '6.5 band · AI feedback ready' },
-    { date: 'Yesterday',   icon: 'mic',         color: 'var(--danger)', title: 'AI Speaking session · Part 2 cue card', meta: '13:42 duration · 6.5 band' },
-    { date: 'Last week',   icon: 'clipboard',   color: 'var(--info)',   title: 'Mock Test #03 completed', meta: 'Overall 7.0 · 3h 12m' },
-    { date: 'Last week',   icon: 'trophy',      color: '#c47a1a',       title: 'Earned badge: 21-day streak', meta: '+50 XP' },
+    })),
+    ...data.mockAttempts.map(att => ({
+      ts: new Date(att.completed_at).getTime(),
+      icon: 'clipboard', color: 'var(--info)',
+      title: 'Mock test completed',
+      meta: att.band_score != null ? `Overall ${att.band_score.toFixed(1)} band` : 'Submitted',
+    })),
   ]
+    .filter(e => !Number.isNaN(e.ts))
+    .sort((a, b) => b.ts - a.ts)
+    .slice(0, 12)
+    .map(e => ({
+      ...e,
+      date: new Date(e.ts).toLocaleString(undefined, { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' }),
+    }))
 
   return (
     <div className="card" style={{ padding: 28 }}>
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 18 }}>
         <h3 style={{ margin: 0, fontSize: 16, fontWeight: 600, color: 'var(--text)' }}>Activity log</h3>
-        <button style={{ fontSize: 12, color: 'var(--text-3)', background: 'none', border: '1px solid var(--border)', borderRadius: 8, padding: '4px 10px', cursor: 'pointer' }}>
+        <button style={{ fontSize: 12, color: 'var(--text-3)', background: 'none', border: '1px solid var(--border)', borderRadius: 8, padding: '4px 10px', cursor: events.length === 0 ? 'default' : 'pointer', opacity: events.length === 0 ? 0.5 : 1 }} disabled={events.length === 0}>
           Export CSV
         </button>
       </div>
+      {events.length === 0 ? (
+        <div style={{ padding: '32px 16px', textAlign: 'center', color: 'var(--text-3)', fontSize: 13, lineHeight: 1.55 }}>
+          No activity yet.<br/>
+          <span style={{ fontSize: 12 }}>Submit an essay or complete a mock test to see your history here.</span>
+        </div>
+      ) : (
       <div style={{ display: 'grid', gap: 4 }}>
         {events.map((e, i) => (
           <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 14, padding: '12px', borderRadius: 10, transition: 'background .15s' }}
@@ -313,6 +322,7 @@ function ActivityLog({ data }: { data: PageData }) {
           </div>
         ))}
       </div>
+      )}
     </div>
   )
 }
