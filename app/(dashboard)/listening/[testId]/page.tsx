@@ -10,7 +10,7 @@ import { listeningRawToBand } from '@/lib/utils/bandScore'
 import { isAnswerCorrect } from '@/lib/utils/answerChecking'
 import type { IeltsTest, TestSection, Question } from '@/lib/types/database'
 import { getTestById, getSectionsByTestId, getQuestionsBySectionIds } from '@/lib/services/tests'
-import { createAttempt, saveAnswer as saveAnswerService, saveAnswerWithResult, completeAttempt, saveBandScoreHistory, logStudySession } from '@/lib/services/attempts'
+import { createAttempt, saveAnswer as saveAnswerService, saveAnswersWithResults, completeAttempt, saveBandScoreHistory, logStudySession } from '@/lib/services/attempts'
 import { getUser } from '@/lib/services/auth'
 
 type QuestionWithSection = Question & { sectionNumber: number; sectionTitle: string }
@@ -2058,6 +2058,7 @@ export default function ListeningTestPage() {
 
     let totalCorrect = 0
     const sectionCorrect: Record<number, { correct: number; total: number }> = {}
+    const answerRows: { questionId: string; userAnswer: string | null; isCorrect: boolean }[] = []
 
     for (const q of questions) {
       const n = q.sectionNumber
@@ -2066,26 +2067,26 @@ export default function ListeningTestPage() {
 
       const correct = isAnswerCorrect(answers[q.id] ?? '', q.correct_answer ?? '')
       if (correct) { totalCorrect++; sectionCorrect[n].correct++ }
-
-      if (attemptId) {
-        try {
-          await saveAnswerWithResult(attemptId, q.id, answers[q.id] ?? null, correct)
-        } catch { /* silent */ }
-      }
+      answerRows.push({ questionId: q.id, userAnswer: answers[q.id] ?? null, isCorrect: correct })
     }
 
     const band = listeningRawToBand(totalCorrect)
     const sectionScores = Object.fromEntries(Object.entries(sectionCorrect))
 
+    // Persist everything in parallel — one batch upsert for all answers plus the
+    // independent attempt/band/session writes — instead of ~40 sequential requests.
     if (attemptId) {
       try {
-        await completeAttempt(attemptId, totalCorrect, band, sectionScores)
         const { user } = await getUser()
-        if (user) {
-          await saveBandScoreHistory(user.id, 'listening', band, attemptId)
-          const mins = startedAtRef.current ? (Date.now() - startedAtRef.current) / 60000 : 30
-          await logStudySession(user.id, 'listening', mins, 'mock_test')
-        }
+        const mins = startedAtRef.current ? (Date.now() - startedAtRef.current) / 60000 : 30
+        await Promise.all([
+          saveAnswersWithResults(attemptId, answerRows),
+          completeAttempt(attemptId, totalCorrect, band, sectionScores),
+          ...(user ? [
+            saveBandScoreHistory(user.id, 'listening', band, attemptId),
+            logStudySession(user.id, 'listening', mins, 'mock_test'),
+          ] : []),
+        ])
       } catch { /* silent */ }
     }
 

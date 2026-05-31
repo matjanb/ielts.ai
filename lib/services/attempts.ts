@@ -55,6 +55,23 @@ export async function saveAnswerWithResult(
     )
 }
 
+/**
+ * Persist all answers for an attempt in a single round-trip. Used on submit so
+ * we don't fire one network request per question (40 sequential upserts → ~1).
+ */
+export async function saveAnswersWithResults(
+  attemptId: string,
+  rows: { questionId: string; userAnswer: string | null; isCorrect: boolean }[]
+) {
+  if (rows.length === 0) return
+  await db()
+    .from('user_answers')
+    .upsert(
+      rows.map(r => ({ attempt_id: attemptId, question_id: r.questionId, user_answer: r.userAnswer, is_correct: r.isCorrect })),
+      { onConflict: 'attempt_id,question_id' }
+    )
+}
+
 export async function completeAttempt(
   attemptId: string,
   totalScore: number,

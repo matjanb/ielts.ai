@@ -6,7 +6,7 @@ import { Send, Clock, BookOpen, ChevronLeft, ChevronRight } from 'lucide-react'
 import { useLanguage } from '@/lib/i18n/LanguageContext'
 import type { IeltsTest, TestSection, Question } from '@/lib/types/database'
 import { getTestById, getSectionsByTestId, getQuestionsBySectionIds } from '@/lib/services/tests'
-import { createAttempt, saveAnswer as saveAnswerService, saveAnswerWithResult, completeAttempt, saveBandScoreHistory, logStudySession } from '@/lib/services/attempts'
+import { createAttempt, saveAnswer as saveAnswerService, saveAnswersWithResults, completeAttempt, saveBandScoreHistory, logStudySession } from '@/lib/services/attempts'
 import { getUser } from '@/lib/services/auth'
 
 type QuestionWithSection = Question & { sectionNumber: number; sectionTitle: string; passageText: string }
@@ -313,6 +313,7 @@ export default function ReadingTestPage() {
 
     let totalCorrect = 0
     const sectionCorrect: Record<number, { correct: number; total: number }> = {}
+    const answerRows: { questionId: string; userAnswer: string | null; isCorrect: boolean }[] = []
 
     for (const q of questions) {
       const n = q.sectionNumber
@@ -320,11 +321,7 @@ export default function ReadingTestPage() {
       sectionCorrect[n].total++
       const isCorrect = (answers[q.id] ?? '').trim().toLowerCase() === (q.correct_answer ?? '').trim().toLowerCase()
       if (isCorrect) { totalCorrect++; sectionCorrect[n].correct++ }
-      if (attemptId) {
-        try {
-          await saveAnswerWithResult(attemptId, q.id, answers[q.id] ?? null, isCorrect)
-        } catch { /* silent */ }
-      }
+      answerRows.push({ questionId: q.id, userAnswer: answers[q.id] ?? null, isCorrect })
     }
 
     const rawToBand = (raw: number) => {
@@ -336,15 +333,20 @@ export default function ReadingTestPage() {
     }
     const band = rawToBand(totalCorrect)
 
+    // Persist everything in parallel — one batch upsert for all answers plus the
+    // independent attempt/band/session writes — instead of ~40 sequential requests.
     if (attemptId) {
       try {
-        await completeAttempt(attemptId, totalCorrect, band, sectionCorrect)
         const { user } = await getUser()
-        if (user) {
-          await saveBandScoreHistory(user.id, 'reading', band, attemptId)
-          const mins = startedAtRef.current ? (Date.now() - startedAtRef.current) / 60000 : 60
-          await logStudySession(user.id, 'reading', mins, 'mock_test')
-        }
+        const mins = startedAtRef.current ? (Date.now() - startedAtRef.current) / 60000 : 60
+        await Promise.all([
+          saveAnswersWithResults(attemptId, answerRows),
+          completeAttempt(attemptId, totalCorrect, band, sectionCorrect),
+          ...(user ? [
+            saveBandScoreHistory(user.id, 'reading', band, attemptId),
+            logStudySession(user.id, 'reading', mins, 'mock_test'),
+          ] : []),
+        ])
       } catch { /* silent */ }
     }
 
