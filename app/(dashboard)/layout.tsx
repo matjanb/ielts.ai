@@ -9,6 +9,7 @@ import { LanguageProvider, useLanguage } from '@/lib/i18n/LanguageContext'
 import { ToastProvider, useToast } from '@/lib/toast'
 import { CommandPalette } from '@/components/ui/CommandPalette'
 import { NotificationsPanel } from '@/components/ui/NotificationsPanel'
+import { LanguageSwitcher } from '@/components/ui/LanguageSwitcher'
 import { SettingsModal } from '@/components/ui/SettingsModal'
 import { ProfileModal } from '@/components/ui/ProfileModal'
 import { signOut, getUser } from '@/lib/services/auth'
@@ -417,6 +418,9 @@ function DashboardLayoutInner({ children }: { children: ReactNode }) {
                 onMarkAllRead={markAllNotifsRead}
               />
             </div>
+
+            {/* Language switcher */}
+            <LanguageSwitcher />
 
             {/* Theme toggle */}
             <button
