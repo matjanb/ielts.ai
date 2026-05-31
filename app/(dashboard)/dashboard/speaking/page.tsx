@@ -1,40 +1,94 @@
 'use client'
 
-import { useState, useRef, useEffect, useCallback } from 'react'
+import { useState, useRef, useEffect, useCallback, useMemo } from 'react'
 import { Loader2 } from 'lucide-react'
 
-const SAMPLE_TOPICS: Record<1 | 2 | 3, string[]> = {
-  1: ['Tell me about your hometown.', 'Do you enjoy cooking? Why or why not?', 'What kind of music do you like?'],
-  2: [
-    'Describe a book you have read recently. You should say: what the book was about, why you chose to read it, what you liked or disliked about it, and explain what effect it had on you.',
-    'Describe a journey that you remember well. You should say: where you went, how you travelled, who you were with, and explain why you remember it so well.',
-  ],
-  3: ['How has technology changed the way people communicate in your country?', 'Do you think environmental problems are best solved by governments or individuals?'],
+/* ── Themed test sets (original IELTS-style wording) ──────────────────────── */
+interface SpeakingSet {
+  id: string
+  title: string
+  part1: { topic: string; questions: string[] }[]
+  part2: { topic: string; bullets: string[] }
+  part2Followups: string[]
+  part3: string[]
 }
-const PART_LABELS: Record<1 | 2 | 3, string> = { 1: 'Introduction', 2: 'Cue card', 3: 'Discussion' }
+
+const SETS: SpeakingSet[] = [
+  {
+    id: 'places',
+    title: 'Home & surroundings',
+    part1: [
+      { topic: 'your hometown', questions: ['Where is your hometown, and how would you describe it?', 'What do you like most about living there?', 'Has your hometown changed much in recent years?', 'Would you recommend it to someone visiting your country?'] },
+      { topic: 'daily routine', questions: ['Do you prefer mornings or evenings? Why?', 'Is there something you do every day without fail?', 'How do you usually relax after a busy day?'] },
+      { topic: 'the weather', questions: ['What kind of weather do you enjoy most?', 'Does the weather ever change your plans?'] },
+    ],
+    part2: { topic: 'a place in your area that you enjoy visiting', bullets: ['where it is', 'how often you go there', 'what you do there', 'and explain why you enjoy it'] },
+    part2Followups: ['Do you usually go there alone or with other people?', 'Has this place become more popular recently?'],
+    part3: ['Why do you think people need public spaces such as parks?', 'How have the places where people spend their free time changed over the past few decades?', 'Do you think cities or the countryside offer a better quality of life?', 'Whose responsibility is it to look after public spaces?', 'How might these kinds of places change in the future?'],
+  },
+  {
+    id: 'tech',
+    title: 'Work, study & technology',
+    part1: [
+      { topic: 'work or study', questions: ['Do you work or are you a student at the moment?', 'What do you enjoy most about it?', 'Is there anything you would like to change about it?'] },
+      { topic: 'free time', questions: ['How do you usually spend your free time?', 'Have your hobbies changed since you were a child?', 'Do you prefer spending free time indoors or outdoors?'] },
+      { topic: 'technology', questions: ['How often do you use the internet each day?', 'Is there an app or device you could not do without?'] },
+    ],
+    part2: { topic: 'a piece of technology you find useful', bullets: ['what it is', 'how you use it', 'how long you have used it', 'and explain why it is useful to you'] },
+    part2Followups: ['Did you find it difficult to learn at first?', 'Would you recommend it to other people?'],
+    part3: ['How has technology changed the way people communicate?', 'Do you think people rely too much on technology today?', 'What are the downsides of being constantly connected?', 'Should schools teach children how to use technology responsibly?', 'How do you imagine technology will change daily life in twenty years?'],
+  },
+  {
+    id: 'people',
+    title: 'People & experiences',
+    part1: [
+      { topic: 'friends', questions: ['Do you have a large group of friends or just a few close ones?', 'How do you usually keep in touch with your friends?', 'What qualities do you value most in a friend?'] },
+      { topic: 'food', questions: ['What kind of food do you most enjoy?', 'Has your taste in food changed over the years?', 'Do you prefer eating at home or in restaurants?'] },
+      { topic: 'music', questions: ['What kind of music do you listen to?', 'Do you play, or would you like to play, a musical instrument?'] },
+    ],
+    part2: { topic: 'a person who has had a positive influence on you', bullets: ['who the person is', 'how you know them', 'what they are like', 'and explain how they have influenced you'] },
+    part2Followups: ['Do you think they realise how much they influenced you?', 'Are you still in contact with this person?'],
+    part3: ['Who are the most important role models for young people today?', 'Do you think famous people make good role models?', 'How do the people around us shape the decisions we make?', 'Is it better to learn from your own mistakes or from other people’s advice?', 'How have relationships between people changed in the modern world?'],
+  },
+]
+
+/* ── Turn model ──────────────────────────────────────────────────────────── */
+type Turn =
+  | { kind: 'q'; part: 1 | 2 | 3; lead?: string; prompt: string }
+  | { kind: 'cue'; part: 2; topic: string; bullets: string[] }
+
+function buildTurns(set: SpeakingSet): Turn[] {
+  const turns: Turn[] = []
+  set.part1.forEach((grp, gi) => {
+    grp.questions.forEach((q, qi) => {
+      turns.push({ kind: 'q', part: 1, prompt: q, lead: qi === 0 ? (gi === 0 ? `Let's begin. First, I'd like to talk about ${grp.topic}.` : `Now let's move on to ${grp.topic}.`) : undefined })
+    })
+  })
+  turns.push({ kind: 'cue', part: 2, topic: set.part2.topic, bullets: set.part2.bullets })
+  set.part2Followups.forEach(q => turns.push({ kind: 'q', part: 2, prompt: q }))
+  set.part3.forEach((q, i) => turns.push({ kind: 'q', part: 3, prompt: q, lead: i === 0 ? "Let's discuss this topic more generally." : undefined }))
+  return turns
+}
+
+function turnQuestion(t: Turn): string {
+  return t.kind === 'cue'
+    ? `Describe ${t.topic}. You should say: ${t.bullets.join('; ')}.`
+    : t.prompt
+}
+
+const PART_LABELS: Record<1 | 2 | 3, string> = { 1: 'Introduction', 2: 'Long turn', 3: 'Discussion' }
 
 interface CriterionResult { band: number; evidence: string }
 interface FeedbackResult {
-  band_score: number
-  fluency_score: number
-  lexical_score: number
-  grammar_score: number
-  pronunciation_score: number
-  pronunciation_notes: string
-  feedback: {
-    overview: string
-    strengths: string[]
-    improvements: string[]
-    next_band_tip?: string
-    criteria?: { fluency: CriterionResult; lexical: CriterionResult; grammar: CriterionResult; pronunciation: CriterionResult }
-  }
+  band_score: number; fluency_score: number; lexical_score: number; grammar_score: number; pronunciation_score: number; pronunciation_notes: string
+  feedback: { overview: string; strengths: string[]; improvements: string[]; next_band_tip?: string; criteria?: { fluency: CriterionResult; lexical: CriterionResult; grammar: CriterionResult; pronunciation: CriterionResult } }
 }
-
 type Phase = 'ready' | 'live' | 'feedback'
 
 const MicIcon = ({ size = 20, color = 'currentColor' }: { size?: number; color?: string }) => (
   <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><rect x="9" y="3" width="6" height="12" rx="3"/><path d="M5 11a7 7 0 0 0 14 0"/><path d="M12 18v3"/></svg>
 )
+const words = (s: string) => (s.trim() ? s.trim().split(/\s+/).length : 0)
 
 /* ── Ready screen ────────────────────────────────────────────────────────── */
 function ReadyScreen({ onStart }: { onStart: () => void }) {
@@ -44,12 +98,12 @@ function ReadyScreen({ onStart }: { onStart: () => void }) {
         <div style={{ display: 'inline-flex', padding: 26, borderRadius: '50%', background: '#1a2a23', marginBottom: 26, boxShadow: '0 0 0 1px rgba(58,162,120,0.25), 0 0 60px -10px rgba(58,162,120,0.4)' }}>
           <MicIcon size={46} color="#3aa278" />
         </div>
-        <h1 style={{ fontSize: 40, fontWeight: 700, letterSpacing: '-0.03em', margin: '0 0 14px', color: '#f5f5f3' }}>Ready when you are</h1>
+        <h1 style={{ fontSize: 40, fontWeight: 700, letterSpacing: '-0.03em', margin: '0 0 14px' }}>Full speaking test</h1>
         <p style={{ fontSize: 15, color: '#a8a9a7', lineHeight: 1.6, margin: '0 0 34px' }}>
-          Find a quiet spot. Record your answer — or type it — and get instant examiner feedback across the official band descriptors.
+          A complete three-part test with the examiner. Answer each question by recording (or typing). You&apos;ll get one band score for the whole test — just like the real exam.
         </p>
         <div style={{ display: 'grid', gap: 8, marginBottom: 34, textAlign: 'left' }}>
-          {['Part 1 — Introduction & interview', 'Part 2 — Long turn on a cue card', 'Part 3 — Two-way discussion', 'Detailed AI feedback at the end'].map((s, i) => (
+          {['Part 1 — short questions on familiar topics', 'Part 2 — a cue card with 1 minute to prepare', 'Part 3 — a deeper two-way discussion', 'One examiner band score at the end'].map((s, i) => (
             <div key={i} style={{ display: 'flex', gap: 12, alignItems: 'center', padding: '11px 16px', background: '#16191b', borderRadius: 12, border: '1px solid #21241f' }}>
               <svg width={15} height={15} viewBox="0 0 24 24" fill="none" stroke="#3aa278" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><path d="M5 12l5 5L20 7"/></svg>
               <span style={{ fontSize: 14, color: '#f0f0ee' }}>{s}</span>
@@ -57,7 +111,7 @@ function ReadyScreen({ onStart }: { onStart: () => void }) {
           ))}
         </div>
         <button onClick={onStart} style={{ display: 'inline-flex', alignItems: 'center', gap: 10, padding: '15px 34px', borderRadius: 14, fontSize: 15, fontWeight: 700, background: '#3aa278', color: '#fff', border: 'none', cursor: 'pointer', boxShadow: '0 10px 30px -10px rgba(58,162,120,0.6)' }}>
-          <MicIcon size={17} color="#fff" /> Begin Speaking test
+          <MicIcon size={17} color="#fff" /> Start the test
         </button>
       </div>
     </div>
@@ -66,12 +120,11 @@ function ReadyScreen({ onStart }: { onStart: () => void }) {
 
 /* ── Feedback screen ─────────────────────────────────────────────────────── */
 const CRIT_META = [
-  { key: 'fluency' as const,       label: 'Fluency & coherence' },
-  { key: 'lexical' as const,       label: 'Lexical resource' },
-  { key: 'grammar' as const,       label: 'Grammatical range' },
+  { key: 'fluency' as const, label: 'Fluency & coherence' },
+  { key: 'lexical' as const, label: 'Lexical resource' },
+  { key: 'grammar' as const, label: 'Grammatical range' },
   { key: 'pronunciation' as const, label: 'Pronunciation' },
 ]
-
 function BandRing({ band }: { band: number }) {
   const r = 58, c = 2 * Math.PI * r
   const off = c * (1 - Math.max(0, Math.min(9, band)) / 9)
@@ -88,22 +141,17 @@ function BandRing({ band }: { band: number }) {
     </div>
   )
 }
-
 function FeedbackScreen({ result, onBack }: { result: FeedbackResult; onBack: () => void }) {
   const scoreFor = { fluency: result.fluency_score, lexical: result.lexical_score, grammar: result.grammar_score, pronunciation: result.pronunciation_score }
   const fb = result.feedback
-
   return (
     <div style={{ padding: '28px 32px 80px', maxWidth: 860, margin: '0 auto' }} className="animate-fade-up">
       <button onClick={onBack} style={{ display: 'inline-flex', alignItems: 'center', gap: 8, fontSize: 13, fontWeight: 600, color: 'var(--text-2)', background: 'none', border: '1px solid var(--border)', borderRadius: 8, padding: '6px 12px', cursor: 'pointer', marginBottom: 22 }}>
         <svg width={13} height={13} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M19 12H5M11 19l-7-7 7-7"/></svg>
         Back to Speaking
       </button>
-
       <h1 style={{ fontSize: 32, letterSpacing: '-0.025em', margin: '0 0 4px', fontWeight: 700, color: 'var(--text)' }}>Your result</h1>
-      <p style={{ color: 'var(--text-2)', margin: '0 0 24px', fontSize: 15 }}>Assessed against the official IELTS band descriptors.</p>
-
-      {/* Hero: band ring + criteria with evidence */}
+      <p style={{ color: 'var(--text-2)', margin: '0 0 24px', fontSize: 15 }}>Assessed across all three parts, against the official band descriptors.</p>
       <div className="card" style={{ padding: 28, display: 'grid', gridTemplateColumns: '148px 1fr', gap: 36, alignItems: 'center', marginBottom: 16 }}>
         <BandRing band={result.band_score} />
         <div style={{ display: 'grid', gap: 16 }}>
@@ -128,36 +176,21 @@ function FeedbackScreen({ result, onBack }: { result: FeedbackResult; onBack: ()
           })}
         </div>
       </div>
-
-      {fb.overview && (
-        <div className="card" style={{ padding: 22, marginBottom: 16 }}>
-          <p style={{ fontSize: 14.5, lineHeight: 1.65, margin: 0, color: 'var(--text)' }}>{fb.overview}</p>
-        </div>
-      )}
-
+      {fb.overview && <div className="card" style={{ padding: 22, marginBottom: 16 }}><p style={{ fontSize: 14.5, lineHeight: 1.65, margin: 0, color: 'var(--text)' }}>{fb.overview}</p></div>}
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16, marginBottom: 16 }}>
         {fb.strengths?.length > 0 && (
           <div className="card" style={{ padding: 22 }}>
             <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: '0.08em', color: 'var(--accent)', marginBottom: 12 }}>STRENGTHS</div>
-            {fb.strengths.map((s, i) => (
-              <div key={i} style={{ display: 'flex', gap: 9, fontSize: 13.5, lineHeight: 1.55, color: 'var(--text)', marginBottom: 9 }}>
-                <span style={{ color: 'var(--accent)', flexShrink: 0 }}>✓</span><span>{s}</span>
-              </div>
-            ))}
+            {fb.strengths.map((s, i) => <div key={i} style={{ display: 'flex', gap: 9, fontSize: 13.5, lineHeight: 1.55, color: 'var(--text)', marginBottom: 9 }}><span style={{ color: 'var(--accent)', flexShrink: 0 }}>✓</span><span>{s}</span></div>)}
           </div>
         )}
         {fb.improvements?.length > 0 && (
           <div className="card" style={{ padding: 22 }}>
             <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: '0.08em', color: 'var(--warn)', marginBottom: 12 }}>WHAT TO IMPROVE</div>
-            {fb.improvements.map((s, i) => (
-              <div key={i} style={{ display: 'flex', gap: 9, fontSize: 13.5, lineHeight: 1.55, color: 'var(--text)', marginBottom: 9 }}>
-                <span style={{ color: 'var(--warn)', flexShrink: 0 }}>→</span><span>{s}</span>
-              </div>
-            ))}
+            {fb.improvements.map((s, i) => <div key={i} style={{ display: 'flex', gap: 9, fontSize: 13.5, lineHeight: 1.55, color: 'var(--text)', marginBottom: 9 }}><span style={{ color: 'var(--warn)', flexShrink: 0 }}>→</span><span>{s}</span></div>)}
           </div>
         )}
       </div>
-
       {fb.next_band_tip && (
         <div className="card" style={{ padding: 22, background: 'var(--accent-soft)', borderColor: 'transparent', display: 'flex', gap: 14, alignItems: 'flex-start' }}>
           <svg width={18} height={18} viewBox="0 0 24 24" fill="none" stroke="var(--accent)" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0, marginTop: 2 }}><path d="M12 3l1.7 4.8L18 9.5l-4.3 1.7L12 16l-1.7-4.8L6 9.5l4.3-1.7z"/></svg>
@@ -171,46 +204,62 @@ function FeedbackScreen({ result, onBack }: { result: FeedbackResult; onBack: ()
   )
 }
 
-/* ── Live exam ───────────────────────────────────────────────────────────── */
+/* ── Guided test runner ──────────────────────────────────────────────────── */
 type RecState = 'idle' | 'recording' | 'transcribing'
 
-function LiveExam({ part, setPart, topic, setTopic, transcript, setTranscript, loading, error, onSubmit, onEndTest }: {
-  part: 1 | 2 | 3; setPart: (p: 1 | 2 | 3) => void
-  topic: string; setTopic: (t: string) => void
-  transcript: string; setTranscript: (updater: string | ((prev: string) => string)) => void
-  loading: boolean; error: string; onSubmit: () => void; onEndTest: () => void
+function LiveExam({ set, loading, error, onComplete, onExit }: {
+  set: SpeakingSet; loading: boolean; error: string
+  onComplete: (turns: { part: number; question: string; answer: string }[]) => void
+  onExit: () => void
 }) {
+  const turns = useMemo(() => buildTurns(set), [set])
+  const [idx, setIdx] = useState(0)
+  const [answers, setAnswers] = useState<string[]>(() => turns.map(() => ''))
   const [elapsed, setElapsed] = useState(0)
+
+  // Part 2 preparation
+  const [prepActive, setPrepActive] = useState(false)
+  const [prepLeft, setPrepLeft] = useState(60)
+  const [prepNotes, setPrepNotes] = useState('')
+
+  // recording
   const [recState, setRecState] = useState<RecState>('idle')
   const [recSeconds, setRecSeconds] = useState(0)
   const [micError, setMicError] = useState('')
   const mediaRef = useRef<MediaRecorder | null>(null)
   const chunksRef = useRef<Blob[]>([])
 
-  useEffect(() => {
-    const id = setInterval(() => setElapsed(s => s + 1), 1000)
-    return () => clearInterval(id)
-  }, [])
+  const turn = turns[idx]
+  const answer = answers[idx] ?? ''
 
-  useEffect(() => {
-    if (recState !== 'recording') return
-    const id = setInterval(() => setRecSeconds(s => s + 1), 1000)
-    return () => clearInterval(id)
-  }, [recState])
+  // counts within the current part
+  const partTurns = turns.filter(t => t.part === turn.part)
+  const posInPart = turns.slice(0, idx + 1).filter(t => t.part === turn.part).length
 
+  useEffect(() => { const id = setInterval(() => setElapsed(s => s + 1), 1000); return () => clearInterval(id) }, [])
   useEffect(() => () => { mediaRef.current?.stream?.getTracks().forEach(t => t.stop()) }, [])
+  useEffect(() => { if (recState !== 'recording') return; const id = setInterval(() => setRecSeconds(s => s + 1), 1000); return () => clearInterval(id) }, [recState])
+  useEffect(() => {
+    if (!prepActive) return
+    const id = setInterval(() => setPrepLeft(s => {
+      const nx = Math.max(0, s - 1)
+      if (nx === 0) setPrepActive(false)
+      return nx
+    }), 1000)
+    return () => clearInterval(id)
+  }, [prepActive])
+
+  const setAnswer = useCallback((updater: string | ((p: string) => string)) => {
+    setAnswers(arr => { const c = [...arr]; const cur = c[idx] ?? ''; c[idx] = typeof updater === 'function' ? (updater as (p: string) => string)(cur) : updater; return c })
+  }, [idx])
 
   const startRecording = useCallback(async () => {
     setMicError('')
-    if (typeof navigator === 'undefined' || !navigator.mediaDevices?.getUserMedia) {
-      setMicError('Recording is not supported in this browser — type your answer instead.')
-      return
-    }
+    if (typeof navigator === 'undefined' || !navigator.mediaDevices?.getUserMedia) { setMicError('Recording is not supported here — type your answer instead.'); return }
     try {
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true })
       const mr = new MediaRecorder(stream)
-      chunksRef.current = []
-      setRecSeconds(0)
+      chunksRef.current = []; setRecSeconds(0)
       mr.ondataavailable = e => { if (e.data.size > 0) chunksRef.current.push(e.data) }
       mr.onstop = async () => {
         stream.getTracks().forEach(t => t.stop())
@@ -218,41 +267,41 @@ function LiveExam({ part, setPart, topic, setTopic, transcript, setTranscript, l
         if (blob.size === 0) { setRecState('idle'); return }
         setRecState('transcribing')
         try {
-          const fd = new FormData()
-          fd.append('audio', blob, 'speech.webm')
+          const fd = new FormData(); fd.append('audio', blob, 'speech.webm')
           const res = await fetch('/api/ai/transcribe', { method: 'POST', body: fd })
           const data = await res.json()
-          if (res.ok && data.transcript) {
-            setTranscript(prev => (prev.trim() ? prev.trim() + ' ' : '') + data.transcript)
-          } else {
-            setMicError(data.error ?? 'Could not transcribe — please try again or type your answer.')
-          }
-        } catch {
-          setMicError('Could not reach the transcription service.')
-        } finally {
-          setRecState('idle')
-        }
+          if (res.ok && data.transcript) setAnswer(prev => (prev.trim() ? prev.trim() + ' ' : '') + data.transcript)
+          else setMicError(data.error ?? 'Could not transcribe — try again or type.')
+        } catch { setMicError('Could not reach the transcription service.') }
+        finally { setRecState('idle') }
       }
-      mr.start()
-      mediaRef.current = mr
-      setRecState('recording')
-    } catch {
-      setMicError('Microphone access denied. Type your answer instead.')
-    }
-  }, [setTranscript])
-
+      mr.start(); mediaRef.current = mr; setRecState('recording')
+    } catch { setMicError('Microphone access denied. Type your answer instead.') }
+  }, [setAnswer])
   const stopRecording = useCallback(() => { mediaRef.current?.stop() }, [])
 
-  const nextQuestion = () => {
-    const list = SAMPLE_TOPICS[part]
-    const i = list.indexOf(topic)
-    setTopic(list[(i + 1) % list.length])
-    setTranscript('')
+  function goTo(i: number) {
+    if (recState === 'recording') stopRecording()
+    setMicError('')
+    setIdx(i)
+    const t = turns[i]
+    if (t.kind === 'cue') { setPrepActive(true); setPrepLeft(60); setPrepNotes('') }
+    else setPrepActive(false)
+  }
+  const next = () => { if (idx < turns.length - 1) goTo(idx + 1); else finish() }
+  const back = () => { if (idx > 0) goTo(idx - 1) }
+
+  function finish() {
+    const session = turns.map((t, i) => ({ part: t.part, question: turnQuestion(t), answer: answers[i] ?? '' })).filter(s => s.answer.trim())
+    onComplete(session)
   }
 
   const mm = String(Math.floor(elapsed / 60)).padStart(2, '0')
   const ss = String(elapsed % 60).padStart(2, '0')
-  const wordCount = transcript.trim() ? transcript.trim().split(/\s+/).length : 0
+  const isLast = idx === turns.length - 1
+  const totalWords = answers.reduce((n, a) => n + words(a), 0)
+  const canAdvance = words(answer) >= 3
+  const canFinish = totalWords >= 40
   const busy = loading || recState === 'transcribing'
 
   return (
@@ -266,123 +315,118 @@ function LiveExam({ part, setPart, topic, setTopic, transcript, setTranscript, l
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
           <span style={{ fontSize: 13.5, color: '#bcbdbe', fontFamily: 'var(--font-mono)' }}>{mm}:{ss}</span>
-          <button onClick={onEndTest} style={{ padding: '6px 14px', background: 'transparent', border: '1px solid #34373a', borderRadius: 8, fontSize: 12, color: '#bcbdbe', cursor: 'pointer' }}>End test</button>
+          <button onClick={onExit} style={{ padding: '6px 14px', background: 'transparent', border: '1px solid #34373a', borderRadius: 8, fontSize: 12, color: '#bcbdbe', cursor: 'pointer' }}>End test</button>
         </div>
       </header>
 
-      {/* Body */}
-      <div style={{ flex: 1, overflow: 'auto', padding: '28px 24px' }}>
-        <div style={{ maxWidth: 680, margin: '0 auto', display: 'flex', flexDirection: 'column', gap: 20 }}>
-
-          {/* Segmented part control */}
-          <div style={{ display: 'flex', gap: 4, padding: 4, background: '#16191b', borderRadius: 12, border: '1px solid #1f2123' }}>
-            {([1, 2, 3] as const).map(p => (
-              <button key={p} onClick={() => setPart(p)} style={{
-                flex: 1, padding: '9px 10px', borderRadius: 9, fontSize: 13, fontWeight: 600,
-                background: part === p ? '#1a2a23' : 'transparent',
-                color: part === p ? '#3aa278' : '#7d7f81',
-                border: part === p ? '1px solid #2c4a3b' : '1px solid transparent', cursor: 'pointer', transition: 'all .15s',
-              }}>
-                <span style={{ opacity: 0.6, marginRight: 6 }}>P{p}</span>{PART_LABELS[p]}
-              </button>
-            ))}
+      {/* Progress */}
+      <div style={{ padding: '14px 24px 0', flexShrink: 0 }}>
+        <div style={{ maxWidth: 680, margin: '0 auto' }}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 }}>
+            <span style={{ display: 'inline-flex', alignItems: 'center', gap: 8, fontSize: 12.5, fontWeight: 600, color: '#3aa278' }}>
+              <span style={{ padding: '2px 9px', borderRadius: 999, background: '#1a2a23', border: '1px solid #2c4a3b' }}>Part {turn.part}</span>
+              {PART_LABELS[turn.part]}
+            </span>
+            <span style={{ fontSize: 12, color: '#6b6d6f', fontFamily: 'var(--font-mono)' }}>{posInPart} / {partTurns.length}</span>
           </div>
+          <div style={{ height: 3, background: '#1f2123', borderRadius: 999, overflow: 'hidden' }}>
+            <div style={{ width: `${((idx + 1) / turns.length) * 100}%`, height: '100%', background: '#3aa278', borderRadius: 999, transition: 'width .35s ease' }}/>
+          </div>
+        </div>
+      </div>
 
-          {/* Question card */}
+      {/* Body */}
+      <div style={{ flex: 1, overflow: 'auto', padding: '22px 24px' }}>
+        <div style={{ maxWidth: 680, margin: '0 auto', display: 'flex', flexDirection: 'column', gap: 18 }}>
+          {/* Question / cue card */}
           <div style={{ background: '#16191b', border: '1px solid #1f2123', borderRadius: 18, padding: 22 }}>
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 14 }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                <div style={{ width: 34, height: 34, borderRadius: '50%', background: '#1a2a23', display: 'flex', alignItems: 'center', justifyContent: 'center', border: '1px solid #2c4a3b' }}>
-                  <svg width={15} height={15} viewBox="0 0 24 24" fill="none" stroke="#3aa278" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M12 3l1.7 4.8L18 9.5l-4.3 1.7L12 16l-1.7-4.8L6 9.5l4.3-1.7z"/></svg>
-                </div>
-                <span style={{ fontSize: 11, letterSpacing: '0.08em', color: '#6b6d6f', fontWeight: 600 }}>EXAMINER ASKS</span>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 12 }}>
+              <div style={{ width: 32, height: 32, borderRadius: '50%', background: '#1a2a23', display: 'flex', alignItems: 'center', justifyContent: 'center', border: '1px solid #2c4a3b', flexShrink: 0 }}>
+                <svg width={14} height={14} viewBox="0 0 24 24" fill="none" stroke="#3aa278" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M12 3l1.7 4.8L18 9.5l-4.3 1.7L12 16l-1.7-4.8L6 9.5l4.3-1.7z"/></svg>
               </div>
-              <button onClick={nextQuestion} style={{ display: 'inline-flex', alignItems: 'center', gap: 6, fontSize: 12, fontWeight: 600, color: '#8a8c8e', background: 'transparent', border: '1px solid #2a2c2e', borderRadius: 8, padding: '5px 10px', cursor: 'pointer' }}>
-                <svg width={13} height={13} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M4 4v6h6M20 20v-6h-6"/><path d="M20 9a8 8 0 0 0-14-3M4 15a8 8 0 0 0 14 3"/></svg>
-                New question
-              </button>
+              <span style={{ fontSize: 11, letterSpacing: '0.08em', color: '#6b6d6f', fontWeight: 600 }}>EXAMINER</span>
             </div>
-            <p style={{ fontSize: 17, lineHeight: 1.5, color: '#f0f0ee', margin: 0, fontWeight: 500 }}>
-              {part === 2 ? `Talk about: "${topic}"` : topic}
-            </p>
-            {part === 2 && (
-              <p style={{ fontSize: 12.5, color: '#7d7f81', margin: '10px 0 0' }}>You have one minute to prepare, then speak for 1–2 minutes.</p>
+            {turn.kind === 'q' && turn.lead && <p style={{ fontSize: 13.5, color: '#8a8c8e', margin: '0 0 8px', fontStyle: 'italic' }}>{turn.lead}</p>}
+            {turn.kind === 'cue' ? (
+              <>
+                <p style={{ fontSize: 17, lineHeight: 1.5, color: '#f0f0ee', margin: '0 0 12px', fontWeight: 500 }}>Describe {turn.topic}.</p>
+                <div style={{ fontSize: 12.5, color: '#7d7f81', marginBottom: 6 }}>You should say:</div>
+                <ul style={{ margin: 0, paddingLeft: 18, color: '#cdcfd0', fontSize: 14.5, lineHeight: 1.7 }}>
+                  {turn.bullets.map((b, i) => <li key={i}>{b}</li>)}
+                </ul>
+              </>
+            ) : (
+              <p style={{ fontSize: 17, lineHeight: 1.5, color: '#f0f0ee', margin: 0, fontWeight: 500 }}>{turn.prompt}</p>
             )}
           </div>
 
-          {/* Response */}
-          <div>
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 }}>
-              <span style={{ fontSize: 10.5, color: '#6b6d6f', letterSpacing: '0.08em', fontWeight: 600 }}>YOUR RESPONSE</span>
-              <span style={{ fontSize: 11, color: wordCount >= 20 ? '#3aa278' : '#6b6d6f', fontFamily: 'var(--font-mono)' }}>{wordCount} / 20 words</span>
+          {/* Part 2 preparation */}
+          {turn.kind === 'cue' && prepActive ? (
+            <div style={{ background: '#131517', border: '1px solid #23262a', borderRadius: 16, padding: 18 }}>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
+                <span style={{ fontSize: 12, fontWeight: 700, letterSpacing: '0.06em', color: '#3aa278' }}>PREPARATION · {String(Math.floor(prepLeft / 60)).padStart(2, '0')}:{String(prepLeft % 60).padStart(2, '0')}</span>
+                <button onClick={() => setPrepActive(false)} style={{ fontSize: 12, fontWeight: 600, color: '#bcbdbe', background: 'transparent', border: '1px solid #2a2c2e', borderRadius: 8, padding: '5px 12px', cursor: 'pointer' }}>I&apos;m ready →</button>
+              </div>
+              <textarea value={prepNotes} onChange={e => setPrepNotes(e.target.value)} placeholder="Make a few notes to plan your answer (optional, not assessed)…"
+                style={{ width: '100%', minHeight: 90, padding: '12px 14px', background: '#0e1011', border: '1px solid #23262a', borderRadius: 12, color: '#cdcfd0', fontSize: 13.5, lineHeight: 1.6, resize: 'vertical', outline: 'none', fontFamily: 'var(--font-sans)' }}/>
             </div>
-            <textarea
-              value={transcript}
-              onChange={e => setTranscript(e.target.value)}
-              placeholder="Tap the mic below to record — or type your answer here…"
-              style={{
-                width: '100%', minHeight: 150, padding: '16px 18px',
-                background: '#131517', border: '1px solid #23262a', borderRadius: 16,
-                color: '#f0f0ee', fontSize: 14.5, lineHeight: 1.65, resize: 'vertical', outline: 'none',
-                fontFamily: 'var(--font-sans)',
-              }}
-              onFocus={e => (e.currentTarget.style.borderColor = '#3aa278')}
-              onBlur={e => (e.currentTarget.style.borderColor = '#23262a')}
-            />
-            {(error || micError) && <div style={{ marginTop: 10, fontSize: 13, color: '#e0937f' }}>{error || micError}</div>}
-          </div>
+          ) : (
+            /* Answer */
+            <div>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 }}>
+                <span style={{ fontSize: 10.5, color: '#6b6d6f', letterSpacing: '0.08em', fontWeight: 600 }}>YOUR ANSWER</span>
+                <span style={{ fontSize: 11, color: '#6b6d6f', fontFamily: 'var(--font-mono)' }}>{words(answer)} words</span>
+              </div>
+              <textarea value={answer} onChange={e => setAnswer(e.target.value)} placeholder={turn.kind === 'cue' ? 'Speak for 1–2 minutes — tap the mic, or type your answer…' : 'Tap the mic to answer, or type here…'}
+                style={{ width: '100%', minHeight: turn.kind === 'cue' ? 150 : 110, padding: '15px 17px', background: '#131517', border: '1px solid #23262a', borderRadius: 16, color: '#f0f0ee', fontSize: 14.5, lineHeight: 1.65, resize: 'vertical', outline: 'none', fontFamily: 'var(--font-sans)' }}
+                onFocus={e => (e.currentTarget.style.borderColor = '#3aa278')} onBlur={e => (e.currentTarget.style.borderColor = '#23262a')}/>
+              {(error || micError) && <div style={{ marginTop: 10, fontSize: 13, color: '#e0937f' }}>{error || micError}</div>}
+            </div>
+          )}
         </div>
       </div>
 
       {/* Dock */}
-      <div style={{ padding: '18px 24px 22px', borderTop: '1px solid #1f2123', background: '#121315', flexShrink: 0 }}>
-        <div style={{ maxWidth: 680, margin: '0 auto' }}>
+      <div style={{ padding: '16px 24px 20px', borderTop: '1px solid #1f2123', background: '#121315', flexShrink: 0 }}>
+        <div style={{ maxWidth: 680, margin: '0 auto', display: 'flex', alignItems: 'center', gap: 14 }}>
+          {/* mic */}
           {recState === 'recording' ? (
-            <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
-              <button onClick={stopRecording} aria-label="Stop recording" style={{ width: 56, height: 56, borderRadius: 28, flexShrink: 0, background: '#d97a64', display: 'flex', alignItems: 'center', justifyContent: 'center', border: 'none', cursor: 'pointer', boxShadow: '0 0 0 8px rgba(217,122,100,0.18)' }}>
-                <svg width={18} height={18} viewBox="0 0 24 24" fill="white"><rect x="6" y="6" width="12" height="12" rx="3"/></svg>
-              </button>
-              <div style={{ flex: 1, display: 'flex', alignItems: 'center', gap: 3, height: 40 }}>
-                {Array.from({ length: 40 }).map((_, i) => (
-                  <div key={i} style={{ flex: 1, background: '#3aa278', borderRadius: 2, animation: `eq 0.9s ease-in-out ${i * 0.035}s infinite alternate`, height: 8 }}/>
-                ))}
-              </div>
-              <span style={{ fontSize: 14, color: '#3aa278', fontFamily: 'var(--font-mono)', minWidth: 48, textAlign: 'right' }}>
-                {String(Math.floor(recSeconds / 60)).padStart(2, '0')}:{String(recSeconds % 60).padStart(2, '0')}
-              </span>
+            <button onClick={stopRecording} aria-label="Stop recording" style={{ width: 54, height: 54, borderRadius: 27, flexShrink: 0, background: '#d97a64', display: 'flex', alignItems: 'center', justifyContent: 'center', border: 'none', cursor: 'pointer', boxShadow: '0 0 0 8px rgba(217,122,100,0.18)' }}>
+              <svg width={18} height={18} viewBox="0 0 24 24" fill="white"><rect x="6" y="6" width="12" height="12" rx="3"/></svg>
+            </button>
+          ) : (
+            <button onClick={startRecording} disabled={recState === 'transcribing'} aria-label="Record" style={{ width: 54, height: 54, borderRadius: 27, flexShrink: 0, background: recState === 'transcribing' ? '#26272a' : '#3aa278', display: 'flex', alignItems: 'center', justifyContent: 'center', border: 'none', cursor: recState === 'transcribing' ? 'default' : 'pointer', boxShadow: recState === 'transcribing' ? 'none' : '0 8px 24px -8px rgba(58,162,120,0.7)' }}>
+              {recState === 'transcribing' ? <Loader2 size={20} color="#888" className="animate-spin"/> : <MicIcon size={22} color="#fff" />}
+            </button>
+          )}
+
+          {/* middle: equalizer while recording */}
+          {recState === 'recording' ? (
+            <div style={{ flex: 1, display: 'flex', alignItems: 'center', gap: 3, height: 38 }}>
+              {Array.from({ length: 36 }).map((_, i) => <div key={i} style={{ flex: 1, background: '#3aa278', borderRadius: 2, animation: `eq 0.9s ease-in-out ${i * 0.035}s infinite alternate`, height: 8 }}/>)}
+              <span style={{ fontSize: 13, color: '#3aa278', fontFamily: 'var(--font-mono)', marginLeft: 8, minWidth: 44, textAlign: 'right' }}>{String(Math.floor(recSeconds / 60)).padStart(2, '0')}:{String(recSeconds % 60).padStart(2, '0')}</span>
             </div>
           ) : (
-            <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
+            <div style={{ flex: 1, display: 'flex', alignItems: 'center', gap: 10 }}>
+              <button onClick={back} disabled={idx === 0 || busy} style={{ padding: '13px 16px', borderRadius: 12, fontSize: 13, fontWeight: 600, background: 'transparent', color: idx === 0 ? '#3a3c3e' : '#bcbdbe', border: '1px solid #2a2c2e', cursor: idx === 0 || busy ? 'default' : 'pointer' }}>Back</button>
               <button
-                onClick={startRecording}
-                disabled={recState === 'transcribing'}
-                aria-label="Start recording"
-                style={{ width: 56, height: 56, borderRadius: 28, flexShrink: 0, background: recState === 'transcribing' ? '#26272a' : '#3aa278', display: 'flex', alignItems: 'center', justifyContent: 'center', border: 'none', cursor: recState === 'transcribing' ? 'default' : 'pointer', boxShadow: recState === 'transcribing' ? 'none' : '0 8px 24px -8px rgba(58,162,120,0.7)', transition: 'all .2s' }}>
-                {recState === 'transcribing' ? <Loader2 size={20} color="#888" className="animate-spin"/> : <MicIcon size={22} color="#fff" />}
+                onClick={next}
+                disabled={busy || (isLast ? !canFinish : !canAdvance)}
+                style={{ flex: 1, padding: '14px', borderRadius: 12, fontSize: 14.5, fontWeight: 700, background: busy || (isLast ? !canFinish : !canAdvance) ? '#1f2123' : '#3aa278', color: busy || (isLast ? !canFinish : !canAdvance) ? '#5f6163' : '#fff', border: 'none', cursor: busy || (isLast ? !canFinish : !canAdvance) ? 'not-allowed' : 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8 }}>
+                {recState === 'transcribing' ? <><Loader2 size={15} className="animate-spin"/> Transcribing…</>
+                  : loading ? <><Loader2 size={15} className="animate-spin"/> Scoring your test…</>
+                  : isLast ? (canFinish ? 'Finish & get my band' : 'Answer a little more to finish')
+                  : (canAdvance ? 'Next question →' : 'Record or type your answer')}
               </button>
-              <div style={{ flex: 1 }}>
-                <button onClick={onSubmit} disabled={busy || wordCount < 20} style={{
-                  width: '100%', padding: '15px', borderRadius: 14, fontSize: 14.5, fontWeight: 700,
-                  background: busy || wordCount < 20 ? '#1f2123' : '#3aa278',
-                  color: busy || wordCount < 20 ? '#5f6163' : '#fff',
-                  border: 'none', cursor: busy || wordCount < 20 ? 'not-allowed' : 'pointer',
-                  display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, transition: 'all .15s',
-                }}>
-                  {recState === 'transcribing' ? <><Loader2 size={15} className="animate-spin"/> Transcribing…</>
-                    : loading ? <><Loader2 size={15} className="animate-spin"/> Analysing…</>
-                    : wordCount < 20 ? 'Record or type at least 20 words'
-                    : 'Submit for AI feedback'}
-                </button>
-              </div>
             </div>
           )}
-          <div style={{ textAlign: 'center', fontSize: 11, color: '#5f6163', marginTop: 12 }}>
-            {recState === 'recording' ? 'Speak naturally — tap stop when you finish' : 'Tap the mic to record · or type your answer'}
-          </div>
+        </div>
+        <div style={{ textAlign: 'center', fontSize: 11, color: '#5f6163', marginTop: 10 }}>
+          {recState === 'recording' ? 'Speak naturally — tap stop when you finish' : turn.kind === 'cue' && prepActive ? 'Use your preparation time, then tap “I’m ready”' : 'Tap the mic to answer · or type · then continue'}
         </div>
       </div>
 
-      <style>{`@keyframes eq { from { height: 6px; opacity: .45 } to { height: 34px; opacity: 1 } }`}</style>
+      <style>{`@keyframes eq { from { height: 6px; opacity: .45 } to { height: 32px; opacity: 1 } }`}</style>
     </div>
   )
 }
@@ -390,46 +434,40 @@ function LiveExam({ part, setPart, topic, setTopic, transcript, setTranscript, l
 /* ── Main page ───────────────────────────────────────────────────────────── */
 export default function SpeakingPage() {
   const [phase, setPhase] = useState<Phase>('ready')
-  const [part, setPart] = useState<1 | 2 | 3>(1)
-  const [topic, setTopic] = useState(SAMPLE_TOPICS[1][0])
-  const [transcript, setTranscript] = useState('')
+  const [setIdx, setSetIdx] = useState(0)
   const [loading, setLoading] = useState(false)
   const [result, setResult] = useState<FeedbackResult | null>(null)
   const [error, setError] = useState('')
 
-  async function handleSubmit() {
-    const wordCount = transcript.trim() ? transcript.trim().split(/\s+/).length : 0
-    if (wordCount < 20) return
+  async function handleComplete(turns: { part: number; question: string; answer: string }[]) {
     setError(''); setResult(null); setLoading(true)
     try {
       const res = await fetch('/api/ai/speaking', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ transcript, part, topic }),
+        body: JSON.stringify({ turns, topic: SETS[setIdx].title }),
       })
       const data = await res.json()
-      if (!res.ok) { setError(data.error ?? 'Failed to get feedback.') }
+      if (!res.ok) setError(data.error ?? 'Failed to score the test.')
       else { setResult(data); setPhase('feedback') }
     } catch { setError('Network error. Please try again.') }
     finally { setLoading(false) }
   }
 
-  // Switching part resets the topic AND clears the previous answer.
-  function changePart(p: 1 | 2 | 3) {
-    setPart(p); setTopic(SAMPLE_TOPICS[p][0]); setTranscript(''); setError('')
+  if (phase === 'ready') {
+    return <ReadyScreen onStart={() => { setSetIdx(Math.floor(Math.random() * SETS.length)); setError(''); setResult(null); setPhase('live') }} />
   }
-
-  if (phase === 'ready') return <ReadyScreen onStart={() => { setTranscript(''); setError(''); setPhase('live') }} />
-  if (phase === 'feedback' && result) return <FeedbackScreen result={result} onBack={() => { setPhase('ready'); setTranscript(''); setResult(null) }} />
-
+  if (phase === 'feedback' && result) {
+    return <FeedbackScreen result={result} onBack={() => { setResult(null); setPhase('ready') }} />
+  }
   return (
     <LiveExam
-      part={part} setPart={changePart}
-      topic={topic} setTopic={setTopic}
-      transcript={transcript} setTranscript={setTranscript}
-      loading={loading} error={error}
-      onSubmit={handleSubmit}
-      onEndTest={() => { setPhase('ready'); setTranscript(''); setError('') }}
+      key={setIdx}
+      set={SETS[setIdx]}
+      loading={loading}
+      error={error}
+      onComplete={handleComplete}
+      onExit={() => { setError(''); setPhase('ready') }}
     />
   )
 }

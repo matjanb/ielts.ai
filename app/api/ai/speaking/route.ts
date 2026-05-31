@@ -48,21 +48,49 @@ export async function POST(request: NextRequest) {
   const allowed = await canUseFeature(user.id, 'speaking')
   if (!allowed) return err('Monthly speaking feedback limit reached. Upgrade to Pro for unlimited access.', 429)
 
-  let body: { transcript: string; part: 1 | 2 | 3; topic: string }
+  interface Turn { part: number; question: string; answer: string }
+  let body: { transcript?: string; part?: 1 | 2 | 3; topic?: string; turns?: Turn[] }
   try {
     body = await request.json()
   } catch {
     return err('Invalid request body', 400)
   }
 
-  const { transcript, part, topic } = body
-  if (!transcript?.trim() || !part || !topic?.trim()) {
-    return err('transcript, part, and topic are required', 400)
+  // Build the candidate transcript either from a full Part 1–3 session (turns)
+  // or from a single legacy response (transcript/part/topic).
+  let candidateTranscript: string
+  let contextHeader: string
+  let sessionMode = false
+  let storePart: 1 | 2 | 3 = body.part ?? 1
+  let storeTopic = body.topic ?? ''
+
+  const turns = (body.turns ?? []).filter(tn => tn?.answer?.trim())
+  if (turns.length > 0) {
+    sessionMode = true
+    candidateTranscript = turns
+      .map(tn => `[Part ${tn.part}] Examiner: ${tn.question}\nCandidate: ${tn.answer.trim()}`)
+      .join('\n\n')
+    contextHeader = 'FULL IELTS SPEAKING TEST (Parts 1–3) — examiner questions and the candidate\'s spoken answers:'
+    storePart = 2
+    storeTopic = body.topic?.trim() || 'Full speaking test'
+  } else {
+    const { transcript, part, topic } = body
+    if (!transcript?.trim() || !part || !topic?.trim()) {
+      return err('transcript, part, and topic are required', 400)
+    }
+    candidateTranscript = transcript.trim()
+    contextHeader = `IELTS Speaking Part ${part} ${part === 2 ? 'CUE CARD' : 'QUESTION'}: ${topic}\n\nCANDIDATE TRANSCRIPT:`
+    storePart = part
+    storeTopic = topic
   }
 
-  if (transcript.trim().split(/\s+/).length < 20) {
-    return err('Transcript is too short to evaluate', 400)
+  if (candidateTranscript.split(/\s+/).filter(Boolean).length < 20) {
+    return err('Response is too short to evaluate. Please answer more fully.', 400)
   }
+
+  const assessScope = sessionMode
+    ? 'Assess this full IELTS Speaking test (Parts 1–3). Judge the candidate\'s overall speaking ability across all parts as a single examiner would — one band per criterion for the whole test.'
+    : 'Assess this IELTS Speaking response.'
 
   try {
     const completion = await openai.chat.completions.create({
@@ -80,14 +108,12 @@ export async function POST(request: NextRequest) {
 
 ${SPEAKING_RUBRIC}
 
-Assess this IELTS Speaking Part ${part} response. The input is a transcript only (no audio is available), so judge fluency from hesitation/repetition markers and sentence flow in the text, and judge pronunciation conservatively per the text-only note in the descriptors — never invent a confident pronunciation band. For each criterion (fluency = Fluency & Coherence, lexical = Lexical Resource, grammar = Grammatical Range & Accuracy, pronunciation) award a band and cite evidence. Do not average the criteria yourself.`,
+${assessScope} The input is a transcript only (no audio is available), so judge fluency from hesitation/repetition markers and sentence flow in the text, and judge pronunciation conservatively per the text-only note in the descriptors — never invent a confident pronunciation band. For each criterion (fluency = Fluency & Coherence, lexical = Lexical Resource, grammar = Grammatical Range & Accuracy, pronunciation) award a band and cite evidence. Do not average the criteria yourself.`,
         },
         {
           role: 'user',
-          content: `PART ${part} ${part === 2 ? 'CUE CARD' : 'QUESTION'}: ${topic}
-
-CANDIDATE TRANSCRIPT:
-${transcript}`,
+          content: `${contextHeader}
+${candidateTranscript}`,
         },
       ],
     })
@@ -122,9 +148,9 @@ ${transcript}`,
       .from('speaking_submissions')
       .insert({
         user_id:             user.id,
-        part,
-        topic,
-        transcript,
+        part:                storePart,
+        topic:               storeTopic,
+        transcript:          candidateTranscript,
         band_score:          scored.band_score,
         fluency_score:       scored.fluency_score,
         pronunciation_score: scored.pronunciation_score,
@@ -146,8 +172,8 @@ ${transcript}`,
     await admin.from('study_sessions').insert({
       user_id:          user.id,
       skill:            'speaking',
-      activity_type:    'practice',
-      duration_minutes: part === 2 ? 8 : 5,
+      activity_type:    sessionMode ? 'mock_test' : 'practice',
+      duration_minutes: sessionMode ? 14 : (storePart === 2 ? 8 : 5),
     })
 
     await recordUsage(user.id, 'speaking')
