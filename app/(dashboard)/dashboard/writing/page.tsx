@@ -19,7 +19,9 @@ export default function WritingPage() {
   const { t } = useLanguage()
   const [taskType, setTaskType] = useState<'1' | '2'>('2')
   const [promptIdx, setPromptIdx] = useState(0)
-  const [content, setContent]   = useState('')
+  const [contents, setContents] = useState<Record<'1' | '2', string>>({ '1': '', '2': '' })
+  const content = contents[taskType]
+  const setContent = (val: string) => setContents(prev => ({ ...prev, [taskType]: val }))
   const [loading, setLoading]   = useState(false)
   const [result, setResult]     = useState<FeedbackResult | null>(null)
   const [error, setError]       = useState('')
@@ -43,7 +45,7 @@ export default function WritingPage() {
   const minutes   = currentPrompt?.minutes ?? (taskType === '1' ? 20 : 40)
 
   function handleTaskTypeChange(type: '1' | '2') {
-    setTaskType(type); setPromptIdx(0); setResult(null); setError(''); setContent(''); setSubmitted(false)
+    setTaskType(type); setPromptIdx(0); setResult(null); setError(''); setSubmitted(false)
   }
 
   // Existing API logic — unchanged
