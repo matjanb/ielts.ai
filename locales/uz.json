@@ -368,7 +368,17 @@
     "startTitle": "IELTS Reading testi",
     "practiceTag": "Reading amaliyoti",
     "minutes": "daq",
-    "part": "Qism"
+    "part": "Qism",
+    "select": "Tanlash",
+    "selectDash": "— Tanlash —",
+    "typeAnswer": "Javobingizni yozing…",
+    "readingPassage": "Oʻqish matni",
+    "previous": "Oldingi",
+    "next": "Keyingi",
+    "minutesFull": "Daqiqa",
+    "gChoose": "Toʻgʻri javobni tanlang",
+    "gMatch": "Tavsiflarni moslang",
+    "gComplete": "Xulosani toʻldiring"
   },
   "diagnostic": {
     "stepOf": "{{current}} / {{total}}",

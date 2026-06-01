@@ -407,7 +407,17 @@
     "startTitle": "IELTS Reading тесті",
     "practiceTag": "Reading практикасы",
     "minutes": "мин",
-    "part": "Бөлім"
+    "part": "Бөлім",
+    "select": "Таңдау",
+    "selectDash": "— Таңдау —",
+    "typeAnswer": "Жауабыңды жаз…",
+    "readingPassage": "Оқу мәтіні",
+    "previous": "Алдыңғы",
+    "next": "Келесі",
+    "minutesFull": "Минут",
+    "gChoose": "Дұрыс жауапты таңда",
+    "gMatch": "Сипаттамаларды сәйкестендір",
+    "gComplete": "Қорытындыны толтыр"
   },
   "diagnostic": {
     "stepOf": "{{current}} / {{total}}",

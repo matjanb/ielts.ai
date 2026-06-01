@@ -54,6 +54,7 @@ function ReadingQuestion({
   answer: string
   onChange: (v: string) => void
 }) {
+  const { t } = useLanguage()
   const qText = question.question_text.replace(/^\[.*?\]\s*/, '')
 
   const selectStyle: React.CSSProperties = {
@@ -70,7 +71,7 @@ function ReadingQuestion({
           onFocus={e => (e.currentTarget.style.borderColor = 'var(--accent)')}
           onBlur={e => (e.currentTarget.style.borderColor = 'var(--border-strong)')}
         >
-          <option value="">Select</option>
+          <option value="">{t('reading.select')}</option>
           <option>YES</option><option>NO</option><option>NOT GIVEN</option>
         </select>
         <p style={{ fontSize: 14, color: 'var(--text)', lineHeight: 1.55, margin: 0 }}>{qText}</p>
@@ -120,7 +121,7 @@ function ReadingQuestion({
           onFocus={e => (e.currentTarget.style.borderColor = 'var(--accent)')}
           onBlur={e => (e.currentTarget.style.borderColor = 'var(--border-strong)')}
         >
-          <option value="">— Select —</option>
+          <option value="">{t('reading.selectDash')}</option>
           {(allOptions.length > 0 ? allOptions.map(o => o.split('=')[0].trim()) : ['A','B','C','D','E','F','G','H']).map(l => {
             const desc = allOptions.find(o => o.startsWith(l + '='))?.replace(l + '=', '').trim() ?? ''
             return <option key={l} value={l}>{desc ? `${l} — ${desc}` : l}</option>
@@ -139,7 +140,7 @@ function ReadingQuestion({
       )}
       <p style={{ fontSize: 14, color: 'var(--text)', lineHeight: 1.55, margin: 0 }}>{qText}</p>
       <input type="text" value={answer} onChange={e => onChange(e.target.value)}
-        placeholder="Type your answer…"
+        placeholder={t('reading.typeAnswer')}
         style={{ padding: '9px 12px', borderRadius: 8, fontSize: 14, border: '1px solid var(--border-strong)', background: 'var(--bg-elev)', color: 'var(--text)', outline: 'none' }}
         onFocus={e => (e.currentTarget.style.borderColor = 'var(--accent)')}
         onBlur={e => (e.currentTarget.style.borderColor = 'var(--border-strong)')}
@@ -187,17 +188,18 @@ function PassageText({ text }: { text: string }) {
 // ── Start Screen ──────────────────────────────────────────────────────────────
 
 function StartScreen({ test, onStart }: { test: IeltsTest; onStart: () => void }) {
+  const { t } = useLanguage()
   return (
     <div style={{ maxWidth: 480, margin: '0 auto' }}>
       <div className="card" style={{ padding: 40, textAlign: 'center', boxShadow: 'var(--shadow-lg)' }}>
         <div style={{ width: 56, height: 56, borderRadius: 16, background: 'var(--accent-soft)', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 20px' }}>
           <BookOpen size={24} strokeWidth={1.8} style={{ color: 'var(--accent)' }} />
         </div>
-        <span style={{ display: 'inline-block', fontSize: 10, fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase', color: 'var(--accent)', background: 'var(--accent-soft)', padding: '3px 10px', borderRadius: 999, marginBottom: 14 }}>Reading</span>
+        <span style={{ display: 'inline-block', fontSize: 10, fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase', color: 'var(--accent)', background: 'var(--accent-soft)', padding: '3px 10px', borderRadius: 999, marginBottom: 14 }}>{t('dashboard.reading')}</span>
         <h1 style={{ fontSize: 20, fontWeight: 700, color: 'var(--text)', marginBottom: 8 }}>{test.title}</h1>
-        <p style={{ fontSize: 14, color: 'var(--text-2)', marginBottom: 28 }}>40 questions · 60 minutes · 3 passages</p>
+        <p style={{ fontSize: 14, color: 'var(--text-2)', marginBottom: 28 }}>{t('reading.startSubtitle')}</p>
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 10, marginBottom: 28 }}>
-          {[{ value: '40', label: 'Questions' }, { value: '60', label: 'Minutes' }, { value: '3', label: 'Passages' }].map(({ value, label }) => (
+          {[{ value: '40', label: t('reading.questions') }, { value: '60', label: t('reading.minutesFull') }, { value: '3', label: t('reading.passages') }].map(({ value, label }) => (
             <div key={label} style={{ padding: '12px 8px', background: 'var(--bg-soft)', borderRadius: 10, textAlign: 'center' }}>
               <div style={{ fontSize: 18, fontWeight: 700, color: 'var(--text)', fontVariantNumeric: 'tabular-nums' }}>{value}</div>
               <div style={{ fontSize: 11, color: 'var(--text-3)', marginTop: 2 }}>{label}</div>
@@ -205,7 +207,7 @@ function StartScreen({ test, onStart }: { test: IeltsTest; onStart: () => void }
           ))}
         </div>
         <button onClick={onStart} style={{ width: '100%', padding: '13px', borderRadius: 12, fontSize: 14, fontWeight: 700, background: 'var(--accent)', color: 'var(--accent-fg)', border: 'none', cursor: 'pointer' }}>
-          Start Test
+          {t('reading.startTest')}
         </button>
       </div>
     </div>
@@ -255,7 +257,7 @@ export default function ReadingTestPage() {
     async function load() {
       try {
         const testData = await getTestById(testId)
-        if (!testData) { setError('Test not found'); return }
+        if (!testData) { setError(t('reading.testNotFound')); return }
         setTest(testData)
 
         const secs = await getSectionsByTestId(testId)
@@ -274,12 +276,13 @@ export default function ReadingTestPage() {
         setQuestions(enriched)
         if (enriched.length > 0) setActiveQuestion(enriched[0].id)
       } catch {
-        setError('Failed to load test')
+        setError(t('reading.failedToLoad'))
       } finally {
         setLoading(false)
       }
     }
     load()
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [testId])
 
   async function handleStart() {
@@ -361,7 +364,7 @@ export default function ReadingTestPage() {
   )
   if (error || !test) return (
     <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: 260, gap: 12 }}>
-      <div style={{ fontSize: 14, color: 'var(--danger)' }}>{error ?? 'Test not found'}</div>
+      <div style={{ fontSize: 14, color: 'var(--danger)' }}>{error ?? t('reading.testNotFound')}</div>
       <button onClick={() => router.back()} style={{ fontSize: 13, color: 'var(--accent)', background: 'none', border: 'none', cursor: 'pointer' }}>{t('common.back')}</button>
     </div>
   )
@@ -392,11 +395,11 @@ export default function ReadingTestPage() {
   }
 
   function getGroupLabel(type: string, qs: QuestionWithSection[]) {
-    const nums = `Questions ${qs[0].question_number}${qs.length > 1 ? `-${qs[qs.length-1].question_number}` : ''}`
+    const nums = `${t('reading.questions')} ${qs[0].question_number}${qs.length > 1 ? `-${qs[qs.length-1].question_number}` : ''}`
     if (type === 'true_false') return `${nums} — YES / NO / NOT GIVEN`
-    if (type === 'multiple_choice') return `${nums} — Choose the correct answer`
-    if (type === 'matching') return `${nums} — Match the descriptions`
-    if (type === 'fill_blank') return `${nums} — Complete the summary`
+    if (type === 'multiple_choice') return `${nums} — ${t('reading.gChoose')}`
+    if (type === 'matching') return `${nums} — ${t('reading.gMatch')}`
+    if (type === 'fill_blank') return `${nums} — ${t('reading.gComplete')}`
     return nums
   }
 
@@ -409,15 +412,15 @@ export default function ReadingTestPage() {
       <div style={{ background: '#2b2b2b', color: '#fff', padding: '8px 16px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexShrink: 0 }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 12, fontSize: 13, fontWeight: 700 }}>
           <span style={{ background: '#ffcb05', color: '#000', padding: '3px 8px', borderRadius: 2, fontSize: 11 }}>IELTS</span>
-          ielts.camp · Practice Reading
+          ielts.camp · {t('reading.practiceTag')}
           <span style={{ fontSize: 11, opacity: 0.7, fontWeight: 400 }}>{test?.title ?? ''}</span>
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
-          <span style={{ fontSize: 11, opacity: 0.7 }}>{answeredCount}/{totalQuestions} answered</span>
+          <span style={{ fontSize: 11, opacity: 0.7 }}>{answeredCount}/{totalQuestions} {t('reading.answered')}</span>
           <Timer totalSeconds={3600} onExpire={handleTimeExpire} />
           <button onClick={handleSubmit} disabled={submitting}
             style={{ padding: '5px 14px', background: '#0066b3', color: '#fff', fontSize: 12, fontWeight: 700, borderRadius: 2, border: 'none', cursor: 'pointer', opacity: submitting ? 0.6 : 1 }}>
-            {submitting ? 'Submitting…' : 'Review & Submit'}
+            {submitting ? t('reading.submitting') : t('reading.reviewSubmit')}
           </button>
         </div>
       </div>
@@ -428,7 +431,7 @@ export default function ReadingTestPage() {
         <div style={{ width: `${leftWidth}%`, display: 'flex', flexDirection: 'column', minWidth: 0, background: 'var(--bg-elev)', borderRight: '2px solid var(--border)' }}>
           <div style={{ padding: '16px 24px', borderBottom: '1px solid var(--border)', flexShrink: 0 }}>
             <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: '0.08em', textTransform: 'uppercase', color: 'var(--accent)', marginBottom: 4 }}>
-              Reading Passage {activePassage}
+              {t('reading.readingPassage')} {activePassage}
             </div>
             <h2 style={{ fontSize: 15, fontWeight: 700, margin: 0, color: 'var(--text)' }}>{currentPassage?.title}</h2>
           </div>
@@ -483,7 +486,7 @@ export default function ReadingTestPage() {
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '10px 16px', borderTop: '1px solid var(--border)', background: 'var(--bg-elev)', flexShrink: 0 }}>
         <button onClick={() => setActivePassage(p => Math.max(1, p - 1))} disabled={activePassage === 1}
           style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '7px 14px', borderRadius: 8, fontSize: 13, fontWeight: 500, color: 'var(--text-2)', background: 'none', border: '1px solid var(--border)', cursor: 'pointer', opacity: activePassage === 1 ? 0.3 : 1 }}>
-          <ChevronLeft size={14} strokeWidth={2} /> Previous
+          <ChevronLeft size={14} strokeWidth={2} /> {t('reading.previous')}
         </button>
 
         <div style={{ display: 'flex', gap: 8 }}>
@@ -499,7 +502,7 @@ export default function ReadingTestPage() {
                 color: active ? 'var(--accent-fg)' : 'var(--text-2)',
                 border: 'none', cursor: 'pointer', transition: 'all .15s',
               }}>
-                <span>Passage {sec.section_number}</span>
+                <span>{t('reading.passage')} {sec.section_number}</span>
                 <span style={{ fontSize: 10, opacity: 0.7 }}>{answered}/{secQs.length}</span>
               </button>
             )
@@ -508,7 +511,7 @@ export default function ReadingTestPage() {
 
         <button onClick={() => setActivePassage(p => Math.min(sections.length, p + 1))} disabled={activePassage === sections.length}
           style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '7px 14px', borderRadius: 8, fontSize: 13, fontWeight: 500, color: 'var(--text-2)', background: 'none', border: '1px solid var(--border)', cursor: 'pointer', opacity: activePassage === sections.length ? 0.3 : 1 }}>
-          Next <ChevronRight size={14} strokeWidth={2} />
+          {t('reading.next')} <ChevronRight size={14} strokeWidth={2} />
         </button>
       </div>
     </div>

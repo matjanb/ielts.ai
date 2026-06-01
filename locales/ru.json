@@ -407,7 +407,17 @@
     "startTitle": "Тест IELTS Reading",
     "practiceTag": "Практика Reading",
     "minutes": "мин",
-    "part": "Часть"
+    "part": "Часть",
+    "select": "Выбрать",
+    "selectDash": "— Выбрать —",
+    "typeAnswer": "Введи ответ…",
+    "readingPassage": "Текст для чтения",
+    "previous": "Назад",
+    "next": "Далее",
+    "minutesFull": "Минуты",
+    "gChoose": "Выбери правильный ответ",
+    "gMatch": "Сопоставь описания",
+    "gComplete": "Заполни резюме"
   },
   "diagnostic": {
     "stepOf": "{{current}} из {{total}}",

@@ -413,7 +413,17 @@
     "startTitle": "IELTS Reading Test",
     "practiceTag": "Practice Reading",
     "minutes": "min",
-    "part": "Part"
+    "part": "Part",
+    "select": "Select",
+    "selectDash": "— Select —",
+    "typeAnswer": "Type your answer…",
+    "readingPassage": "Reading Passage",
+    "previous": "Previous",
+    "next": "Next",
+    "minutesFull": "Minutes",
+    "gChoose": "Choose the correct answer",
+    "gMatch": "Match the descriptions",
+    "gComplete": "Complete the summary"
   },
   "diagnostic": {
     "stepOf": "{{current}} of {{total}}",
