@@ -572,7 +572,8 @@
     "errUnsupported": "Bu yerda yozib olish qo‘llab-quvvatlanmaydi — javobni yozing.",
     "errTranscribe": "Tanib bo‘lmadi — qayta urinib ko‘ring yoki yozing.",
     "errService": "Tanib olish xizmatiga ulanib bo‘lmadi.",
-    "errDenied": "Mikrofonga ruxsat yo‘q. Javobni yozing."
+    "errDenied": "Mikrofonga ruxsat yo‘q. Javobni yozing.",
+    "prevQ": "Orqaga"
   },
   "hub": {
     "currentBand": "joriy ball",

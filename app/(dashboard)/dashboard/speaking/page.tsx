@@ -93,25 +93,25 @@ const words = (s: string) => (s.trim() ? s.trim().split(/\s+/).length : 0)
 function ReadyScreen({ onStart }: { onStart: () => void }) {
   const { t } = useLanguage()
   return (
-    <div style={{ flex: 1, background: 'radial-gradient(120% 80% at 50% -10%, #16221c 0%, #0e1011 55%)', color: '#f5f5f3', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 24 }}>
+    <div style={{ flex: 1, background: 'radial-gradient(120% 80% at 50% -10%, var(--accent-soft) 0%, var(--bg) 55%)', color: 'var(--text)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 24 }}>
       <div className="animate-fade-up" style={{ maxWidth: 480, textAlign: 'center' }}>
-        <div style={{ display: 'inline-flex', padding: 26, borderRadius: '50%', background: '#1a2a23', marginBottom: 26, boxShadow: '0 0 0 1px rgba(58,162,120,0.25), 0 0 60px -10px rgba(58,162,120,0.4)' }}>
-          <MicIcon size={46} color="#3aa278" />
+        <div style={{ display: 'inline-flex', padding: 26, borderRadius: '50%', background: 'var(--accent-soft)', marginBottom: 26, boxShadow: '0 0 0 1px color-mix(in srgb, var(--accent) 25%, transparent), 0 0 60px -10px color-mix(in srgb, var(--accent) 40%, transparent)' }}>
+          <MicIcon size={46} color="var(--accent)" />
         </div>
-        <h1 style={{ fontSize: 40, fontWeight: 700, letterSpacing: '-0.03em', margin: '0 0 14px' }}>{t('speak.readyTitle')}</h1>
-        <p style={{ fontSize: 15, color: '#a8a9a7', lineHeight: 1.6, margin: '0 0 34px' }}>
+        <h1 style={{ fontSize: 40, fontWeight: 700, letterSpacing: '-0.03em', margin: '0 0 14px', color: 'var(--text)' }}>{t('speak.readyTitle')}</h1>
+        <p style={{ fontSize: 15, color: 'var(--text-2)', lineHeight: 1.6, margin: '0 0 34px' }}>
           {t('speak.readyDesc')}
         </p>
         <div style={{ display: 'grid', gap: 8, marginBottom: 34, textAlign: 'left' }}>
           {[t('speak.b1'), t('speak.b2'), t('speak.b3'), t('speak.b4')].map((s, i) => (
-            <div key={i} style={{ display: 'flex', gap: 12, alignItems: 'center', padding: '11px 16px', background: '#16191b', borderRadius: 12, border: '1px solid #21241f' }}>
-              <svg width={15} height={15} viewBox="0 0 24 24" fill="none" stroke="#3aa278" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><path d="M5 12l5 5L20 7"/></svg>
-              <span style={{ fontSize: 14, color: '#f0f0ee' }}>{s}</span>
+            <div key={i} style={{ display: 'flex', gap: 12, alignItems: 'center', padding: '11px 16px', background: 'var(--bg-elev)', borderRadius: 12, border: '1px solid var(--border)' }}>
+              <svg width={15} height={15} viewBox="0 0 24 24" fill="none" stroke="var(--accent)" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><path d="M5 12l5 5L20 7"/></svg>
+              <span style={{ fontSize: 14, color: 'var(--text)' }}>{s}</span>
             </div>
           ))}
         </div>
-        <button onClick={onStart} style={{ display: 'inline-flex', alignItems: 'center', gap: 10, padding: '15px 34px', borderRadius: 14, fontSize: 15, fontWeight: 700, background: '#3aa278', color: '#fff', border: 'none', cursor: 'pointer', boxShadow: '0 10px 30px -10px rgba(58,162,120,0.6)' }}>
-          <MicIcon size={17} color="#fff" /> {t('speak.start')}
+        <button onClick={onStart} style={{ display: 'inline-flex', alignItems: 'center', gap: 10, padding: '15px 34px', borderRadius: 14, fontSize: 15, fontWeight: 700, background: 'var(--accent)', color: 'var(--accent-fg)', border: 'none', cursor: 'pointer', boxShadow: '0 10px 30px -10px color-mix(in srgb, var(--accent) 60%, transparent)' }}>
+          <MicIcon size={17} color="var(--accent-fg)" /> {t('speak.start')}
         </button>
       </div>
     </div>
@@ -309,17 +309,17 @@ function LiveExam({ set, loading, error, onComplete, onExit }: {
   const busy = loading || recState === 'transcribing'
 
   return (
-    <div style={{ flex: 1, background: '#0e1011', color: '#f5f5f3', display: 'flex', flexDirection: 'column' }}>
+    <div style={{ flex: 1, background: 'var(--bg)', color: 'var(--text)', display: 'flex', flexDirection: 'column' }}>
       {/* Header */}
-      <header style={{ padding: '14px 24px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', borderBottom: '1px solid #1f2123', flexShrink: 0 }}>
+      <header style={{ padding: '14px 24px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', borderBottom: '1px solid var(--border)', flexShrink: 0 }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 9 }}>
-          <span style={{ width: 8, height: 8, borderRadius: '50%', background: '#3aa278', boxShadow: '0 0 0 4px rgba(58,162,120,0.2)' }}/>
-          <span style={{ fontSize: 13, fontWeight: 600, color: '#3aa278' }}>{t('speak.examiner')}</span>
-          <span style={{ fontSize: 13, color: '#5f6163' }}>· Sarah</span>
+          <span style={{ width: 8, height: 8, borderRadius: '50%', background: 'var(--accent)', boxShadow: '0 0 0 4px color-mix(in srgb, var(--accent) 20%, transparent)' }}/>
+          <span style={{ fontSize: 13, fontWeight: 600, color: 'var(--accent)' }}>{t('speak.examiner')}</span>
+          <span style={{ fontSize: 13, color: 'var(--text-3)' }}>· Sarah</span>
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
-          <span style={{ fontSize: 13.5, color: '#bcbdbe', fontFamily: 'var(--font-mono)' }}>{mm}:{ss}</span>
-          <button onClick={onExit} style={{ padding: '6px 14px', background: 'transparent', border: '1px solid #34373a', borderRadius: 8, fontSize: 12, color: '#bcbdbe', cursor: 'pointer' }}>{t('speak.endTest')}</button>
+          <span style={{ fontSize: 13.5, color: 'var(--text-2)', fontFamily: 'var(--font-mono)' }}>{mm}:{ss}</span>
+          <button onClick={onExit} style={{ padding: '6px 14px', background: 'transparent', border: '1px solid var(--border-strong)', borderRadius: 8, fontSize: 12, color: 'var(--text-2)', cursor: 'pointer' }}>{t('speak.endTest')}</button>
         </div>
       </header>
 
@@ -327,14 +327,14 @@ function LiveExam({ set, loading, error, onComplete, onExit }: {
       <div style={{ padding: '14px 24px 0', flexShrink: 0 }}>
         <div style={{ maxWidth: 680, margin: '0 auto' }}>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 }}>
-            <span style={{ display: 'inline-flex', alignItems: 'center', gap: 8, fontSize: 12.5, fontWeight: 600, color: '#3aa278' }}>
-              <span style={{ padding: '2px 9px', borderRadius: 999, background: '#1a2a23', border: '1px solid #2c4a3b' }}>{t('speak.part')} {turn.part}</span>
+            <span style={{ display: 'inline-flex', alignItems: 'center', gap: 8, fontSize: 12.5, fontWeight: 600, color: 'var(--accent)' }}>
+              <span style={{ padding: '2px 9px', borderRadius: 999, background: 'var(--accent-soft)', border: '1px solid color-mix(in srgb, var(--accent) 35%, transparent)' }}>{t('speak.part')} {turn.part}</span>
               {partLabel(turn.part)}
             </span>
-            <span style={{ fontSize: 12, color: '#6b6d6f', fontFamily: 'var(--font-mono)' }}>{posInPart} / {partTurns.length}</span>
+            <span style={{ fontSize: 12, color: 'var(--text-3)', fontFamily: 'var(--font-mono)' }}>{posInPart} / {partTurns.length}</span>
           </div>
-          <div style={{ height: 3, background: '#1f2123', borderRadius: 999, overflow: 'hidden' }}>
-            <div style={{ width: `${((idx + 1) / turns.length) * 100}%`, height: '100%', background: '#3aa278', borderRadius: 999, transition: 'width .35s ease' }}/>
+          <div style={{ height: 3, background: 'var(--bg-soft)', borderRadius: 999, overflow: 'hidden' }}>
+            <div style={{ width: `${((idx + 1) / turns.length) * 100}%`, height: '100%', background: 'var(--accent)', borderRadius: 999, transition: 'width .35s ease' }}/>
           </div>
         </div>
       </div>
@@ -343,80 +343,80 @@ function LiveExam({ set, loading, error, onComplete, onExit }: {
       <div style={{ flex: 1, overflow: 'auto', padding: '22px 24px' }}>
         <div style={{ maxWidth: 680, margin: '0 auto', display: 'flex', flexDirection: 'column', gap: 18 }}>
           {/* Question / cue card */}
-          <div style={{ background: '#16191b', border: '1px solid #1f2123', borderRadius: 18, padding: 22 }}>
+          <div style={{ background: 'var(--bg-elev)', border: '1px solid var(--border)', borderRadius: 18, padding: 22 }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 12 }}>
-              <div style={{ width: 32, height: 32, borderRadius: '50%', background: '#1a2a23', display: 'flex', alignItems: 'center', justifyContent: 'center', border: '1px solid #2c4a3b', flexShrink: 0 }}>
-                <svg width={14} height={14} viewBox="0 0 24 24" fill="none" stroke="#3aa278" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M12 3l1.7 4.8L18 9.5l-4.3 1.7L12 16l-1.7-4.8L6 9.5l4.3-1.7z"/></svg>
+              <div style={{ width: 32, height: 32, borderRadius: '50%', background: 'var(--accent-soft)', display: 'flex', alignItems: 'center', justifyContent: 'center', border: '1px solid color-mix(in srgb, var(--accent) 35%, transparent)', flexShrink: 0 }}>
+                <svg width={14} height={14} viewBox="0 0 24 24" fill="none" stroke="var(--accent)" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M12 3l1.7 4.8L18 9.5l-4.3 1.7L12 16l-1.7-4.8L6 9.5l4.3-1.7z"/></svg>
               </div>
-              <span style={{ fontSize: 11, letterSpacing: '0.08em', color: '#6b6d6f', fontWeight: 600 }}>{t('speak.examinerLabel')}</span>
+              <span style={{ fontSize: 11, letterSpacing: '0.08em', color: 'var(--text-3)', fontWeight: 600 }}>{t('speak.examinerLabel')}</span>
             </div>
-            {turn.kind === 'q' && turn.lead && <p style={{ fontSize: 13.5, color: '#8a8c8e', margin: '0 0 8px', fontStyle: 'italic' }}>{turn.lead}</p>}
+            {turn.kind === 'q' && turn.lead && <p style={{ fontSize: 13.5, color: 'var(--text-3)', margin: '0 0 8px', fontStyle: 'italic' }}>{turn.lead}</p>}
             {turn.kind === 'cue' ? (
               <>
-                <p style={{ fontSize: 17, lineHeight: 1.5, color: '#f0f0ee', margin: '0 0 12px', fontWeight: 500 }}>Describe {turn.topic}.</p>
-                <div style={{ fontSize: 12.5, color: '#7d7f81', marginBottom: 6 }}>You should say:</div>
-                <ul style={{ margin: 0, paddingLeft: 18, color: '#cdcfd0', fontSize: 14.5, lineHeight: 1.7 }}>
+                <p style={{ fontSize: 17, lineHeight: 1.5, color: 'var(--text)', margin: '0 0 12px', fontWeight: 500 }}>Describe {turn.topic}.</p>
+                <div style={{ fontSize: 12.5, color: 'var(--text-3)', marginBottom: 6 }}>You should say:</div>
+                <ul style={{ margin: 0, paddingLeft: 18, color: 'var(--text-2)', fontSize: 14.5, lineHeight: 1.7 }}>
                   {turn.bullets.map((b, i) => <li key={i}>{b}</li>)}
                 </ul>
               </>
             ) : (
-              <p style={{ fontSize: 17, lineHeight: 1.5, color: '#f0f0ee', margin: 0, fontWeight: 500 }}>{turn.prompt}</p>
+              <p style={{ fontSize: 17, lineHeight: 1.5, color: 'var(--text)', margin: 0, fontWeight: 500 }}>{turn.prompt}</p>
             )}
           </div>
 
           {/* Part 2 preparation */}
           {turn.kind === 'cue' && prepActive ? (
-            <div style={{ background: '#131517', border: '1px solid #23262a', borderRadius: 16, padding: 18 }}>
+            <div style={{ background: 'var(--bg-soft)', border: '1px solid var(--border)', borderRadius: 16, padding: 18 }}>
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
-                <span style={{ fontSize: 12, fontWeight: 700, letterSpacing: '0.06em', color: '#3aa278' }}>{t('speak.prep')} · {String(Math.floor(prepLeft / 60)).padStart(2, '0')}:{String(prepLeft % 60).padStart(2, '0')}</span>
-                <button onClick={() => setPrepActive(false)} style={{ fontSize: 12, fontWeight: 600, color: '#bcbdbe', background: 'transparent', border: '1px solid #2a2c2e', borderRadius: 8, padding: '5px 12px', cursor: 'pointer' }}>{t('speak.ready2')} →</button>
+                <span style={{ fontSize: 12, fontWeight: 700, letterSpacing: '0.06em', color: 'var(--accent)' }}>{t('speak.prep')} · {String(Math.floor(prepLeft / 60)).padStart(2, '0')}:{String(prepLeft % 60).padStart(2, '0')}</span>
+                <button onClick={() => setPrepActive(false)} style={{ fontSize: 12, fontWeight: 600, color: 'var(--text-2)', background: 'transparent', border: '1px solid var(--border)', borderRadius: 8, padding: '5px 12px', cursor: 'pointer' }}>{t('speak.ready2')} →</button>
               </div>
               <textarea value={prepNotes} onChange={e => setPrepNotes(e.target.value)} placeholder={t('speak.prepPlaceholder')}
-                style={{ width: '100%', minHeight: 90, padding: '12px 14px', background: '#0e1011', border: '1px solid #23262a', borderRadius: 12, color: '#cdcfd0', fontSize: 13.5, lineHeight: 1.6, resize: 'vertical', outline: 'none', fontFamily: 'var(--font-sans)' }}/>
+                style={{ width: '100%', minHeight: 90, padding: '12px 14px', background: 'var(--bg)', border: '1px solid var(--border)', borderRadius: 12, color: 'var(--text-2)', fontSize: 13.5, lineHeight: 1.6, resize: 'vertical', outline: 'none', fontFamily: 'var(--font-sans)' }}/>
             </div>
           ) : (
             /* Answer */
             <div>
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 }}>
-                <span style={{ fontSize: 10.5, color: '#6b6d6f', letterSpacing: '0.08em', fontWeight: 600 }}>{t('speak.yourAnswer')}</span>
-                <span style={{ fontSize: 11, color: '#6b6d6f', fontFamily: 'var(--font-mono)' }}>{words(answer)} {t('speak.words')}</span>
+                <span style={{ fontSize: 10.5, color: 'var(--text-3)', letterSpacing: '0.08em', fontWeight: 600 }}>{t('speak.yourAnswer')}</span>
+                <span style={{ fontSize: 11, color: 'var(--text-3)', fontFamily: 'var(--font-mono)' }}>{words(answer)} {t('speak.words')}</span>
               </div>
               <textarea value={answer} onChange={e => setAnswer(e.target.value)} placeholder={turn.kind === 'cue' ? t('speak.ansLong') : t('speak.ansShort')}
-                style={{ width: '100%', minHeight: turn.kind === 'cue' ? 150 : 110, padding: '15px 17px', background: '#131517', border: '1px solid #23262a', borderRadius: 16, color: '#f0f0ee', fontSize: 14.5, lineHeight: 1.65, resize: 'vertical', outline: 'none', fontFamily: 'var(--font-sans)' }}
-                onFocus={e => (e.currentTarget.style.borderColor = '#3aa278')} onBlur={e => (e.currentTarget.style.borderColor = '#23262a')}/>
-              {(error || micError) && <div style={{ marginTop: 10, fontSize: 13, color: '#e0937f' }}>{error || micError}</div>}
+                style={{ width: '100%', minHeight: turn.kind === 'cue' ? 150 : 110, padding: '15px 17px', background: 'var(--bg-elev)', border: '1px solid var(--border)', borderRadius: 16, color: 'var(--text)', fontSize: 14.5, lineHeight: 1.65, resize: 'vertical', outline: 'none', fontFamily: 'var(--font-sans)' }}
+                onFocus={e => (e.currentTarget.style.borderColor = 'var(--accent)')} onBlur={e => (e.currentTarget.style.borderColor = 'var(--border)')}/>
+              {(error || micError) && <div style={{ marginTop: 10, fontSize: 13, color: 'var(--danger)' }}>{error || micError}</div>}
             </div>
           )}
         </div>
       </div>
 
       {/* Dock */}
-      <div style={{ padding: '16px 24px 20px', borderTop: '1px solid #1f2123', background: '#121315', flexShrink: 0 }}>
+      <div style={{ padding: '16px 24px 20px', borderTop: '1px solid var(--border)', background: 'var(--bg-soft)', flexShrink: 0 }}>
         <div style={{ maxWidth: 680, margin: '0 auto', display: 'flex', alignItems: 'center', gap: 14 }}>
           {/* mic */}
           {recState === 'recording' ? (
-            <button onClick={stopRecording} aria-label="Stop recording" style={{ width: 54, height: 54, borderRadius: 27, flexShrink: 0, background: '#d97a64', display: 'flex', alignItems: 'center', justifyContent: 'center', border: 'none', cursor: 'pointer', boxShadow: '0 0 0 8px rgba(217,122,100,0.18)' }}>
+            <button onClick={stopRecording} aria-label="Stop recording" style={{ width: 54, height: 54, borderRadius: 27, flexShrink: 0, background: 'var(--danger)', display: 'flex', alignItems: 'center', justifyContent: 'center', border: 'none', cursor: 'pointer', boxShadow: '0 0 0 8px color-mix(in srgb, var(--danger) 18%, transparent)' }}>
               <svg width={18} height={18} viewBox="0 0 24 24" fill="white"><rect x="6" y="6" width="12" height="12" rx="3"/></svg>
             </button>
           ) : (
-            <button onClick={startRecording} disabled={recState === 'transcribing'} aria-label="Record" style={{ width: 54, height: 54, borderRadius: 27, flexShrink: 0, background: recState === 'transcribing' ? '#26272a' : '#3aa278', display: 'flex', alignItems: 'center', justifyContent: 'center', border: 'none', cursor: recState === 'transcribing' ? 'default' : 'pointer', boxShadow: recState === 'transcribing' ? 'none' : '0 8px 24px -8px rgba(58,162,120,0.7)' }}>
-              {recState === 'transcribing' ? <Loader2 size={20} color="#888" className="animate-spin"/> : <MicIcon size={22} color="#fff" />}
+            <button onClick={startRecording} disabled={recState === 'transcribing'} aria-label="Record" style={{ width: 54, height: 54, borderRadius: 27, flexShrink: 0, background: recState === 'transcribing' ? 'var(--bg-soft)' : 'var(--accent)', display: 'flex', alignItems: 'center', justifyContent: 'center', border: recState === 'transcribing' ? '1px solid var(--border)' : 'none', cursor: recState === 'transcribing' ? 'default' : 'pointer', boxShadow: recState === 'transcribing' ? 'none' : '0 8px 24px -8px color-mix(in srgb, var(--accent) 70%, transparent)' }}>
+              {recState === 'transcribing' ? <Loader2 size={20} color="var(--text-3)" className="animate-spin"/> : <MicIcon size={22} color="var(--accent-fg)" />}
             </button>
           )}
 
           {/* middle: equalizer while recording */}
           {recState === 'recording' ? (
             <div style={{ flex: 1, display: 'flex', alignItems: 'center', gap: 3, height: 38 }}>
-              {Array.from({ length: 36 }).map((_, i) => <div key={i} style={{ flex: 1, background: '#3aa278', borderRadius: 2, animation: `eq 0.9s ease-in-out ${i * 0.035}s infinite alternate`, height: 8 }}/>)}
-              <span style={{ fontSize: 13, color: '#3aa278', fontFamily: 'var(--font-mono)', marginLeft: 8, minWidth: 44, textAlign: 'right' }}>{String(Math.floor(recSeconds / 60)).padStart(2, '0')}:{String(recSeconds % 60).padStart(2, '0')}</span>
+              {Array.from({ length: 36 }).map((_, i) => <div key={i} style={{ flex: 1, background: 'var(--accent)', borderRadius: 2, animation: `eq 0.9s ease-in-out ${i * 0.035}s infinite alternate`, height: 8 }}/>)}
+              <span style={{ fontSize: 13, color: 'var(--accent)', fontFamily: 'var(--font-mono)', marginLeft: 8, minWidth: 44, textAlign: 'right' }}>{String(Math.floor(recSeconds / 60)).padStart(2, '0')}:{String(recSeconds % 60).padStart(2, '0')}</span>
             </div>
           ) : (
             <div style={{ flex: 1, display: 'flex', alignItems: 'center', gap: 10 }}>
-              <button onClick={back} disabled={idx === 0 || busy} style={{ padding: '13px 16px', borderRadius: 12, fontSize: 13, fontWeight: 600, background: 'transparent', color: idx === 0 ? '#3a3c3e' : '#bcbdbe', border: '1px solid #2a2c2e', cursor: idx === 0 || busy ? 'default' : 'pointer' }}>Back</button>
+              <button onClick={back} disabled={idx === 0 || busy} style={{ padding: '13px 16px', borderRadius: 12, fontSize: 13, fontWeight: 600, background: 'transparent', color: idx === 0 ? 'var(--text-3)' : 'var(--text-2)', border: '1px solid var(--border)', cursor: idx === 0 || busy ? 'default' : 'pointer' }}>{t('speak.prevQ')}</button>
               <button
                 onClick={next}
                 disabled={busy || (isLast ? !canFinish : !canAdvance)}
-                style={{ flex: 1, padding: '14px', borderRadius: 12, fontSize: 14.5, fontWeight: 700, background: busy || (isLast ? !canFinish : !canAdvance) ? '#1f2123' : '#3aa278', color: busy || (isLast ? !canFinish : !canAdvance) ? '#5f6163' : '#fff', border: 'none', cursor: busy || (isLast ? !canFinish : !canAdvance) ? 'not-allowed' : 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8 }}>
+                style={{ flex: 1, padding: '14px', borderRadius: 12, fontSize: 14.5, fontWeight: 700, background: busy || (isLast ? !canFinish : !canAdvance) ? 'var(--bg-soft)' : 'var(--accent)', color: busy || (isLast ? !canFinish : !canAdvance) ? 'var(--text-3)' : 'var(--accent-fg)', border: busy || (isLast ? !canFinish : !canAdvance) ? '1px solid var(--border)' : 'none', cursor: busy || (isLast ? !canFinish : !canAdvance) ? 'not-allowed' : 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8 }}>
                 {recState === 'transcribing' ? <><Loader2 size={15} className="animate-spin"/> {t('speak.transcribing')}</>
                   : loading ? <><Loader2 size={15} className="animate-spin"/> {t('speak.scoring')}</>
                   : isLast ? (canFinish ? t('speak.finish') : t('speak.finishMore'))
@@ -425,7 +425,7 @@ function LiveExam({ set, loading, error, onComplete, onExit }: {
             </div>
           )}
         </div>
-        <div style={{ textAlign: 'center', fontSize: 11, color: '#5f6163', marginTop: 10 }}>
+        <div style={{ textAlign: 'center', fontSize: 11, color: 'var(--text-3)', marginTop: 10 }}>
           {recState === 'recording' ? t('speak.hintRec') : turn.kind === 'cue' && prepActive ? t('speak.hintPrep') : t('speak.hintIdle')}
         </div>
       </div>

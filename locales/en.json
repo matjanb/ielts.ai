@@ -617,7 +617,8 @@
     "errUnsupported": "Recording is not supported here — type your answer instead.",
     "errTranscribe": "Could not transcribe — try again or type.",
     "errService": "Could not reach the transcription service.",
-    "errDenied": "Microphone access denied. Type your answer instead."
+    "errDenied": "Microphone access denied. Type your answer instead.",
+    "prevQ": "Back"
   },
   "hub": {
     "currentBand": "current band",
