@@ -51,13 +51,14 @@ function Icon({ name, size = 16, color = 'currentColor' }: { name: string; size?
 
 /* ── BandTrajectory ───────────────────────────────────────────────────────── */
 function BandTrajectory({ data, overallBand, targetBand }: { data: PageData; overallBand: number; targetBand: number }) {
+  const { t } = useLanguage()
   // Use real band history if available, else show placeholder
   const history = data.skillRows.some(s => s.sparkline.length > 0)
     ? data.skillRows.find(s => s.key === 'listening')?.sparkline ?? []
     : [5.0, 5.5, 5.5, 6.0, 6.0, 6.5, 6.5, 7.0]
 
   const points = history.length >= 2 ? history : [5.0, 5.5, 5.5, 6.0, 6.0, 6.5, 6.5, overallBand || 7.0]
-  const labels = points.map((_, i) => i === points.length - 1 ? 'Today' : `W${i + 1}`)
+  const labels = points.map((_, i) => i === points.length - 1 ? t('progress.today') : `W${i + 1}`)
   const target = targetBand || 7.5
   const W = 600, H = 220
   const padL = 36, padR = 16, padT = 24, padB = 32
@@ -75,16 +76,16 @@ function BandTrajectory({ data, overallBand, targetBand }: { data: PageData; ove
     <div className="card" style={{ padding: 28 }}>
       <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between' }}>
         <div>
-          <div style={{ fontSize: 11, letterSpacing: '0.1em', textTransform: 'uppercase', color: 'var(--text-3)' }}>Overall band trajectory</div>
+          <div style={{ fontSize: 11, letterSpacing: '0.1em', textTransform: 'uppercase', color: 'var(--text-3)' }}>{t('progress.trajectory')}</div>
           <div style={{ display: 'flex', alignItems: 'baseline', gap: 10, marginTop: 6 }}>
             <span style={{ fontFamily: 'var(--font-display)', fontStyle: 'italic', fontSize: 52, lineHeight: 1, color: 'var(--accent)', fontWeight: 500 }}>{displayBand}</span>
             {delta > 0 && (
-              <span className="chip chip-accent" style={{ fontSize: 11 }}>+{delta.toFixed(1)} from start</span>
+              <span className="chip chip-accent" style={{ fontSize: 11 }}>+{delta.toFixed(1)} {t('progress.fromStart')}</span>
             )}
           </div>
         </div>
         <div style={{ textAlign: 'right' }}>
-          <div style={{ fontSize: 11, color: 'var(--text-3)' }}>Target band</div>
+          <div style={{ fontSize: 11, color: 'var(--text-3)' }}>{t('progress.targetBand')}</div>
           <div style={{ fontSize: 24, fontWeight: 700, fontVariantNumeric: 'tabular-nums', color: 'var(--text)' }}>{target.toFixed(1)}</div>
         </div>
       </div>
@@ -122,19 +123,20 @@ function BandTrajectory({ data, overallBand, targetBand }: { data: PageData; ove
 
 /* ── KeyStats ─────────────────────────────────────────────────────────────── */
 function KeyStats({ data }: { data: PageData }) {
+  const { t } = useLanguage()
   const bestBand = Math.max(0, ...data.skillRows.map(s => s.band))
   const essaysGraded = data.writingHistory.length
   const rows = [
-    { icon: 'flame',     color: 'var(--warn)',   label: 'Current streak',  value: data.streak > 0 ? `${data.streak} ${data.streak === 1 ? 'day' : 'days'}` : '—', sub: data.streak > 0 ? 'keep it up' : 'start today' },
-    { icon: 'clock',     color: 'var(--info)',   label: 'Hours practiced', value: data.hoursThisWeek,      sub: data.vsLastPct !== 0 ? `${data.vsLastPct > 0 ? '+' : ''}${data.vsLastPct}% vs last wk` : 'this week' },
-    { icon: 'clipboard', color: 'var(--accent)', label: 'Mock tests',      value: `${data.mockAttempts.length}`, sub: 'completed' },
-    { icon: 'pencil',    color: '#6b46c1',       label: 'Essays graded',   value: `${essaysGraded}`,       sub: essaysGraded > 0 ? 'AI feedback' : 'none yet' },
-    { icon: 'trophy',    color: '#c47a1a',       label: 'Best band',       value: bestBand > 0 ? bestBand.toFixed(1) : '—', sub: bestBand > 0 ? 'across skills' : '' },
+    { icon: 'flame',     color: 'var(--warn)',   label: t('progress.currentStreak'),  value: data.streak > 0 ? `${data.streak} ${data.streak === 1 ? t('progress.day') : t('progress.days')}` : '—', sub: data.streak > 0 ? t('progress.keepItUp') : t('progress.startToday') },
+    { icon: 'clock',     color: 'var(--info)',   label: t('progress.hoursPracticed'), value: data.hoursThisWeek,      sub: data.vsLastPct !== 0 ? `${data.vsLastPct > 0 ? '+' : ''}${data.vsLastPct}% ${t('progress.vsLastWk')}` : t('progress.thisWeek') },
+    { icon: 'clipboard', color: 'var(--accent)', label: t('progress.mockTests'),      value: `${data.mockAttempts.length}`, sub: t('progress.completed') },
+    { icon: 'pencil',    color: '#6b46c1',       label: t('progress.essaysGraded'),   value: `${essaysGraded}`,       sub: essaysGraded > 0 ? t('progress.aiFeedback') : t('progress.noneYet') },
+    { icon: 'trophy',    color: '#c47a1a',       label: t('progress.bestBand'),       value: bestBand > 0 ? bestBand.toFixed(1) : '—', sub: bestBand > 0 ? t('progress.acrossSkills') : '' },
   ]
 
   return (
     <div className="card" style={{ padding: 24 }}>
-      <h3 style={{ margin: '0 0 16px', fontSize: 15, fontWeight: 600, color: 'var(--text)' }}>Key stats</h3>
+      <h3 style={{ margin: '0 0 16px', fontSize: 15, fontWeight: 600, color: 'var(--text)' }}>{t('progress.keyStats')}</h3>
       <div style={{ display: 'grid', gap: 14 }}>
         {rows.map(r => (
           <div key={r.label} style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
@@ -157,6 +159,7 @@ function KeyStats({ data }: { data: PageData }) {
 
 /* ── SkillBreakdown ───────────────────────────────────────────────────────── */
 function SkillBreakdown({ data }: { data: PageData }) {
+  const { t } = useLanguage()
   const COLORS: Record<string, string> = {
     listening: 'var(--accent)', reading: 'var(--info)', writing: 'var(--warn)', speaking: 'var(--danger)',
   }
@@ -175,10 +178,10 @@ function SkillBreakdown({ data }: { data: PageData }) {
 
   return (
     <div className="card" style={{ padding: 28 }}>
-      <h3 style={{ margin: '0 0 18px', fontSize: 16, fontWeight: 600, color: 'var(--text)' }}>Skill breakdown</h3>
+      <h3 style={{ margin: '0 0 18px', fontSize: 16, fontWeight: 600, color: 'var(--text)' }}>{t('progress.skillBreakdown')}</h3>
       {skills.length === 0 ? (
         <p style={{ fontSize: 13, color: 'var(--text-3)', lineHeight: 1.5, margin: 0 }}>
-          Complete tests and submissions to see your band progress per skill.
+          {t('progress.skillEmpty')}
         </p>
       ) : (
       <div style={{ display: 'grid', gap: 18 }}>
@@ -192,7 +195,7 @@ function SkillBreakdown({ data }: { data: PageData }) {
           return (
             <div key={s.name}>
               <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 8 }}>
-                <span style={{ fontSize: 13, fontWeight: 600, color: 'var(--text)' }}>{s.name}</span>
+                <span style={{ fontSize: 13, fontWeight: 600, color: 'var(--text)' }}>{t('dashboard.' + s.key)}</span>
                 <span style={{ fontSize: 13, fontVariantNumeric: 'tabular-nums' }}>
                   <span style={{ color: 'var(--text-3)' }}>{s.start.toFixed(1)} → </span>
                   <strong style={{ color: 'var(--text)' }}>{s.current.toFixed(1)}</strong>
@@ -218,6 +221,7 @@ function SkillBreakdown({ data }: { data: PageData }) {
 
 /* ── StudyTime ────────────────────────────────────────────────────────────── */
 function StudyTime({ data }: { data: PageData }) {
+  const { t } = useLanguage()
   const colors = { l: 'var(--accent)', r: 'var(--info)', w: 'var(--warn)', s: 'var(--danger)' } as const
   const days = data.weeklyBars
   const maxH = Math.max(...days.map(d => d.w + d.s + d.r + d.l), 1)
@@ -226,9 +230,9 @@ function StudyTime({ data }: { data: PageData }) {
   return (
     <div className="card" style={{ padding: 28 }}>
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 18 }}>
-        <h3 style={{ margin: 0, fontSize: 16, fontWeight: 600, color: 'var(--text)' }}>Study time</h3>
+        <h3 style={{ margin: 0, fontSize: 16, fontWeight: 600, color: 'var(--text)' }}>{t('progress.studyTime')}</h3>
         <span style={{ fontSize: 12, color: 'var(--text-3)' }}>
-          {Math.floor(total / 60)}h {total % 60}m this week
+          {Math.floor(total / 60)}h {total % 60}m {t('progress.thisWeek')}
         </span>
       </div>
       <div style={{ display: 'flex', alignItems: 'flex-end', gap: 10, height: 160 }}>
@@ -254,10 +258,10 @@ function StudyTime({ data }: { data: PageData }) {
         })}
       </div>
       <div style={{ display: 'flex', gap: 12, marginTop: 16, flexWrap: 'wrap', fontSize: 11, color: 'var(--text-2)' }}>
-        {[['Listening', colors.l], ['Reading', colors.r], ['Writing', colors.w], ['Speaking', colors.s]].map(([k, v]) => (
+        {[['listening', colors.l], ['reading', colors.r], ['writing', colors.w], ['speaking', colors.s]].map(([k, v]) => (
           <div key={k as string} style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
             <span style={{ width: 8, height: 8, borderRadius: 2, background: v as string }}/>
-            {k}
+            {t('dashboard.' + (k as string))}
           </div>
         ))}
       </div>
@@ -267,20 +271,21 @@ function StudyTime({ data }: { data: PageData }) {
 
 /* ── ActivityLog ──────────────────────────────────────────────────────────── */
 function ActivityLog({ data }: { data: PageData }) {
+  const { t } = useLanguage()
   // Build the feed purely from the user's real activity — writing submissions and
   // completed mock tests — newest first. No fabricated placeholders.
   const events = [
     ...data.writingHistory.map(sub => ({
       ts: new Date(sub.created_at).getTime(),
       icon: 'pencil', color: 'var(--warn)',
-      title: `Submitted Writing Task ${sub.task_type === '1' ? '1' : '2'} essay`,
-      meta: sub.band_score != null ? `${sub.band_score.toFixed(1)} band · AI feedback ready` : 'Pending review',
+      title: t('progress.submittedWriting', { n: sub.task_type === '1' ? '1' : '2' }),
+      meta: sub.band_score != null ? `${sub.band_score.toFixed(1)} ${t('progress.bandFeedbackReady')}` : t('progress.pendingReview'),
     })),
     ...data.mockAttempts.map(att => ({
       ts: new Date(att.completed_at).getTime(),
       icon: 'clipboard', color: 'var(--info)',
-      title: 'Mock test completed',
-      meta: att.band_score != null ? `Overall ${att.band_score.toFixed(1)} band` : 'Submitted',
+      title: t('progress.mockCompleted'),
+      meta: att.band_score != null ? t('progress.overallMeta', { band: att.band_score.toFixed(1) }) : t('progress.submitted'),
     })),
   ]
     .filter(e => !Number.isNaN(e.ts))
@@ -294,15 +299,15 @@ function ActivityLog({ data }: { data: PageData }) {
   return (
     <div className="card" style={{ padding: 28 }}>
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 18 }}>
-        <h3 style={{ margin: 0, fontSize: 16, fontWeight: 600, color: 'var(--text)' }}>Activity log</h3>
+        <h3 style={{ margin: 0, fontSize: 16, fontWeight: 600, color: 'var(--text)' }}>{t('progress.activityLog')}</h3>
         <button style={{ fontSize: 12, color: 'var(--text-3)', background: 'none', border: '1px solid var(--border)', borderRadius: 8, padding: '4px 10px', cursor: events.length === 0 ? 'default' : 'pointer', opacity: events.length === 0 ? 0.5 : 1 }} disabled={events.length === 0}>
-          Export CSV
+          {t('progress.exportCsv')}
         </button>
       </div>
       {events.length === 0 ? (
         <div style={{ padding: '32px 16px', textAlign: 'center', color: 'var(--text-3)', fontSize: 13, lineHeight: 1.55 }}>
-          No activity yet.<br/>
-          <span style={{ fontSize: 12 }}>Submit an essay or complete a mock test to see your history here.</span>
+          {t('progress.noActivity')}<br/>
+          <span style={{ fontSize: 12 }}>{t('progress.noActivitySub')}</span>
         </div>
       ) : (
       <div style={{ display: 'grid', gap: 4 }}>
@@ -329,6 +334,7 @@ function ActivityLog({ data }: { data: PageData }) {
 
 /* ── Main page ────────────────────────────────────────────────────────────── */
 export default function ProgressPage() {
+  const { t } = useLanguage()
   const [period, setPeriod] = useState(1)
   const [data, setData] = useState<PageData | null>(null)
   const [loading, setLoading] = useState(true)
@@ -431,7 +437,7 @@ export default function ProgressPage() {
   if (!data) {
     return (
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: 260 }}>
-        <p style={{ fontSize: 14, color: 'var(--text-3)' }}>Sign in to view your progress.</p>
+        <p style={{ fontSize: 14, color: 'var(--text-3)' }}>{t('progress.signIn')}</p>
       </div>
     )
   }
@@ -442,13 +448,13 @@ export default function ProgressPage() {
       {/* Header row */}
       <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 24, marginBottom: 24 }}>
         <div>
-          <h1 style={{ fontSize: 32, fontWeight: 700, letterSpacing: '-0.025em', margin: 0, color: 'var(--text)' }}>Progress</h1>
+          <h1 style={{ fontSize: 32, fontWeight: 700, letterSpacing: '-0.025em', margin: 0, color: 'var(--text)' }}>{t('progress.title')}</h1>
           <p style={{ fontSize: 15, margin: '6px 0 0', color: 'var(--text-2)' }}>
-            {d.mockAttempts.length} mock{d.mockAttempts.length !== 1 ? 's' : ''} completed · {d.hoursThisWeek} practiced · {d.streak} day streak
+            {d.mockAttempts.length} {t('progress.subMocks')} · {d.hoursThisWeek} {t('progress.subPracticed')} · {d.streak} {t('dash.dayStreak')}
           </p>
         </div>
         <div style={{ display: 'flex', gap: 4, padding: 4, background: 'var(--bg-soft)', borderRadius: 999, border: '1px solid var(--border)' }}>
-          {['Week', 'Month', 'All time'].map((p, i) => (
+          {[t('progress.week'), t('progress.month'), t('progress.allTime')].map((p, i) => (
             <button key={p} onClick={() => setPeriod(i)} style={{
               padding: '6px 14px', borderRadius: 999, fontSize: 12, fontWeight: 600, cursor: 'pointer',
               background: i === period ? 'var(--bg-elev)' : 'transparent',
