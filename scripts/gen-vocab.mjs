@@ -520,7 +520,13 @@ const DECKS = {
 }
 
 /* ── SQL emit ─────────────────────────────────────────────────────────────── */
-const q = (s) => `'${String(s).replace(/'/g, "''")}'`
+// Normalise smart quotes to ASCII first, then SQL-escape by doubling apostrophes.
+// (Typographic ’ in source can be silently mangled to ' on paste, breaking quote parity.)
+const q = (s) =>
+  `'${String(s)
+    .replace(/[‘’‚′]/g, "'")
+    .replace(/[“”„″]/g, '"')
+    .replace(/'/g, "''")}'`
 const arr = (a) => (a.length ? `array[${a.map(q).join(', ')}]::text[]` : `'{}'::text[]`)
 
 const SCHEMA = `-- ============================================================
