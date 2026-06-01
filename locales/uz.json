@@ -702,7 +702,18 @@
     "synonyms": "SINONIMLAR",
     "antonyms": "ANTONIMLAR",
     "howWell": "BUNI QANCHALIK YAXSHI BILASIZ?",
-    "band": "Ball"
+    "band": "Ball",
+    "loading": "Yuklanmoqda…",
+    "noWords": "Bu to‘plamda hozircha so‘z yo‘q.",
+    "noDue": "Hammasi takrorlandi — hozir navbatda hech narsa yo‘q.",
+    "sessionDone": "Sessiya tugadi",
+    "sessionDoneSub": "Takrorlagan so‘zlaringiz: {{n}}.",
+    "backToVocab": "Lug‘atga qaytish",
+    "ofTotal": "{{total}} so‘zdan",
+    "inProgress": "o‘rganilmoqda",
+    "ofSeen": "ko‘rilgan so‘zlardan",
+    "minEst": "≈ {{min}} daq",
+    "reviewWord": "takrorlash"
   },
   "progress": {
     "title": "Progress",

@@ -747,7 +747,18 @@
     "synonyms": "SYNONYMS",
     "antonyms": "ANTONYMS",
     "howWell": "HOW WELL DO YOU KNOW THIS?",
-    "band": "Band"
+    "band": "Band",
+    "loading": "Loading…",
+    "noWords": "No words in this deck yet.",
+    "noDue": "All caught up — nothing due for review right now.",
+    "sessionDone": "Session complete",
+    "sessionDoneSub": "You reviewed {{n}} words.",
+    "backToVocab": "Back to vocabulary",
+    "ofTotal": "of {{total}} words",
+    "inProgress": "still learning",
+    "ofSeen": "of words seen",
+    "minEst": "≈ {{min}} min",
+    "reviewWord": "to review"
   },
   "progress": {
     "title": "Progress",
