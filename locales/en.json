@@ -843,7 +843,8 @@
     "skillGrammar": "Grammar",
     "skillReview": "Review",
     "skillVocab": "Vocabulary",
-    "skillMixed": "Mixed"
+    "skillMixed": "Mixed",
+    "tasksDoneShort": "done today"
   },
   "settings": {
     "subtitle": "Manage your profile, preferences, and subscription.",

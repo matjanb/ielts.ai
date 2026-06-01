@@ -837,7 +837,8 @@
     "skillGrammar": "Грамматика",
     "skillReview": "Повторение",
     "skillVocab": "Словарь",
-    "skillMixed": "Смешанное"
+    "skillMixed": "Смешанное",
+    "tasksDoneShort": "сделано сегодня"
   },
   "settings": {
     "subtitle": "Управляй профилем, настройками и подпиской.",

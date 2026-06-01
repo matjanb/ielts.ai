@@ -837,7 +837,8 @@
     "skillGrammar": "Грамматика",
     "skillReview": "Қайталау",
     "skillVocab": "Сөздік",
-    "skillMixed": "Аралас"
+    "skillMixed": "Аралас",
+    "tasksDoneShort": "бүгін орындалды"
   },
   "settings": {
     "subtitle": "Профиль, баптаулар мен жазылымды басқар.",
