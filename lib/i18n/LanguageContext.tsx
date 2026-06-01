@@ -1,10 +1,15 @@
 'use client'
 
 import { createContext, useContext, useEffect, useState, type ReactNode } from 'react'
+import enBase from '../../locales/en.json'
 
 export type Language = 'en' | 'ru' | 'kz' | 'uz'
 
 type Translations = Record<string, unknown>
+
+// English is bundled synchronously so the very first paint already has real
+// strings (never raw keys) and acts as the fallback for any missing key.
+const EN = enBase as Translations
 
 interface LanguageContextValue {
   language: Language
@@ -40,23 +45,29 @@ function resolve(obj: Translations, key: string): string {
 
 export function LanguageProvider({ children }: { children: ReactNode }) {
   const [language, setLanguageState] = useState<Language>(DEFAULT_LANG)
-  const [translations, setTranslations] = useState<Translations>({})
+  const [translations, setTranslations] = useState<Translations>(EN)
 
   useEffect(() => {
     const saved = localStorage.getItem(STORAGE_KEY) as Language | null
     const initial = saved && ['en', 'ru', 'kz', 'uz'].includes(saved) ? saved : DEFAULT_LANG
+    // syncing the persisted language choice on mount (localStorage is client-only)
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setLanguageState(initial)
-    loadTranslations(initial).then(setTranslations)
+    if (initial !== 'en') loadTranslations(initial).then(setTranslations)
   }, [])
 
   function setLanguage(lang: Language) {
     setLanguageState(lang)
     localStorage.setItem(STORAGE_KEY, lang)
-    loadTranslations(lang).then(setTranslations)
+    if (lang === 'en') setTranslations(EN)
+    else loadTranslations(lang).then(setTranslations)
   }
 
   function t(key: string, params?: Record<string, string>): string {
     let value = resolve(translations, key)
+    // Fall back to English for any key missing in the active locale, so a
+    // missing translation never leaks the raw key (e.g. "dashboard.vocabulary").
+    if (value === key) value = resolve(EN, key)
     if (params) {
       value = Object.entries(params).reduce(
         (str, [k, v]) => str.replace(`{{${k}}}`, v),

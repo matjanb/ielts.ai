@@ -323,7 +323,8 @@
     "nextTest": "Следующий тест",
     "noActivity": "Нет недавней активности. Начните практику!",
     "subscription": "Подписка",
-    "logout": "Выйти"
+    "logout": "Выйти",
+    "vocabulary": "Словарь"
   },
   "common": {
     "loading": "Загрузка…",

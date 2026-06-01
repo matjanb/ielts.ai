@@ -216,7 +216,8 @@
     "nextTest": "Keyingi tavsiya etilgan",
     "noActivity": "So'nggi faollik yo'q. Mashq boshlang!",
     "subscription": "Obuna",
-    "logout": "Chiqish"
+    "logout": "Chiqish",
+    "vocabulary": "Lug‘at"
   },
   "onboarding": {
     "stepOf": "{{current}} / {{total}}",
