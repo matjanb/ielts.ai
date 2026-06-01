@@ -829,7 +829,21 @@
     "week": "Week",
     "noPlan": "No study plan yet",
     "noPlanDesc": "Complete your onboarding, then generate a personalised week-by-week plan tuned to your target band and weak skills.",
-    "generateMyPlan": "Generate my plan"
+    "generateMyPlan": "Generate my plan",
+    "today": "Today",
+    "todayNone": "Nothing scheduled for today — rest or get ahead.",
+    "todayAllDone": "All of today’s tasks are done — great work!",
+    "start": "Start",
+    "weeklyGoal": "Goal",
+    "tip": "Tip",
+    "focus": "Focus",
+    "thisWeek": "This week",
+    "tasksProgress": "{{done}} / {{total}} tasks done",
+    "skillMock": "Mock test",
+    "skillGrammar": "Grammar",
+    "skillReview": "Review",
+    "skillVocab": "Vocabulary",
+    "skillMixed": "Mixed"
   },
   "settings": {
     "subtitle": "Manage your profile, preferences, and subscription.",

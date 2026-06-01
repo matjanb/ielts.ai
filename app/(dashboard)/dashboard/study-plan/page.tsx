@@ -1,32 +1,64 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { BrainCircuit, Loader2, RefreshCw, AlertCircle, Check, Calendar, Target, Clock, Layers } from 'lucide-react'
+import Link from 'next/link'
+import { BrainCircuit, Loader2, RefreshCw, AlertCircle, Calendar, Target, Clock, Layers, ArrowRight } from 'lucide-react'
 import { useLanguage } from '@/lib/i18n/LanguageContext'
 
+interface Task { day: string; skill: string; activity: string; minutes: number }
 interface WeekPlan {
   week: number
   theme: string
-  tasks: string[]
+  focus_skill?: string
+  weekly_goal?: string
+  tip?: string
+  tasks: Task[]
 }
-
 interface StudyPlan {
   weeks_duration: number
   target_band: number
   daily_minutes: number
   focus_skills: string[]
-  plan_data: { weeks: WeekPlan[] }
+  plan_data: { overview?: string; weeks: WeekPlan[] }
+  started_at?: string
+  progress?: Record<string, boolean>
 }
 
 const STAT_ICONS = { duration: Calendar, target: Target, daily: Clock, focus: Layers }
 
+const SKILL_ROUTE: Record<string, string> = {
+  listening: '/listening', reading: '/reading',
+  writing: '/dashboard/writing', speaking: '/dashboard/speaking',
+  vocabulary: '/vocabulary', mock: '/mock-tests',
+  grammar: '/vocabulary', review: '/mock-tests', mixed: '/dashboard',
+}
+const SKILL_COLOR: Record<string, string> = {
+  listening: 'var(--info)', reading: 'var(--accent)', writing: 'var(--warn)',
+  speaking: 'var(--danger)', vocabulary: '#6b46c1', mock: '#0891b2',
+  grammar: '#0d9488', review: '#475569', mixed: 'var(--text-3)',
+}
+
+const DAY_NAMES = ['Weekend', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Weekend']
+
 export default function StudyPlanPage() {
   const { t } = useLanguage()
   const [plan, setPlan]         = useState<StudyPlan | null>(null)
+  const [progress, setProgress] = useState<Record<string, boolean>>({})
+  const [userId, setUserId]     = useState<string | null>(null)
   const [loading, setLoading]   = useState(true)
   const [generating, setGenerating] = useState(false)
   const [error, setError]       = useState('')
   const [activeWeek, setActiveWeek] = useState(1)
+
+  function skillLabel(s: string): string {
+    if (s === 'listening' || s === 'reading' || s === 'writing' || s === 'speaking') return t('dashboard.' + s)
+    if (s === 'vocabulary') return t('plan.skillVocab')
+    if (s === 'mock') return t('plan.skillMock')
+    if (s === 'grammar') return t('plan.skillGrammar')
+    if (s === 'review') return t('plan.skillReview')
+    if (s === 'mixed') return t('plan.skillMixed')
+    return s
+  }
 
   useEffect(() => {
     async function loadPlan() {
@@ -35,8 +67,14 @@ export default function StudyPlanPage() {
         const { getStudyPlan } = await import('@/lib/services/user')
         const { user } = await getUser()
         if (!user) return
+        setUserId(user.id)
         const data = await getStudyPlan(user.id)
-        if (data) setPlan(data as StudyPlan)
+        if (data) {
+          const sp = data as StudyPlan
+          setPlan(sp)
+          setProgress(sp.progress ?? {})
+          setActiveWeek(currentWeekOf(sp))
+        }
       } finally {
         setLoading(false)
       }
@@ -51,11 +89,28 @@ export default function StudyPlanPage() {
       const res = await fetch('/api/ai/study-plan', { method: 'POST' })
       const data = await res.json()
       if (!res.ok) setError(data.error ?? t('plan.failed'))
-      else { setPlan(data); setActiveWeek(1) }
+      else {
+        const sp = data as StudyPlan
+        setPlan(sp)
+        setProgress(sp.progress ?? {})
+        setActiveWeek(currentWeekOf(sp))
+      }
     } catch {
       setError(t('plan.networkError'))
     } finally {
       setGenerating(false)
+    }
+  }
+
+  async function toggleTask(week: number, idx: number) {
+    const key = `${week}:${idx}`
+    const next = { ...progress }
+    if (next[key]) delete next[key]
+    else next[key] = true
+    setProgress(next)
+    if (userId) {
+      const { updateStudyPlanProgress } = await import('@/lib/services/user')
+      updateStudyPlanProgress(userId, next).catch(() => {})
     }
   }
 
@@ -70,6 +125,15 @@ export default function StudyPlanPage() {
 
   const weeks: WeekPlan[] = plan?.plan_data?.weeks ?? []
   const totalTasks = weeks.reduce((n, w) => n + (w.tasks?.length ?? 0), 0)
+  const doneTasks = Object.values(progress).filter(Boolean).length
+  const overview = plan?.plan_data?.overview
+
+  const curWeek = plan ? currentWeekOf(plan) : 1
+  const todayName = DAY_NAMES[new Date().getDay()]
+  const curWeekPlan = weeks.find(w => w.week === curWeek)
+  const todayTasks = (curWeekPlan?.tasks ?? [])
+    .map((task, idx) => ({ task, idx }))
+    .filter(({ task }) => task.day?.toLowerCase() === todayName.toLowerCase())
 
   const stats = plan ? [
     { key: 'duration', label: t('plan.duration'),    value: `${plan.weeks_duration} ${t('plan.weeks')}`, color: 'var(--accent)' },
@@ -77,6 +141,40 @@ export default function StudyPlanPage() {
     { key: 'daily',    label: t('plan.dailyStudy'),  value: `${plan.daily_minutes} ${t('plan.min')}`,    color: 'var(--warn)' },
     { key: 'focus',    label: t('plan.focusSkills'), value: plan.focus_skills.join(', ') || t('plan.allSkills'), color: '#6b46c1' },
   ] : []
+
+  /* Task row — checkbox + activity + skill badge + Start link */
+  function TaskRow({ week, idx, task }: { week: number; idx: number; task: Task }) {
+    const key = `${week}:${idx}`
+    const done = !!progress[key]
+    const color = SKILL_COLOR[task.skill] ?? 'var(--text-3)'
+    return (
+      <div style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '11px 14px', background: 'var(--bg-soft)', borderRadius: 10 }}>
+        <button onClick={() => toggleTask(week, idx)} aria-label="toggle" style={{
+          width: 20, height: 20, borderRadius: 6, flexShrink: 0, cursor: 'pointer', padding: 0,
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+          background: done ? 'var(--accent)' : 'transparent',
+          border: `1.5px solid ${done ? 'var(--accent)' : 'var(--border-strong)'}`,
+        }}>
+          {done && <svg width={12} height={12} viewBox="0 0 24 24" fill="none" stroke="var(--accent-fg)" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><path d="M20 6 9 17l-5-5"/></svg>}
+        </button>
+
+        <div style={{ flex: 1, minWidth: 0 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 2, flexWrap: 'wrap' }}>
+            <span style={{ fontSize: 10.5, fontWeight: 700, color, background: `color-mix(in srgb, ${color} 14%, transparent)`, padding: '2px 8px', borderRadius: 999 }}>{skillLabel(task.skill)}</span>
+            <span style={{ fontSize: 11.5, color: 'var(--text-3)' }}>{task.day} · {task.minutes} {t('plan.min')}</span>
+          </div>
+          <div style={{ fontSize: 13.5, color: done ? 'var(--text-3)' : 'var(--text)', lineHeight: 1.45, textDecoration: done ? 'line-through' : 'none' }}>{task.activity}</div>
+        </div>
+
+        <Link href={SKILL_ROUTE[task.skill] ?? '/dashboard'} style={{
+          flexShrink: 0, display: 'inline-flex', alignItems: 'center', gap: 5, padding: '6px 12px', borderRadius: 8,
+          fontSize: 12, fontWeight: 600, color: 'var(--accent)', background: 'var(--accent-soft)', textDecoration: 'none',
+        }}>
+          {t('plan.start')} <ArrowRight size={12} />
+        </Link>
+      </div>
+    )
+  }
 
   return (
     <div style={{ padding: '32px 32px 80px' }}>
@@ -86,9 +184,9 @@ export default function StudyPlanPage() {
           <h1 style={{ fontSize: 32, fontWeight: 700, letterSpacing: '-0.025em', margin: 0, color: 'var(--text)' }}>
             {t('dashboard.studyPlan')}
           </h1>
-          <p style={{ fontSize: 15, color: 'var(--text-2)', margin: '6px 0 0' }}>
+          <p style={{ fontSize: 15, color: 'var(--text-2)', margin: '6px 0 0', maxWidth: 620, lineHeight: 1.5 }}>
             {plan
-              ? t('plan.roadmapSub', { weeks: String(plan.weeks_duration), band: plan.target_band.toFixed(1), tasks: String(totalTasks) })
+              ? (overview || t('plan.roadmapSub', { weeks: String(plan.weeks_duration), band: plan.target_band.toFixed(1), tasks: String(totalTasks) }))
               : t('plan.generateSub')}
           </p>
         </div>
@@ -108,6 +206,38 @@ export default function StudyPlanPage() {
         <div style={{ display: 'flex', alignItems: 'flex-start', gap: 10, padding: '12px 16px', borderRadius: 10, marginBottom: 16, fontSize: 14, color: 'var(--danger)', background: 'color-mix(in srgb, var(--danger) 10%, transparent)', border: '1px solid color-mix(in srgb, var(--danger) 30%, transparent)' }}>
           <AlertCircle size={16} style={{ flexShrink: 0, marginTop: 1 }} />
           {error}
+        </div>
+      )}
+
+      {/* Overall progress */}
+      {plan && totalTasks > 0 && (
+        <div className="card" style={{ padding: '16px 20px', marginBottom: 16 }}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 }}>
+            <span style={{ fontSize: 13, fontWeight: 600, color: 'var(--text)' }}>{t('plan.tasksProgress', { done: String(doneTasks), total: String(totalTasks) })}</span>
+            <span style={{ fontSize: 13, fontWeight: 700, color: 'var(--accent)', fontVariantNumeric: 'tabular-nums' }}>{Math.round((doneTasks / totalTasks) * 100)}%</span>
+          </div>
+          <div style={{ height: 6, background: 'var(--bg-soft)', borderRadius: 999, overflow: 'hidden' }}>
+            <div style={{ height: '100%', width: `${(doneTasks / totalTasks) * 100}%`, background: 'var(--accent)', borderRadius: 999, transition: 'width .3s' }}/>
+          </div>
+        </div>
+      )}
+
+      {/* Today */}
+      {plan && (
+        <div className="card" style={{ padding: 22, marginBottom: 16 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 14 }}>
+            <Calendar size={16} style={{ color: 'var(--accent)' }} />
+            <h3 style={{ margin: 0, fontSize: 15, fontWeight: 700, color: 'var(--text)' }}>{t('plan.today')}</h3>
+            <span style={{ fontSize: 11, fontWeight: 700, color: 'var(--accent)', background: 'var(--accent-soft)', padding: '2px 10px', borderRadius: 999 }}>{t('plan.week')} {curWeek}</span>
+          </div>
+          {todayTasks.length === 0 ? (
+            <p style={{ fontSize: 13.5, color: 'var(--text-3)', margin: 0 }}>{t('plan.todayNone')}</p>
+          ) : todayTasks.every(({ idx }) => progress[`${curWeek}:${idx}`]) ? (
+            <p style={{ fontSize: 13.5, color: 'var(--accent)', margin: '0 0 12px' }}>{t('plan.todayAllDone')}</p>
+          ) : null}
+          <div style={{ display: 'grid', gap: 8 }}>
+            {todayTasks.map(({ task, idx }) => <TaskRow key={idx} week={curWeek} idx={idx} task={task} />)}
+          </div>
         </div>
       )}
 
@@ -136,23 +266,24 @@ export default function StudyPlanPage() {
         <div className="card" style={{ padding: 28 }}>
           <h3 style={{ margin: '0 0 20px', fontSize: 18, fontWeight: 600, color: 'var(--text)' }}>{t('plan.weeklyRoadmap')}</h3>
           <div style={{ position: 'relative' }}>
-            {/* vertical rail */}
             <div style={{ position: 'absolute', left: 15, top: 8, bottom: 8, width: 2, background: 'var(--border)' }}/>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
               {weeks.map(week => {
                 const open = activeWeek === week.week
+                const isCurrent = week.week === curWeek
+                const wTotal = week.tasks?.length ?? 0
+                const wDone = week.tasks?.filter((_, i) => progress[`${week.week}:${i}`]).length ?? 0
                 return (
                   <div key={week.week} style={{ position: 'relative', paddingLeft: 48 }}>
-                    {/* node */}
                     <button
                       onClick={() => setActiveWeek(open ? -1 : week.week)}
                       style={{
                         position: 'absolute', left: 0, top: 6, width: 32, height: 32, borderRadius: '50%',
                         display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer',
                         fontSize: 13, fontWeight: 700, zIndex: 1,
-                        background: open ? 'var(--accent)' : 'var(--bg-elev)',
-                        color: open ? 'var(--accent-fg)' : 'var(--text-2)',
-                        border: `2px solid ${open ? 'var(--accent)' : 'var(--border-strong)'}`,
+                        background: open || isCurrent ? 'var(--accent)' : 'var(--bg-elev)',
+                        color: open || isCurrent ? 'var(--accent-fg)' : 'var(--text-2)',
+                        border: `2px solid ${open || isCurrent ? 'var(--accent)' : 'var(--border-strong)'}`,
                         transition: 'all .15s',
                       }}
                     >
@@ -161,25 +292,41 @@ export default function StudyPlanPage() {
 
                     <button
                       onClick={() => setActiveWeek(open ? -1 : week.week)}
-                      style={{
-                        width: '100%', textAlign: 'left', background: 'transparent', border: 'none',
-                        cursor: 'pointer', padding: '10px 0 8px',
-                      }}
+                      style={{ width: '100%', textAlign: 'left', background: 'transparent', border: 'none', cursor: 'pointer', padding: '10px 0 8px' }}
                     >
-                      <div style={{ fontSize: 14, fontWeight: 600, color: 'var(--text)' }}>{t('plan.week')} {week.week}</div>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+                        <span style={{ fontSize: 14, fontWeight: 600, color: 'var(--text)' }}>{t('plan.week')} {week.week}</span>
+                        {isCurrent && <span style={{ fontSize: 10, fontWeight: 700, color: 'var(--accent)', background: 'var(--accent-soft)', padding: '1px 8px', borderRadius: 999 }}>{t('plan.thisWeek')}</span>}
+                        {wTotal > 0 && <span style={{ fontSize: 11, color: 'var(--text-3)', fontVariantNumeric: 'tabular-nums' }}>{wDone}/{wTotal}</span>}
+                      </div>
                       {week.theme && <div style={{ fontSize: 13, color: 'var(--text-2)', marginTop: 2 }}>{week.theme}</div>}
                     </button>
 
-                    {open && week.tasks?.length > 0 && (
-                      <div style={{ display: 'grid', gap: 8, padding: '4px 0 18px' }}>
-                        {week.tasks.map((task, i) => (
-                          <div key={i} style={{ display: 'flex', alignItems: 'flex-start', gap: 10, padding: '10px 14px', background: 'var(--bg-soft)', borderRadius: 10 }}>
-                            <div style={{ width: 18, height: 18, borderRadius: 5, border: '1.5px solid var(--border-strong)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, marginTop: 1 }}>
-                              <Check size={12} style={{ color: 'var(--text-3)' }} />
-                            </div>
-                            <span style={{ fontSize: 13.5, color: 'var(--text)', lineHeight: 1.5 }}>{task}</span>
+                    {open && (
+                      <div style={{ padding: '4px 0 18px' }}>
+                        {/* week meta */}
+                        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, marginBottom: 12 }}>
+                          {week.focus_skill && (
+                            <span style={{ fontSize: 11.5, color: 'var(--text-2)' }}>
+                              <strong style={{ color: 'var(--text-3)', fontWeight: 700 }}>{t('plan.focus')}:</strong> {skillLabel(week.focus_skill)}
+                            </span>
+                          )}
+                          {week.weekly_goal && (
+                            <span style={{ fontSize: 11.5, color: 'var(--text-2)' }}>
+                              <strong style={{ color: 'var(--text-3)', fontWeight: 700 }}>{t('plan.weeklyGoal')}:</strong> {week.weekly_goal}
+                            </span>
+                          )}
+                        </div>
+
+                        <div style={{ display: 'grid', gap: 8 }}>
+                          {week.tasks?.map((task, i) => <TaskRow key={i} week={week.week} idx={i} task={task} />)}
+                        </div>
+
+                        {week.tip && (
+                          <div style={{ marginTop: 12, padding: '10px 14px', background: 'var(--accent-soft)', borderRadius: 10, fontSize: 12.5, color: 'var(--text-2)', lineHeight: 1.5 }}>
+                            <strong style={{ color: 'var(--accent)' }}>{t('plan.tip')}:</strong> {week.tip}
                           </div>
-                        ))}
+                        )}
                       </div>
                     )}
                   </div>
@@ -209,4 +356,13 @@ export default function StudyPlanPage() {
       ) : null}
     </div>
   )
+}
+
+/* Which week the student is on, from started_at (1-based, clamped). */
+function currentWeekOf(sp: StudyPlan): number {
+  if (!sp.started_at) return 1
+  const start = new Date(sp.started_at + 'T00:00:00').getTime()
+  if (Number.isNaN(start)) return 1
+  const elapsed = Math.floor((Date.now() - start) / (7 * 86400000)) + 1
+  return Math.max(1, Math.min(sp.weeks_duration || 1, elapsed))
 }

@@ -784,7 +784,21 @@
     "week": "Hafta",
     "noPlan": "Hozircha reja yo‘q",
     "noPlanDesc": "Onboardingni yakunlang, so‘ng maqsadli ball va zaif ko‘nikmalarga moslangan haftalik reja yarating.",
-    "generateMyPlan": "Rejamni yaratish"
+    "generateMyPlan": "Rejamni yaratish",
+    "today": "Bugun",
+    "todayNone": "Bugunga reja yo‘q — dam oling yoki oldinroq ishlang.",
+    "todayAllDone": "Bugungi barcha vazifalar bajarildi — zo‘r!",
+    "start": "Boshlash",
+    "weeklyGoal": "Maqsad",
+    "tip": "Maslahat",
+    "focus": "Diqqat",
+    "thisWeek": "Shu hafta",
+    "tasksProgress": "{{done}} / {{total}} vazifa bajarildi",
+    "skillMock": "Sinov test",
+    "skillGrammar": "Grammatika",
+    "skillReview": "Takrorlash",
+    "skillVocab": "Lug‘at",
+    "skillMixed": "Aralash"
   },
   "settings": {
     "subtitle": "Profil, sozlamalar va obunani boshqaring.",

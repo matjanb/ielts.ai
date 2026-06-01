@@ -133,6 +133,15 @@ export async function getStudyPlan(userId: string) {
   return data
 }
 
+/** Persist per-task completion map ("<week>:<dayIndex>" -> true). */
+export async function updateStudyPlanProgress(userId: string, progress: Record<string, boolean>) {
+  const { error } = await db()
+    .from('study_plans')
+    .update({ progress, updated_at: new Date().toISOString() })
+    .eq('user_id', userId)
+  return { error }
+}
+
 export async function getStudyStreak(userId: string): Promise<number> {
   const { data } = await db()
     .from('study_sessions')
