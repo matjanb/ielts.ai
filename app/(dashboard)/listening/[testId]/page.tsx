@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback, useRef } from 'react'
 import { useRouter, useParams } from 'next/navigation'
-import { Play, Pause, Send, Volume2, AlertCircle, Loader2, Clock } from 'lucide-react'
+import { Play, Pause, Volume2, AlertCircle, Loader2 } from 'lucide-react'
 import Image from 'next/image'
 import { useLanguage } from '@/lib/i18n/LanguageContext'
 import { TestTimer } from '@/components/test/TestTimer'
@@ -37,6 +37,7 @@ function AudioPlayer({
 
   // Reset state when audio source changes
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setPlaying(false)
     setProgress(0)
     setDuration(0)
@@ -1971,7 +1972,7 @@ export default function ListeningTestPage() {
       try {
         const testData = await getTestById(testId)
         if (!testData) {
-          setLoadError('Test not found')
+          setLoadError(t('listening.testNotFound'))
           return
         }
         setTest(testData)
@@ -1980,7 +1981,7 @@ export default function ListeningTestPage() {
         setSections(secs)
 
         if (secs.length === 0) {
-          setLoadError('No sections found for this test. Please run the seed data.')
+          setLoadError(t('listening.noSectionsFound'))
           return
         }
 
@@ -1988,7 +1989,7 @@ export default function ListeningTestPage() {
         const questionsData = await getQuestionsBySectionIds(sectionIds)
 
         if (questionsData.length === 0) {
-          setLoadError('No questions found for this test. Please run the seed data.')
+          setLoadError(t('listening.noQuestionsSeed'))
           return
         }
 
@@ -2006,6 +2007,7 @@ export default function ListeningTestPage() {
       }
     }
     load()
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [testId])
 
   // Scroll to top + show section toast when section changes
@@ -2016,7 +2018,7 @@ export default function ListeningTestPage() {
 
     const section = sections[currentSectionIdx]
     if (section) {
-      setSectionToast(`Part ${section.section_number} — audio starting`)
+      setSectionToast(t('listening.audioStarting', { part: t('listening.part'), n: String(section.section_number) }))
       if (toastTimerRef.current) clearTimeout(toastTimerRef.current)
       toastTimerRef.current = setTimeout(() => setSectionToast(null), 2000)
     }
@@ -2114,8 +2116,8 @@ export default function ListeningTestPage() {
           <div style={{ width: 44, height: 44, borderRadius: 12, background: 'color-mix(in srgb, var(--danger) 12%, transparent)', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 16px' }}>
             <AlertCircle size={20} style={{ color: 'var(--danger)' }} />
           </div>
-          <p style={{ fontSize: 14, fontWeight: 600, color: 'var(--danger)', marginBottom: 8 }}>Failed to load test</p>
-          <p style={{ fontSize: 12, color: 'var(--text-3)', marginBottom: 20, fontFamily: 'var(--font-mono)' }}>{loadError ?? 'Test not found'}</p>
+          <p style={{ fontSize: 14, fontWeight: 600, color: 'var(--danger)', marginBottom: 8 }}>{t('listening.failedToLoad')}</p>
+          <p style={{ fontSize: 12, color: 'var(--text-3)', marginBottom: 20, fontFamily: 'var(--font-mono)' }}>{loadError ?? t('listening.testNotFound')}</p>
           <button onClick={() => router.back()} style={{ fontSize: 13, color: 'var(--accent)', background: 'none', border: 'none', cursor: 'pointer' }}>
             ← {t('common.back')}
           </button>
@@ -2134,15 +2136,15 @@ export default function ListeningTestPage() {
             </svg>
           </div>
           <span style={{ display: 'inline-block', fontSize: 10, fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase', color: 'var(--accent)', background: 'var(--accent-soft)', padding: '3px 10px', borderRadius: 999, marginBottom: 14 }}>
-            Listening
+            {t('dashboard.listening')}
           </span>
           <h1 style={{ fontSize: 20, fontWeight: 700, color: 'var(--text)', marginBottom: 8 }}>{test.title}</h1>
           <p style={{ fontSize: 14, color: 'var(--text-2)', marginBottom: 28, lineHeight: 1.55 }}>{t('listening.startSubtitle')}</p>
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 10, marginBottom: 28 }}>
             {[
               { value: String(questions.length), label: t('listening.questions') },
-              { value: '30', label: 'min' },
-              { value: String(sections.length || 4), label: 'sections' },
+              { value: '30', label: t('listening.minutes') },
+              { value: String(sections.length || 4), label: t('listening.sectionsLabel') },
             ].map(({ value, label }) => (
               <div key={label} style={{ padding: '12px 8px', background: 'var(--bg-soft)', borderRadius: 10, textAlign: 'center' }}>
                 <div style={{ fontSize: 18, fontWeight: 700, color: 'var(--text)', fontVariantNumeric: 'tabular-nums' }}>{value}</div>
@@ -2157,7 +2159,7 @@ export default function ListeningTestPage() {
             display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
           }}>
             {starting && <Loader2 size={15} className="animate-spin"/>}
-            {starting ? 'Starting…' : t('listening.startTest')}
+            {starting ? t('listening.starting') : t('listening.startTest')}
           </button>
         </div>
       </div>
@@ -2170,9 +2172,9 @@ export default function ListeningTestPage() {
         <div className="card" style={{ padding: 36, textAlign: 'center' }}>
           <AlertCircle size={20} style={{ color: 'var(--warn)', margin: '0 auto 16px', display: 'block' }} />
           <p style={{ fontSize: 14, color: 'var(--text-2)', marginBottom: 16 }}>
-            No questions found. The database migration and seed may not have been applied yet.
+            {t('listening.noQuestionsFound')}
           </p>
-          <button onClick={() => setStarted(false)} style={{ fontSize: 13, color: 'var(--accent)', background: 'none', border: 'none', cursor: 'pointer' }}>← Back</button>
+          <button onClick={() => setStarted(false)} style={{ fontSize: 13, color: 'var(--accent)', background: 'none', border: 'none', cursor: 'pointer' }}>← {t('common.back')}</button>
         </div>
       </div>
     )
@@ -2200,16 +2202,16 @@ export default function ListeningTestPage() {
         <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 10, fontWeight: 700, fontSize: 14 }}>
             <span style={{ background: '#ffcb05', color: '#000', padding: '3px 8px', borderRadius: 2, fontSize: 11 }}>IELTS</span>
-            ielts.camp · Practice Listening
+            ielts.camp · {t('listening.practiceTag')}
           </div>
           <span style={{ fontSize: 11, opacity: 0.6 }}>{test?.title ?? ''}</span>
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-          <span style={{ fontSize: 11, opacity: 0.7 }}>{answeredCount}/{questions.length} answered</span>
+          <span style={{ fontSize: 11, opacity: 0.7 }}>{answeredCount}/{questions.length} {t('listening.answered')}</span>
           <TestTimer totalSeconds={1800} onExpire={handleTimeExpire} />
           <button onClick={handleSubmit} disabled={submitting}
             style={{ padding: '5px 14px', background: '#0066b3', color: '#fff', fontSize: 12, fontWeight: 700, borderRadius: 2, border: 'none', cursor: 'pointer', opacity: submitting ? 0.6 : 1 }}>
-            {submitting ? 'Submitting…' : t('listening.submitTest')}
+            {submitting ? t('listening.submitting') : t('listening.submitTest')}
           </button>
         </div>
       </div>
@@ -2218,7 +2220,7 @@ export default function ListeningTestPage() {
       <AudioPlayer
         audioUrl={currentSection?.audio_url ?? null}
         autoPlay={started}
-        sectionLabel={`Section ${currentSection?.section_number ?? 1} of ${sections.length || 4}`}
+        sectionLabel={`${t('listening.section')} ${currentSection?.section_number ?? 1} ${t('listening.of')} ${sections.length || 4}`}
       />
 
       {/* ── Main scrollable content ── */}
@@ -2229,7 +2231,7 @@ export default function ListeningTestPage() {
         <div style={{ marginBottom: 32 }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8 }}>
             <span style={{ fontSize: 10, fontWeight: 700, letterSpacing: '0.08em', textTransform: 'uppercase', color: 'var(--accent)', background: 'var(--accent-soft)', padding: '3px 10px', borderRadius: 999 }}>
-              Part {currentSection?.section_number}
+              {t('listening.part')} {currentSection?.section_number}
             </span>
           </div>
           <h2 style={{ fontSize: 18, fontWeight: 600, color: 'var(--text)', margin: '0 0 6px' }}>{currentSection?.title}</h2>
@@ -2243,7 +2245,7 @@ export default function ListeningTestPage() {
           {groups.map((group, gi) => {
             const first = group.items[0].question_number
             const last = group.items[group.items.length - 1].question_number
-            const rangeLabel = first === last ? `Question ${first}` : `Questions ${first}–${last}`
+            const rangeLabel = first === last ? `${t('listening.questionSingular')} ${first}` : `${t('listening.questions')} ${first}–${last}`
             return (
               <div key={gi}>
                 <div style={{ marginBottom: 12 }}>
@@ -2317,7 +2319,7 @@ export default function ListeningTestPage() {
                 cursor: 'pointer', transition: 'all .15s',
               }}>
                 <span style={{ fontSize: 12, fontWeight: 700, color: active ? 'var(--accent)' : 'var(--text-2)' }}>
-                  Part {s.section_number}
+                  {t('listening.part')} {s.section_number}
                 </span>
                 <span style={{ fontSize: 10, marginTop: 2, fontVariantNumeric: 'tabular-nums', color: allDone ? 'var(--accent)' : active ? 'color-mix(in srgb, var(--accent) 60%, transparent)' : 'var(--text-3)' }}>
                   {done}/{sqs.length}

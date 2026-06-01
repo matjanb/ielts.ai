@@ -378,7 +378,18 @@
     "allQuestions": "All Questions",
     "sectionLabel": "Section {{n}}",
     "timeUp": "Time is up!",
-    "autoSubmit": "Your test was automatically submitted."
+    "autoSubmit": "Your test was automatically submitted.",
+    "failedToLoad": "Failed to load test",
+    "testNotFound": "Test not found",
+    "starting": "Starting…",
+    "noQuestionsFound": "No questions found. The database migration and seed may not have been applied yet.",
+    "noSectionsFound": "No sections found for this test. Please run the seed data.",
+    "noQuestionsSeed": "No questions found for this test. Please run the seed data.",
+    "practiceTag": "Practice Listening",
+    "sectionsLabel": "sections",
+    "part": "Part",
+    "questionSingular": "Question",
+    "audioStarting": "{{part}} {{n}} — audio starting"
   },
   "reading": {
     "startSubtitle": "40 questions · 60 minutes · 3 passages",
@@ -392,7 +403,17 @@
     "overallBand": "Overall Band Score",
     "rawScore": "Raw Score",
     "yourAnswer2": "Your answer",
-    "correctAnswer": "Correct answer"
+    "correctAnswer": "Correct answer",
+    "failedToLoad": "Failed to load test",
+    "testNotFound": "Test not found",
+    "answered": "answered",
+    "reviewSubmit": "Review & Submit",
+    "submitting": "Submitting…",
+    "starting": "Starting…",
+    "startTitle": "IELTS Reading Test",
+    "practiceTag": "Practice Reading",
+    "minutes": "min",
+    "part": "Part"
   },
   "diagnostic": {
     "stepOf": "{{current}} of {{total}}",

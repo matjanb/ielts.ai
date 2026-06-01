@@ -333,7 +333,18 @@
     "allQuestions": "Barcha savollar",
     "sectionLabel": "{{n}}-bo'lim",
     "timeUp": "Vaqt tugadi!",
-    "autoSubmit": "Testingiz avtomatik ravishda yuborildi."
+    "autoSubmit": "Testingiz avtomatik ravishda yuborildi.",
+    "failedToLoad": "Testni yuklab bo‘lmadi",
+    "testNotFound": "Test topilmadi",
+    "starting": "Boshlanmoqda…",
+    "noQuestionsFound": "Savollar topilmadi. Maʼlumotlar bazasi migratsiyasi va seed hali qoʻllanilmagan boʻlishi mumkin.",
+    "noSectionsFound": "Bu test uchun boʻlimlar topilmadi. Seed maʼlumotlarini ishga tushiring.",
+    "noQuestionsSeed": "Bu test uchun savollar topilmadi. Seed maʼlumotlarini ishga tushiring.",
+    "practiceTag": "Listening amaliyoti",
+    "sectionsLabel": "boʻlim",
+    "part": "Qism",
+    "questionSingular": "Savol",
+    "audioStarting": "{{part}} {{n}} — audio boshlanmoqda"
   },
   "reading": {
     "startSubtitle": "40 savol · 60 daqiqa · 3 matn",
@@ -347,7 +358,17 @@
     "overallBand": "Umumiy ball",
     "rawScore": "Xom ball",
     "yourAnswer2": "Javobingiz",
-    "correctAnswer": "To'g'ri javob"
+    "correctAnswer": "To'g'ri javob",
+    "failedToLoad": "Testni yuklab bo‘lmadi",
+    "testNotFound": "Test topilmadi",
+    "answered": "javob berildi",
+    "reviewSubmit": "Koʻrib chiqib yuborish",
+    "submitting": "Yuborilmoqda…",
+    "starting": "Boshlanmoqda…",
+    "startTitle": "IELTS Reading testi",
+    "practiceTag": "Reading amaliyoti",
+    "minutes": "daq",
+    "part": "Qism"
   },
   "diagnostic": {
     "stepOf": "{{current}} / {{total}}",

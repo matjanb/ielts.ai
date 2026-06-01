@@ -372,7 +372,18 @@
     "allQuestions": "Барлық сұрақтар",
     "sectionLabel": "{{n}} бөлімі",
     "timeUp": "Уақыт бітті!",
-    "autoSubmit": "Тестіңіз автоматты түрде жіберілді."
+    "autoSubmit": "Тестіңіз автоматты түрде жіберілді.",
+    "failedToLoad": "Тестті жүктеу мүмкін болмады",
+    "testNotFound": "Тест табылмады",
+    "starting": "Басталуда…",
+    "noQuestionsFound": "Сұрақтар табылмады. Дерекқор миграциясы мен сид деректері әлі қолданылмаған болуы мүмкін.",
+    "noSectionsFound": "Бұл тест үшін бөлімдер табылмады. Сид деректерін іске қос.",
+    "noQuestionsSeed": "Бұл тест үшін сұрақтар табылмады. Сид деректерін іске қос.",
+    "practiceTag": "Listening практикасы",
+    "sectionsLabel": "бөлім",
+    "part": "Бөлім",
+    "questionSingular": "Сұрақ",
+    "audioStarting": "{{part}} {{n}} — аудио басталуда"
   },
   "reading": {
     "startSubtitle": "40 сұрақ · 60 минут · 3 мәтін",
@@ -386,7 +397,17 @@
     "overallBand": "Жалпы балл",
     "rawScore": "Шикі балл",
     "yourAnswer2": "Жауабыңыз",
-    "correctAnswer": "Дұрыс жауап"
+    "correctAnswer": "Дұрыс жауап",
+    "failedToLoad": "Тестті жүктеу мүмкін болмады",
+    "testNotFound": "Тест табылмады",
+    "answered": "жауап берілді",
+    "reviewSubmit": "Тексеріп жіберу",
+    "submitting": "Жіберілуде…",
+    "starting": "Басталуда…",
+    "startTitle": "IELTS Reading тесті",
+    "practiceTag": "Reading практикасы",
+    "minutes": "мин",
+    "part": "Бөлім"
   },
   "diagnostic": {
     "stepOf": "{{current}} / {{total}}",
