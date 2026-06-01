@@ -2,6 +2,7 @@
 
 import { useState, useRef, useEffect, useCallback, useMemo } from 'react'
 import { Loader2 } from 'lucide-react'
+import { useLanguage } from '@/lib/i18n/LanguageContext'
 
 /* ── Themed test sets (original IELTS-style wording) ──────────────────────── */
 interface SpeakingSet {
@@ -76,8 +77,6 @@ function turnQuestion(t: Turn): string {
     : t.prompt
 }
 
-const PART_LABELS: Record<1 | 2 | 3, string> = { 1: 'Introduction', 2: 'Long turn', 3: 'Discussion' }
-
 interface CriterionResult { band: number; evidence: string }
 interface FeedbackResult {
   band_score: number; fluency_score: number; lexical_score: number; grammar_score: number; pronunciation_score: number; pronunciation_notes: string
@@ -92,18 +91,19 @@ const words = (s: string) => (s.trim() ? s.trim().split(/\s+/).length : 0)
 
 /* ── Ready screen ────────────────────────────────────────────────────────── */
 function ReadyScreen({ onStart }: { onStart: () => void }) {
+  const { t } = useLanguage()
   return (
     <div style={{ flex: 1, background: 'radial-gradient(120% 80% at 50% -10%, #16221c 0%, #0e1011 55%)', color: '#f5f5f3', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 24 }}>
       <div className="animate-fade-up" style={{ maxWidth: 480, textAlign: 'center' }}>
         <div style={{ display: 'inline-flex', padding: 26, borderRadius: '50%', background: '#1a2a23', marginBottom: 26, boxShadow: '0 0 0 1px rgba(58,162,120,0.25), 0 0 60px -10px rgba(58,162,120,0.4)' }}>
           <MicIcon size={46} color="#3aa278" />
         </div>
-        <h1 style={{ fontSize: 40, fontWeight: 700, letterSpacing: '-0.03em', margin: '0 0 14px' }}>Full speaking test</h1>
+        <h1 style={{ fontSize: 40, fontWeight: 700, letterSpacing: '-0.03em', margin: '0 0 14px' }}>{t('speak.readyTitle')}</h1>
         <p style={{ fontSize: 15, color: '#a8a9a7', lineHeight: 1.6, margin: '0 0 34px' }}>
-          A complete three-part test with the examiner. Answer each question by recording (or typing). You&apos;ll get one band score for the whole test — just like the real exam.
+          {t('speak.readyDesc')}
         </p>
         <div style={{ display: 'grid', gap: 8, marginBottom: 34, textAlign: 'left' }}>
-          {['Part 1 — short questions on familiar topics', 'Part 2 — a cue card with 1 minute to prepare', 'Part 3 — a deeper two-way discussion', 'One examiner band score at the end'].map((s, i) => (
+          {[t('speak.b1'), t('speak.b2'), t('speak.b3'), t('speak.b4')].map((s, i) => (
             <div key={i} style={{ display: 'flex', gap: 12, alignItems: 'center', padding: '11px 16px', background: '#16191b', borderRadius: 12, border: '1px solid #21241f' }}>
               <svg width={15} height={15} viewBox="0 0 24 24" fill="none" stroke="#3aa278" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><path d="M5 12l5 5L20 7"/></svg>
               <span style={{ fontSize: 14, color: '#f0f0ee' }}>{s}</span>
@@ -111,7 +111,7 @@ function ReadyScreen({ onStart }: { onStart: () => void }) {
           ))}
         </div>
         <button onClick={onStart} style={{ display: 'inline-flex', alignItems: 'center', gap: 10, padding: '15px 34px', borderRadius: 14, fontSize: 15, fontWeight: 700, background: '#3aa278', color: '#fff', border: 'none', cursor: 'pointer', boxShadow: '0 10px 30px -10px rgba(58,162,120,0.6)' }}>
-          <MicIcon size={17} color="#fff" /> Start the test
+          <MicIcon size={17} color="#fff" /> {t('speak.start')}
         </button>
       </div>
     </div>
@@ -120,12 +120,13 @@ function ReadyScreen({ onStart }: { onStart: () => void }) {
 
 /* ── Feedback screen ─────────────────────────────────────────────────────── */
 const CRIT_META = [
-  { key: 'fluency' as const, label: 'Fluency & coherence' },
-  { key: 'lexical' as const, label: 'Lexical resource' },
-  { key: 'grammar' as const, label: 'Grammatical range' },
-  { key: 'pronunciation' as const, label: 'Pronunciation' },
+  { key: 'fluency' as const, label: 'speak.critFluency' },
+  { key: 'lexical' as const, label: 'speak.critLexical' },
+  { key: 'grammar' as const, label: 'speak.critGrammar' },
+  { key: 'pronunciation' as const, label: 'speak.critPron' },
 ]
 function BandRing({ band }: { band: number }) {
+  const { t } = useLanguage()
   const r = 58, c = 2 * Math.PI * r
   const off = c * (1 - Math.max(0, Math.min(9, band)) / 9)
   return (
@@ -136,22 +137,23 @@ function BandRing({ band }: { band: number }) {
       </svg>
       <div style={{ position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
         <div style={{ fontFamily: 'var(--font-display)', fontStyle: 'italic', fontSize: 52, lineHeight: 1, color: 'var(--accent)', fontWeight: 500 }}>{band.toFixed(1)}</div>
-        <div style={{ fontSize: 10, letterSpacing: '0.12em', color: 'var(--text-3)', marginTop: 2 }}>BAND</div>
+        <div style={{ fontSize: 10, letterSpacing: '0.12em', color: 'var(--text-3)', marginTop: 2 }}>{t('speak.band')}</div>
       </div>
     </div>
   )
 }
 function FeedbackScreen({ result, onBack }: { result: FeedbackResult; onBack: () => void }) {
+  const { t } = useLanguage()
   const scoreFor = { fluency: result.fluency_score, lexical: result.lexical_score, grammar: result.grammar_score, pronunciation: result.pronunciation_score }
   const fb = result.feedback
   return (
     <div style={{ padding: '28px 32px 80px', maxWidth: 860, margin: '0 auto' }} className="animate-fade-up">
       <button onClick={onBack} style={{ display: 'inline-flex', alignItems: 'center', gap: 8, fontSize: 13, fontWeight: 600, color: 'var(--text-2)', background: 'none', border: '1px solid var(--border)', borderRadius: 8, padding: '6px 12px', cursor: 'pointer', marginBottom: 22 }}>
         <svg width={13} height={13} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M19 12H5M11 19l-7-7 7-7"/></svg>
-        Back to Speaking
+        {t('speak.back')}
       </button>
-      <h1 style={{ fontSize: 32, letterSpacing: '-0.025em', margin: '0 0 4px', fontWeight: 700, color: 'var(--text)' }}>Your result</h1>
-      <p style={{ color: 'var(--text-2)', margin: '0 0 24px', fontSize: 15 }}>Assessed across all three parts, against the official band descriptors.</p>
+      <h1 style={{ fontSize: 32, letterSpacing: '-0.025em', margin: '0 0 4px', fontWeight: 700, color: 'var(--text)' }}>{t('speak.result')}</h1>
+      <p style={{ color: 'var(--text-2)', margin: '0 0 24px', fontSize: 15 }}>{t('speak.resultSub')}</p>
       <div className="card" style={{ padding: 28, display: 'grid', gridTemplateColumns: '148px 1fr', gap: 36, alignItems: 'center', marginBottom: 16 }}>
         <BandRing band={result.band_score} />
         <div style={{ display: 'grid', gap: 16 }}>
@@ -161,7 +163,7 @@ function FeedbackScreen({ result, onBack }: { result: FeedbackResult; onBack: ()
             return (
               <div key={key}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 5 }}>
-                  <span style={{ fontSize: 13, fontWeight: 600, color: 'var(--text)' }}>{label}</span>
+                  <span style={{ fontSize: 13, fontWeight: 600, color: 'var(--text)' }}>{t(label)}</span>
                   <span style={{ fontSize: 13, fontWeight: 700, fontVariantNumeric: 'tabular-nums', color: 'var(--accent)' }}>{v.toFixed(1)}</span>
                 </div>
                 <div style={{ height: 6, background: 'var(--bg-soft)', borderRadius: 999, overflow: 'hidden' }}>
@@ -180,13 +182,13 @@ function FeedbackScreen({ result, onBack }: { result: FeedbackResult; onBack: ()
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16, marginBottom: 16 }}>
         {fb.strengths?.length > 0 && (
           <div className="card" style={{ padding: 22 }}>
-            <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: '0.08em', color: 'var(--accent)', marginBottom: 12 }}>STRENGTHS</div>
+            <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: '0.08em', color: 'var(--accent)', marginBottom: 12 }}>{t('speak.strengths')}</div>
             {fb.strengths.map((s, i) => <div key={i} style={{ display: 'flex', gap: 9, fontSize: 13.5, lineHeight: 1.55, color: 'var(--text)', marginBottom: 9 }}><span style={{ color: 'var(--accent)', flexShrink: 0 }}>✓</span><span>{s}</span></div>)}
           </div>
         )}
         {fb.improvements?.length > 0 && (
           <div className="card" style={{ padding: 22 }}>
-            <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: '0.08em', color: 'var(--warn)', marginBottom: 12 }}>WHAT TO IMPROVE</div>
+            <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: '0.08em', color: 'var(--warn)', marginBottom: 12 }}>{t('speak.improve')}</div>
             {fb.improvements.map((s, i) => <div key={i} style={{ display: 'flex', gap: 9, fontSize: 13.5, lineHeight: 1.55, color: 'var(--text)', marginBottom: 9 }}><span style={{ color: 'var(--warn)', flexShrink: 0 }}>→</span><span>{s}</span></div>)}
           </div>
         )}
@@ -195,7 +197,7 @@ function FeedbackScreen({ result, onBack }: { result: FeedbackResult; onBack: ()
         <div className="card" style={{ padding: 22, background: 'var(--accent-soft)', borderColor: 'transparent', display: 'flex', gap: 14, alignItems: 'flex-start' }}>
           <svg width={18} height={18} viewBox="0 0 24 24" fill="none" stroke="var(--accent)" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0, marginTop: 2 }}><path d="M12 3l1.7 4.8L18 9.5l-4.3 1.7L12 16l-1.7-4.8L6 9.5l4.3-1.7z"/></svg>
           <div>
-            <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: '0.08em', color: 'var(--accent)', marginBottom: 5 }}>TO REACH THE NEXT BAND</div>
+            <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: '0.08em', color: 'var(--accent)', marginBottom: 5 }}>{t('speak.nextBand')}</div>
             <p style={{ fontSize: 14, lineHeight: 1.6, margin: 0, color: 'var(--text)' }}>{fb.next_band_tip}</p>
           </div>
         </div>
@@ -212,6 +214,8 @@ function LiveExam({ set, loading, error, onComplete, onExit }: {
   onComplete: (turns: { part: number; question: string; answer: string }[]) => void
   onExit: () => void
 }) {
+  const { t } = useLanguage()
+  const partLabel = (p: 1 | 2 | 3) => t(p === 1 ? 'speak.partIntro' : p === 2 ? 'speak.partLong' : 'speak.partDisc')
   const turns = useMemo(() => buildTurns(set), [set])
   const [idx, setIdx] = useState(0)
   const [answers, setAnswers] = useState<string[]>(() => turns.map(() => ''))
@@ -255,7 +259,7 @@ function LiveExam({ set, loading, error, onComplete, onExit }: {
 
   const startRecording = useCallback(async () => {
     setMicError('')
-    if (typeof navigator === 'undefined' || !navigator.mediaDevices?.getUserMedia) { setMicError('Recording is not supported here — type your answer instead.'); return }
+    if (typeof navigator === 'undefined' || !navigator.mediaDevices?.getUserMedia) { setMicError(t('speak.errUnsupported')); return }
     try {
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true })
       const mr = new MediaRecorder(stream)
@@ -271,13 +275,13 @@ function LiveExam({ set, loading, error, onComplete, onExit }: {
           const res = await fetch('/api/ai/transcribe', { method: 'POST', body: fd })
           const data = await res.json()
           if (res.ok && data.transcript) setAnswer(prev => (prev.trim() ? prev.trim() + ' ' : '') + data.transcript)
-          else setMicError(data.error ?? 'Could not transcribe — try again or type.')
-        } catch { setMicError('Could not reach the transcription service.') }
+          else setMicError(data.error ?? t('speak.errTranscribe'))
+        } catch { setMicError(t('speak.errService')) }
         finally { setRecState('idle') }
       }
       mr.start(); mediaRef.current = mr; setRecState('recording')
-    } catch { setMicError('Microphone access denied. Type your answer instead.') }
-  }, [setAnswer])
+    } catch { setMicError(t('speak.errDenied')) }
+  }, [setAnswer, t])
   const stopRecording = useCallback(() => { mediaRef.current?.stop() }, [])
 
   function goTo(i: number) {
@@ -310,12 +314,12 @@ function LiveExam({ set, loading, error, onComplete, onExit }: {
       <header style={{ padding: '14px 24px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', borderBottom: '1px solid #1f2123', flexShrink: 0 }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 9 }}>
           <span style={{ width: 8, height: 8, borderRadius: '50%', background: '#3aa278', boxShadow: '0 0 0 4px rgba(58,162,120,0.2)' }}/>
-          <span style={{ fontSize: 13, fontWeight: 600, color: '#3aa278' }}>AI examiner</span>
+          <span style={{ fontSize: 13, fontWeight: 600, color: '#3aa278' }}>{t('speak.examiner')}</span>
           <span style={{ fontSize: 13, color: '#5f6163' }}>· Sarah</span>
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
           <span style={{ fontSize: 13.5, color: '#bcbdbe', fontFamily: 'var(--font-mono)' }}>{mm}:{ss}</span>
-          <button onClick={onExit} style={{ padding: '6px 14px', background: 'transparent', border: '1px solid #34373a', borderRadius: 8, fontSize: 12, color: '#bcbdbe', cursor: 'pointer' }}>End test</button>
+          <button onClick={onExit} style={{ padding: '6px 14px', background: 'transparent', border: '1px solid #34373a', borderRadius: 8, fontSize: 12, color: '#bcbdbe', cursor: 'pointer' }}>{t('speak.endTest')}</button>
         </div>
       </header>
 
@@ -324,8 +328,8 @@ function LiveExam({ set, loading, error, onComplete, onExit }: {
         <div style={{ maxWidth: 680, margin: '0 auto' }}>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 }}>
             <span style={{ display: 'inline-flex', alignItems: 'center', gap: 8, fontSize: 12.5, fontWeight: 600, color: '#3aa278' }}>
-              <span style={{ padding: '2px 9px', borderRadius: 999, background: '#1a2a23', border: '1px solid #2c4a3b' }}>Part {turn.part}</span>
-              {PART_LABELS[turn.part]}
+              <span style={{ padding: '2px 9px', borderRadius: 999, background: '#1a2a23', border: '1px solid #2c4a3b' }}>{t('speak.part')} {turn.part}</span>
+              {partLabel(turn.part)}
             </span>
             <span style={{ fontSize: 12, color: '#6b6d6f', fontFamily: 'var(--font-mono)' }}>{posInPart} / {partTurns.length}</span>
           </div>
@@ -344,7 +348,7 @@ function LiveExam({ set, loading, error, onComplete, onExit }: {
               <div style={{ width: 32, height: 32, borderRadius: '50%', background: '#1a2a23', display: 'flex', alignItems: 'center', justifyContent: 'center', border: '1px solid #2c4a3b', flexShrink: 0 }}>
                 <svg width={14} height={14} viewBox="0 0 24 24" fill="none" stroke="#3aa278" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M12 3l1.7 4.8L18 9.5l-4.3 1.7L12 16l-1.7-4.8L6 9.5l4.3-1.7z"/></svg>
               </div>
-              <span style={{ fontSize: 11, letterSpacing: '0.08em', color: '#6b6d6f', fontWeight: 600 }}>EXAMINER</span>
+              <span style={{ fontSize: 11, letterSpacing: '0.08em', color: '#6b6d6f', fontWeight: 600 }}>{t('speak.examinerLabel')}</span>
             </div>
             {turn.kind === 'q' && turn.lead && <p style={{ fontSize: 13.5, color: '#8a8c8e', margin: '0 0 8px', fontStyle: 'italic' }}>{turn.lead}</p>}
             {turn.kind === 'cue' ? (
@@ -364,20 +368,20 @@ function LiveExam({ set, loading, error, onComplete, onExit }: {
           {turn.kind === 'cue' && prepActive ? (
             <div style={{ background: '#131517', border: '1px solid #23262a', borderRadius: 16, padding: 18 }}>
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
-                <span style={{ fontSize: 12, fontWeight: 700, letterSpacing: '0.06em', color: '#3aa278' }}>PREPARATION · {String(Math.floor(prepLeft / 60)).padStart(2, '0')}:{String(prepLeft % 60).padStart(2, '0')}</span>
-                <button onClick={() => setPrepActive(false)} style={{ fontSize: 12, fontWeight: 600, color: '#bcbdbe', background: 'transparent', border: '1px solid #2a2c2e', borderRadius: 8, padding: '5px 12px', cursor: 'pointer' }}>I&apos;m ready →</button>
+                <span style={{ fontSize: 12, fontWeight: 700, letterSpacing: '0.06em', color: '#3aa278' }}>{t('speak.prep')} · {String(Math.floor(prepLeft / 60)).padStart(2, '0')}:{String(prepLeft % 60).padStart(2, '0')}</span>
+                <button onClick={() => setPrepActive(false)} style={{ fontSize: 12, fontWeight: 600, color: '#bcbdbe', background: 'transparent', border: '1px solid #2a2c2e', borderRadius: 8, padding: '5px 12px', cursor: 'pointer' }}>{t('speak.ready2')} →</button>
               </div>
-              <textarea value={prepNotes} onChange={e => setPrepNotes(e.target.value)} placeholder="Make a few notes to plan your answer (optional, not assessed)…"
+              <textarea value={prepNotes} onChange={e => setPrepNotes(e.target.value)} placeholder={t('speak.prepPlaceholder')}
                 style={{ width: '100%', minHeight: 90, padding: '12px 14px', background: '#0e1011', border: '1px solid #23262a', borderRadius: 12, color: '#cdcfd0', fontSize: 13.5, lineHeight: 1.6, resize: 'vertical', outline: 'none', fontFamily: 'var(--font-sans)' }}/>
             </div>
           ) : (
             /* Answer */
             <div>
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 }}>
-                <span style={{ fontSize: 10.5, color: '#6b6d6f', letterSpacing: '0.08em', fontWeight: 600 }}>YOUR ANSWER</span>
-                <span style={{ fontSize: 11, color: '#6b6d6f', fontFamily: 'var(--font-mono)' }}>{words(answer)} words</span>
+                <span style={{ fontSize: 10.5, color: '#6b6d6f', letterSpacing: '0.08em', fontWeight: 600 }}>{t('speak.yourAnswer')}</span>
+                <span style={{ fontSize: 11, color: '#6b6d6f', fontFamily: 'var(--font-mono)' }}>{words(answer)} {t('speak.words')}</span>
               </div>
-              <textarea value={answer} onChange={e => setAnswer(e.target.value)} placeholder={turn.kind === 'cue' ? 'Speak for 1–2 minutes — tap the mic, or type your answer…' : 'Tap the mic to answer, or type here…'}
+              <textarea value={answer} onChange={e => setAnswer(e.target.value)} placeholder={turn.kind === 'cue' ? t('speak.ansLong') : t('speak.ansShort')}
                 style={{ width: '100%', minHeight: turn.kind === 'cue' ? 150 : 110, padding: '15px 17px', background: '#131517', border: '1px solid #23262a', borderRadius: 16, color: '#f0f0ee', fontSize: 14.5, lineHeight: 1.65, resize: 'vertical', outline: 'none', fontFamily: 'var(--font-sans)' }}
                 onFocus={e => (e.currentTarget.style.borderColor = '#3aa278')} onBlur={e => (e.currentTarget.style.borderColor = '#23262a')}/>
               {(error || micError) && <div style={{ marginTop: 10, fontSize: 13, color: '#e0937f' }}>{error || micError}</div>}
@@ -413,16 +417,16 @@ function LiveExam({ set, loading, error, onComplete, onExit }: {
                 onClick={next}
                 disabled={busy || (isLast ? !canFinish : !canAdvance)}
                 style={{ flex: 1, padding: '14px', borderRadius: 12, fontSize: 14.5, fontWeight: 700, background: busy || (isLast ? !canFinish : !canAdvance) ? '#1f2123' : '#3aa278', color: busy || (isLast ? !canFinish : !canAdvance) ? '#5f6163' : '#fff', border: 'none', cursor: busy || (isLast ? !canFinish : !canAdvance) ? 'not-allowed' : 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8 }}>
-                {recState === 'transcribing' ? <><Loader2 size={15} className="animate-spin"/> Transcribing…</>
-                  : loading ? <><Loader2 size={15} className="animate-spin"/> Scoring your test…</>
-                  : isLast ? (canFinish ? 'Finish & get my band' : 'Answer a little more to finish')
-                  : (canAdvance ? 'Next question →' : 'Record or type your answer')}
+                {recState === 'transcribing' ? <><Loader2 size={15} className="animate-spin"/> {t('speak.transcribing')}</>
+                  : loading ? <><Loader2 size={15} className="animate-spin"/> {t('speak.scoring')}</>
+                  : isLast ? (canFinish ? t('speak.finish') : t('speak.finishMore'))
+                  : (canAdvance ? `${t('speak.nextQ')} →` : t('speak.needAnswer'))}
               </button>
             </div>
           )}
         </div>
         <div style={{ textAlign: 'center', fontSize: 11, color: '#5f6163', marginTop: 10 }}>
-          {recState === 'recording' ? 'Speak naturally — tap stop when you finish' : turn.kind === 'cue' && prepActive ? 'Use your preparation time, then tap “I’m ready”' : 'Tap the mic to answer · or type · then continue'}
+          {recState === 'recording' ? t('speak.hintRec') : turn.kind === 'cue' && prepActive ? t('speak.hintPrep') : t('speak.hintIdle')}
         </div>
       </div>
 
