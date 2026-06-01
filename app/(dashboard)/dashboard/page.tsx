@@ -3,8 +3,10 @@
 import { useEffect, useState } from 'react'
 import Link from 'next/link'
 import { useLanguage } from '@/lib/i18n/LanguageContext'
-import { getStudyStreak, getStudyPlan } from '@/lib/services/user'
+import { getStudyStreak } from '@/lib/services/user'
 import { getDashboardData } from '@/lib/services/progress'
+import { getDailyPlanContext } from '@/lib/services/dailyPlan'
+import { buildDailyPlan, dayOfYear } from '@/lib/dailyPlan'
 import { getUser } from '@/lib/services/auth'
 import type { Profile } from '@/lib/types/database'
 
@@ -217,39 +219,15 @@ function CalendarStrip({ heatmap }: { heatmap: number[] }) {
   )
 }
 
-// ── Study-plan helpers (today's tasks) ───────────────────────────────────────
-const PLAN_ROUTE: Record<string, string> = {
-  listening: '/listening', reading: '/reading',
-  writing: '/dashboard/writing', speaking: '/dashboard/speaking',
-  vocabulary: '/vocabulary', mock: '/mock-tests',
-  grammar: '/vocabulary', review: '/mock-tests', mixed: '/dashboard',
-}
-const DAY_NAMES = ['Weekend', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Weekend']
-
-interface PlanTask { day: string; skill: string; activity: string; minutes: number }
-interface PlanRow {
-  weeks_duration: number
-  started_at?: string
-  progress?: Record<string, boolean>
-  plan_data?: { weeks?: { week: number; tasks?: PlanTask[] }[] }
-}
-
-function planCurrentWeek(sp: PlanRow): number {
-  if (!sp.started_at) return 1
-  const start = new Date(sp.started_at + 'T00:00:00').getTime()
-  if (Number.isNaN(start)) return 1
-  const elapsed = Math.floor((Date.now() - start) / (7 * 86400000)) + 1
-  return Math.max(1, Math.min(sp.weeks_duration || 1, elapsed))
-}
-
 // ── Today card ─────────────────────────────────────────────────────────────────
 type Session = { label: string; href: string; skill: string; score?: number | null; meta?: string; done?: boolean }
 
-function TodayCard({ sessions, fromPlan }: { sessions: Session[]; fromPlan: boolean }) {
+function TodayCard({ sessions, daily, onToggle }: { sessions: Session[]; daily: boolean; onToggle?: (i: number) => void }) {
   const { t } = useLanguage()
   const doneCount = sessions.filter(s => s.done).length
-  const ringVal = fromPlan && sessions.length ? doneCount / sessions.length : 0
-  const allDone = fromPlan && sessions.length > 0 && doneCount === sessions.length
+  const ringVal = daily && sessions.length ? doneCount / sessions.length : 0
+  const allDone = daily && sessions.length > 0 && doneCount === sessions.length
+  const firstOpen = sessions.findIndex(x => !x.done)
 
   return (
     <div className="card" style={{ padding: 28 }}>
@@ -257,8 +235,8 @@ function TodayCard({ sessions, fromPlan }: { sessions: Session[]; fromPlan: bool
         <div>
           <div style={{ fontSize: 11, letterSpacing: '0.1em', textTransform: 'uppercase', color: 'var(--text-3)' }}>{t('dash.todayPlan')}</div>
           <h2 style={{ fontSize: 20, margin: '6px 0 0', fontWeight: 600, letterSpacing: '-0.015em', color: 'var(--text)' }}>
-            {fromPlan
-              ? (sessions.length ? `${doneCount}/${sessions.length} ${t('plan.tasksDoneShort')}` : t('plan.todayNone'))
+            {daily
+              ? `${doneCount}/${sessions.length} ${t('plan.tasksDoneShort')}`
               : `${sessions.length} ${t('dash.sessionsQueued')}`}
           </h2>
         </div>
@@ -266,38 +244,63 @@ function TodayCard({ sessions, fromPlan }: { sessions: Session[]; fromPlan: bool
       </div>
       <div style={{ display: 'grid', gap: 8 }}>
         {sessions.map((s, i) => {
-          const highlight = !s.done && (fromPlan ? i === sessions.findIndex(x => !x.done) : i === 0)
+          const highlight = !s.done && (daily ? i === firstOpen : i === 0)
+          const icon = (
+            <div style={{ width: 34, height: 34, borderRadius: 9, flexShrink: 0, background: highlight ? 'var(--accent)' : 'var(--bg-elev)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              <svg width={15} height={15} viewBox="0 0 24 24" fill="none" stroke={highlight ? 'var(--accent-fg)' : 'var(--text-2)'} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+                {SKILL_ICONS[s.skill] ?? SKILL_ICONS.overall}
+              </svg>
+            </div>
+          )
+          const body = (
+            <div style={{ flex: 1, minWidth: 0 }}>
+              <div style={{ fontSize: 14, fontWeight: 500, color: 'var(--text)', textDecoration: s.done ? 'line-through' : 'none', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{s.label}</div>
+              {s.meta
+                ? <div style={{ fontSize: 12, color: 'var(--text-3)' }}>{s.meta}</div>
+                : s.score != null && <div style={{ fontSize: 12, color: 'var(--text-3)' }}>{t('dash.last')}: {s.score.toFixed(1)}</div>}
+            </div>
+          )
+          const rowStyle: React.CSSProperties = {
+            display: 'flex', alignItems: 'center', gap: 12,
+            padding: '13px 16px', borderRadius: 12,
+            background: highlight ? 'var(--accent-soft)' : 'var(--bg-soft)',
+            border: highlight ? '1px solid var(--accent)' : '1px solid transparent',
+            opacity: s.done ? 0.6 : 1,
+          }
+
+          // Daily mode: checkbox toggles done; the rest links to the activity.
+          if (daily && onToggle) {
+            return (
+              <div key={i} style={rowStyle}>
+                <button onClick={() => onToggle(i)} aria-label="toggle" style={{
+                  width: 22, height: 22, borderRadius: 7, flexShrink: 0, cursor: 'pointer', padding: 0,
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  background: s.done ? 'var(--accent)' : 'transparent',
+                  border: `1.5px solid ${s.done ? 'var(--accent)' : 'var(--border-strong)'}`,
+                }}>
+                  {s.done && <svg width={13} height={13} viewBox="0 0 24 24" fill="none" stroke="var(--accent-fg)" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><path d="M20 6 9 17l-5-5"/></svg>}
+                </button>
+                {icon}
+                <Link href={s.href} style={{ flex: 1, minWidth: 0, textDecoration: 'none', display: 'flex', alignItems: 'center', gap: 8 }}>
+                  {body}
+                  <svg width={14} height={14} viewBox="0 0 24 24" fill="none" stroke="var(--text-3)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0 }}><path d="M5 12h14M13 5l7 7-7 7"/></svg>
+                </Link>
+              </div>
+            )
+          }
+
+          // Fallback mode: whole row is a link.
           return (
             <Link key={i} href={s.href} style={{ textDecoration: 'none' }}>
-              <div style={{
-                display: 'flex', alignItems: 'center', gap: 14,
-                padding: '13px 16px', borderRadius: 12,
-                background: highlight ? 'var(--accent-soft)' : 'var(--bg-soft)',
-                border: highlight ? '1px solid var(--accent)' : '1px solid transparent',
-                transition: 'background .15s', opacity: s.done ? 0.6 : 1,
-              }}
-              onMouseEnter={e => (e.currentTarget.style.background = highlight ? 'var(--accent-soft)' : 'var(--border)')}
-              onMouseLeave={e => (e.currentTarget.style.background = highlight ? 'var(--accent-soft)' : 'var(--bg-soft)')}
-              >
-                <div style={{ width: 34, height: 34, borderRadius: 9, background: highlight ? 'var(--accent)' : 'var(--bg-elev)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                  <svg width={15} height={15} viewBox="0 0 24 24" fill="none" stroke={highlight ? 'var(--accent-fg)' : 'var(--text-2)'} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-                    {SKILL_ICONS[s.skill] ?? SKILL_ICONS.overall}
-                  </svg>
-                </div>
-                <div style={{ flex: 1, minWidth: 0 }}>
-                  <div style={{ fontSize: 14, fontWeight: 500, color: 'var(--text)', textDecoration: s.done ? 'line-through' : 'none', overflow: 'hidden', textOverflow: 'ellipsis' }}>{s.label}</div>
-                  {s.meta
-                    ? <div style={{ fontSize: 12, color: 'var(--text-3)' }}>{s.meta}</div>
-                    : s.score != null && <div style={{ fontSize: 12, color: 'var(--text-3)' }}>{t('dash.last')}: {s.score.toFixed(1)}</div>}
-                </div>
-                {s.done
-                  ? <svg width={15} height={15} viewBox="0 0 24 24" fill="none" stroke="var(--accent)" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M20 6 9 17l-5-5"/></svg>
-                  : highlight && <svg width={14} height={14} viewBox="0 0 24 24" fill="none" stroke="var(--accent)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M6 4l14 8-14 8z"/></svg>}
+              <div style={rowStyle}>
+                {icon}
+                {body}
+                {highlight && <svg width={14} height={14} viewBox="0 0 24 24" fill="none" stroke="var(--accent)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M6 4l14 8-14 8z"/></svg>}
               </div>
             </Link>
           )
         })}
-        {fromPlan && allDone && (
+        {allDone && (
           <div style={{ fontSize: 12.5, color: 'var(--accent)', textAlign: 'center', padding: '4px 0' }}>{t('plan.todayAllDone')}</div>
         )}
       </div>
@@ -313,7 +316,9 @@ export default function DashboardPage() {
   const [deltas, setDeltas]           = useState<Record<string, number>>({})
   const [heatmap, setHeatmap]         = useState<number[]>([])
   const [recentItems, setRecentItems] = useState<Array<{ label: string; score: number | null; href: string; skill: string }>>([])
-  const [planToday, setPlanToday]     = useState<Session[] | null>(null)
+  const [dailyTasks, setDailyTasks]   = useState<Session[] | null>(null)
+  const [dailyKey, setDailyKey]       = useState<string>('')
+  const [userId, setUserId]           = useState<string | null>(null)
   const [streak, setStreak]           = useState(0)
   const [loading, setLoading]         = useState(true)
 
@@ -324,6 +329,7 @@ export default function DashboardPage() {
     async function load() {
       const { user } = await getUser()
       if (!user) return
+      setUserId(user.id)
 
       const dashData = await getDashboardData(user.id)
       setProfile(dashData.profile)
@@ -370,27 +376,22 @@ export default function DashboardPage() {
       ]
       setRecentItems(items.slice(0, 3))
 
-      // Today's tasks from the study plan (current week + today's weekday)
+      // Today's plan — generated daily from weak skills + daily-minute budget
       try {
-        const sp = await getStudyPlan(user.id) as PlanRow | null
-        if (sp?.plan_data?.weeks?.length) {
-          const cur = planCurrentWeek(sp)
-          const todayName = DAY_NAMES[new Date().getDay()]
-          const wp = sp.plan_data.weeks.find(w => w.week === cur)
-          const prog = sp.progress ?? {}
-          const planItems: Session[] = (wp?.tasks ?? [])
-            .map((task, idx) => ({ task, idx }))
-            .filter(({ task }) => task.day?.toLowerCase() === todayName.toLowerCase())
-            .map(({ task, idx }) => ({
-              label: task.activity,
-              href: PLAN_ROUTE[task.skill] ?? '/dashboard',
-              skill: task.skill,
-              meta: `${task.minutes} ${t('plan.min')}`,
-              done: !!prog[`${cur}:${idx}`],
-            }))
-          setPlanToday(planItems)
-        }
-      } catch { /* plan is optional */ }
+        const ctx = await getDailyPlanContext(user.id)
+        const tasks = buildDailyPlan({ bands: ctx.bands, weakHints: ctx.weakHints, dailyMinutes: ctx.dailyMinutes, daySeed: dayOfYear() })
+        const dk = new Date().toISOString().slice(0, 10)
+        setDailyKey(dk)
+        let done: boolean[] = []
+        try { done = JSON.parse(localStorage.getItem(`dailyplan:${user.id}:${dk}`) ?? '[]') } catch { /* ignore */ }
+        setDailyTasks(tasks.map((tk, i) => ({
+          label: t(`daily.${tk.skill}${tk.variant}`),
+          href: tk.route,
+          skill: tk.skill === 'vocabulary' ? 'overall' : tk.skill,
+          meta: `${tk.minutes} ${t('plan.min')}`,
+          done: !!done[i],
+        })))
+      } catch { /* daily plan optional */ }
 
       const s = await getStudyStreak(user.id)
       setStreak(s)
@@ -413,14 +414,25 @@ export default function DashboardPage() {
   const target = profile?.target_band_score ?? 7.5
   const skills = ['listening', 'reading', 'writing', 'speaking'].filter(s => scores[s] != null)
 
-  // Today card: prefer the study plan's tasks for today; else recent items; else defaults.
+  // Today card: a freshly generated daily plan; else recent items; else defaults.
   const fallbackSessions: Session[] = recentItems.length > 0 ? recentItems : [
     { label: t('dash.listeningPractice'), href: '/listening', skill: 'listening' },
     { label: t('dash.writingTask2'), href: '/dashboard/writing', skill: 'writing' },
     { label: t('dash.vocabReview'), href: '/vocabulary', skill: 'overall' },
   ]
-  const planMode = planToday !== null
-  const todaySessions: Session[] = planMode ? planToday! : fallbackSessions
+  const dailyMode = dailyTasks !== null && dailyTasks.length > 0
+  const todaySessions: Session[] = dailyMode ? dailyTasks! : fallbackSessions
+
+  function toggleDaily(i: number) {
+    setDailyTasks(prev => {
+      if (!prev) return prev
+      const next = prev.map((s, idx) => (idx === i ? { ...s, done: !s.done } : s))
+      if (userId && dailyKey) {
+        try { localStorage.setItem(`dailyplan:${userId}:${dailyKey}`, JSON.stringify(next.map(s => !!s.done))) } catch { /* ignore */ }
+      }
+      return next
+    })
+  }
 
   return (
     <div style={{ padding: '32px 32px 80px' }}>
@@ -439,7 +451,7 @@ export default function DashboardPage() {
 
       {/* Main grid */}
       <div style={{ display: 'grid', gridTemplateColumns: '2.1fr 1fr', gap: 16, marginBottom: 16 }}>
-        <TodayCard sessions={todaySessions} fromPlan={planMode} />
+        <TodayCard sessions={todaySessions} daily={dailyMode} onToggle={dailyMode ? toggleDaily : undefined} />
         <BandPredictor current={overall} target={typeof target === 'number' ? target : 7.5} />
       </div>
 

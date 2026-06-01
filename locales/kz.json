@@ -887,5 +887,16 @@
     "nextStep": "КЕЛЕСІ ҚАДАМ",
     "nextTask2": "Осы аптада тағы екі пікірталас эссесі, содан кейін Problem-Solution-ге көш.",
     "nextTask1": "Дерек трендтерін дәл салыстырулармен қорытуды жаттық."
+  },
+  "daily": {
+    "vocabulary0": "Сөздерді қайталау (карточкалар)",
+    "listening0": "Listening бөлімін жаттығу",
+    "listening1": "Note/form completion жаттығуы",
+    "reading0": "Оқу мәтінін жаттығу",
+    "reading1": "Skim & scan жылдамдық жаттығуы",
+    "writing0": "Writing Task 2 эссесі",
+    "writing1": "Writing Task 1 есебі",
+    "speaking0": "Speaking Part 2 (cue card)",
+    "speaking1": "Speaking Part 1 (сұрақтар)"
   }
 }

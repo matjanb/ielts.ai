@@ -887,5 +887,16 @@
     "nextStep": "СЛЕДУЮЩИЙ ШАГ",
     "nextTask2": "Ещё два эссе-рассуждения на этой неделе, затем переходи к Problem-Solution.",
     "nextTask1": "Практикуй описание трендов данных с точными сравнениями."
+  },
+  "daily": {
+    "vocabulary0": "Повторение слов (карточки)",
+    "listening0": "Практика секции Listening",
+    "listening1": "Тренировка note/form completion",
+    "reading0": "Практика чтения (passage)",
+    "reading1": "Тренировка скорости (skim & scan)",
+    "writing0": "Эссе Writing Task 2",
+    "writing1": "Отчёт Writing Task 1",
+    "speaking0": "Speaking Part 2 (cue card)",
+    "speaking1": "Speaking Part 1 (вопросы)"
   }
 }

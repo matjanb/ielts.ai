@@ -848,5 +848,16 @@
     "nextStep": "KEYINGI QADAM",
     "nextTask2": "Bu hafta yana ikkita munozara inshosi, so‘ng Problem-Solution-ga o‘ting.",
     "nextTask1": "Maʼlumot tendentsiyalarini aniq taqqoslashlar bilan umumlashtirishni mashq qiling."
+  },
+  "daily": {
+    "vocabulary0": "So‘zlarni takrorlash (kartalar)",
+    "listening0": "Listening bo‘limini mashq qilish",
+    "listening1": "Note/form completion mashqi",
+    "reading0": "O‘qish matnini mashq qilish",
+    "reading1": "Skim & scan tezlik mashqi",
+    "writing0": "Writing Task 2 inshosi",
+    "writing1": "Writing Task 1 hisoboti",
+    "speaking0": "Speaking Part 2 (cue card)",
+    "speaking1": "Speaking Part 1 (savollar)"
   }
 }

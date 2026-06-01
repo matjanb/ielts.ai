@@ -893,5 +893,16 @@
     "nextStep": "NEXT STEP",
     "nextTask2": "Two more discussion essays this week, then move to Problem-Solution.",
     "nextTask1": "Practice summarising data trends with accurate comparisons."
+  },
+  "daily": {
+    "vocabulary0": "Vocabulary review (flashcards)",
+    "listening0": "Listening section practice",
+    "listening1": "Note & form completion drill",
+    "reading0": "Reading passage practice",
+    "reading1": "Skim & scan speed drill",
+    "writing0": "Writing Task 2 essay",
+    "writing1": "Writing Task 1 report",
+    "speaking0": "Speaking Part 2 cue card",
+    "speaking1": "Speaking Part 1 Q&A"
   }
 }
