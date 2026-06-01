@@ -520,14 +520,19 @@ const DECKS = {
 }
 
 /* ── SQL emit ─────────────────────────────────────────────────────────────── */
-// Normalise smart quotes to ASCII first, then SQL-escape by doubling apostrophes.
-// (Typographic ’ in source can be silently mangled to ' on paste, breaking quote parity.)
-const q = (s) =>
-  `'${String(s)
-    .replace(/[‘’‚′]/g, "'")
-    .replace(/[“”„″]/g, '"')
-    .replace(/'/g, "''")}'`
-const arr = (a) => (a.length ? `array[${a.map(q).join(', ')}]::text[]` : `'{}'::text[]`)
+// Dollar-quote every text literal. This is immune to apostrophe issues — including
+// the IPA primary-stress mark ˈ (U+02C8), which some SQL editors silently convert to
+// a straight ' on paste, which would otherwise break string-literal parity and yield
+// "relation \"the\" does not exist". Values never contain '$', so $v$ is always safe.
+const dq = (s) => {
+  s = String(s)
+  let tag = '$v$', n = 0
+  while (s.includes(tag)) { tag = `$v${++n}$` }
+  return `${tag}${s}${tag}`
+}
+// ASCII-only scalar columns (slug, pos, category, color, band) — plain quoting is fine.
+const q = (s) => `'${String(s).replace(/'/g, "''")}'`
+const arr = (a) => (a.length ? `array[${a.map(dq).join(', ')}]::text[]` : `'{}'::text[]`)
 
 const SCHEMA = `-- ============================================================
 -- IELTS Vocabulary bank: decks + words (+ per-user SRS progress)
@@ -607,7 +612,7 @@ function emit() {
     slugs
       .map((slug, i) => {
         const d = DECKS[slug]
-        return `  (${q(slug)}, ${q(d.title)}, ${q(d.description)}, ${q(d.category)}, ${q(d.color)}, ${i})`
+        return `  (${q(slug)}, ${dq(d.title)}, ${dq(d.description)}, ${q(d.category)}, ${q(d.color)}, ${i})`
       })
       .join(',\n') + '\non conflict (slug) do update set\n  title = excluded.title, description = excluded.description,\n  category = excluded.category, color = excluded.color, sort_order = excluded.sort_order;'
   )
@@ -624,7 +629,7 @@ function emit() {
       d.words
         .map(
           ([word, pos, ipa, def, ex, syn, ant, band]) =>
-            `  (${q(word)}, ${q(pos)}, ${q(ipa)}, ${q(def)}, ${q(ex)}, ${arr(syn)}, ${arr(ant)}, ${q(band)})`
+            `  (${dq(word)}, ${q(pos)}, ${dq(ipa)}, ${dq(def)}, ${dq(ex)}, ${arr(syn)}, ${arr(ant)}, ${q(band)})`
         )
         .join(',\n')
     )
