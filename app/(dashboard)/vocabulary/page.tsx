@@ -1,6 +1,7 @@
 'use client'
 
 import { useState } from 'react'
+import { useLanguage } from '@/lib/i18n/LanguageContext'
 
 // ── Flashcard SRS session ─────────────────────────────────────────────────────
 const FLASHCARDS = [
@@ -38,6 +39,7 @@ const SRS_BUTTONS = [
 ]
 
 function FlashcardSession({ onClose }: { onClose: () => void }) {
+  const { t } = useLanguage()
   const [idx, setIdx] = useState(0)
   const [flipped, setFlipped] = useState(false)
   const card = FLASHCARDS[idx]
@@ -52,7 +54,7 @@ function FlashcardSession({ onClose }: { onClose: () => void }) {
       {/* Header */}
       <header style={{ padding: '16px 32px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', borderBottom: '1px solid var(--border)' }}>
         <button onClick={onClose} style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 13, fontWeight: 600, color: 'var(--text-2)', background: 'transparent', border: '1px solid var(--border-strong)', borderRadius: 8, padding: '6px 12px', cursor: 'pointer' }}>
-          ✕ Exit
+          ✕ {t('vocab.exit')}
         </button>
         <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
           <span style={{ fontSize: 12, color: 'var(--text-3)', fontFamily: 'var(--font-mono)' }}>{idx + 1} / {FLASHCARDS.length}</span>
@@ -78,7 +80,7 @@ function FlashcardSession({ onClose }: { onClose: () => void }) {
             <div className="card" style={{ padding: 64, textAlign: 'center', minHeight: 360, display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 10, marginBottom: 24 }}>
                 <span className="chip" style={{ fontStyle: 'italic' }}>{card.pos}</span>
-                <span className="chip chip-accent">Band {card.band}</span>
+                <span className="chip chip-accent">{t('vocab.band')} {card.band}</span>
               </div>
               <h1 style={{ fontFamily: 'var(--font-display)', fontStyle: 'italic', fontSize: 72, fontWeight: 500, margin: '0 0 8px', letterSpacing: '-0.02em', color: 'var(--text)' }}>
                 {card.word}
@@ -89,7 +91,7 @@ function FlashcardSession({ onClose }: { onClose: () => void }) {
                 background: 'var(--accent)', color: 'var(--accent-fg)', border: 'none', cursor: 'pointer',
                 alignSelf: 'center',
               }}>
-                Show definition
+                {t('vocab.showDef')}
               </button>
             </div>
           ) : (
@@ -101,12 +103,12 @@ function FlashcardSession({ onClose }: { onClose: () => void }) {
               </div>
               <p style={{ fontSize: 17, lineHeight: 1.5, marginTop: 0, marginBottom: 16, fontWeight: 500, color: 'var(--text)' }}>{card.def}</p>
               <div style={{ padding: 14, background: 'var(--bg-soft)', borderRadius: 10, fontStyle: 'italic', fontSize: 14, lineHeight: 1.55, marginBottom: 20, color: 'var(--text-2)' }}>
-                "{card.ex}"
+                &ldquo;{card.ex}&rdquo;
               </div>
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16, marginBottom: 28 }}>
-                {[{ label: 'SYNONYMS', words: card.syn }, { label: 'ANTONYMS', words: card.ant }].map(g => (
+                {[{ label: 'vocab.synonyms', words: card.syn }, { label: 'vocab.antonyms', words: card.ant }].map(g => (
                   <div key={g.label}>
-                    <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: '0.08em', color: 'var(--text-3)', marginBottom: 8 }}>{g.label}</div>
+                    <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: '0.08em', color: 'var(--text-3)', marginBottom: 8 }}>{t(g.label)}</div>
                     <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4 }}>
                       {g.words.map(w => <span key={w} className="chip" style={{ fontSize: 11 }}>{w}</span>)}
                     </div>
@@ -115,7 +117,7 @@ function FlashcardSession({ onClose }: { onClose: () => void }) {
               </div>
 
               <div style={{ paddingTop: 20, borderTop: '1px dashed var(--border)' }}>
-                <div style={{ fontSize: 11, textAlign: 'center', color: 'var(--text-3)', marginBottom: 14 }}>HOW WELL DO YOU KNOW THIS?</div>
+                <div style={{ fontSize: 11, textAlign: 'center', color: 'var(--text-3)', marginBottom: 14 }}>{t('vocab.howWell')}</div>
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 8 }}>
                   {SRS_BUTTONS.map(b => (
                     <button key={b.label} onClick={next} style={{
@@ -126,7 +128,7 @@ function FlashcardSession({ onClose }: { onClose: () => void }) {
                     onMouseEnter={e => { e.currentTarget.style.background = `color-mix(in srgb, ${b.color} 12%, var(--bg-soft))`; e.currentTarget.style.borderColor = b.color }}
                     onMouseLeave={e => { e.currentTarget.style.background = 'var(--bg-soft)'; e.currentTarget.style.borderColor = 'var(--border)' }}
                     >
-                      <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--text)' }}>{b.label}</div>
+                      <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--text)' }}>{t('vocab.' + b.label.toLowerCase())}</div>
                       <div style={{ fontSize: 10, color: 'var(--text-3)', fontFamily: 'var(--font-mono)', marginTop: 2 }}>{b.sub}</div>
                     </button>
                   ))}
@@ -162,6 +164,7 @@ const RECENTLY_LEARNED = [
 
 // ── Main page ─────────────────────────────────────────────────────────────────
 export default function VocabularyPage() {
+  const { t } = useLanguage()
   const [studying, setStudying] = useState(false)
   if (studying) return <FlashcardSession onClose={() => setStudying(false)} />
 
@@ -170,9 +173,9 @@ export default function VocabularyPage() {
       {/* Header */}
       <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 24 }}>
         <div>
-          <h1 style={{ fontSize: 32, fontWeight: 700, letterSpacing: '-0.025em', margin: 0, color: 'var(--text)' }}>Vocabulary</h1>
+          <h1 style={{ fontSize: 32, fontWeight: 700, letterSpacing: '-0.025em', margin: 0, color: 'var(--text)' }}>{t('vocab.title')}</h1>
           <p style={{ color: 'var(--text-2)', fontSize: 15, margin: '6px 0 0' }}>
-            412 words learned · 98 to review today · spaced repetition tuned to your weak topics
+            412 {t('vocab.wordsLearned')} · 98 {t('vocab.toReview')} · {t('vocab.srsTuned')}
           </p>
         </div>
         <button onClick={() => setStudying(true)} style={{
@@ -185,22 +188,22 @@ export default function VocabularyPage() {
           <svg width={14} height={14} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
             <path d="M13 2L4 14h7l-1 8 9-12h-7z"/>
           </svg>
-          Start review · 98 due
+          {t('vocab.startReview')} · 98 {t('vocab.due')}
         </button>
       </div>
 
       {/* Stats */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 14, marginTop: 28 }}>
         {[
-          { big: '412', label: 'LEARNED', color: 'var(--accent)', sub: 'of 800 in your plan' },
-          { big: '98', label: 'DUE TODAY', color: 'var(--warn)', sub: '≈ 15 min' },
-          { big: '247', label: 'IN LEARNING', color: 'var(--info)', sub: '< 5 reviews each' },
-          { big: '89%', label: 'RETENTION', color: 'var(--accent)', sub: 'last 30 days' },
+          { big: '412', label: 'vocab.learned', color: 'var(--accent)', sub: 'vocab.ofPlan' },
+          { big: '98', label: 'vocab.dueToday', color: 'var(--warn)', sub: 'vocab.about15' },
+          { big: '247', label: 'vocab.inLearning', color: 'var(--info)', sub: 'vocab.under5' },
+          { big: '89%', label: 'vocab.retention', color: 'var(--accent)', sub: 'vocab.last30' },
         ].map(s => (
           <div key={s.label} className="card" style={{ padding: 22 }}>
-            <div style={{ fontSize: 11, letterSpacing: '0.08em', color: 'var(--text-3)' }}>{s.label}</div>
+            <div style={{ fontSize: 11, letterSpacing: '0.08em', color: 'var(--text-3)' }}>{t(s.label)}</div>
             <div style={{ fontSize: 38, fontWeight: 700, letterSpacing: '-0.03em', lineHeight: 1, marginTop: 6, color: s.color, fontVariantNumeric: 'tabular-nums' }}>{s.big}</div>
-            <div style={{ fontSize: 12, color: 'var(--text-2)', marginTop: 4 }}>{s.sub}</div>
+            <div style={{ fontSize: 12, color: 'var(--text-2)', marginTop: 4 }}>{t(s.sub)}</div>
           </div>
         ))}
       </div>
@@ -221,13 +224,13 @@ export default function VocabularyPage() {
                 <div style={{ height: '100%', width: `${pct}%`, background: d.color, borderRadius: 999 }}/>
               </div>
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                <span style={{ fontSize: 11, color: 'var(--text-3)' }}>{Math.round(pct)}% complete</span>
+                <span style={{ fontSize: 11, color: 'var(--text-3)' }}>{Math.round(pct)}% {t('vocab.complete')}</span>
                 <button onClick={() => setStudying(true)} style={{
                   padding: '5px 10px', borderRadius: 8, fontSize: 12, fontWeight: 600,
                   background: 'var(--bg-soft)', color: 'var(--text)', border: '1px solid var(--border)',
                   cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 6,
                 }}>
-                  Study
+                  {t('vocab.study')}
                   <svg width={11} height={11} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                     <path d="M5 12h14M13 5l7 7-7 7"/>
                   </svg>
@@ -245,16 +248,16 @@ export default function VocabularyPage() {
           <svg width={22} height={22} viewBox="0 0 24 24" fill="none" stroke="var(--text-3)" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" style={{ marginBottom: 12 }}>
             <path d="M12 5v14M5 12h14"/>
           </svg>
-          <div style={{ fontWeight: 600, color: 'var(--text-2)', marginBottom: 4 }}>+ Browse 24 more decks</div>
-          <div style={{ fontSize: 12, color: 'var(--text-3)' }}>Pick by topic, level, or skill</div>
+          <div style={{ fontWeight: 600, color: 'var(--text-2)', marginBottom: 4 }}>+ {t('vocab.browse')}</div>
+          <div style={{ fontSize: 12, color: 'var(--text-3)' }}>{t('vocab.browseSub')}</div>
         </button>
       </div>
 
       {/* Recently learned */}
       <div className="card" style={{ padding: 28, marginTop: 16 }}>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 18 }}>
-          <h3 style={{ margin: 0, fontSize: 16, fontWeight: 600, color: 'var(--text)' }}>Recently learned</h3>
-          <button style={{ fontSize: 12, color: 'var(--text-3)', background: 'transparent', border: 'none', cursor: 'pointer' }}>See all</button>
+          <h3 style={{ margin: 0, fontSize: 16, fontWeight: 600, color: 'var(--text)' }}>{t('vocab.recentlyLearned')}</h3>
+          <button style={{ fontSize: 12, color: 'var(--text-3)', background: 'transparent', border: 'none', cursor: 'pointer' }}>{t('vocab.seeAll')}</button>
         </div>
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 10 }}>
           {RECENTLY_LEARNED.map(v => (
