@@ -125,7 +125,13 @@
     "expertF3": "Unlimited essay corrections",
     "expertF4": "Speaking coach (unlimited)",
     "expertF5": "Target score guarantee*",
-    "expertF6": "Dedicated support"
+    "expertF6": "Dedicated support",
+    "dur1": "1 month",
+    "dur3": "3 months",
+    "dur12": "12 months",
+    "off50": "50% OFF",
+    "bestValue": "Best value",
+    "perMo": "{{p}}/mo"
   },
   "faq": {
     "sectionBadge": "FAQ",
@@ -267,7 +273,8 @@
     "limitedMockTests": "5 mock tests per month",
     "basicFeedback": "Basic writing feedback",
     "studyGuides": "Access to study guides",
-    "communityAccess": "Community access"
+    "communityAccess": "Community access",
+    "back": "Back to dashboard"
   },
   "mockTest": {
     "startTest": "Start Test",

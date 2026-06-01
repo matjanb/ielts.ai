@@ -119,7 +119,13 @@
     "expertF3": "Cheksiz esse tekshiruvi",
     "expertF4": "Cheksiz gapirish murabbiyi",
     "expertF5": "Maqsadli ball kafolati*",
-    "expertF6": "Shaxsiy qo'llab-quvvatlash"
+    "expertF6": "Shaxsiy qo'llab-quvvatlash",
+    "dur1": "1 oy",
+    "dur3": "3 oy",
+    "dur12": "12 oy",
+    "off50": "−50%",
+    "bestValue": "Eng foydali",
+    "perMo": "{{p}}/oy"
   },
   "faq": {
     "sectionBadge": "Ko'p so'raladigan savollar",
@@ -285,7 +291,8 @@
     "limitedMockTests": "Oyiga 5 ta mashq testi",
     "basicFeedback": "Asosiy yozish fikr-mulohazasi",
     "studyGuides": "O'quv qo'llanmalariga kirish",
-    "communityAccess": "Hamjamiyatga kirish"
+    "communityAccess": "Hamjamiyatga kirish",
+    "back": "Boshqaruv paneliga qaytish"
   },
   "common": {
     "loading": "Yuklanmoqda…",
