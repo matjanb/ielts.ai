@@ -587,5 +587,25 @@
     "errTranscribe": "Could not transcribe — try again or type.",
     "errService": "Could not reach the transcription service.",
     "errDenied": "Microphone access denied. Type your answer instead."
+  },
+  "hub": {
+    "currentBand": "current band",
+    "hPracticed": "h practiced",
+    "nextTest": "Next test",
+    "book": "Book",
+    "test": "Test",
+    "min": "min",
+    "questions40": "40 questions",
+    "tasks2": "2 tasks"
+  },
+  "writingHub": {
+    "nextFallback": "Writing Test 1",
+    "listTitle": "Writing tests",
+    "empty": "No writing tests available yet.",
+    "aboutTitle": "About Writing",
+    "task1Desc": "150 words · 20 min · Describe a chart, map or process",
+    "task2Desc": "250 words · 40 min · Opinion, discussion or problem-solution essay",
+    "aiGrading": "AI GRADING",
+    "aiGradingDesc": "Submit your essay for instant AI feedback on band score, task achievement, coherence, lexical resource and grammar."
   }
 }

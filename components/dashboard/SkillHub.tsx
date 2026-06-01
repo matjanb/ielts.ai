@@ -1,6 +1,7 @@
 'use client'
 
 import Link from 'next/link'
+import { useLanguage } from '@/lib/i18n/LanguageContext'
 import type { IeltsTest } from '@/lib/types/database'
 
 // ── Icon paths ────────────────────────────────────────────────────────────────
@@ -36,6 +37,7 @@ interface SkillHubHeaderProps {
 }
 
 export function SkillHubHeader({ name, icon, band, delta, hours, nextTest, startHref }: SkillHubHeaderProps) {
+  const { t } = useLanguage()
   return (
     <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 24 }}>
       <div>
@@ -47,9 +49,9 @@ export function SkillHubHeader({ name, icon, band, delta, hours, nextTest, start
             <h1 style={{ fontSize: 30, margin: 0, fontWeight: 700, letterSpacing: '-0.02em', color: 'var(--text)' }}>{name}</h1>
             {(hours != null || band != null) && (
               <div style={{ fontSize: 14, color: 'var(--text-2)', marginTop: 2 }}>
-                {hours != null && <span>{hours}h practiced · </span>}
+                {hours != null && <span>{hours}{t('hub.hPracticed')} · </span>}
                 {band != null && (
-                  <span>current band{' '}
+                  <span>{t('hub.currentBand')}{' '}
                     <span style={{ color: 'var(--accent)', fontWeight: 600 }}>{band.toFixed(1)}</span>
                     {delta && <span> ({delta})</span>}
                   </span>
@@ -71,7 +73,7 @@ export function SkillHubHeader({ name, icon, band, delta, hours, nextTest, start
       onMouseLeave={e => { e.currentTarget.style.background = 'var(--accent)'; e.currentTarget.style.transform = 'none' }}
       >
         <NavIcon name="play" size={14} color="var(--accent-fg)" />
-        Next test
+        {t('hub.nextTest')}
         {nextTest && <span style={{ opacity: 0.7, fontWeight: 400, fontSize: 12, marginLeft: 4 }}>· {nextTest}</span>}
       </Link>
     </div>
@@ -116,6 +118,7 @@ interface TestCardProps {
 }
 
 export function TestCard({ test, href, icon, questionsLabel = '40 questions', timeLabel }: TestCardProps) {
+  const { t } = useLanguage()
   return (
     <Link href={href} style={{ textDecoration: 'none', display: 'block' }}>
       <div style={{
@@ -138,9 +141,9 @@ export function TestCard({ test, href, icon, questionsLabel = '40 questions', ti
           <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginTop: 4 }}>
             {(test.book_number != null || test.test_number != null) && (
               <span style={{ fontSize: 11, color: 'var(--text-3)', fontFamily: 'var(--font-mono)' }}>
-                {test.book_number != null ? `Book ${test.book_number}` : ''}
+                {test.book_number != null ? `${t('hub.book')} ${test.book_number}` : ''}
                 {test.book_number != null && test.test_number != null ? ' · ' : ''}
-                {test.test_number != null ? `Test ${test.test_number}` : ''}
+                {test.test_number != null ? `${t('hub.test')} ${test.test_number}` : ''}
               </span>
             )}
             <span style={{ fontSize: 11, color: 'var(--text-3)', display: 'flex', alignItems: 'center', gap: 4 }}>

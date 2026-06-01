@@ -542,5 +542,25 @@
     "errTranscribe": "Tanib bo‘lmadi — qayta urinib ko‘ring yoki yozing.",
     "errService": "Tanib olish xizmatiga ulanib bo‘lmadi.",
     "errDenied": "Mikrofonga ruxsat yo‘q. Javobni yozing."
+  },
+  "hub": {
+    "currentBand": "joriy ball",
+    "hPracticed": "soat mashq",
+    "nextTest": "Keyingi test",
+    "book": "Kitob",
+    "test": "Test",
+    "min": "daq",
+    "questions40": "40 savol",
+    "tasks2": "2 topshiriq"
+  },
+  "writingHub": {
+    "nextFallback": "Yozish testi 1",
+    "listTitle": "Yozish testlari",
+    "empty": "Hozircha yozish testlari yo‘q.",
+    "aboutTitle": "Yozish haqida",
+    "task1Desc": "150 so‘z · 20 daq · Diagramma, xarita yoki jarayonni tasvirlash",
+    "task2Desc": "250 so‘z · 40 daq · Fikr, munozara yoki muammo-yechim inshosi",
+    "aiGrading": "AI BAHOLASH",
+    "aiGradingDesc": "Insho yuboring va darhol AI bahosini oling: umumiy ball, vazifa bajarilishi, izchillik, lug‘at va grammatika."
   }
 }
