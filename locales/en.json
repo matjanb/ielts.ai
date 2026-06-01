@@ -758,7 +758,15 @@
     "inProgress": "still learning",
     "ofSeen": "of words seen",
     "minEst": "≈ {{min}} min",
-    "reviewWord": "to review"
+    "reviewWord": "to review",
+    "rulesTitle": "How it works",
+    "rulesIntro": "Flip each card, then rate how well you knew the word. Your answer decides when the card comes back.",
+    "ruleAgain": "Forgot it — you’ll see it again very soon.",
+    "ruleHard": "Knew it with effort — comes back tomorrow.",
+    "ruleGood": "Knew it — comes back in a day, then less and less often.",
+    "ruleEasy": "Knew it instantly — comes back in a few days and counts as learned.",
+    "startSession": "Start",
+    "rulesCount": "{{n}} cards in this set"
   },
   "progress": {
     "title": "Progress",

@@ -25,6 +25,7 @@ function FlashcardSession({
   onClose: () => void
 }) {
   const { t } = useLanguage()
+  const [started, setStarted] = useState(false)
   const [idx, setIdx] = useState(0)
   const [flipped, setFlipped] = useState(false)
   const [reviewed, setReviewed] = useState(0)
@@ -36,6 +37,46 @@ function FlashcardSession({
     setReviewed(n => n + 1)
     if (idx < words.length - 1) { setIdx(idx + 1); setFlipped(false) }
     else setDone(true)
+  }
+
+  // ── Rules / intro screen (shown before the cards) ──
+  if (!started && !done) {
+    return (
+      <div style={{ minHeight: '100vh', background: 'var(--bg)', display: 'flex', flexDirection: 'column' }}>
+        <header style={{ padding: '16px 32px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', borderBottom: '1px solid var(--border)' }}>
+          <button onClick={onClose} style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 13, fontWeight: 600, color: 'var(--text-2)', background: 'transparent', border: '1px solid var(--border-strong)', borderRadius: 8, padding: '6px 12px', cursor: 'pointer' }}>
+            ✕ {t('vocab.exit')}
+          </button>
+          <span style={{ fontSize: 13, fontWeight: 600, color: 'var(--text-2)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', maxWidth: 220 }}>{title}</span>
+          <span style={{ width: 60 }}/>
+        </header>
+
+        <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 24 }}>
+          <div className="card animate-fade-up" style={{ padding: 36, maxWidth: 520, width: '100%' }}>
+            <h1 style={{ fontSize: 24, fontWeight: 700, color: 'var(--text)', margin: '0 0 6px', letterSpacing: '-0.02em' }}>{t('vocab.rulesTitle')}</h1>
+            <p style={{ fontSize: 14.5, lineHeight: 1.55, color: 'var(--text-2)', margin: '0 0 22px' }}>{t('vocab.rulesIntro')}</p>
+
+            <div style={{ display: 'grid', gap: 10, marginBottom: 26 }}>
+              {SRS_BUTTONS.map(b => (
+                <div key={b.key} style={{ display: 'flex', alignItems: 'flex-start', gap: 12, padding: '12px 14px', background: 'var(--bg-soft)', borderRadius: 12, border: '1px solid var(--border)' }}>
+                  <span style={{ flexShrink: 0, marginTop: 1, fontSize: 12, fontWeight: 700, color: b.color, background: `color-mix(in srgb, ${b.color} 14%, transparent)`, padding: '3px 10px', borderRadius: 999, minWidth: 58, textAlign: 'center' }}>
+                    {t('vocab.' + b.key)}
+                  </span>
+                  <span style={{ fontSize: 13.5, lineHeight: 1.5, color: 'var(--text)' }}>{t('vocab.rule' + b.key.charAt(0).toUpperCase() + b.key.slice(1))}</span>
+                </div>
+              ))}
+            </div>
+
+            <button onClick={() => setStarted(true)} style={{
+              width: '100%', padding: '14px', borderRadius: 'var(--radius-lg)', fontSize: 15, fontWeight: 700,
+              background: 'var(--accent)', color: 'var(--accent-fg)', border: 'none', cursor: 'pointer',
+            }}>
+              {t('vocab.startSession')} · {t('vocab.rulesCount', { n: String(words.length) })}
+            </button>
+          </div>
+        </div>
+      </div>
+    )
   }
 
   if (done || !card) {

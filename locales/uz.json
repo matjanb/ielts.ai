@@ -713,7 +713,15 @@
     "inProgress": "o‘rganilmoqda",
     "ofSeen": "ko‘rilgan so‘zlardan",
     "minEst": "≈ {{min}} daq",
-    "reviewWord": "takrorlash"
+    "reviewWord": "takrorlash",
+    "rulesTitle": "Bu qanday ishlaydi",
+    "rulesIntro": "Kartani aylantiring va so‘zni qanchalik bilganingizni baholang. Javobingizga qarab karta qachon qaytishi belgilanadi.",
+    "ruleAgain": "Unutdim — yaqin orada yana ko‘rasiz.",
+    "ruleHard": "Zo‘rg‘a esladim — ertaga qaytadi.",
+    "ruleGood": "Bildim — bir kundan keyin, keyin kamroq qaytadi.",
+    "ruleEasy": "Darrov bildim — bir necha kundan keyin qaytadi va «o‘rganilgan» bo‘ladi.",
+    "startSession": "Boshlash",
+    "rulesCount": "To‘plamda {{n}} ta karta"
   },
   "progress": {
     "title": "Progress",
