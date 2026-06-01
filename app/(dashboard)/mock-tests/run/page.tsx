@@ -5,6 +5,7 @@ import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { getUser } from '@/lib/services/auth'
 import { saveBandScoreHistory } from '@/lib/services/attempts'
+import { useLanguage } from '@/lib/i18n/LanguageContext'
 import {
   loadCurrentMock, clearCurrentMock, getMockProgress,
   type CurrentMock, type MockProgress, type MockSkill,
@@ -25,6 +26,7 @@ const ICONS: Record<MockSkill, React.ReactNode> = {
 }
 
 export default function MockRunPage() {
+  const { t } = useLanguage()
   const router = useRouter()
   const [mock, setMock] = useState<CurrentMock | null>(null)
   const [userId, setUserId] = useState<string | null>(null)
@@ -58,10 +60,10 @@ export default function MockRunPage() {
   }, [tick])
 
   const sections: Section[] = mock ? [
-    { skill: 'listening', label: 'Listening', title: mock.listeningTitle ?? 'Listening test', href: mock.listeningTestId ? `/listening/${mock.listeningTestId}` : null },
-    { skill: 'reading', label: 'Reading', title: mock.readingTitle ?? 'Reading test', href: mock.readingTestId ? `/reading/${mock.readingTestId}` : null },
-    { skill: 'writing', label: 'Writing', title: mock.writingTitle ?? 'Writing tasks', href: mock.writingTestId ? '/dashboard/writing' : null },
-    { skill: 'speaking', label: 'Speaking', title: 'AI Speaking session', href: '/dashboard/speaking' },
+    { skill: 'listening', label: t('dashboard.listening'), title: mock.listeningTitle ?? t('mock.fbListening'), href: mock.listeningTestId ? `/listening/${mock.listeningTestId}` : null },
+    { skill: 'reading', label: t('dashboard.reading'), title: mock.readingTitle ?? t('mock.fbReading'), href: mock.readingTestId ? `/reading/${mock.readingTestId}` : null },
+    { skill: 'writing', label: t('dashboard.writing'), title: mock.writingTitle ?? t('mock.fbWriting'), href: mock.writingTestId ? '/dashboard/writing' : null },
+    { skill: 'speaking', label: t('dashboard.speaking'), title: t('mock.fbSpeaking'), href: '/dashboard/speaking' },
   ] : []
 
   const included = sections.filter(s => s.href)
@@ -81,8 +83,8 @@ export default function MockRunPage() {
   if (loaded && !mock) {
     return (
       <div style={{ padding: 48, textAlign: 'center' }}>
-        <p style={{ fontSize: 15, color: 'var(--text-2)' }}>No mock in progress.</p>
-        <Link href="/mock-tests" style={{ color: 'var(--accent)', fontWeight: 600, textDecoration: 'none' }}>← Build a mock</Link>
+        <p style={{ fontSize: 15, color: 'var(--text-2)' }}>{t('mock.noMock')}</p>
+        <Link href="/mock-tests" style={{ color: 'var(--accent)', fontWeight: 600, textDecoration: 'none' }}>← {t('mock.buildMock')}</Link>
       </div>
     )
   }
@@ -94,17 +96,17 @@ export default function MockRunPage() {
 
   return (
     <div style={{ padding: '32px 32px 80px', maxWidth: 760, margin: '0 auto' }}>
-      <Link href="/mock-tests" style={{ fontSize: 13, color: 'var(--text-3)', textDecoration: 'none' }}>← Mock tests</Link>
+      <Link href="/mock-tests" style={{ fontSize: 13, color: 'var(--text-3)', textDecoration: 'none' }}>← {t('mock.back')}</Link>
 
       <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', gap: 16, margin: '10px 0 24px', flexWrap: 'wrap' }}>
         <div>
-          <h1 style={{ margin: '0 0 4px', fontSize: 26, fontWeight: 700, color: 'var(--text)' }}>Your mock test</h1>
+          <h1 style={{ margin: '0 0 4px', fontSize: 26, fontWeight: 700, color: 'var(--text)' }}>{t('mock.yourMock')}</h1>
           <p style={{ margin: 0, fontSize: 14, color: 'var(--text-3)' }}>
-            Complete each section in its own screen, then come back here. {doneBands.length}/{included.length} done.
+            {t('mock.subtitle')} {doneBands.length}/{included.length} {t('mock.done')}.
           </p>
         </div>
         <div style={{ textAlign: 'right' }}>
-          <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: '0.08em', color: 'var(--text-3)' }}>OVERALL BAND</div>
+          <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: '0.08em', color: 'var(--text-3)' }}>{t('mock.overallBand')}</div>
           <div style={{ fontFamily: 'var(--font-display)', fontStyle: 'italic', fontSize: 44, lineHeight: 1, color: 'var(--accent)', fontWeight: 600 }}>
             {overall != null ? overall.toFixed(1) : '—'}
           </div>
@@ -130,7 +132,7 @@ export default function MockRunPage() {
               <div style={{ flex: 1, minWidth: 0 }}>
                 <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: '0.06em', textTransform: 'uppercase', color: 'var(--text-3)' }}>{s.label}</div>
                 <div style={{ fontSize: 14.5, fontWeight: 600, color: 'var(--text)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                  {disabled ? 'Not included' : s.title}
+                  {disabled ? t('mock.notIncluded') : s.title}
                 </div>
               </div>
               {disabled ? (
@@ -138,14 +140,14 @@ export default function MockRunPage() {
               ) : done ? (
                 <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
                   <span style={{ fontFamily: 'var(--font-display)', fontStyle: 'italic', fontSize: 20, fontWeight: 700, color: 'var(--accent)' }}>{band!.toFixed(1)}</span>
-                  <Link href={s.href!} style={{ fontSize: 12, color: 'var(--text-3)', textDecoration: 'none' }}>Retake</Link>
+                  <Link href={s.href!} style={{ fontSize: 12, color: 'var(--text-3)', textDecoration: 'none' }}>{t('mock.retake')}</Link>
                 </div>
               ) : (
                 <Link href={s.href!} style={{
                   padding: '8px 16px', borderRadius: 9, fontSize: 13, fontWeight: 700,
                   background: 'var(--accent)', color: 'var(--accent-fg)', textDecoration: 'none', flexShrink: 0,
                 }}>
-                  Start →
+                  {t('mock.start')} →
                 </Link>
               )}
             </div>
@@ -155,10 +157,10 @@ export default function MockRunPage() {
 
       <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginTop: 24 }}>
         <button onClick={() => setTick(t => t + 1)} style={{ padding: '9px 16px', borderRadius: 9, fontSize: 13, fontWeight: 600, background: 'var(--bg-soft)', color: 'var(--text)', border: '1px solid var(--border)', cursor: 'pointer' }}>
-          Refresh progress
+          {t('mock.refresh')}
         </button>
         <button onClick={endMock} style={{ padding: '9px 16px', borderRadius: 9, fontSize: 13, fontWeight: 600, background: 'transparent', color: 'var(--text-3)', border: '1px solid var(--border)', cursor: 'pointer' }}>
-          {allDone ? 'Finish & clear' : 'Discard mock'}
+          {allDone ? t('mock.finishClear') : t('mock.discard')}
         </button>
       </div>
     </div>

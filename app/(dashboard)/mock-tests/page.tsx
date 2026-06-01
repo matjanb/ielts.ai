@@ -7,11 +7,8 @@ import { getListeningTests, getReadingTests, getWritingTests } from '@/lib/servi
 import { getDashboardData } from '@/lib/services/progress'
 import { getUser } from '@/lib/services/auth'
 import { saveCurrentMock, loadCurrentMock, type CurrentMock } from '@/lib/services/mock'
+import { useLanguage } from '@/lib/i18n/LanguageContext'
 import type { IeltsTest } from '@/lib/types/database'
-
-const SKILL_LABELS: Record<string, string> = {
-  listening: 'Listening', reading: 'Reading', writing: 'Writing', speaking: 'Speaking',
-}
 
 const selectStyle: React.CSSProperties = {
   width: '100%', padding: '9px 12px', borderRadius: 10, fontSize: 13.5,
@@ -20,6 +17,7 @@ const selectStyle: React.CSSProperties = {
 }
 
 export default function MockTestsPage() {
+  const { t } = useLanguage()
   const router = useRouter()
   const [previousMocks, setPreviousMocks] = useState<Array<{ date: string; band: number }>>([])
   const [readiness, setReadiness] = useState<number | null>(null)
@@ -98,13 +96,13 @@ export default function MockTestsPage() {
       {/* Hub header */}
       <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 24 }}>
         <div>
-          <div style={{ fontSize: 11, letterSpacing: '0.1em', textTransform: 'uppercase', color: 'var(--text-3)', marginBottom: 8 }}>Full IELTS Academic mock</div>
+          <div style={{ fontSize: 11, letterSpacing: '0.1em', textTransform: 'uppercase', color: 'var(--text-3)', marginBottom: 8 }}>{t('mock.eyebrow')}</div>
           <h1 style={{ fontSize: 34, fontWeight: 700, letterSpacing: '-0.025em', margin: '0 0 6px', color: 'var(--text)' }}>
-            2 hours 45 minutes.{' '}
-            <span style={{ fontFamily: 'var(--font-display)', fontStyle: 'italic', color: 'var(--accent)' }}>The real thing.</span>
+            {t('mock.duration')}{' '}
+            <span style={{ fontFamily: 'var(--font-display)', fontStyle: 'italic', color: 'var(--accent)' }}>{t('mock.tagline')}</span>
           </h1>
           <p style={{ fontSize: 15, color: 'var(--text-2)', margin: 0, maxWidth: 600 }}>
-            Build a full mock from real tests — Listening, Reading, Writing and an AI Speaking session — each in the same interface as the official computer-based test.
+            {t('mock.intro')}
           </p>
         </div>
         {resumable && (
@@ -113,7 +111,7 @@ export default function MockTestsPage() {
             fontWeight: 600, fontSize: 14, background: 'var(--accent-soft)', color: 'var(--accent)',
             border: '1px solid var(--accent)', textDecoration: 'none', flexShrink: 0,
           }}>
-            Resume mock →
+            {t('mock.resume')} →
           </Link>
         )}
       </div>
@@ -128,9 +126,9 @@ export default function MockTestsPage() {
             { name: 'Speaking', time: '14 min', q: 3 },
           ].map((s, i) => (
             <div key={s.name} style={{ padding: 24, borderRight: i < 3 ? '1px solid var(--border)' : 'none' }}>
-              <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: '0.08em', color: 'var(--text-2)', marginBottom: 12 }}>{s.name.toUpperCase()}</div>
+              <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: '0.08em', color: 'var(--text-2)', marginBottom: 12 }}>{t('dashboard.' + s.name.toLowerCase()).toUpperCase()}</div>
               <div style={{ fontSize: 28, fontWeight: 700, letterSpacing: '-0.02em', fontVariantNumeric: 'tabular-nums', color: 'var(--text)' }}>{s.time}</div>
-              <div style={{ fontSize: 12, color: 'var(--text-3)', marginTop: 4 }}>{s.q} {s.q === 2 ? 'tasks' : 'questions'}</div>
+              <div style={{ fontSize: 12, color: 'var(--text-3)', marginTop: 4 }}>{s.q} {s.q === 2 ? t('mock.tasks') : t('mock.questions')}</div>
             </div>
           ))}
         </div>
@@ -140,22 +138,22 @@ export default function MockTestsPage() {
         {/* Composer */}
         <div className="card" style={{ padding: 28 }}>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 18 }}>
-            <h3 style={{ margin: 0, fontSize: 18, fontWeight: 600, color: 'var(--text)' }}>Build a mock</h3>
+            <h3 style={{ margin: 0, fontSize: 18, fontWeight: 600, color: 'var(--text)' }}>{t('mock.buildMock')}</h3>
             <button onClick={autoFill} style={{ fontSize: 12, fontWeight: 600, color: 'var(--accent)', background: 'var(--accent-soft)', border: '1px solid var(--accent)', borderRadius: 8, padding: '5px 12px', cursor: 'pointer' }}>
-              Auto-pick
+              {t('mock.autoPick')}
             </button>
           </div>
 
           <div style={{ display: 'grid', gap: 16 }}>
             {([
-              { key: 'listening', label: 'Listening', tests: listening, value: lid, set: setLid },
-              { key: 'reading', label: 'Reading', tests: reading, value: rid, set: setRid },
-              { key: 'writing', label: 'Writing', tests: writing, value: wid, set: setWid },
+              { key: 'listening', tests: listening, value: lid, set: setLid },
+              { key: 'reading', tests: reading, value: rid, set: setRid },
+              { key: 'writing', tests: writing, value: wid, set: setWid },
             ] as const).map(row => (
               <div key={row.key}>
-                <label style={{ display: 'block', fontSize: 12, fontWeight: 700, letterSpacing: '0.05em', textTransform: 'uppercase', color: 'var(--text-3)', marginBottom: 7 }}>{row.label}</label>
+                <label style={{ display: 'block', fontSize: 12, fontWeight: 700, letterSpacing: '0.05em', textTransform: 'uppercase', color: 'var(--text-3)', marginBottom: 7 }}>{t('dashboard.' + row.key)}</label>
                 {row.tests.length === 0 ? (
-                  <div style={{ fontSize: 13, color: 'var(--text-3)' }}>No {row.label.toLowerCase()} tests available.</div>
+                  <div style={{ fontSize: 13, color: 'var(--text-3)' }}>{t('mock.noTests')}</div>
                 ) : (
                   <select value={row.value} onChange={e => row.set(e.target.value)} style={selectStyle}>
                     {row.tests.map(t => <option key={t.id} value={t.id}>{t.title}</option>)}
@@ -166,9 +164,9 @@ export default function MockTestsPage() {
 
             {/* Speaking — AI flow, no DB test to pick */}
             <div>
-              <label style={{ display: 'block', fontSize: 12, fontWeight: 700, letterSpacing: '0.05em', textTransform: 'uppercase', color: 'var(--text-3)', marginBottom: 7 }}>Speaking</label>
+              <label style={{ display: 'block', fontSize: 12, fontWeight: 700, letterSpacing: '0.05em', textTransform: 'uppercase', color: 'var(--text-3)', marginBottom: 7 }}>{t('dashboard.speaking')}</label>
               <div style={{ ...selectStyle, cursor: 'default', display: 'flex', alignItems: 'center', justifyContent: 'space-between', color: 'var(--text-2)' }}>
-                AI Speaking session (Parts 1–3)
+                {t('mock.aiSpeaking')}
                 <span style={{ fontSize: 10, fontWeight: 700, padding: '2px 7px', borderRadius: 999, background: 'var(--accent-soft)', color: 'var(--accent)' }}>AI</span>
               </div>
             </div>
@@ -179,22 +177,22 @@ export default function MockTestsPage() {
             background: canStart ? 'var(--accent)' : 'var(--bg-soft)', color: canStart ? 'var(--accent-fg)' : 'var(--text-3)',
             border: 'none', cursor: canStart ? 'pointer' : 'default',
           }}>
-            Start mock
+            {t('mock.startMock')}
           </button>
 
           {/* Previous mocks — real completed attempts */}
           <div style={{ marginTop: 28, paddingTop: 24, borderTop: '1px solid var(--border)' }}>
-            <h3 style={{ margin: '0 0 16px', fontSize: 16, fontWeight: 600, color: 'var(--text)' }}>Previous attempts</h3>
+            <h3 style={{ margin: '0 0 16px', fontSize: 16, fontWeight: 600, color: 'var(--text)' }}>{t('mock.previousAttempts')}</h3>
             {previousMocks.length === 0 ? (
               <p style={{ fontSize: 13, color: 'var(--text-3)', lineHeight: 1.5, margin: 0 }}>
-                No completed tests yet. Finish a test to track your band history here.
+                {t('mock.noPrevious')}
               </p>
             ) : (
               <div style={{ display: 'grid', gap: 4 }}>
                 {previousMocks.map((m, i) => (
                   <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '12px 0', borderTop: i === 0 ? 'none' : '1px solid var(--border)' }}>
                     <div style={{ fontSize: 11, color: 'var(--text-3)', fontFamily: 'var(--font-mono)', width: 56 }}>{m.date}</div>
-                    <div style={{ fontSize: 14, fontWeight: 600, color: 'var(--text)', flex: 1 }}>Test attempt</div>
+                    <div style={{ fontSize: 14, fontWeight: 600, color: 'var(--text)', flex: 1 }}>{t('mock.testAttempt')}</div>
                     <div style={{ width: 36, height: 36, borderRadius: 10, background: 'var(--accent-soft)', color: 'var(--accent)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontFamily: 'var(--font-display)', fontStyle: 'italic', fontSize: 16, fontWeight: 700 }}>
                       {m.band.toFixed(1)}
                     </div>
@@ -211,13 +209,13 @@ export default function MockTestsPage() {
             <svg width={14} height={14} viewBox="0 0 24 24" fill="none" stroke="var(--warn)" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
               <path d="M12 3l1.7 4.8L18 9.5l-4.3 1.7L12 16l-1.7-4.8L6 9.5l4.3-1.7z"/>
             </svg>
-            <span style={{ fontSize: 11, fontWeight: 700, letterSpacing: '0.08em', color: 'var(--warn)' }}>EXAM-DAY READINESS</span>
+            <span style={{ fontSize: 11, fontWeight: 700, letterSpacing: '0.08em', color: 'var(--warn)' }}>{t('mock.readiness')}</span>
           </div>
           <div style={{ fontFamily: 'var(--font-display)', fontStyle: 'italic', fontSize: 60, lineHeight: 0.9, color: 'var(--accent)', fontWeight: 500 }}>
             {readiness != null ? `${readiness}%` : '—'}
           </div>
           <div style={{ fontSize: 13, color: 'var(--text-2)', marginTop: 8 }}>
-            {readiness != null ? 'Latest band average vs your target band' : 'Complete a test to estimate exam readiness'}
+            {readiness != null ? t('mock.readinessHas') : t('mock.readinessNone')}
           </div>
           <div style={{ marginTop: 18, height: 8, borderRadius: 999, background: 'var(--bg-soft)', overflow: 'hidden' }}>
             <div style={{ width: `${readiness ?? 0}%`, height: '100%', background: 'linear-gradient(90deg, var(--accent), var(--warn))', transition: 'width .6s' }}/>
@@ -225,10 +223,10 @@ export default function MockTestsPage() {
 
           {weakSkills.length > 0 && (
             <div style={{ marginTop: 24, paddingTop: 18, borderTop: '1px dashed var(--border)' }}>
-              <div style={{ fontSize: 11, letterSpacing: '0.08em', color: 'var(--text-3)', marginBottom: 12 }}>WEAKEST SKILLS</div>
+              <div style={{ fontSize: 11, letterSpacing: '0.08em', color: 'var(--text-3)', marginBottom: 12 }}>{t('mock.weakest')}</div>
               {weakSkills.map((s, i) => (
                 <div key={i} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10, marginBottom: 10, fontSize: 13, color: 'var(--text)' }}>
-                  <span>{SKILL_LABELS[s.skill] ?? s.skill}</span>
+                  <span>{t('dashboard.' + s.skill)}</span>
                   <span style={{ fontWeight: 700, fontVariantNumeric: 'tabular-nums', color: 'var(--text-2)' }}>{s.band.toFixed(1)}</span>
                 </div>
               ))}
