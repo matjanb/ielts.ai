@@ -47,20 +47,24 @@ export async function POST() {
 
   const admin = createAdminClient()
 
-  const { data: od } = await admin
+  // Onboarding is optional — fall back to sensible defaults so anyone can
+  // generate a plan even if they skipped (or never completed) onboarding.
+  const { data: odRow } = await admin
     .from('onboarding_data')
     .select('*')
     .eq('user_id', user.id)
-    .single()
+    .maybeSingle()
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const od: any = odRow ?? {}
 
-  if (!od) return err('Onboarding data not found. Please complete onboarding first.', 400)
-
-  const dailyMinutes = od.daily_hours === '30_min' ? 30
+  const dailyMinutes = !od.daily_hours ? 60
+    : od.daily_hours === '30_min' ? 30
     : od.daily_hours === '1_hour' ? 60
     : od.daily_hours === '2_hours' ? 120
     : 180
 
-  const weekCount = od.timeline === 'within_1_month' ? 4
+  const weekCount = !od.timeline ? 8
+    : od.timeline === 'within_1_month' ? 4
     : od.timeline === '1_3_months' ? 8
     : od.timeline === '3_6_months' ? 12
     : 8
