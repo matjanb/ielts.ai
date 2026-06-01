@@ -2,6 +2,7 @@
 
 import type { Question } from '@/lib/types/database'
 import { isAnswerCorrect } from '@/lib/utils/answerChecking'
+import { useLanguage } from '@/lib/i18n/LanguageContext'
 
 /* Strip a leading "[...]" instruction block from the question text. */
 function stripPrefix(text: string): string {
@@ -39,6 +40,7 @@ export function QuestionRenderer({
   onChange: (v: string) => void
   revealed?: boolean
 }) {
+  const { t } = useLanguage()
   const qText = stripPrefix(question.question_text)
   const correct = revealed && isAnswerCorrect(value, question.correct_answer ?? '')
   const type = question.question_type
@@ -50,7 +52,7 @@ export function QuestionRenderer({
     const opts = /\btrue\b/i.test(br) ? ['TRUE', 'FALSE', 'NOT GIVEN'] : ['YES', 'NO', 'NOT GIVEN']
     input = (
       <select value={value} onChange={e => onChange(e.target.value)} disabled={revealed} style={selectStyle}>
-        <option value="">Select</option>
+        <option value="">{t('practice.qrSelect')}</option>
         {opts.map(o => <option key={o}>{o}</option>)}
       </select>
     )
@@ -58,11 +60,11 @@ export function QuestionRenderer({
     const opts = parseKeyed(bracket(question.question_text) ?? '')
     input = opts.length > 0 ? (
       <select value={value} onChange={e => onChange(e.target.value)} disabled={revealed} style={selectStyle}>
-        <option value="">Select</option>
+        <option value="">{t('practice.qrSelect')}</option>
         {opts.map(o => <option key={o.key} value={o.key}>{o.key} — {o.label}</option>)}
       </select>
     ) : (
-      <input value={value} onChange={e => onChange(e.target.value)} disabled={revealed} style={inputStyle} placeholder="Your answer" />
+      <input value={value} onChange={e => onChange(e.target.value)} disabled={revealed} style={inputStyle} placeholder={t('practice.qrYourAnswer')} />
     )
   } else if (type === 'multiple_choice') {
     const arr = Array.isArray(question.options) ? (question.options as string[]) : []
@@ -77,12 +79,12 @@ export function QuestionRenderer({
         ))}
       </div>
     ) : (
-      <input value={value} onChange={e => onChange(e.target.value)} disabled={revealed} style={inputStyle} placeholder="Your answer" />
+      <input value={value} onChange={e => onChange(e.target.value)} disabled={revealed} style={inputStyle} placeholder={t('practice.qrYourAnswer')} />
     )
   } else {
     // fill_blank and anything else: free text
     input = (
-      <input value={value} onChange={e => onChange(e.target.value)} disabled={revealed} style={inputStyle} placeholder="Type your answer" />
+      <input value={value} onChange={e => onChange(e.target.value)} disabled={revealed} style={inputStyle} placeholder={t('practice.qrType')} />
     )
   }
 
@@ -100,7 +102,7 @@ export function QuestionRenderer({
           {input}
           {revealed && !correct && (
             <div style={{ fontSize: 12.5, color: 'var(--danger)' }}>
-              Correct answer: <strong style={{ color: 'var(--text)' }}>{question.correct_answer}</strong>
+              {t('practice.qrCorrect')}: <strong style={{ color: 'var(--text)' }}>{question.correct_answer}</strong>
             </div>
           )}
         </div>

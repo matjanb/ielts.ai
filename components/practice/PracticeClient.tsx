@@ -5,6 +5,7 @@ import Link from 'next/link'
 import { getUser } from '@/lib/services/auth'
 import { logStudySession } from '@/lib/services/attempts'
 import { isAnswerCorrect } from '@/lib/utils/answerChecking'
+import { useLanguage } from '@/lib/i18n/LanguageContext'
 import {
   getPracticeFilters, getPracticeSet, questionTypeLabel,
   type PracticeFilters, type PracticeGroup, type Difficulty,
@@ -80,7 +81,9 @@ export function PracticeClient({ skill }: { skill: 'reading' | 'listening' }) {
     setStep('config'); setGroups([]); setAnswers({})
   }
 
-  const skillLabel = skill === 'reading' ? 'Reading' : 'Listening'
+  const { t } = useLanguage()
+  const skillLabel = t(skill === 'reading' ? 'dashboard.reading' : 'dashboard.listening')
+  const diffLabel = (d: string) => (d === 'any' ? t('practice.any') : t('practice.' + d))
   const revealed = step === 'done'
 
   /* ── Config ─────────────────────────────────────────────────── */
@@ -88,19 +91,19 @@ export function PracticeClient({ skill }: { skill: 'reading' | 'listening' }) {
     return (
       <div style={{ padding: '32px 32px 80px', maxWidth: 760 }}>
         <Link href={`/${skill}`} style={{ fontSize: 13, color: 'var(--text-3)', textDecoration: 'none' }}>← {skillLabel}</Link>
-        <h1 style={{ margin: '10px 0 4px', fontSize: 24, fontWeight: 700, color: 'var(--text)' }}>Targeted practice</h1>
+        <h1 style={{ margin: '10px 0 4px', fontSize: 24, fontWeight: 700, color: 'var(--text)' }}>{t('practice.title')}</h1>
         <p style={{ margin: '0 0 24px', fontSize: 14, color: 'var(--text-3)' }}>
-          Drill a single {skillLabel.toLowerCase()} question type at the difficulty you choose.
+          {t('practice.drillSubtitle')}
         </p>
 
         <div className="card" style={{ padding: 24, display: 'flex', flexDirection: 'column', gap: 22 }}>
           {/* Question type */}
           <div>
-            <div style={{ fontSize: 12, fontWeight: 700, letterSpacing: '0.06em', textTransform: 'uppercase', color: 'var(--text-3)', marginBottom: 10 }}>Question type</div>
+            <div style={{ fontSize: 12, fontWeight: 700, letterSpacing: '0.06em', textTransform: 'uppercase', color: 'var(--text-3)', marginBottom: 10 }}>{t('practice.qType')}</div>
             {!filters ? (
-              <div style={{ fontSize: 13, color: 'var(--text-3)' }}>Loading…</div>
+              <div style={{ fontSize: 13, color: 'var(--text-3)' }}>{t('practice.loading')}</div>
             ) : filters.types.length === 0 ? (
-              <div style={{ fontSize: 13, color: 'var(--text-3)' }}>No questions available yet.</div>
+              <div style={{ fontSize: 13, color: 'var(--text-3)' }}>{t('practice.noQuestions')}</div>
             ) : (
               <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
                 {filters.types.map(t => {
@@ -124,19 +127,19 @@ export function PracticeClient({ skill }: { skill: 'reading' | 'listening' }) {
               (e.g. listening is uniformly 'medium', so it's hidden there). */}
           {type && availDiffs.length >= 2 && (
             <div>
-              <div style={{ fontSize: 12, fontWeight: 700, letterSpacing: '0.06em', textTransform: 'uppercase', color: 'var(--text-3)', marginBottom: 10 }}>Difficulty</div>
+              <div style={{ fontSize: 12, fontWeight: 700, letterSpacing: '0.06em', textTransform: 'uppercase', color: 'var(--text-3)', marginBottom: 10 }}>{t('practice.difficulty')}</div>
               <div style={{ display: 'flex', gap: 8 }}>
                 {(['any', ...availDiffs] as const).map(d => {
                   const active = difficulty === d
                   const count = d === 'any' ? null : filters?.countByTypeDifficulty[type]?.[d as Difficulty]
                   return (
                     <button key={d} onClick={() => setDifficulty(d as Difficulty | 'any')} style={{
-                      padding: '7px 14px', borderRadius: 10, fontSize: 13, fontWeight: 600, cursor: 'pointer', textTransform: 'capitalize',
+                      padding: '7px 14px', borderRadius: 10, fontSize: 13, fontWeight: 600, cursor: 'pointer',
                       background: active ? 'var(--accent-soft)' : 'var(--bg-soft)',
                       color: active ? 'var(--accent)' : 'var(--text-2)',
                       border: `1px solid ${active ? 'var(--accent)' : 'var(--border)'}`,
                     }}>
-                      {d}{count != null && <span style={{ opacity: 0.6, fontWeight: 500 }}> · {count}</span>}
+                      {diffLabel(d)}{count != null && <span style={{ opacity: 0.6, fontWeight: 500 }}> · {count}</span>}
                     </button>
                   )
                 })}
@@ -147,7 +150,7 @@ export function PracticeClient({ skill }: { skill: 'reading' | 'listening' }) {
           {/* Count */}
           {type && (
             <div>
-              <div style={{ fontSize: 12, fontWeight: 700, letterSpacing: '0.06em', textTransform: 'uppercase', color: 'var(--text-3)', marginBottom: 10 }}>Questions</div>
+              <div style={{ fontSize: 12, fontWeight: 700, letterSpacing: '0.06em', textTransform: 'uppercase', color: 'var(--text-3)', marginBottom: 10 }}>{t('practice.questions')}</div>
               <div style={{ display: 'flex', gap: 8 }}>
                 {COUNTS.map(c => {
                   const active = limit === c
@@ -157,7 +160,7 @@ export function PracticeClient({ skill }: { skill: 'reading' | 'listening' }) {
                       background: active ? 'var(--accent-soft)' : 'var(--bg-soft)',
                       color: active ? 'var(--accent)' : 'var(--text-2)',
                       border: `1px solid ${active ? 'var(--accent)' : 'var(--border)'}`,
-                    }}>{COUNT_LABELS[c]}</button>
+                    }}>{c === 9999 ? t('practice.all') : COUNT_LABELS[c]}</button>
                   )
                 })}
               </div>
@@ -169,7 +172,7 @@ export function PracticeClient({ skill }: { skill: 'reading' | 'listening' }) {
             background: !type ? 'var(--bg-soft)' : 'var(--accent)', color: !type ? 'var(--text-3)' : 'var(--accent-fg)',
             border: 'none', cursor: !type || loading ? 'default' : 'pointer', opacity: loading ? 0.7 : 1,
           }}>
-            {loading ? 'Building…' : 'Start practice'}
+            {loading ? t('practice.building') : t('practice.startPractice')}
           </button>
         </div>
       </div>
@@ -180,8 +183,8 @@ export function PracticeClient({ skill }: { skill: 'reading' | 'listening' }) {
   if (groups.length === 0) {
     return (
       <div style={{ padding: 32 }}>
-        <p style={{ color: 'var(--text-3)', fontSize: 14 }}>No questions matched that combination.</p>
-        <button onClick={reset} style={{ marginTop: 12, padding: '8px 16px', borderRadius: 8, border: '1px solid var(--border)', background: 'var(--bg-soft)', color: 'var(--text)', cursor: 'pointer' }}>Back</button>
+        <p style={{ color: 'var(--text-3)', fontSize: 14 }}>{t('practice.noMatch')}</p>
+        <button onClick={reset} style={{ marginTop: 12, padding: '8px 16px', borderRadius: 8, border: '1px solid var(--border)', background: 'var(--bg-soft)', color: 'var(--text)', cursor: 'pointer' }}>{t('practice.back')}</button>
       </div>
     )
   }
@@ -191,14 +194,14 @@ export function PracticeClient({ skill }: { skill: 'reading' | 'listening' }) {
       {/* Sticky header */}
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 18, gap: 16, flexWrap: 'wrap' }}>
         <div>
-          <div style={{ fontSize: 13, color: 'var(--text-3)' }}>{skillLabel} · {type && questionTypeLabel(type)}{difficulty !== 'any' && <span style={{ textTransform: 'capitalize' }}> · {difficulty}</span>}</div>
+          <div style={{ fontSize: 13, color: 'var(--text-3)' }}>{skillLabel} · {type && questionTypeLabel(type)}{difficulty !== 'any' && <span> · {diffLabel(difficulty)}</span>}</div>
           <h1 style={{ margin: '2px 0 0', fontSize: 20, fontWeight: 700, color: 'var(--text)' }}>
-            {revealed ? `Score: ${score} / ${allQuestions.length}` : `${allQuestions.length} questions`}
+            {revealed ? `${t('practice.score')}: ${score} / ${allQuestions.length}` : `${allQuestions.length} ${t('practice.questionsWord')}`}
           </h1>
         </div>
         {revealed
-          ? <button onClick={reset} style={{ padding: '9px 18px', borderRadius: 10, fontSize: 13, fontWeight: 700, background: 'var(--accent)', color: 'var(--accent-fg)', border: 'none', cursor: 'pointer' }}>New drill</button>
-          : <button onClick={finish} style={{ padding: '9px 18px', borderRadius: 10, fontSize: 13, fontWeight: 700, background: 'var(--accent)', color: 'var(--accent-fg)', border: 'none', cursor: 'pointer' }}>Check answers</button>}
+          ? <button onClick={reset} style={{ padding: '9px 18px', borderRadius: 10, fontSize: 13, fontWeight: 700, background: 'var(--accent)', color: 'var(--accent-fg)', border: 'none', cursor: 'pointer' }}>{t('practice.newDrill')}</button>
+          : <button onClick={finish} style={{ padding: '9px 18px', borderRadius: 10, fontSize: 13, fontWeight: 700, background: 'var(--accent)', color: 'var(--accent-fg)', border: 'none', cursor: 'pointer' }}>{t('practice.checkAnswers')}</button>}
       </div>
 
       <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
@@ -206,7 +209,7 @@ export function PracticeClient({ skill }: { skill: 'reading' | 'listening' }) {
           <div key={g.sectionId} className="card" style={{ padding: 20 }}>
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12, gap: 10 }}>
               <h3 style={{ margin: 0, fontSize: 14, fontWeight: 700, color: 'var(--text)' }}>{g.title}</h3>
-              {g.difficulty && <span style={{ fontSize: 11, fontWeight: 700, textTransform: 'capitalize', padding: '2px 8px', borderRadius: 999, background: 'var(--bg-soft)', color: 'var(--text-3)' }}>{g.difficulty}</span>}
+              {g.difficulty && <span style={{ fontSize: 11, fontWeight: 700, padding: '2px 8px', borderRadius: 999, background: 'var(--bg-soft)', color: 'var(--text-3)' }}>{diffLabel(g.difficulty)}</span>}
             </div>
 
             {skill === 'listening' && g.audioUrl && (
