@@ -28,20 +28,21 @@ export default function StudyPlanPage() {
   const [error, setError]       = useState('')
   const [activeWeek, setActiveWeek] = useState(1)
 
-  useEffect(() => { loadPlan() }, [])
-
-  async function loadPlan() {
-    try {
-      const { getUser } = await import('@/lib/services/auth')
-      const { getStudyPlan } = await import('@/lib/services/user')
-      const { user } = await getUser()
-      if (!user) return
-      const data = await getStudyPlan(user.id)
-      if (data) setPlan(data as StudyPlan)
-    } finally {
-      setLoading(false)
+  useEffect(() => {
+    async function loadPlan() {
+      try {
+        const { getUser } = await import('@/lib/services/auth')
+        const { getStudyPlan } = await import('@/lib/services/user')
+        const { user } = await getUser()
+        if (!user) return
+        const data = await getStudyPlan(user.id)
+        if (data) setPlan(data as StudyPlan)
+      } finally {
+        setLoading(false)
+      }
     }
-  }
+    loadPlan()
+  }, [])
 
   async function handleGenerate() {
     setError('')
@@ -49,10 +50,10 @@ export default function StudyPlanPage() {
     try {
       const res = await fetch('/api/ai/study-plan', { method: 'POST' })
       const data = await res.json()
-      if (!res.ok) setError(data.error ?? 'Failed to generate plan.')
+      if (!res.ok) setError(data.error ?? t('plan.failed'))
       else { setPlan(data); setActiveWeek(1) }
     } catch {
-      setError('Network error. Please try again.')
+      setError(t('plan.networkError'))
     } finally {
       setGenerating(false)
     }
@@ -71,10 +72,10 @@ export default function StudyPlanPage() {
   const totalTasks = weeks.reduce((n, w) => n + (w.tasks?.length ?? 0), 0)
 
   const stats = plan ? [
-    { key: 'duration', label: 'Duration',    value: `${plan.weeks_duration} weeks`, color: 'var(--accent)' },
-    { key: 'target',   label: 'Target band',  value: plan.target_band.toFixed(1),    color: 'var(--info)' },
-    { key: 'daily',    label: 'Daily study',  value: `${plan.daily_minutes} min`,    color: 'var(--warn)' },
-    { key: 'focus',    label: 'Focus skills', value: plan.focus_skills.join(', ') || 'All skills', color: '#6b46c1' },
+    { key: 'duration', label: t('plan.duration'),    value: `${plan.weeks_duration} ${t('plan.weeks')}`, color: 'var(--accent)' },
+    { key: 'target',   label: t('plan.targetBand'),  value: plan.target_band.toFixed(1),    color: 'var(--info)' },
+    { key: 'daily',    label: t('plan.dailyStudy'),  value: `${plan.daily_minutes} ${t('plan.min')}`,    color: 'var(--warn)' },
+    { key: 'focus',    label: t('plan.focusSkills'), value: plan.focus_skills.join(', ') || t('plan.allSkills'), color: '#6b46c1' },
   ] : []
 
   return (
@@ -87,8 +88,8 @@ export default function StudyPlanPage() {
           </h1>
           <p style={{ fontSize: 15, color: 'var(--text-2)', margin: '6px 0 0' }}>
             {plan
-              ? `A ${plan.weeks_duration}-week roadmap to Band ${plan.target_band.toFixed(1)} · ${totalTasks} tasks`
-              : 'Generate a personalised study plan based on your onboarding goals.'}
+              ? t('plan.roadmapSub', { weeks: String(plan.weeks_duration), band: plan.target_band.toFixed(1), tasks: String(totalTasks) })
+              : t('plan.generateSub')}
           </p>
         </div>
         <button onClick={handleGenerate} disabled={generating} style={{
@@ -98,8 +99,8 @@ export default function StudyPlanPage() {
           cursor: generating ? 'not-allowed' : 'pointer', opacity: generating ? 0.6 : 1,
         }}>
           {generating
-            ? <><Loader2 size={15} className="animate-spin" /> Generating…</>
-            : plan ? <><RefreshCw size={15} /> Regenerate</> : <><BrainCircuit size={15} /> Generate plan</>}
+            ? <><Loader2 size={15} className="animate-spin" /> {t('plan.generating')}</>
+            : plan ? <><RefreshCw size={15} /> {t('plan.regenerate')}</> : <><BrainCircuit size={15} /> {t('plan.generatePlan')}</>}
         </button>
       </div>
 
@@ -133,7 +134,7 @@ export default function StudyPlanPage() {
       {/* Weekly roadmap timeline */}
       {weeks.length > 0 ? (
         <div className="card" style={{ padding: 28 }}>
-          <h3 style={{ margin: '0 0 20px', fontSize: 18, fontWeight: 600, color: 'var(--text)' }}>Weekly roadmap</h3>
+          <h3 style={{ margin: '0 0 20px', fontSize: 18, fontWeight: 600, color: 'var(--text)' }}>{t('plan.weeklyRoadmap')}</h3>
           <div style={{ position: 'relative' }}>
             {/* vertical rail */}
             <div style={{ position: 'absolute', left: 15, top: 8, bottom: 8, width: 2, background: 'var(--border)' }}/>
@@ -165,7 +166,7 @@ export default function StudyPlanPage() {
                         cursor: 'pointer', padding: '10px 0 8px',
                       }}
                     >
-                      <div style={{ fontSize: 14, fontWeight: 600, color: 'var(--text)' }}>Week {week.week}</div>
+                      <div style={{ fontSize: 14, fontWeight: 600, color: 'var(--text)' }}>{t('plan.week')} {week.week}</div>
                       {week.theme && <div style={{ fontSize: 13, color: 'var(--text-2)', marginTop: 2 }}>{week.theme}</div>}
                     </button>
 
@@ -192,9 +193,9 @@ export default function StudyPlanPage() {
           <div style={{ width: 56, height: 56, borderRadius: 16, background: 'var(--accent-soft)', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 16px' }}>
             <BrainCircuit size={26} style={{ color: 'var(--accent)' }} strokeWidth={1.5} />
           </div>
-          <h3 style={{ fontSize: 16, fontWeight: 600, color: 'var(--text)', margin: '0 0 6px' }}>No study plan yet</h3>
+          <h3 style={{ fontSize: 16, fontWeight: 600, color: 'var(--text)', margin: '0 0 6px' }}>{t('plan.noPlan')}</h3>
           <p style={{ fontSize: 14, color: 'var(--text-3)', margin: '0 auto 20px', maxWidth: 340, lineHeight: 1.5 }}>
-            Complete your onboarding, then generate a personalised week-by-week plan tuned to your target band and weak skills.
+            {t('plan.noPlanDesc')}
           </p>
           <button onClick={handleGenerate} disabled={generating} style={{
             display: 'inline-flex', alignItems: 'center', gap: 8,
@@ -202,7 +203,7 @@ export default function StudyPlanPage() {
             background: 'var(--accent)', color: 'var(--accent-fg)', border: 'none',
             cursor: generating ? 'not-allowed' : 'pointer', opacity: generating ? 0.6 : 1,
           }}>
-            {generating ? <><Loader2 size={15} className="animate-spin" /> Generating…</> : <><BrainCircuit size={15} /> Generate my plan</>}
+            {generating ? <><Loader2 size={15} className="animate-spin" /> {t('plan.generating')}</> : <><BrainCircuit size={15} /> {t('plan.generateMyPlan')}</>}
           </button>
         </div>
       ) : null}

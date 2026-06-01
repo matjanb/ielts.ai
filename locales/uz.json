@@ -713,5 +713,43 @@
     "overallMeta": "Umumiy ball {{band}}",
     "submitted": "Yuborildi",
     "today": "Bugun"
+  },
+  "plan": {
+    "roadmapSub": "{{band}} ballga {{weeks}} haftalik reja · {{tasks}} topshiriq",
+    "generateSub": "Maqsadlaringiz asosida shaxsiy reja yarating.",
+    "generating": "Yaratilmoqda…",
+    "regenerate": "Qayta yaratish",
+    "generatePlan": "Reja yaratish",
+    "failed": "Reja yaratib bo‘lmadi.",
+    "networkError": "Tarmoq xatosi. Qayta urinib ko‘ring.",
+    "duration": "Davomiyligi",
+    "weeks": "hafta",
+    "targetBand": "Maqsadli ball",
+    "dailyStudy": "Kunlik",
+    "min": "daq",
+    "focusSkills": "Asosiy ko‘nikmalar",
+    "allSkills": "Barcha ko‘nikmalar",
+    "weeklyRoadmap": "Haftalik reja",
+    "week": "Hafta",
+    "noPlan": "Hozircha reja yo‘q",
+    "noPlanDesc": "Onboardingni yakunlang, so‘ng maqsadli ball va zaif ko‘nikmalarga moslangan haftalik reja yarating.",
+    "generateMyPlan": "Rejamni yaratish"
+  },
+  "settings": {
+    "subtitle": "Profil, sozlamalar va obunani boshqaring.",
+    "profile": "Profil",
+    "fullName": "To‘liq ism",
+    "fullNamePh": "To‘liq ismingiz",
+    "email": "Email",
+    "saving": "Saqlanmoqda…",
+    "saved": "Saqlandi!",
+    "currentPlan": "Joriy reja",
+    "upgrade": "Yangilash",
+    "manage": "Boshqarish",
+    "appearance": "Ko‘rinish va til",
+    "theme": "Mavzu",
+    "themeDesc": "Yorug‘ yoki qorong‘i rejim",
+    "language": "Til",
+    "languageDesc": "Interfeys tili"
   }
 }

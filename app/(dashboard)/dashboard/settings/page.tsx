@@ -67,25 +67,25 @@ export default function SettingsPage() {
     <div className="space-y-6">
       <div>
         <h1 className="text-2xl font-bold text-[var(--text)] mb-1">{t('dashboard.settings')}</h1>
-        <p className="text-sm text-[var(--text-2)]">Manage your profile, preferences, and subscription.</p>
+        <p className="text-sm text-[var(--text-2)]">{t('settings.subtitle')}</p>
       </div>
 
       {/* Profile */}
       <section className="p-6 card">
-        <h2 className="text-sm font-semibold text-[var(--text)] mb-4">Profile</h2>
+        <h2 className="text-sm font-semibold text-[var(--text)] mb-4">{t('settings.profile')}</h2>
         <form onSubmit={handleSave} className="space-y-4">
           <div>
-            <label className="block text-xs font-medium text-[var(--text-2)] mb-1.5">Full Name</label>
+            <label className="block text-xs font-medium text-[var(--text-2)] mb-1.5">{t('settings.fullName')}</label>
             <input
               type="text"
               value={fullName}
               onChange={e => setFullName(e.target.value)}
               className="w-full px-4 py-2.5 rounded-xl text-sm border border-[var(--border)] bg-[var(--bg-elev)] text-[var(--text)]  transition-all"
-              placeholder="Your full name"
+              placeholder={t('settings.fullNamePh')}
             />
           </div>
           <div>
-            <label className="block text-xs font-medium text-[var(--text-2)] mb-1.5">Email</label>
+            <label className="block text-xs font-medium text-[var(--text-2)] mb-1.5">{t('settings.email')}</label>
             <input
               type="email"
               value={email}
@@ -102,9 +102,9 @@ export default function SettingsPage() {
             className="flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold btn-primary text-white disabled:opacity-60"
           >
             {saving
-              ? <><Loader2 size={14} className="animate-spin" /> Saving…</>
+              ? <><Loader2 size={14} className="animate-spin" /> {t('settings.saving')}</>
               : saved
-              ? 'Saved!'
+              ? t('settings.saved')
               : <><Save size={14} /> {t('common.save')}</>
             }
           </button>
@@ -118,7 +118,7 @@ export default function SettingsPage() {
           <div>
             <div className="flex items-center gap-2 mb-0.5">
               <CreditCard size={14} style={{ color: "var(--text-3)" }} />
-              <span className="text-sm text-[var(--text-2)]">Current plan</span>
+              <span className="text-sm text-[var(--text-2)]">{t('settings.currentPlan')}</span>
             </div>
             <span className={`inline-block mt-1 px-2.5 py-0.5 rounded-full text-xs font-semibold capitalize ${
               subscription === 'free'
@@ -132,7 +132,7 @@ export default function SettingsPage() {
             href="/subscription"
             className="flex items-center gap-1.5 px-4 py-2 rounded-xl text-sm font-semibold border border-[var(--border)] text-[var(--text-2)] hover:border-[var(--accent)] hover:text-[var(--accent)] transition-all"
           >
-            {subscription === 'free' ? 'Upgrade' : 'Manage'}
+            {subscription === 'free' ? t('settings.upgrade') : t('settings.manage')}
             <ExternalLink size={12} />
           </Link>
         </div>
@@ -140,19 +140,19 @@ export default function SettingsPage() {
 
       {/* Appearance */}
       <section className="p-6 card">
-        <h2 className="text-sm font-semibold text-[var(--text)] mb-4">Appearance & Language</h2>
+        <h2 className="text-sm font-semibold text-[var(--text)] mb-4">{t('settings.appearance')}</h2>
         <div className="space-y-4">
           <div className="flex items-center justify-between">
             <div>
-              <div className="text-sm text-[var(--text-2)]">Theme</div>
-              <div className="text-xs text-[var(--text-3)]">Light or dark mode</div>
+              <div className="text-sm text-[var(--text-2)]">{t('settings.theme')}</div>
+              <div className="text-xs text-[var(--text-3)]">{t('settings.themeDesc')}</div>
             </div>
             <ThemeToggle />
           </div>
           <div className="flex items-center justify-between">
             <div>
-              <div className="text-sm text-[var(--text-2)]">Language</div>
-              <div className="text-xs text-[var(--text-3)]">Interface language</div>
+              <div className="text-sm text-[var(--text-2)]">{t('settings.language')}</div>
+              <div className="text-xs text-[var(--text-3)]">{t('settings.languageDesc')}</div>
             </div>
             <LanguageSwitcher />
           </div>

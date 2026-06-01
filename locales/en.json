@@ -758,5 +758,43 @@
     "overallMeta": "Overall {{band}} band",
     "submitted": "Submitted",
     "today": "Today"
+  },
+  "plan": {
+    "roadmapSub": "A {{weeks}}-week roadmap to Band {{band}} · {{tasks}} tasks",
+    "generateSub": "Generate a personalised study plan based on your onboarding goals.",
+    "generating": "Generating…",
+    "regenerate": "Regenerate",
+    "generatePlan": "Generate plan",
+    "failed": "Failed to generate plan.",
+    "networkError": "Network error. Please try again.",
+    "duration": "Duration",
+    "weeks": "weeks",
+    "targetBand": "Target band",
+    "dailyStudy": "Daily study",
+    "min": "min",
+    "focusSkills": "Focus skills",
+    "allSkills": "All skills",
+    "weeklyRoadmap": "Weekly roadmap",
+    "week": "Week",
+    "noPlan": "No study plan yet",
+    "noPlanDesc": "Complete your onboarding, then generate a personalised week-by-week plan tuned to your target band and weak skills.",
+    "generateMyPlan": "Generate my plan"
+  },
+  "settings": {
+    "subtitle": "Manage your profile, preferences, and subscription.",
+    "profile": "Profile",
+    "fullName": "Full Name",
+    "fullNamePh": "Your full name",
+    "email": "Email",
+    "saving": "Saving…",
+    "saved": "Saved!",
+    "currentPlan": "Current plan",
+    "upgrade": "Upgrade",
+    "manage": "Manage",
+    "appearance": "Appearance & Language",
+    "theme": "Theme",
+    "themeDesc": "Light or dark mode",
+    "language": "Language",
+    "languageDesc": "Interface language"
   }
 }
