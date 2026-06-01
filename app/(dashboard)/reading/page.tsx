@@ -3,11 +3,13 @@
 import { useEffect, useState } from 'react'
 import { getReadingTests, getSubskillAccuracy, type SubskillStat } from '@/lib/services/tests'
 import { getUser } from '@/lib/services/auth'
+import { useLanguage } from '@/lib/i18n/LanguageContext'
 import { SkillHubHeader, SubskillCard, TestCard, HubSpinner } from '@/components/dashboard/SkillHub'
 import { PracticeBanner } from '@/components/practice/PracticeBanner'
 import type { IeltsTest } from '@/lib/types/database'
 
 export default function ReadingIndexPage() {
+  const { t } = useLanguage()
   const [tests, setTests] = useState<IeltsTest[]>([])
   const [subskills, setSubskills] = useState<SubskillStat[]>([])
   const [loading, setLoading] = useState(true)
@@ -29,9 +31,9 @@ export default function ReadingIndexPage() {
   return (
     <div style={{ padding: '32px 32px 80px' }}>
       <SkillHubHeader
-        name="Reading"
+        name={t('dashboard.reading')}
         icon="book"
-        nextTest={firstTest?.title ?? 'Passage 1 · TFNG drill'}
+        nextTest={firstTest?.title ?? t('readingHub.nextFallback')}
         startHref={startHref}
       />
 
@@ -40,7 +42,7 @@ export default function ReadingIndexPage() {
       <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: 16, marginTop: 24 }}>
         <div className="card" style={{ padding: 28 }}>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 18 }}>
-            <h3 style={{ margin: 0, fontSize: 18, fontWeight: 600, color: 'var(--text)' }}>Reading passages</h3>
+            <h3 style={{ margin: 0, fontSize: 18, fontWeight: 600, color: 'var(--text)' }}>{t('readingHub.passages')}</h3>
             <div style={{ display: 'flex', gap: 4 }}>
               {['Academic', 'General'].map(f => (
                 <button key={f} style={{
@@ -60,7 +62,7 @@ export default function ReadingIndexPage() {
             <HubSpinner />
           ) : tests.length === 0 ? (
             <div style={{ padding: '32px 0', textAlign: 'center', color: 'var(--text-3)', fontSize: 14 }}>
-              No reading tests available yet.
+              {t('readingHub.empty')}
             </div>
           ) : (
             <div style={{ display: 'grid', gap: 8 }}>
@@ -70,8 +72,8 @@ export default function ReadingIndexPage() {
                   test={test}
                   href={`/reading/${test.id}`}
                   icon="book"
-                  questionsLabel="40 questions"
-                  timeLabel="60 min"
+                  questionsLabel={t('hub.questions40')}
+                  timeLabel={`60 ${t('hub.min')}`}
                 />
               ))}
             </div>
@@ -80,14 +82,14 @@ export default function ReadingIndexPage() {
 
         {subskills.length > 0 ? (
           <SubskillCard
-            title="Question type accuracy"
+            title={t('hub.qTypeAccuracy')}
             rows={subskills.map(s => ({ label: s.label, value: s.accuracy }))}
           />
         ) : (
           <div className="card" style={{ padding: 24 }}>
-            <h3 style={{ margin: '0 0 14px', fontSize: 15, fontWeight: 600, color: 'var(--text)' }}>Question type accuracy</h3>
+            <h3 style={{ margin: '0 0 14px', fontSize: 15, fontWeight: 600, color: 'var(--text)' }}>{t('hub.qTypeAccuracy')}</h3>
             <p style={{ fontSize: 13, color: 'var(--text-3)', lineHeight: 1.5, margin: 0 }}>
-              Complete a reading test to see your accuracy broken down by question type (True/False/NG, matching, etc.).
+              {t('readingHub.qTypeEmpty')}
             </p>
           </div>
         )}

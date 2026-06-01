@@ -596,7 +596,8 @@
     "test": "Test",
     "min": "min",
     "questions40": "40 questions",
-    "tasks2": "2 tasks"
+    "tasks2": "2 tasks",
+    "qTypeAccuracy": "Question type accuracy"
   },
   "writingHub": {
     "nextFallback": "Writing Test 1",
@@ -607,5 +608,21 @@
     "task2Desc": "250 words · 40 min · Opinion, discussion or problem-solution essay",
     "aiGrading": "AI GRADING",
     "aiGradingDesc": "Submit your essay for instant AI feedback on band score, task achievement, coherence, lexical resource and grammar."
+  },
+  "readingHub": {
+    "passages": "Reading passages",
+    "empty": "No reading tests available yet.",
+    "qTypeEmpty": "Complete a reading test to see your accuracy broken down by question type (True/False/NG, matching, etc.).",
+    "nextFallback": "Passage 1 · TFNG drill"
+  },
+  "listeningHub": {
+    "library": "Practice library",
+    "qTypeEmpty": "Complete a listening test to see your accuracy broken down by question type.",
+    "nextFallback": "Section 1"
+  },
+  "practice": {
+    "title": "Targeted practice",
+    "desc": "Drill one question type (e.g. True/False/NG) by difficulty level.",
+    "start": "Start"
   }
 }

@@ -31,9 +31,9 @@ export default function ListeningIndexPage() {
   return (
     <div style={{ padding: '32px 32px 80px' }}>
       <SkillHubHeader
-        name="Listening"
+        name={t('dashboard.listening')}
         icon="headphones"
-        nextTest={firstTest?.title ?? 'Section 1'}
+        nextTest={firstTest?.title ?? t('listeningHub.nextFallback')}
         startHref={startHref}
       />
 
@@ -43,7 +43,7 @@ export default function ListeningIndexPage() {
         {/* Practice library */}
         <div className="card" style={{ padding: 28 }}>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 18 }}>
-            <h3 style={{ margin: 0, fontSize: 18, fontWeight: 600, color: 'var(--text)' }}>Practice library</h3>
+            <h3 style={{ margin: 0, fontSize: 18, fontWeight: 600, color: 'var(--text)' }}>{t('listeningHub.library')}</h3>
             <div style={{ display: 'flex', gap: 4 }}>
               {['All', 'Cambridge 18', 'Cambridge 19'].map(f => (
                 <button key={f} style={{
@@ -73,7 +73,7 @@ export default function ListeningIndexPage() {
                   test={test}
                   href={`/listening/${test.id}`}
                   icon="headphones"
-                  questionsLabel="40 questions"
+                  questionsLabel={t('hub.questions40')}
                   timeLabel={`30 ${t('listening.minutes')}`}
                 />
               ))}
@@ -84,14 +84,14 @@ export default function ListeningIndexPage() {
         {/* Subskill performance — real data from completed attempts */}
         {subskills.length > 0 ? (
           <SubskillCard
-            title="Question type accuracy"
+            title={t('hub.qTypeAccuracy')}
             rows={subskills.map(s => ({ label: s.label, value: s.accuracy }))}
           />
         ) : (
           <div className="card" style={{ padding: 24 }}>
-            <h3 style={{ margin: '0 0 14px', fontSize: 15, fontWeight: 600, color: 'var(--text)' }}>Question type accuracy</h3>
+            <h3 style={{ margin: '0 0 14px', fontSize: 15, fontWeight: 600, color: 'var(--text)' }}>{t('hub.qTypeAccuracy')}</h3>
             <p style={{ fontSize: 13, color: 'var(--text-3)', lineHeight: 1.5, margin: 0 }}>
-              Complete a listening test to see your accuracy broken down by question type.
+              {t('listeningHub.qTypeEmpty')}
             </p>
           </div>
         )}

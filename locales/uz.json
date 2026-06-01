@@ -551,7 +551,8 @@
     "test": "Test",
     "min": "daq",
     "questions40": "40 savol",
-    "tasks2": "2 topshiriq"
+    "tasks2": "2 topshiriq",
+    "qTypeAccuracy": "Savol turlari bo‘yicha aniqlik"
   },
   "writingHub": {
     "nextFallback": "Yozish testi 1",
@@ -562,5 +563,21 @@
     "task2Desc": "250 so‘z · 40 daq · Fikr, munozara yoki muammo-yechim inshosi",
     "aiGrading": "AI BAHOLASH",
     "aiGradingDesc": "Insho yuboring va darhol AI bahosini oling: umumiy ball, vazifa bajarilishi, izchillik, lug‘at va grammatika."
+  },
+  "readingHub": {
+    "passages": "O‘qish matnlari",
+    "empty": "Hozircha o‘qish testlari yo‘q.",
+    "qTypeEmpty": "Savol turlari bo‘yicha aniqlikni ko‘rish uchun o‘qish testini bajaring (True/False/NG, matching va h.k.).",
+    "nextFallback": "Matn 1 · TFNG"
+  },
+  "listeningHub": {
+    "library": "Mashq kutubxonasi",
+    "qTypeEmpty": "Savol turlari bo‘yicha aniqlikni ko‘rish uchun tinglash testini bajaring.",
+    "nextFallback": "1-bo‘lim"
+  },
+  "practice": {
+    "title": "Maqsadli mashq",
+    "desc": "Bitta savol turini (masalan, True/False/NG) qiyinlik darajalari bo‘yicha mashq qiling.",
+    "start": "Boshlash"
   }
 }

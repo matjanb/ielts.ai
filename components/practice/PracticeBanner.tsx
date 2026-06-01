@@ -1,10 +1,11 @@
 'use client'
 
 import Link from 'next/link'
+import { useLanguage } from '@/lib/i18n/LanguageContext'
 
 /** CTA on the Reading/Listening hubs linking to the targeted-practice drill. */
 export function PracticeBanner({ skill }: { skill: 'reading' | 'listening' }) {
-  const label = skill === 'reading' ? 'Reading' : 'Listening'
+  const { t } = useLanguage()
   return (
     <Link href={`/${skill}/practice`} style={{ textDecoration: 'none' }}>
       <div className="card" style={{
@@ -18,13 +19,13 @@ export function PracticeBanner({ skill }: { skill: 'reading' | 'listening' }) {
             </svg>
           </div>
           <div>
-            <div style={{ fontSize: 14, fontWeight: 700, color: 'var(--text)' }}>Targeted practice</div>
+            <div style={{ fontSize: 14, fontWeight: 700, color: 'var(--text)' }}>{t('practice.title')}</div>
             <div style={{ fontSize: 12.5, color: 'var(--text-2)' }}>
-              Drill one {label.toLowerCase()} question type (e.g. True/False/NG) by difficulty level.
+              {t('practice.desc')}
             </div>
           </div>
         </div>
-        <span style={{ fontSize: 13, fontWeight: 700, color: 'var(--accent)', flexShrink: 0 }}>Start →</span>
+        <span style={{ fontSize: 13, fontWeight: 700, color: 'var(--accent)', flexShrink: 0 }}>{t('practice.start')} →</span>
       </div>
     </Link>
   )
