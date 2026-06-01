@@ -897,6 +897,12 @@
     "writing0": "Эссе Writing Task 2",
     "writing1": "Отчёт Writing Task 1",
     "speaking0": "Speaking Part 2 (cue card)",
-    "speaking1": "Speaking Part 1 (вопросы)"
+    "speaking1": "Speaking Part 1 (вопросы)",
+    "typedDrill": "Дрилл: {{type}} · {{skill}}",
+    "qtTrueFalse": "True / False / Not Given",
+    "qtMultipleChoice": "Multiple choice",
+    "qtMatching": "Matching",
+    "qtMatchingHeadings": "Matching headings",
+    "qtFillBlank": "Sentence / form completion"
   }
 }

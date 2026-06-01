@@ -897,6 +897,12 @@
     "writing0": "Writing Task 2 эссесі",
     "writing1": "Writing Task 1 есебі",
     "speaking0": "Speaking Part 2 (cue card)",
-    "speaking1": "Speaking Part 1 (сұрақтар)"
+    "speaking1": "Speaking Part 1 (сұрақтар)",
+    "typedDrill": "Дрилл: {{type}} · {{skill}}",
+    "qtTrueFalse": "True / False / Not Given",
+    "qtMultipleChoice": "Multiple choice",
+    "qtMatching": "Matching",
+    "qtMatchingHeadings": "Matching headings",
+    "qtFillBlank": "Sentence / form completion"
   }
 }

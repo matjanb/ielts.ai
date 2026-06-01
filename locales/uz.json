@@ -858,6 +858,12 @@
     "writing0": "Writing Task 2 inshosi",
     "writing1": "Writing Task 1 hisoboti",
     "speaking0": "Speaking Part 2 (cue card)",
-    "speaking1": "Speaking Part 1 (savollar)"
+    "speaking1": "Speaking Part 1 (savollar)",
+    "typedDrill": "Drill: {{type}} · {{skill}}",
+    "qtTrueFalse": "True / False / Not Given",
+    "qtMultipleChoice": "Multiple choice",
+    "qtMatching": "Matching",
+    "qtMatchingHeadings": "Matching headings",
+    "qtFillBlank": "Sentence / form completion"
   }
 }

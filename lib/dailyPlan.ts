@@ -13,6 +13,7 @@ export interface DailyTask {
   variant: number   // which template wording to use
   minutes: number
   route: string
+  qtype?: string    // specific question type to drill (reading/listening)
 }
 
 const TEMPLATES: Record<DailySkill, { minutes: number; route: string; variants: number }> = {
@@ -36,8 +37,17 @@ export function buildDailyPlan(opts: {
   weakHints: string[]
   dailyMinutes: number
   daySeed: number
+  weakType?: Partial<Record<string, string>>
 }): DailyTask[] {
-  const { bands, weakHints, dailyMinutes, daySeed } = opts
+  const { bands, weakHints, dailyMinutes, daySeed, weakType = {} } = opts
+
+  // Reading/Listening: if we know the weakest question type, drill exactly that.
+  const targeted = (skill: DailySkill, tpl: { minutes: number; route: string }): DailyTask => {
+    const qt = weakType[skill]
+    return qt
+      ? { skill, variant: 0, minutes: tpl.minutes, route: `${tpl.route}/practice?type=${encodeURIComponent(qt)}`, qtype: qt }
+      : { skill, variant: 0, minutes: tpl.minutes, route: tpl.route }
+  }
 
   // Lower score = weaker = higher priority. Unmeasured: very weak if flagged, else mid.
   const score = (s: DailySkill) => bands[s] ?? (weakHints.includes(s) ? 4.5 : 6.0)
@@ -56,16 +66,24 @@ export function buildDailyPlan(opts: {
   }
 
   const variantCount: Record<string, number> = {}
+  const addedDrill = new Set<string>() // reading/listening drill per skill added once
   let i = 0
   while (remaining >= 12 && tasks.length < 8 && i < seq.length * 3) {
     const skill = seq[i % seq.length]
     i++
     const tpl = TEMPLATES[skill]
     if (tpl.minutes > remaining + 8) continue // would overshoot too much — try a smaller one
-    const vc = variantCount[skill] ?? 0
-    variantCount[skill] = vc + 1
-    const variant = (vc + daySeed) % tpl.variants
-    tasks.push({ skill, variant, minutes: tpl.minutes, route: tpl.route })
+
+    if (skill === 'reading' || skill === 'listening') {
+      if (addedDrill.has(skill)) continue // one focused drill per skill
+      addedDrill.add(skill)
+      tasks.push(targeted(skill, tpl))
+    } else {
+      const vc = variantCount[skill] ?? 0
+      variantCount[skill] = vc + 1
+      const variant = (vc + daySeed) % tpl.variants
+      tasks.push({ skill, variant, minutes: tpl.minutes, route: tpl.route })
+    }
     remaining -= tpl.minutes
   }
 
@@ -73,7 +91,9 @@ export function buildDailyPlan(opts: {
   if (tasks.length === 0) {
     const skill = ranked[0]
     const tpl = TEMPLATES[skill]
-    tasks.push({ skill, variant: daySeed % tpl.variants, minutes: tpl.minutes, route: tpl.route })
+    tasks.push(skill === 'reading' || skill === 'listening'
+      ? targeted(skill, tpl)
+      : { skill, variant: daySeed % tpl.variants, minutes: tpl.minutes, route: tpl.route })
   }
 
   return tasks

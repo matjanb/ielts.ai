@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import Link from 'next/link'
 import { getUser } from '@/lib/services/auth'
 import { logStudySession } from '@/lib/services/attempts'
@@ -43,6 +43,24 @@ export function PracticeClient({ skill }: { skill: 'reading' | 'listening' }) {
     getPracticeFilters(skill).then(setFilters)
     getUser().then(({ user }) => setUserId(user?.id ?? null))
   }, [skill])
+
+  // Deep link from the daily plan: ?type=<question_type> preselects + auto-starts
+  // a focused drill of that type (e.g. the user's weakest reading sub-skill).
+  const autoRef = useRef<'pending' | 'done'>('pending')
+  useEffect(() => {
+    if (!filters || autoRef.current !== 'pending') return
+    const wanted = new URLSearchParams(window.location.search).get('type')
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    if (wanted && filters.types.some(x => x.type === wanted)) setType(wanted)
+    else autoRef.current = 'done'
+  }, [filters])
+  useEffect(() => {
+    if (autoRef.current === 'pending' && type && filters && step === 'config') {
+      autoRef.current = 'done'
+      start()
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [type, filters])
 
   // difficulty levels that actually exist for the chosen type
   const availDiffs = useMemo<Difficulty[]>(() => {

@@ -219,6 +219,15 @@ function CalendarStrip({ heatmap }: { heatmap: number[] }) {
   )
 }
 
+// Localised label for a DB question_type (used by daily-plan targeted drills).
+const QT_KEY: Record<string, string> = {
+  true_false: 'qtTrueFalse', multiple_choice: 'qtMultipleChoice',
+  matching: 'qtMatching', matching_headings: 'qtMatchingHeadings', fill_blank: 'qtFillBlank',
+}
+function qtLabel(t: (k: string) => string, type: string): string {
+  return QT_KEY[type] ? t('daily.' + QT_KEY[type]) : type
+}
+
 // ── Today card ─────────────────────────────────────────────────────────────────
 type Session = { label: string; href: string; skill: string; score?: number | null; meta?: string; done?: boolean }
 
@@ -379,13 +388,15 @@ export default function DashboardPage() {
       // Today's plan — generated daily from weak skills + daily-minute budget
       try {
         const ctx = await getDailyPlanContext(user.id)
-        const tasks = buildDailyPlan({ bands: ctx.bands, weakHints: ctx.weakHints, dailyMinutes: ctx.dailyMinutes, daySeed: dayOfYear() })
+        const tasks = buildDailyPlan({ bands: ctx.bands, weakHints: ctx.weakHints, dailyMinutes: ctx.dailyMinutes, daySeed: dayOfYear(), weakType: ctx.weakType })
         const dk = new Date().toISOString().slice(0, 10)
         setDailyKey(dk)
         let done: boolean[] = []
         try { done = JSON.parse(localStorage.getItem(`dailyplan:${user.id}:${dk}`) ?? '[]') } catch { /* ignore */ }
         setDailyTasks(tasks.map((tk, i) => ({
-          label: t(`daily.${tk.skill}${tk.variant}`),
+          label: tk.qtype
+            ? t('daily.typedDrill', { type: qtLabel(t, tk.qtype), skill: t('dashboard.' + tk.skill) })
+            : t(`daily.${tk.skill}${tk.variant}`),
           href: tk.route,
           skill: tk.skill === 'vocabulary' ? 'overall' : tk.skill,
           meta: `${tk.minutes} ${t('plan.min')}`,

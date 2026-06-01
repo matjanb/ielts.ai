@@ -1,5 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { createClient } from '@/lib/supabase/client'
+import { getSubskillAccuracy } from '@/lib/services/tests'
 
 function db() {
   return createClient() as any
@@ -9,6 +10,8 @@ export interface DailyPlanContext {
   dailyMinutes: number
   bands: Record<string, number | undefined>
   weakHints: string[]
+  /** Weakest question type per skill (only when there's enough answered data). */
+  weakType: Partial<Record<'reading' | 'listening', string>>
 }
 
 const HOURS_TO_MIN: Record<string, number> = {
@@ -21,11 +24,22 @@ const HOURS_TO_MIN: Record<string, number> = {
  * Weak skills: latest measured bands + the skills flagged in the diagnostic.
  */
 export async function getDailyPlanContext(userId: string): Promise<DailyPlanContext> {
-  const [diag, onb, hist] = await Promise.all([
+  const [diag, onb, hist, readAcc, listenAcc] = await Promise.all([
     db().from('diagnostic_data').select('daily_study_time, weakest_skills').eq('user_id', userId).maybeSingle(),
     db().from('onboarding_data').select('daily_hours, focus_skills').eq('user_id', userId).maybeSingle(),
     db().from('band_score_history').select('skill, score, recorded_at').eq('user_id', userId).order('recorded_at', { ascending: false }).limit(60),
+    getSubskillAccuracy(userId, 'reading').catch(() => []),
+    getSubskillAccuracy(userId, 'listening').catch(() => []),
   ])
+
+  // Weakest question type per skill — only trust it once enough questions answered.
+  const weakestType = (rows: { type: string; total: number; accuracy: number }[]) => {
+    const eligible = rows.filter(r => r.total >= 4)
+    return eligible.length ? eligible[0].type : undefined // getSubskillAccuracy is sorted weakest-first
+  }
+  const weakType: Partial<Record<'reading' | 'listening', string>> = {}
+  const rt = weakestType(readAcc as any); if (rt) weakType.reading = rt
+  const lt = weakestType(listenAcc as any); if (lt) weakType.listening = lt
 
   // Daily minutes
   let dailyMinutes = 60
@@ -46,5 +60,5 @@ export async function getDailyPlanContext(userId: string): Promise<DailyPlanCont
     ...(onb.data?.focus_skills ?? []),
   ]
 
-  return { dailyMinutes, bands, weakHints }
+  return { dailyMinutes, bands, weakHints, weakType }
 }
