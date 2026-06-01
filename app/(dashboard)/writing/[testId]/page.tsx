@@ -5,6 +5,7 @@ import { useParams, useRouter } from 'next/navigation'
 import { Loader2 } from 'lucide-react'
 import { getTestById, getWritingPromptsForTest, type WritingPrompt } from '@/lib/services/tests'
 import type { IeltsTest } from '@/lib/types/database'
+import { useLanguage } from '@/lib/i18n/LanguageContext'
 
 interface FeedbackResult {
   band_score: number
@@ -16,6 +17,7 @@ interface FeedbackResult {
 }
 
 export default function WritingTestPage() {
+  const { t } = useLanguage()
   const params = useParams<{ testId: string }>()
   const router = useRouter()
   const testId = params.testId
@@ -108,9 +110,9 @@ export default function WritingTestPage() {
         body: JSON.stringify({ content, task_type: taskType, prompt: currentPrompt.text }),
       })
       const data = await res.json()
-      if (!res.ok) setError(data.error ?? 'Failed to get feedback.')
+      if (!res.ok) setError(data.error ?? t('wtest.failed'))
       else setResult(data)
-    } catch { setError('Network error. Please try again.') }
+    } catch { setError(t('wtest.networkError')) }
     finally { setLoading(false) }
   }
 
@@ -132,7 +134,7 @@ export default function WritingTestPage() {
             fontSize: 18, lineHeight: 1, padding: '0 4px', display: 'flex', alignItems: 'center',
           }}>←</button>
           <span style={{ background: '#ffcb05', color: '#000', padding: '3px 8px', borderRadius: 2, fontSize: 11 }}>IELTS</span>
-          <span style={{ opacity: 0.7, fontWeight: 400, fontSize: 12 }}>{test?.title ?? 'Writing'}</span>
+          <span style={{ opacity: 0.7, fontWeight: 400, fontSize: 12 }}>{test?.title ?? t('dashboard.writing')}</span>
           <div style={{ display: 'flex', gap: 4, marginLeft: 8 }}>
             {(['1', '2'] as const).map(n => (
               <button key={n} onClick={() => handleTaskTypeChange(n)} style={{
@@ -146,14 +148,14 @@ export default function WritingTestPage() {
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: 12, fontSize: 12 }}>
           <span style={{ fontVariantNumeric: 'tabular-nums', color: wordCount >= minWords ? '#3aa278' : 'rgba(255,255,255,0.7)' }}>
-            {wordCount} / {minWords} words
+            {wordCount} / {minWords} {t('wtest.words')}
           </span>
           <button onClick={handleSubmit} disabled={loading || wordCount < 50 || !currentPrompt} style={{
             padding: '5px 14px', background: '#0066b3', color: '#fff', fontSize: 12, fontWeight: 700,
             borderRadius: 2, border: 'none', cursor: (wordCount < 50 || !currentPrompt) ? 'not-allowed' : 'pointer',
             opacity: (loading || wordCount < 50 || !currentPrompt) ? 0.6 : 1,
           }}>
-            {loading ? 'Analysing…' : 'Submit for AI grading'}
+            {loading ? t('wtest.analysing') : t('wtest.submit')}
           </button>
         </div>
       </div>
@@ -167,17 +169,17 @@ export default function WritingTestPage() {
             Writing Task {taskType}
           </div>
           <p style={{ fontSize: 12, color: 'var(--text-3)', marginBottom: 14 }}>
-            You should spend about {minutes} minutes on this task.
+            {t('wtest.spend', { min: String(minutes) })}
           </p>
           <div style={{ height: 1, background: 'var(--border)', marginBottom: 16 }}/>
 
           {promptsLoading ? (
             <div style={{ display: 'flex', alignItems: 'center', gap: 8, color: 'var(--text-3)', fontSize: 13, padding: '20px 0' }}>
-              <Loader2 size={14} className="animate-spin" /> Loading task…
+              <Loader2 size={14} className="animate-spin" /> {t('wtest.loadingTask')}
             </div>
           ) : !currentPrompt ? (
             <div style={{ padding: '20px 0', color: 'var(--text-3)', fontSize: 13, lineHeight: 1.55 }}>
-              No Writing Task {taskType} prompt available for this test.
+              {t('wtest.noPrompt', { n: taskType })}
             </div>
           ) : (
             <>
@@ -197,7 +199,7 @@ export default function WritingTestPage() {
               )}
               {taskType === '2' && !currentPrompt.imageUrl && (
                 <div style={{ marginTop: 20, padding: 14, background: 'color-mix(in srgb, var(--warn) 8%, transparent)', border: '1px solid color-mix(in srgb, var(--warn) 30%, transparent)', borderRadius: 8, fontSize: 12, color: 'var(--text-2)' }}>
-                  <strong>Tip:</strong> State a clear position, support it with reasons and concrete examples, and keep your argument consistent throughout.
+                  <strong>{t('wtest.tipLabel')}</strong> {t('wtest.tipText')}
                 </div>
               )}
             </>
@@ -212,13 +214,13 @@ export default function WritingTestPage() {
               <button onClick={() => applyFormat('italic')}    style={{ padding: '3px 9px', fontSize: 12, fontStyle: 'italic', background: 'var(--bg-elev)', border: '1px solid var(--border)', borderRadius: 4, cursor: 'pointer', color: 'var(--text)' }}>I</button>
               <button onClick={() => applyFormat('underline')} style={{ padding: '3px 9px', fontSize: 12, textDecoration: 'underline', background: 'var(--bg-elev)', border: '1px solid var(--border)', borderRadius: 4, cursor: 'pointer', color: 'var(--text)' }}>U</button>
               <div style={{ width: 1, background: 'var(--border)', margin: '0 4px' }}/>
-              <button onClick={handleCut}   style={{ padding: '3px 9px', fontSize: 11, background: 'var(--bg-elev)', border: '1px solid var(--border)', borderRadius: 4, cursor: 'pointer', color: 'var(--text)' }}>Cut</button>
-              <button onClick={handleCopy}  style={{ padding: '3px 9px', fontSize: 11, background: 'var(--bg-elev)', border: '1px solid var(--border)', borderRadius: 4, cursor: 'pointer', color: 'var(--text)' }}>Copy</button>
-              <button onClick={handlePaste} style={{ padding: '3px 9px', fontSize: 11, background: 'var(--bg-elev)', border: '1px solid var(--border)', borderRadius: 4, cursor: 'pointer', color: 'var(--text)' }}>Paste</button>
+              <button onClick={handleCut}   style={{ padding: '3px 9px', fontSize: 11, background: 'var(--bg-elev)', border: '1px solid var(--border)', borderRadius: 4, cursor: 'pointer', color: 'var(--text)' }}>{t('wtest.cut')}</button>
+              <button onClick={handleCopy}  style={{ padding: '3px 9px', fontSize: 11, background: 'var(--bg-elev)', border: '1px solid var(--border)', borderRadius: 4, cursor: 'pointer', color: 'var(--text)' }}>{t('wtest.copy')}</button>
+              <button onClick={handlePaste} style={{ padding: '3px 9px', fontSize: 11, background: 'var(--bg-elev)', border: '1px solid var(--border)', borderRadius: 4, cursor: 'pointer', color: 'var(--text)' }}>{t('wtest.paste')}</button>
             </div>
             <div style={{ fontSize: 12, color: wordCount >= minWords ? 'var(--accent)' : 'var(--text-3)' }}>
               <strong style={{ color: wordCount >= minWords ? 'var(--accent)' : 'var(--danger)' }}>{wordCount}</strong>
-              {' / '}{minWords} words minimum
+              {' / '}{minWords} {t('wtest.wordsMin')}
             </div>
           </div>
 
@@ -228,7 +230,7 @@ export default function WritingTestPage() {
             contentEditable
             suppressContentEditableWarning
             onInput={handleEditorInput}
-            data-placeholder="Start writing your response here…"
+            data-placeholder={t('wtest.placeholder')}
             style={{
               flex: 1, padding: '20px 24px', outline: 'none', overflow: 'auto',
               fontFamily: 'var(--font-sans)', fontSize: 15, lineHeight: 1.7,
@@ -238,9 +240,9 @@ export default function WritingTestPage() {
           />
 
           <div style={{ padding: '10px 16px', borderTop: '1px solid var(--border)', background: 'var(--bg-soft)', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexShrink: 0 }}>
-            <span style={{ fontSize: 11, color: 'var(--text-3)', fontFamily: 'var(--font-mono)' }}>Auto-saved</span>
+            <span style={{ fontSize: 11, color: 'var(--text-3)', fontFamily: 'var(--font-mono)' }}>{t('wtest.autoSaved')}</span>
             {error && <span style={{ fontSize: 12, color: 'var(--danger)' }}>{error}</span>}
-            {loading && <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 12, color: 'var(--text-2)' }}><Loader2 size={12} className="animate-spin"/> Analysing essay…</div>}
+            {loading && <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 12, color: 'var(--text-2)' }}><Loader2 size={12} className="animate-spin"/> {t('wtest.analysingEssay')}</div>}
           </div>
         </div>
 
@@ -251,11 +253,11 @@ export default function WritingTestPage() {
               <svg width={15} height={15} viewBox="0 0 24 24" fill="none" stroke="#3aa278" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
                 <path d="M12 3l1.7 4.8L18 9.5l-4.3 1.7L12 16l-1.7-4.8L6 9.5l4.3-1.7z"/>
               </svg>
-              <span style={{ fontSize: 12, fontWeight: 700, letterSpacing: '0.08em', color: '#3aa278' }}>AI EXAMINER</span>
+              <span style={{ fontSize: 12, fontWeight: 700, letterSpacing: '0.08em', color: '#3aa278' }}>{t('wtest.aiExaminer')}</span>
             </div>
 
             <div style={{ textAlign: 'center', padding: '16px 0 20px' }}>
-              <div style={{ fontSize: 10, letterSpacing: '0.1em', opacity: 0.5, marginBottom: 6 }}>OVERALL BAND</div>
+              <div style={{ fontSize: 10, letterSpacing: '0.1em', opacity: 0.5, marginBottom: 6 }}>{t('wtest.overallBand')}</div>
               <div style={{ fontFamily: 'var(--font-display)', fontStyle: 'italic', fontSize: 72, lineHeight: 1, color: '#3aa278', fontWeight: 500 }}>
                 {result.band_score.toFixed(1)}
               </div>
@@ -263,10 +265,10 @@ export default function WritingTestPage() {
 
             <div style={{ marginTop: 20, display: 'grid', gap: 10 }}>
               {[
-                { k: 'Task response',        v: result.task_achievement },
-                { k: 'Coherence & cohesion', v: result.coherence_cohesion },
-                { k: 'Lexical resource',     v: result.lexical_resource },
-                { k: 'Grammar',              v: result.grammatical_accuracy },
+                { k: t('wtest.critTask'),      v: result.task_achievement },
+                { k: t('wtest.critCoherence'), v: result.coherence_cohesion },
+                { k: t('wtest.critLexical'),   v: result.lexical_resource },
+                { k: t('wtest.critGrammar'),   v: result.grammatical_accuracy },
               ].map(row => (
                 <div key={row.k} style={{ background: '#16191b', padding: 14, borderRadius: 10 }}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 6 }}>
@@ -288,31 +290,29 @@ export default function WritingTestPage() {
 
             {result.feedback.strengths.length > 0 && (
               <div style={{ marginTop: 10, padding: 14, background: '#16191b', borderRadius: 10 }}>
-                <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: '0.08em', color: '#3aa278', marginBottom: 8 }}>STRENGTHS</div>
+                <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: '0.08em', color: '#3aa278', marginBottom: 8 }}>{t('wtest.strengths')}</div>
                 {result.feedback.strengths.map((s, i) => <div key={i} style={{ fontSize: 12, lineHeight: 1.5, marginBottom: 5, opacity: 0.8 }}>✓ {s}</div>)}
               </div>
             )}
 
             {result.feedback.improvements.length > 0 && (
               <div style={{ marginTop: 10, padding: 14, background: '#16191b', borderRadius: 10 }}>
-                <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: '0.08em', color: '#e4b54f', marginBottom: 8 }}>IMPROVE</div>
+                <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: '0.08em', color: '#e4b54f', marginBottom: 8 }}>{t('wtest.improve')}</div>
                 {result.feedback.improvements.map((s, i) => <div key={i} style={{ fontSize: 12, lineHeight: 1.5, marginBottom: 5, opacity: 0.8 }}>→ {s}</div>)}
               </div>
             )}
 
             {result.feedback.rewritten_paragraph && (
               <div style={{ marginTop: 10, padding: 14, background: '#16191b', borderRadius: 10 }}>
-                <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: '0.08em', color: '#3aa278', marginBottom: 8 }}>BAND-8 VERSION</div>
+                <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: '0.08em', color: '#3aa278', marginBottom: 8 }}>{t('wtest.band8')}</div>
                 <p style={{ fontSize: 12, lineHeight: 1.6, margin: 0, fontStyle: 'italic', opacity: 0.75 }}>{result.feedback.rewritten_paragraph}</p>
               </div>
             )}
 
             <div style={{ marginTop: 14, padding: 14, background: '#16191b', borderRadius: 10 }}>
-              <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: '0.08em', color: '#3aa278', marginBottom: 6 }}>NEXT STEP</div>
+              <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: '0.08em', color: '#3aa278', marginBottom: 6 }}>{t('wtest.nextStep')}</div>
               <p style={{ fontSize: 12.5, lineHeight: 1.55, margin: 0 }}>
-                {taskType === '2'
-                  ? 'Two more discussion essays this week, then move to Problem-Solution.'
-                  : 'Practice summarising data trends with accurate comparisons.'}
+                {taskType === '2' ? t('wtest.nextTask2') : t('wtest.nextTask1')}
               </p>
             </div>
           </div>
