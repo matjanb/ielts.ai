@@ -521,7 +521,7 @@ const DECKS = {
 
 /* ── SQL emit ─────────────────────────────────────────────────────────────── */
 const q = (s) => `'${String(s).replace(/'/g, "''")}'`
-const arr = (a) => (a.length ? `array[${a.map(q).join(', ')}]` : `'{}'`)
+const arr = (a) => (a.length ? `array[${a.map(q).join(', ')}]::text[]` : `'{}'::text[]`)
 
 const SCHEMA = `-- ============================================================
 -- IELTS Vocabulary bank: decks + words (+ per-user SRS progress)
