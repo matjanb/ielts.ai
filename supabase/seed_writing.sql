@@ -348,3 +348,44 @@ VALUES (
 );
 
 END $$;
+
+-- ============================================================
+-- Writing Test 8
+-- ============================================================
+
+DO $$
+DECLARE
+  wt8_id  uuid;
+  s1_id   uuid;
+  s2_id   uuid;
+BEGIN
+
+INSERT INTO tests (title, type, book_number, test_number, difficulty)
+VALUES ('Cambridge IELTS — Writing Test 8', 'writing', 1, 8, 'medium')
+RETURNING id INTO wt8_id;
+
+INSERT INTO test_sections (test_id, section_number, title, instructions)
+VALUES (wt8_id, 1, 'Writing Task 1', 'You should spend about 20 minutes on this task. Write at least 150 words.')
+RETURNING id INTO s1_id;
+
+INSERT INTO questions (section_id, question_number, question_type, question_text, options, image_url, points)
+VALUES (
+  s1_id, 1, 'essay',
+  'The graph below shows the average monthly change in the prices of three metals during 2014. Summarise the information by selecting and reporting the main features, and make comparisons where relevant.',
+  '{"task_type":"1","min_words":150,"minutes":20,"task_subtype":"graph","note":"Write at least 150 words."}',
+  null, 1
+);
+
+INSERT INTO test_sections (test_id, section_number, title, instructions)
+VALUES (wt8_id, 2, 'Writing Task 2', 'You should spend about 40 minutes on this task. Write at least 250 words.')
+RETURNING id INTO s2_id;
+
+INSERT INTO questions (section_id, question_number, question_type, question_text, options, points)
+VALUES (
+  s2_id, 1, 'essay',
+  'In many countries, people are now living longer than ever before. Some people say an ageing population creates problems for governments. Other people think there are benefits if society has more elderly people. To what extent do the advantages of having an ageing population outweigh the disadvantages?',
+  '{"task_type":"2","min_words":250,"minutes":40,"note":"Give reasons for your answer and include any relevant examples from your own knowledge or experience. Write at least 250 words."}',
+  1
+);
+
+END $$;
