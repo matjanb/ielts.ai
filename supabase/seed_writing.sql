@@ -307,3 +307,44 @@ VALUES (
 );
 
 END $$;
+
+-- ============================================================
+-- Writing Test 7
+-- ============================================================
+
+DO $$
+DECLARE
+  wt7_id  uuid;
+  s1_id   uuid;
+  s2_id   uuid;
+BEGIN
+
+INSERT INTO tests (title, type, book_number, test_number, difficulty)
+VALUES ('Cambridge IELTS — Writing Test 7', 'writing', 1, 7, 'medium')
+RETURNING id INTO wt7_id;
+
+INSERT INTO test_sections (test_id, section_number, title, instructions)
+VALUES (wt7_id, 1, 'Writing Task 1', 'You should spend about 20 minutes on this task. Write at least 150 words.')
+RETURNING id INTO s1_id;
+
+INSERT INTO questions (section_id, question_number, question_type, question_text, options, image_url, points)
+VALUES (
+  s1_id, 1, 'essay',
+  'The diagram below shows the floor plan of a public library 20 years ago and how it looks now. Summarise the information by selecting and reporting the main features, and make comparisons where relevant.',
+  '{"task_type":"1","min_words":150,"minutes":20,"task_subtype":"map","note":"Write at least 150 words."}',
+  null, 1
+);
+
+INSERT INTO test_sections (test_id, section_number, title, instructions)
+VALUES (wt7_id, 2, 'Writing Task 2', 'You should spend about 40 minutes on this task. Write at least 250 words.')
+RETURNING id INTO s2_id;
+
+INSERT INTO questions (section_id, question_number, question_type, question_text, options, points)
+VALUES (
+  s2_id, 1, 'essay',
+  'In many countries around the world, rural people are moving to cities, so the population in the countryside is decreasing. Do you think this is a positive or a negative development?',
+  '{"task_type":"2","min_words":250,"minutes":40,"note":"Give reasons for your answer and include any relevant examples from your own knowledge or experience. Write at least 250 words."}',
+  1
+);
+
+END $$;
