@@ -225,3 +225,44 @@ VALUES (
 );
 
 END $$;
+
+-- ============================================================
+-- Writing Test 5
+-- ============================================================
+
+DO $$
+DECLARE
+  wt5_id  uuid;
+  s1_id   uuid;
+  s2_id   uuid;
+BEGIN
+
+INSERT INTO tests (title, type, book_number, test_number, difficulty)
+VALUES ('Cambridge IELTS — Writing Test 5', 'writing', 1, 5, 'medium')
+RETURNING id INTO wt5_id;
+
+INSERT INTO test_sections (test_id, section_number, title, instructions)
+VALUES (wt5_id, 1, 'Writing Task 1', 'You should spend about 20 minutes on this task. Write at least 150 words.')
+RETURNING id INTO s1_id;
+
+INSERT INTO questions (section_id, question_number, question_type, question_text, options, image_url, points)
+VALUES (
+  s1_id, 1, 'essay',
+  'The graph below gives information about the percentage of the population in four Asian countries living in cities from 1970 to 2020, with predictions for 2030 and 2040. Summarise the information by selecting and reporting the main features, and make comparisons where relevant.',
+  '{"task_type":"1","min_words":150,"minutes":20,"task_subtype":"graph","note":"Write at least 150 words."}',
+  null, 1
+);
+
+INSERT INTO test_sections (test_id, section_number, title, instructions)
+VALUES (wt5_id, 2, 'Writing Task 2', 'You should spend about 40 minutes on this task. Write at least 250 words.')
+RETURNING id INTO s2_id;
+
+INSERT INTO questions (section_id, question_number, question_type, question_text, options, points)
+VALUES (
+  s2_id, 1, 'essay',
+  'The most important aim of science should be to improve people''s lives. To what extent do you agree or disagree with this statement?',
+  '{"task_type":"2","min_words":250,"minutes":40,"note":"Give reasons for your answer and include any relevant examples from your own knowledge or experience. Write at least 250 words."}',
+  1
+);
+
+END $$;
