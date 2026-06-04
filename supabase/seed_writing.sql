@@ -594,3 +594,44 @@ VALUES (
 );
 
 END $$;
+
+-- ============================================================
+-- Writing Test 14
+-- ============================================================
+
+DO $$
+DECLARE
+  wt14_id uuid;
+  s1_id   uuid;
+  s2_id   uuid;
+BEGIN
+
+INSERT INTO tests (title, type, book_number, test_number, difficulty)
+VALUES ('Cambridge IELTS — Writing Test 14', 'writing', 1, 14, 'medium')
+RETURNING id INTO wt14_id;
+
+INSERT INTO test_sections (test_id, section_number, title, instructions)
+VALUES (wt14_id, 1, 'Writing Task 1', 'You should spend about 20 minutes on this task. Write at least 150 words.')
+RETURNING id INTO s1_id;
+
+INSERT INTO questions (section_id, question_number, question_type, question_text, options, image_url, points)
+VALUES (
+  s1_id, 1, 'essay',
+  'The diagram below shows the manufacturing process for making sugar from sugar cane. Summarise the information by selecting and reporting the main features, and make comparisons where relevant.',
+  '{"task_type":"1","min_words":150,"minutes":20,"task_subtype":"process","note":"Write at least 150 words."}',
+  null, 1
+);
+
+INSERT INTO test_sections (test_id, section_number, title, instructions)
+VALUES (wt14_id, 2, 'Writing Task 2', 'You should spend about 40 minutes on this task. Write at least 250 words.')
+RETURNING id INTO s2_id;
+
+INSERT INTO questions (section_id, question_number, question_type, question_text, options, points)
+VALUES (
+  s2_id, 1, 'essay',
+  'In their advertising, businesses nowadays usually emphasise that their products are new in some way. Why is this? Do you think it is a positive or negative development?',
+  '{"task_type":"2","min_words":250,"minutes":40,"note":"Give reasons for your answer and include any relevant examples from your own knowledge or experience. Write at least 250 words."}',
+  1
+);
+
+END $$;
