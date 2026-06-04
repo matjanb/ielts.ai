@@ -52,7 +52,7 @@ create table if not exists profiles (
   country                 text,
   subscription_status     subscription_status not null default 'free',
   subscription_expires_at timestamptz,
-  stripe_customer_id      text unique,
+  paddle_customer_id      text unique,
   onboarding_completed    boolean not null default false,
   created_at              timestamptz not null default now(),
   updated_at              timestamptz not null default now()

@@ -34,7 +34,7 @@ export default function TermsPage() {
           heading: 'Subscriptions & billing',
           body: (
             <>
-              Paid plans are billed in advance through Stripe on a monthly or annual basis. Your
+              Paid plans are billed in advance through Paddle on a monthly or annual basis. Your
               subscription renews automatically until cancelled. You can cancel anytime from
               Settings; access continues until the end of the current billing period.
             </>

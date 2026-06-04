@@ -1,6 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { createClient } from '@/lib/supabase/client'
 import { getSubskillAccuracy } from '@/lib/services/tests'
+import { buildDailyPlan, dailyPlanSummary, dayOfYear, type DailyTask, type DailySummary } from '@/lib/dailyPlan'
 
 function db() {
   return createClient() as any
@@ -12,10 +13,18 @@ export interface DailyPlanContext {
   weakHints: string[]
   /** Weakest question type per skill (only when there's enough answered data). */
   weakType: Partial<Record<'reading' | 'listening', string>>
+  /** Approximate days until the exam, from the timeline/exam-date bucket. */
+  daysToExam?: number
 }
 
 const HOURS_TO_MIN: Record<string, number> = {
   '30_min': 30, '1_hour': 60, '2_hours': 120, '3_plus_hours': 180,
+}
+
+/* We don't store a real exam date — only a coarse bucket. Map each bucket to a
+ * representative day count so the plan can scale its urgency. */
+const BUCKET_TO_DAYS: Record<string, number> = {
+  within_1_month: 21, '1_3_months': 60, '3_6_months': 135,
 }
 
 /**
@@ -25,8 +34,8 @@ const HOURS_TO_MIN: Record<string, number> = {
  */
 export async function getDailyPlanContext(userId: string): Promise<DailyPlanContext> {
   const [diag, onb, hist, readAcc, listenAcc] = await Promise.all([
-    db().from('diagnostic_data').select('daily_study_time, weakest_skills').eq('user_id', userId).maybeSingle(),
-    db().from('onboarding_data').select('daily_hours, focus_skills').eq('user_id', userId).maybeSingle(),
+    db().from('diagnostic_data').select('daily_study_time, weakest_skills, exam_date').eq('user_id', userId).maybeSingle(),
+    db().from('onboarding_data').select('daily_hours, focus_skills, timeline').eq('user_id', userId).maybeSingle(),
     db().from('band_score_history').select('skill, score, recorded_at').eq('user_id', userId).order('recorded_at', { ascending: false }).limit(60),
     getSubskillAccuracy(userId, 'reading').catch(() => []),
     getSubskillAccuracy(userId, 'listening').catch(() => []),
@@ -60,5 +69,40 @@ export async function getDailyPlanContext(userId: string): Promise<DailyPlanCont
     ...(onb.data?.focus_skills ?? []),
   ]
 
-  return { dailyMinutes, bands, weakHints, weakType }
+  // Approximate days to the exam from whichever bucket we have (diagnostic first,
+  // then onboarding timeline). 'not_sure'/missing → undefined (relaxed pacing).
+  const bucket = diag.data?.exam_date ?? onb.data?.timeline
+  const daysToExam = bucket ? BUCKET_TO_DAYS[bucket] : undefined
+
+  return { dailyMinutes, bands, weakHints, weakType, daysToExam }
+}
+
+/** Stable per-user, per-day localStorage key for today's done-state. Shared by
+ *  both the Overview and the Study Plan page so progress stays in sync. */
+export function dailyDoneKey(userId: string): string {
+  return `dailyplan:${userId}:${new Date().toISOString().slice(0, 10)}`
+}
+
+export interface DailyPlanResult {
+  tasks: DailyTask[]
+  summary: DailySummary
+  doneKey: string
+}
+
+/**
+ * The single entry point both pages use to render "today" — same context, same
+ * day-seed, same localStorage key, so the Overview and Study Plan always agree.
+ */
+export async function getDailyPlan(userId: string): Promise<DailyPlanResult> {
+  const ctx = await getDailyPlanContext(userId)
+  const tasks = buildDailyPlan({
+    bands: ctx.bands,
+    weakHints: ctx.weakHints,
+    dailyMinutes: ctx.dailyMinutes,
+    daySeed: dayOfYear(),
+    weakType: ctx.weakType,
+    daysToExam: ctx.daysToExam,
+  })
+  const summary = dailyPlanSummary({ bands: ctx.bands, weakHints: ctx.weakHints, daysToExam: ctx.daysToExam })
+  return { tasks, summary, doneKey: dailyDoneKey(userId) }
 }

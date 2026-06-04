@@ -2,8 +2,10 @@
 
 import { useEffect, useState } from 'react'
 import Link from 'next/link'
-import { BrainCircuit, Loader2, RefreshCw, AlertCircle, Calendar, Target, Clock, Layers, ArrowRight } from 'lucide-react'
+import { BrainCircuit, Loader2, RefreshCw, AlertCircle, Calendar, Target, Clock, Layers, ArrowRight, Info } from 'lucide-react'
 import { useLanguage } from '@/lib/i18n/LanguageContext'
+import { getDailyPlan } from '@/lib/services/dailyPlan'
+import type { DailySummary, TaskReason } from '@/lib/dailyPlan'
 
 interface Task { day: string; skill: string; activity: string; minutes: number }
 interface WeekPlan {
@@ -24,7 +26,20 @@ interface StudyPlan {
   progress?: Record<string, boolean>
 }
 
+/** A daily-plan task, localized for rendering in the "Today" card. */
+interface DailyView { skill: string; label: string; minutes: number; route: string; reason: string }
+
 const STAT_ICONS = { duration: Calendar, target: Target, daily: Clock, focus: Layers }
+
+// Localized labels for the adaptive daily plan (shared wording with the Overview).
+const QT_KEY: Record<string, string> = {
+  true_false: 'qtTrueFalse', multiple_choice: 'qtMultipleChoice',
+  matching: 'qtMatching', matching_headings: 'qtMatchingHeadings', fill_blank: 'qtFillBlank',
+}
+const REASON_KEY: Record<TaskReason, string> = {
+  weakest: 'daily.reasonWeakest', weak: 'daily.reasonWeak',
+  maintain: 'daily.reasonMaintain', habit: 'daily.reasonHabit', mock: 'daily.reasonMock',
+}
 
 const SKILL_ROUTE: Record<string, string> = {
   listening: '/listening', reading: '/reading',
@@ -38,8 +53,6 @@ const SKILL_COLOR: Record<string, string> = {
   grammar: '#0d9488', review: '#475569', mixed: 'var(--text-3)',
 }
 
-const DAY_NAMES = ['Weekend', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Weekend']
-
 export default function StudyPlanPage() {
   const { t } = useLanguage()
   const [plan, setPlan]         = useState<StudyPlan | null>(null)
@@ -49,6 +62,11 @@ export default function StudyPlanPage() {
   const [generating, setGenerating] = useState(false)
   const [error, setError]       = useState('')
   const [activeWeek, setActiveWeek] = useState(1)
+  // Adaptive "today" — same engine, day-seed and localStorage key as the Overview.
+  const [dailyTasks, setDailyTasks]     = useState<DailyView[] | null>(null)
+  const [dailySummary, setDailySummary] = useState<DailySummary | null>(null)
+  const [dailyDone, setDailyDone]       = useState<boolean[]>([])
+  const [dailyKey, setDailyKey]         = useState('')
 
   function skillLabel(s: string): string {
     if (s === 'listening' || s === 'reading' || s === 'writing' || s === 'speaking') return t('dashboard.' + s)
@@ -59,6 +77,27 @@ export default function StudyPlanPage() {
     if (s === 'mixed') return t('plan.skillMixed')
     return s
   }
+  function qtLabel(type: string): string { return QT_KEY[type] ? t('daily.' + QT_KEY[type]) : type }
+  function reasonText(r?: TaskReason): string { return r ? t(REASON_KEY[r]) : '' }
+  function whyToday(s: DailySummary): string {
+    const skills = s.weakest.map(k => t('dashboard.' + k)).join(' & ')
+    const key = s.urgency === 'high' ? 'daily.whyTodayHigh' : s.urgency === 'med' ? 'daily.whyTodayMed' : 'daily.whyTodayLow'
+    return t(key, { skills })
+  }
+  function whyWeek(s: DailySummary): string {
+    const skills = s.weakest.map(k => t('dashboard.' + k)).join(' & ')
+    const key = s.urgency === 'high' ? 'daily.whyWeekHigh' : s.urgency === 'med' ? 'daily.whyWeekMed' : 'daily.whyWeekLow'
+    return t(key, { skills })
+  }
+
+  function toggleDailyTask(idx: number) {
+    setDailyDone(prev => {
+      const next = [...prev]
+      next[idx] = !next[idx]
+      if (dailyKey) { try { localStorage.setItem(dailyKey, JSON.stringify(next)) } catch { /* ignore */ } }
+      return next
+    })
+  }
 
   useEffect(() => {
     async function loadPlan() {
@@ -68,6 +107,26 @@ export default function StudyPlanPage() {
         const { user } = await getUser()
         if (!user) return
         setUserId(user.id)
+
+        // Adaptive daily plan — shown even if no weekly roadmap exists yet.
+        try {
+          const dp = await getDailyPlan(user.id)
+          setDailyKey(dp.doneKey)
+          setDailySummary(dp.summary)
+          let done: boolean[] = []
+          try { done = JSON.parse(localStorage.getItem(dp.doneKey) ?? '[]') } catch { /* ignore */ }
+          setDailyDone(done)
+          setDailyTasks(dp.tasks.map(tk => ({
+            skill: tk.skill,
+            label: tk.qtype
+              ? t('daily.typedDrill', { type: qtLabel(tk.qtype), skill: t('dashboard.' + tk.skill) })
+              : t(`daily.${tk.skill}${tk.variant}`),
+            minutes: tk.minutes,
+            route: tk.route,
+            reason: reasonText(tk.reason),
+          })))
+        } catch { /* daily plan optional */ }
+
         const data = await getStudyPlan(user.id)
         if (data) {
           const sp = data as StudyPlan
@@ -80,7 +139,7 @@ export default function StudyPlanPage() {
       }
     }
     loadPlan()
-  }, [])
+  }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
   async function handleGenerate() {
     setError('')
@@ -129,11 +188,8 @@ export default function StudyPlanPage() {
   const overview = plan?.plan_data?.overview
 
   const curWeek = plan ? currentWeekOf(plan) : 1
-  const todayName = DAY_NAMES[new Date().getDay()]
-  const curWeekPlan = weeks.find(w => w.week === curWeek)
-  const todayTasks = (curWeekPlan?.tasks ?? [])
-    .map((task, idx) => ({ task, idx }))
-    .filter(({ task }) => task.day?.toLowerCase() === todayName.toLowerCase())
+  const doneToday = dailyTasks ? dailyTasks.filter((_, i) => dailyDone[i]).length : 0
+  const allDoneToday = !!dailyTasks && dailyTasks.length > 0 && doneToday === dailyTasks.length
 
   const stats = plan ? [
     { key: 'duration', label: t('plan.duration'),    value: `${plan.weeks_duration} ${t('plan.weeks')}`, color: 'var(--accent)' },
@@ -167,6 +223,40 @@ export default function StudyPlanPage() {
         </div>
 
         <Link href={SKILL_ROUTE[task.skill] ?? '/dashboard'} style={{
+          flexShrink: 0, display: 'inline-flex', alignItems: 'center', gap: 5, padding: '6px 12px', borderRadius: 8,
+          fontSize: 12, fontWeight: 600, color: 'var(--accent)', background: 'var(--accent-soft)', textDecoration: 'none',
+        }}>
+          {t('plan.start')} <ArrowRight size={12} />
+        </Link>
+      </div>
+    )
+  }
+
+  /* Adaptive "today" row — checkbox + activity + skill/reason + Start link. */
+  function DailyRow({ idx, task }: { idx: number; task: DailyView }) {
+    const done = !!dailyDone[idx]
+    const color = SKILL_COLOR[task.skill] ?? 'var(--text-3)'
+    return (
+      <div style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '11px 14px', background: 'var(--bg-soft)', borderRadius: 10 }}>
+        <button onClick={() => toggleDailyTask(idx)} aria-label="toggle" style={{
+          width: 20, height: 20, borderRadius: 6, flexShrink: 0, cursor: 'pointer', padding: 0,
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+          background: done ? 'var(--accent)' : 'transparent',
+          border: `1.5px solid ${done ? 'var(--accent)' : 'var(--border-strong)'}`,
+        }}>
+          {done && <svg width={12} height={12} viewBox="0 0 24 24" fill="none" stroke="var(--accent-fg)" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><path d="M20 6 9 17l-5-5"/></svg>}
+        </button>
+
+        <div style={{ flex: 1, minWidth: 0 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 2, flexWrap: 'wrap' }}>
+            <span style={{ fontSize: 10.5, fontWeight: 700, color, background: `color-mix(in srgb, ${color} 14%, transparent)`, padding: '2px 8px', borderRadius: 999 }}>{skillLabel(task.skill)}</span>
+            <span style={{ fontSize: 11.5, color: 'var(--text-3)' }}>{task.minutes} {t('plan.min')}</span>
+            {task.reason && <span style={{ fontSize: 11.5, fontWeight: 600, color: 'var(--accent)' }}>· {task.reason}</span>}
+          </div>
+          <div style={{ fontSize: 13.5, color: done ? 'var(--text-3)' : 'var(--text)', lineHeight: 1.45, textDecoration: done ? 'line-through' : 'none' }}>{task.label}</div>
+        </div>
+
+        <Link href={task.route} style={{
           flexShrink: 0, display: 'inline-flex', alignItems: 'center', gap: 5, padding: '6px 12px', borderRadius: 8,
           fontSize: 12, fontWeight: 600, color: 'var(--accent)', background: 'var(--accent-soft)', textDecoration: 'none',
         }}>
@@ -223,20 +313,22 @@ export default function StudyPlanPage() {
       )}
 
       {/* Today */}
-      {plan && (
+      {dailyTasks && dailyTasks.length > 0 && (
         <div className="card" style={{ padding: 22, marginBottom: 16 }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 14 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 12 }}>
             <Calendar size={16} style={{ color: 'var(--accent)' }} />
             <h3 style={{ margin: 0, fontSize: 15, fontWeight: 700, color: 'var(--text)' }}>{t('plan.today')}</h3>
-            <span style={{ fontSize: 11, fontWeight: 700, color: 'var(--accent)', background: 'var(--accent-soft)', padding: '2px 10px', borderRadius: 999 }}>{t('plan.week')} {curWeek}</span>
+            <span style={{ fontSize: 11, fontWeight: 700, color: 'var(--accent)', background: 'var(--accent-soft)', padding: '2px 10px', borderRadius: 999, fontVariantNumeric: 'tabular-nums' }}>{doneToday}/{dailyTasks.length}</span>
           </div>
-          {todayTasks.length === 0 ? (
-            <p style={{ fontSize: 13.5, color: 'var(--text-3)', margin: 0 }}>{t('plan.todayNone')}</p>
-          ) : todayTasks.every(({ idx }) => progress[`${curWeek}:${idx}`]) ? (
-            <p style={{ fontSize: 13.5, color: 'var(--accent)', margin: '0 0 12px' }}>{t('plan.todayAllDone')}</p>
-          ) : null}
+          {dailySummary && (
+            <div style={{ display: 'flex', gap: 8, alignItems: 'flex-start', padding: '10px 14px', marginBottom: 14, background: 'var(--accent-soft)', borderRadius: 10, fontSize: 12.5, lineHeight: 1.5, color: 'var(--text-2)' }}>
+              <Info size={14} style={{ color: 'var(--accent)', flexShrink: 0, marginTop: 2 }} />
+              <span>{whyToday(dailySummary)}</span>
+            </div>
+          )}
+          {allDoneToday && <p style={{ fontSize: 13.5, color: 'var(--accent)', margin: '0 0 12px' }}>{t('plan.todayAllDone')}</p>}
           <div style={{ display: 'grid', gap: 8 }}>
-            {todayTasks.map(({ task, idx }) => <TaskRow key={idx} week={curWeek} idx={idx} task={task} />)}
+            {dailyTasks.map((task, idx) => <DailyRow key={idx} idx={idx} task={task} />)}
           </div>
         </div>
       )}
@@ -264,7 +356,10 @@ export default function StudyPlanPage() {
       {/* Weekly roadmap timeline */}
       {weeks.length > 0 ? (
         <div className="card" style={{ padding: 28 }}>
-          <h3 style={{ margin: '0 0 20px', fontSize: 18, fontWeight: 600, color: 'var(--text)' }}>{t('plan.weeklyRoadmap')}</h3>
+          <h3 style={{ margin: '0 0 8px', fontSize: 18, fontWeight: 600, color: 'var(--text)' }}>{t('plan.weeklyRoadmap')}</h3>
+          {dailySummary && (
+            <p style={{ margin: '0 0 20px', fontSize: 13, color: 'var(--text-2)', lineHeight: 1.5 }}>{whyWeek(dailySummary)}</p>
+          )}
           <div style={{ position: 'relative' }}>
             <div style={{ position: 'absolute', left: 15, top: 8, bottom: 8, width: 2, background: 'var(--border)' }}/>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>

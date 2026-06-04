@@ -5,8 +5,8 @@ import Link from 'next/link'
 import { useLanguage } from '@/lib/i18n/LanguageContext'
 import { getStudyStreak } from '@/lib/services/user'
 import { getDashboardData } from '@/lib/services/progress'
-import { getDailyPlanContext } from '@/lib/services/dailyPlan'
-import { buildDailyPlan, dayOfYear } from '@/lib/dailyPlan'
+import { getDailyPlan } from '@/lib/services/dailyPlan'
+import type { DailySummary, TaskReason } from '@/lib/dailyPlan'
 import { getUser } from '@/lib/services/auth'
 import type { Profile } from '@/lib/types/database'
 
@@ -228,10 +228,24 @@ function qtLabel(t: (k: string) => string, type: string): string {
   return QT_KEY[type] ? t('daily.' + QT_KEY[type]) : type
 }
 
-// ── Today card ─────────────────────────────────────────────────────────────────
-type Session = { label: string; href: string; skill: string; score?: number | null; meta?: string; done?: boolean }
+// Per-task "why it's here" tag + the one-line rationale above today's plan.
+const REASON_KEY: Record<TaskReason, string> = {
+  weakest: 'daily.reasonWeakest', weak: 'daily.reasonWeak',
+  maintain: 'daily.reasonMaintain', habit: 'daily.reasonHabit', mock: 'daily.reasonMock',
+}
+function reasonText(t: (k: string) => string, r?: TaskReason): string {
+  return r ? t(REASON_KEY[r]) : ''
+}
+function whyToday(t: (k: string, p?: Record<string, string>) => string, s: DailySummary): string {
+  const skills = s.weakest.map(k => t('dashboard.' + k)).join(' & ')
+  const key = s.urgency === 'high' ? 'daily.whyTodayHigh' : s.urgency === 'med' ? 'daily.whyTodayMed' : 'daily.whyTodayLow'
+  return t(key, { skills })
+}
 
-function TodayCard({ sessions, daily, onToggle }: { sessions: Session[]; daily: boolean; onToggle?: (i: number) => void }) {
+// ── Today card ─────────────────────────────────────────────────────────────────
+type Session = { label: string; href: string; skill: string; score?: number | null; meta?: string; reason?: string; done?: boolean }
+
+function TodayCard({ sessions, daily, note, onToggle }: { sessions: Session[]; daily: boolean; note?: string; onToggle?: (i: number) => void }) {
   const { t } = useLanguage()
   const doneCount = sessions.filter(s => s.done).length
   const ringVal = daily && sessions.length ? doneCount / sessions.length : 0
@@ -240,7 +254,7 @@ function TodayCard({ sessions, daily, onToggle }: { sessions: Session[]; daily: 
 
   return (
     <div className="card" style={{ padding: 28 }}>
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 20 }}>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: note ? 12 : 20 }}>
         <div>
           <div style={{ fontSize: 11, letterSpacing: '0.1em', textTransform: 'uppercase', color: 'var(--text-3)' }}>{t('dash.todayPlan')}</div>
           <h2 style={{ fontSize: 20, margin: '6px 0 0', fontWeight: 600, letterSpacing: '-0.015em', color: 'var(--text)' }}>
@@ -251,6 +265,12 @@ function TodayCard({ sessions, daily, onToggle }: { sessions: Session[]; daily: 
         </div>
         <Ring value={ringVal} size={52} stroke={4} />
       </div>
+      {note && (
+        <div style={{ display: 'flex', gap: 8, alignItems: 'flex-start', padding: '10px 14px', marginBottom: 16, background: 'var(--accent-soft)', borderRadius: 10, fontSize: 12.5, lineHeight: 1.5, color: 'var(--text-2)' }}>
+          <svg width={14} height={14} viewBox="0 0 24 24" fill="none" stroke="var(--accent)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0, marginTop: 2 }}><circle cx="12" cy="12" r="10"/><path d="M12 16v-4M12 8h.01"/></svg>
+          <span>{note}</span>
+        </div>
+      )}
       <div style={{ display: 'grid', gap: 8 }}>
         {sessions.map((s, i) => {
           const highlight = !s.done && (daily ? i === firstOpen : i === 0)
@@ -265,7 +285,7 @@ function TodayCard({ sessions, daily, onToggle }: { sessions: Session[]; daily: 
             <div style={{ flex: 1, minWidth: 0 }}>
               <div style={{ fontSize: 14, fontWeight: 500, color: 'var(--text)', textDecoration: s.done ? 'line-through' : 'none', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{s.label}</div>
               {s.meta
-                ? <div style={{ fontSize: 12, color: 'var(--text-3)' }}>{s.meta}</div>
+                ? <div style={{ fontSize: 12, color: 'var(--text-3)' }}>{s.meta}{s.reason ? <> · <span style={{ color: 'var(--accent)' }}>{s.reason}</span></> : ''}</div>
                 : s.score != null && <div style={{ fontSize: 12, color: 'var(--text-3)' }}>{t('dash.last')}: {s.score.toFixed(1)}</div>}
             </div>
           )
@@ -326,8 +346,8 @@ export default function DashboardPage() {
   const [heatmap, setHeatmap]         = useState<number[]>([])
   const [recentItems, setRecentItems] = useState<Array<{ label: string; score: number | null; href: string; skill: string }>>([])
   const [dailyTasks, setDailyTasks]   = useState<Session[] | null>(null)
+  const [dailySummary, setDailySummary] = useState<DailySummary | null>(null)
   const [dailyKey, setDailyKey]       = useState<string>('')
-  const [userId, setUserId]           = useState<string | null>(null)
   const [streak, setStreak]           = useState(0)
   const [loading, setLoading]         = useState(true)
 
@@ -338,7 +358,6 @@ export default function DashboardPage() {
     async function load() {
       const { user } = await getUser()
       if (!user) return
-      setUserId(user.id)
 
       const dashData = await getDashboardData(user.id)
       setProfile(dashData.profile)
@@ -385,21 +404,22 @@ export default function DashboardPage() {
       ]
       setRecentItems(items.slice(0, 3))
 
-      // Today's plan — generated daily from weak skills + daily-minute budget
+      // Today's plan — the single adaptive engine shared with the Study Plan page:
+      // weakest skills + weak question types + days-to-exam pressure.
       try {
-        const ctx = await getDailyPlanContext(user.id)
-        const tasks = buildDailyPlan({ bands: ctx.bands, weakHints: ctx.weakHints, dailyMinutes: ctx.dailyMinutes, daySeed: dayOfYear(), weakType: ctx.weakType })
-        const dk = new Date().toISOString().slice(0, 10)
-        setDailyKey(dk)
+        const { tasks, summary, doneKey } = await getDailyPlan(user.id)
+        setDailyKey(doneKey)
+        setDailySummary(summary)
         let done: boolean[] = []
-        try { done = JSON.parse(localStorage.getItem(`dailyplan:${user.id}:${dk}`) ?? '[]') } catch { /* ignore */ }
+        try { done = JSON.parse(localStorage.getItem(doneKey) ?? '[]') } catch { /* ignore */ }
         setDailyTasks(tasks.map((tk, i) => ({
           label: tk.qtype
             ? t('daily.typedDrill', { type: qtLabel(t, tk.qtype), skill: t('dashboard.' + tk.skill) })
             : t(`daily.${tk.skill}${tk.variant}`),
           href: tk.route,
-          skill: tk.skill === 'vocabulary' ? 'overall' : tk.skill,
+          skill: tk.skill === 'vocabulary' || tk.skill === 'mock' ? 'overall' : tk.skill,
           meta: `${tk.minutes} ${t('plan.min')}`,
+          reason: reasonText(t, tk.reason),
           done: !!done[i],
         })))
       } catch { /* daily plan optional */ }
@@ -438,8 +458,8 @@ export default function DashboardPage() {
     setDailyTasks(prev => {
       if (!prev) return prev
       const next = prev.map((s, idx) => (idx === i ? { ...s, done: !s.done } : s))
-      if (userId && dailyKey) {
-        try { localStorage.setItem(`dailyplan:${userId}:${dailyKey}`, JSON.stringify(next.map(s => !!s.done))) } catch { /* ignore */ }
+      if (dailyKey) {
+        try { localStorage.setItem(dailyKey, JSON.stringify(next.map(s => !!s.done))) } catch { /* ignore */ }
       }
       return next
     })
@@ -462,7 +482,7 @@ export default function DashboardPage() {
 
       {/* Main grid */}
       <div style={{ display: 'grid', gridTemplateColumns: '2.1fr 1fr', gap: 16, marginBottom: 16 }}>
-        <TodayCard sessions={todaySessions} daily={dailyMode} onToggle={dailyMode ? toggleDaily : undefined} />
+        <TodayCard sessions={todaySessions} daily={dailyMode} note={dailyMode && dailySummary ? whyToday(t, dailySummary) : undefined} onToggle={dailyMode ? toggleDaily : undefined} />
         <BandPredictor current={overall} target={typeof target === 'number' ? target : 7.5} />
       </div>
 

@@ -910,6 +910,18 @@
     "qtMultipleChoice": "Multiple choice",
     "qtMatching": "Matching",
     "qtMatchingHeadings": "Matching headings",
-    "qtFillBlank": "Sentence / form completion"
+    "qtFillBlank": "Sentence / form completion",
+    "mock0": "Полный пробный тест (на время)",
+    "reasonWeakest": "слабейшая секция",
+    "reasonWeak": "слабая секция",
+    "reasonMaintain": "поддержать форму",
+    "reasonHabit": "ежедневная привычка",
+    "reasonMock": "репетиция экзамена",
+    "whyTodayHigh": "Экзамен близко — сегодня максимум по самым слабым секциям: {{skills}}.",
+    "whyTodayMed": "До экзамена пара месяцев — уверенный упор на слабые секции: {{skills}}.",
+    "whyTodayLow": "Времени достаточно — развиваем все навыки с упором на {{skills}}.",
+    "whyWeekHigh": "Эта неделя — подготовка к экзамену: большинство занятий по слабым секциям ({{skills}}) плюс пробники на время.",
+    "whyWeekMed": "Эта неделя с упором на слабые секции ({{skills}}), не забывая остальные навыки.",
+    "whyWeekLow": "Эта неделя равномерно развивает все навыки, чуть больше внимания — {{skills}}."
   }
 }

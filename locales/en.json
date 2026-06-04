@@ -916,6 +916,18 @@
     "qtMultipleChoice": "Multiple choice",
     "qtMatching": "Matching",
     "qtMatchingHeadings": "Matching headings",
-    "qtFillBlank": "Sentence / form completion"
+    "qtFillBlank": "Sentence / form completion",
+    "mock0": "Full mock test (timed)",
+    "reasonWeakest": "weakest skill",
+    "reasonWeak": "weak skill",
+    "reasonMaintain": "keep sharp",
+    "reasonHabit": "daily habit",
+    "reasonMock": "exam rehearsal",
+    "whyTodayHigh": "Exam is close — today hits your weakest sections hardest: {{skills}}.",
+    "whyTodayMed": "A couple of months to go — steady focus on your weak sections: {{skills}}.",
+    "whyTodayLow": "Plenty of time — building every skill with extra focus on {{skills}}.",
+    "whyWeekHigh": "This week is exam prep: most sessions target your weakest sections ({{skills}}) plus timed mocks.",
+    "whyWeekMed": "This week leans into your weak sections ({{skills}}) while keeping every skill active.",
+    "whyWeekLow": "This week builds all skills evenly, with a little extra on {{skills}}."
   }
 }

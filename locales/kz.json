@@ -910,6 +910,18 @@
     "qtMultipleChoice": "Multiple choice",
     "qtMatching": "Matching",
     "qtMatchingHeadings": "Matching headings",
-    "qtFillBlank": "Sentence / form completion"
+    "qtFillBlank": "Sentence / form completion",
+    "mock0": "Толық сынақ тест (уақытпен)",
+    "reasonWeakest": "ең әлсіз бөлім",
+    "reasonWeak": "әлсіз бөлім",
+    "reasonMaintain": "форманы сақтау",
+    "reasonHabit": "күнделікті әдет",
+    "reasonMock": "емтихан репетициясы",
+    "whyTodayHigh": "Емтихан жақын — бүгін ең әлсіз бөлімдерге басты назар: {{skills}}.",
+    "whyTodayMed": "Емтиханға бірнеше ай қалды — әлсіз бөлімдерге тұрақты назар: {{skills}}.",
+    "whyTodayLow": "Уақыт жеткілікті — барлық дағдыны дамытамыз, {{skills}} бөліміне көбірек көңіл бөлеміз.",
+    "whyWeekHigh": "Бұл апта — емтиханға дайындық: сабақтардың көбі әлсіз бөлімдерге ({{skills}}) және уақытпен сынақтарға арналған.",
+    "whyWeekMed": "Бұл апта әлсіз бөлімдерге ({{skills}}) баса назар аударады, басқа дағдыларды да ұмытпайды.",
+    "whyWeekLow": "Бұл апта барлық дағдыны бірқалыпты дамытады, {{skills}} бөліміне сәл көбірек."
   }
 }

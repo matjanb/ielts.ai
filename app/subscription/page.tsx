@@ -5,21 +5,25 @@ import Link from 'next/link'
 import { ThemeProvider } from '@/components/providers/ThemeProvider'
 import { LanguageProvider, useLanguage } from '@/lib/i18n/LanguageContext'
 import { ThemeToggle } from '@/components/ui/ThemeToggle'
+import { getPaddle, PADDLE_PRICE } from '@/lib/paddle/client'
+import { getUser } from '@/lib/services/auth'
 
-// Start a Stripe Checkout session for the chosen plan and redirect to it.
+// Open the Paddle overlay checkout for the chosen plan.
 async function handleCheckout(planId: string) {
   try {
-    const res = await fetch('/api/stripe/checkout', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ plan: planId }),
-    })
-    const data = await res.json()
-    if (res.ok && data.url) {
-      window.location.href = data.url as string
-    } else {
-      alert(data.error ?? 'Checkout is not available yet.')
+    const priceId = PADDLE_PRICE[planId]
+    const paddle = await getPaddle()
+    if (!paddle || !priceId) {
+      alert('Checkout is not available yet.')
+      return
     }
+    const { user } = await getUser()
+    paddle.Checkout.open({
+      items: [{ priceId, quantity: 1 }],
+      customer: user?.email ? { email: user.email } : undefined,
+      customData: user?.id ? { user_id: user.id } : undefined,
+      settings: { successUrl: `${window.location.origin}/dashboard?checkout=success` },
+    })
   } catch {
     alert('Network error. Please try again.')
   }
@@ -35,9 +39,9 @@ const FEATURES = [
 ]
 
 const PLANS = [
-  { id: '1mo',  nameKey: 'dur1',  price: 14.99, original: 29.98, months: 1,  popular: false, best: false },
-  { id: '3mo',  nameKey: 'dur3',  price: 19.99, original: 39.98, months: 3,  popular: true,  best: false },
-  { id: '12mo', nameKey: 'dur12', price: 49.99, original: 99.98, months: 12, popular: false, best: true },
+  { id: '1mo',  nameKey: 'dur1',  price: 19.99,  discountPct: 0,  months: 1,  popular: false, best: false },
+  { id: '3mo',  nameKey: 'dur3',  price: 45.99,  discountPct: 30, months: 3,  popular: true,  best: false },
+  { id: '12mo', nameKey: 'dur12', price: 119.99, discountPct: 50, months: 12, popular: false, best: true },
 ]
 
 function CheckIcon() {
@@ -85,6 +89,7 @@ function SubscriptionContent() {
           {PLANS.map(plan => {
             const isSelected = selected === plan.id
             const perMonth = (plan.price / plan.months).toFixed(2)
+            const original = (plan.price / (1 - plan.discountPct / 100)).toFixed(2)
             return (
               <div
                 key={plan.id}
@@ -120,15 +125,19 @@ function SubscriptionContent() {
 
                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 }}>
                   <h3 style={{ fontSize: 20, fontWeight: 700, margin: 0, color: 'var(--text)' }}>{t(`pricing.${plan.nameKey}`)}</h3>
-                  <span style={{ fontSize: 11, fontWeight: 700, color: 'var(--accent)', background: 'var(--accent-soft)', padding: '3px 9px', borderRadius: 999 }}>
-                    {t('pricing.off50')}
-                  </span>
+                  {plan.discountPct > 0 && (
+                    <span style={{ fontSize: 11, fontWeight: 700, color: 'var(--accent)', background: 'var(--accent-soft)', padding: '3px 9px', borderRadius: 999 }}>
+                      −{plan.discountPct}%
+                    </span>
+                  )}
                 </div>
 
                 <div style={{ display: 'flex', alignItems: 'flex-end', gap: 8, marginBottom: 4 }}>
                   <span style={{ fontSize: 16, color: 'var(--text-2)', marginBottom: 6 }}>$</span>
                   <span style={{ fontSize: 48, fontWeight: 700, letterSpacing: '-0.03em', lineHeight: 1, color: 'var(--text)', fontVariantNumeric: 'tabular-nums' }}>{plan.price}</span>
-                  <span style={{ fontSize: 15, color: 'var(--text-3)', textDecoration: 'line-through', marginBottom: 6 }}>${plan.original}</span>
+                  {plan.discountPct > 0 && (
+                    <span style={{ fontSize: 15, color: 'var(--text-3)', textDecoration: 'line-through', marginBottom: 6 }}>${original}</span>
+                  )}
                 </div>
                 <div style={{ fontSize: 13, color: 'var(--text-3)', marginBottom: 20 }}>
                   {t('pricing.perMo', { p: `$${perMonth}` })}
@@ -163,7 +172,7 @@ function SubscriptionContent() {
 
         {/* Trust row */}
         <div style={{ display: 'flex', justifyContent: 'center', gap: 32, marginTop: 48, color: 'var(--text-2)', fontSize: 13, flexWrap: 'wrap' }}>
-          {['🔒 Stripe-encrypted', '✓ 7-day refund', '✕ Cancel anytime', '⚡ Instant access'].map(item => (
+          {['🔒 Paddle-encrypted', '✓ 7-day refund', '✕ Cancel anytime', '⚡ Instant access'].map(item => (
             <span key={item}>{item}</span>
           ))}
         </div>

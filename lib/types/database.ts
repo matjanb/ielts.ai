@@ -31,7 +31,7 @@ export interface Database {
           country: string | null
           subscription_status: SubscriptionStatus
           subscription_expires_at: string | null
-          stripe_customer_id: string | null
+          paddle_customer_id: string | null
           onboarding_completed: boolean
           created_at: string
           updated_at: string
@@ -45,7 +45,7 @@ export interface Database {
           country?: string | null
           subscription_status?: SubscriptionStatus
           subscription_expires_at?: string | null
-          stripe_customer_id?: string | null
+          paddle_customer_id?: string | null
           onboarding_completed?: boolean
           created_at?: string
           updated_at?: string
@@ -58,7 +58,7 @@ export interface Database {
           country?: string | null
           subscription_status?: SubscriptionStatus
           subscription_expires_at?: string | null
-          stripe_customer_id?: string | null
+          paddle_customer_id?: string | null
           onboarding_completed?: boolean
           updated_at?: string
         }

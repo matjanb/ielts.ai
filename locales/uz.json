@@ -871,6 +871,18 @@
     "qtMultipleChoice": "Multiple choice",
     "qtMatching": "Matching",
     "qtMatchingHeadings": "Matching headings",
-    "qtFillBlank": "Sentence / form completion"
+    "qtFillBlank": "Sentence / form completion",
+    "mock0": "To‘liq sinov testi (vaqt bilan)",
+    "reasonWeakest": "eng zaif bo‘lim",
+    "reasonWeak": "zaif bo‘lim",
+    "reasonMaintain": "shaklni saqlash",
+    "reasonHabit": "kunlik odat",
+    "reasonMock": "imtihon repetitsiyasi",
+    "whyTodayHigh": "Imtihon yaqin — bugun eng zaif bo‘limlarga asosiy e’tibor: {{skills}}.",
+    "whyTodayMed": "Imtihongacha bir necha oy bor — zaif bo‘limlarga barqaror e’tibor: {{skills}}.",
+    "whyTodayLow": "Vaqt yetarli — barcha ko‘nikmalarni rivojlantiramiz, {{skills}}ga ko‘proq e’tibor.",
+    "whyWeekHigh": "Bu hafta — imtihonga tayyorgarlik: ko‘p mashg‘ulotlar zaif bo‘limlarga ({{skills}}) va vaqtli sinovlarga qaratilgan.",
+    "whyWeekMed": "Bu hafta zaif bo‘limlarga ({{skills}}) e’tibor qaratadi, boshqa ko‘nikmalarni ham unutmaydi.",
+    "whyWeekLow": "Bu hafta barcha ko‘nikmalarni bir tekis rivojlantiradi, {{skills}}ga ozgina ko‘proq."
   }
 }

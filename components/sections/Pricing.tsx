@@ -7,9 +7,9 @@ import { useLanguage } from '@/lib/i18n/LanguageContext'
 const FEATURE_KEYS = ['proF1', 'proF2', 'proF3', 'proF4', 'proF5', 'proF6']
 
 const PLANS = [
-  { id: '1mo',  nameKey: 'dur1',  price: 14.99, original: 29.98, months: 1,  popular: false, best: false },
-  { id: '3mo',  nameKey: 'dur3',  price: 19.99, original: 39.98, months: 3,  popular: true,  best: false },
-  { id: '12mo', nameKey: 'dur12', price: 49.99, original: 99.98, months: 12, popular: false, best: true },
+  { id: '1mo',  nameKey: 'dur1',  price: 19.99,  discountPct: 0,  months: 1,  popular: false, best: false },
+  { id: '3mo',  nameKey: 'dur3',  price: 45.99,  discountPct: 30, months: 3,  popular: true,  best: false },
+  { id: '12mo', nameKey: 'dur12', price: 119.99, discountPct: 50, months: 12, popular: false, best: true },
 ]
 
 export function Pricing() {
@@ -33,8 +33,9 @@ export function Pricing() {
 
         {/* Tiers */}
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 16, maxWidth: 980, margin: '0 auto' }}>
-          {PLANS.map(({ id, nameKey, price, original, months, popular, best }) => {
+          {PLANS.map(({ id, nameKey, price, discountPct, months, popular, best }) => {
             const perMonth = (price / months).toFixed(2)
+            const original = (price / (1 - discountPct / 100)).toFixed(2)
             return (
               <div key={id} style={{
                 position: 'relative', display: 'flex', flexDirection: 'column',
@@ -68,17 +69,21 @@ export function Pricing() {
                     <h3 style={{ fontSize: 15, fontWeight: 600, margin: 0, opacity: popular ? 0.85 : 1, color: popular ? 'inherit' : 'var(--text-2)' }}>
                       {t(`pricing.${nameKey}`)}
                     </h3>
-                    <span style={{
-                      fontSize: 10, fontWeight: 700, padding: '3px 8px', borderRadius: 999,
-                      background: popular ? 'var(--accent-fg)' : 'var(--accent-soft)',
-                      color: popular ? 'var(--accent)' : 'var(--accent)',
-                    }}>
-                      {t('pricing.off50')}
-                    </span>
+                    {discountPct > 0 && (
+                      <span style={{
+                        fontSize: 10, fontWeight: 700, padding: '3px 8px', borderRadius: 999,
+                        background: popular ? 'var(--accent-fg)' : 'var(--accent-soft)',
+                        color: 'var(--accent)',
+                      }}>
+                        −{discountPct}%
+                      </span>
+                    )}
                   </div>
                   <div style={{ display: 'flex', alignItems: 'flex-end', gap: 8, marginBottom: 4 }}>
                     <span style={{ fontSize: 40, fontWeight: 700, letterSpacing: '-0.02em', lineHeight: 1 }}>${price}</span>
-                    <span style={{ fontSize: 16, marginBottom: 5, textDecoration: 'line-through', opacity: 0.55 }}>${original}</span>
+                    {discountPct > 0 && (
+                      <span style={{ fontSize: 16, marginBottom: 5, textDecoration: 'line-through', opacity: 0.55 }}>${original}</span>
+                    )}
                   </div>
                   <div style={{ fontSize: 13, opacity: popular ? 0.8 : 1, color: popular ? 'inherit' : 'var(--text-3)' }}>
                     {t('pricing.perMo', { p: `$${perMonth}` })}
