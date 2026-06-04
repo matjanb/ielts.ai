@@ -47,7 +47,7 @@ export function StatsStrip() {
   const { t } = useLanguage()
 
   const stats = [
-    { node: <CountUp to={500000} suffix="+" />, label: t('stat.students') },
+    { node: <CountUp to={100000} suffix="+" />, label: t('stat.students') },
     { node: <CountUp to={2.0} decimals={1} prefix="+" />, label: t('stat.band') },
     { node: <CountUp to={93} suffix="%" />, label: t('stat.rate') },
   ]
