@@ -31,6 +31,11 @@ export function Footer() {
             onMouseLeave={e => (e.currentTarget.style.color = 'var(--text-3)')}>
             Terms
           </Link>
+          <Link href="/refund" style={{ transition: 'color 0.15s' }}
+            onMouseEnter={e => (e.currentTarget.style.color = 'var(--text)')}
+            onMouseLeave={e => (e.currentTarget.style.color = 'var(--text-3)')}>
+            Refund
+          </Link>
           <span>© 2026</span>
         </div>
       </div>
