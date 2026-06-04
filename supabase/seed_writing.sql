@@ -635,3 +635,44 @@ VALUES (
 );
 
 END $$;
+
+-- ============================================================
+-- Writing Test 15
+-- ============================================================
+
+DO $$
+DECLARE
+  wt15_id uuid;
+  s1_id   uuid;
+  s2_id   uuid;
+BEGIN
+
+INSERT INTO tests (title, type, book_number, test_number, difficulty)
+VALUES ('Cambridge IELTS — Writing Test 15', 'writing', 1, 15, 'medium')
+RETURNING id INTO wt15_id;
+
+INSERT INTO test_sections (test_id, section_number, title, instructions)
+VALUES (wt15_id, 1, 'Writing Task 1', 'You should spend about 20 minutes on this task. Write at least 150 words.')
+RETURNING id INTO s1_id;
+
+INSERT INTO questions (section_id, question_number, question_type, question_text, options, image_url, points)
+VALUES (
+  s1_id, 1, 'essay',
+  'The plans below show the site of an airport now and how it will look after redevelopment next year. Summarise the information by selecting and reporting the main features, and make comparisons where relevant.',
+  '{"task_type":"1","min_words":150,"minutes":20,"task_subtype":"map","note":"Write at least 150 words."}',
+  null, 1
+);
+
+INSERT INTO test_sections (test_id, section_number, title, instructions)
+VALUES (wt15_id, 2, 'Writing Task 2', 'You should spend about 40 minutes on this task. Write at least 250 words.')
+RETURNING id INTO s2_id;
+
+INSERT INTO questions (section_id, question_number, question_type, question_text, options, points)
+VALUES (
+  s2_id, 1, 'essay',
+  'Many manufactured food and drink products contain high levels of sugar, which causes many health problems. Sugary products should be made more expensive to encourage people to consume less sugar. Do you agree or disagree?',
+  '{"task_type":"2","min_words":250,"minutes":40,"note":"Give reasons for your answer and include any relevant examples from your own knowledge or experience. Write at least 250 words."}',
+  1
+);
+
+END $$;
