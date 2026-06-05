@@ -166,7 +166,10 @@ export default function SignupPage() {
         {/* Form */}
         <form onSubmit={handleSubmit} className="space-y-4">
           {error && (
-            <div className="px-4 py-3 rounded-xl text-sm">
+            <div
+              className="px-4 py-3 rounded-xl text-sm"
+              style={{ background: 'var(--danger-soft, rgba(220,38,38,0.1))', color: 'var(--danger, #dc2626)', border: '1px solid var(--danger, #dc2626)' }}
+            >
               {error}
             </div>
           )}

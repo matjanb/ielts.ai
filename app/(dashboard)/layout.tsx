@@ -152,7 +152,7 @@ function DashboardLayoutInner({ children }: { children: ReactNode }) {
   }
   const onLeave = () => {
     if (hoverTimer.current) clearTimeout(hoverTimer.current)
-    hoverTimer.current = setTimeout(() => setHover(false), 200)
+    hoverTimer.current = setTimeout(() => setHover(false), 450)
   }
 
   const expanded = hover || pinned
@@ -200,6 +200,9 @@ function DashboardLayoutInner({ children }: { children: ReactNode }) {
     return pathname.startsWith(n.href)
   })
 
+  // Settings stays accessible without a subscription (account / billing / sign out).
+  const paywalled = subscribed === false && !pathname.startsWith('/dashboard/settings')
+
   return (
     <div style={{ position: 'relative', minHeight: '100vh', background: 'var(--bg)' }}>
 
@@ -209,7 +212,7 @@ function DashboardLayoutInner({ children }: { children: ReactNode }) {
         onMouseLeave={onLeave}
         style={{
           position: 'fixed', top: 0, left: 0, bottom: 0,
-          width: expanded ? sidebarWidth + 16 : 8,
+          width: expanded ? sidebarWidth + 80 : 8,
           zIndex: 30, pointerEvents: 'auto',
         }}
       />
@@ -462,14 +465,14 @@ function DashboardLayoutInner({ children }: { children: ReactNode }) {
 
         {/* Page content — scrolls for normal pages; exam pages use flex:1 to fill.
             Non-subscribers see it blurred behind the paywall overlay. */}
-        <div style={{ flex: 1, display: 'flex', flexDirection: 'column', minHeight: 0, overflowY: subscribed === false ? 'hidden' : 'auto', position: 'relative' }}>
+        <div style={{ flex: 1, display: 'flex', flexDirection: 'column', minHeight: 0, overflowY: paywalled ? 'hidden' : 'auto', position: 'relative' }}>
           <div style={{
             flex: 1, display: 'flex', flexDirection: 'column', minHeight: 0,
-            ...(subscribed === false ? { filter: 'blur(6px)', pointerEvents: 'none', userSelect: 'none' } : {}),
+            ...(paywalled ? { filter: 'blur(6px)', pointerEvents: 'none', userSelect: 'none' } : {}),
           }}>
             {children}
           </div>
-          {subscribed === false && <PaywallOverlay user={{ id: userId, email: userEmail }} />}
+          {paywalled && <PaywallOverlay user={{ id: userId, email: userEmail }} />}
         </div>
       </main>
 
