@@ -56,7 +56,10 @@ export async function openCheckout(
     items: [{ priceId, quantity: 1 }],
     customer: user?.email ? { email: user.email } : undefined,
     customData: user?.id ? { user_id: user.id } : undefined,
-    settings: { successUrl: `${window.location.origin}/dashboard?checkout=success` },
+    // Land back on the subscription page, which waits for the webhook to flip
+    // the status to active and then forwards into the dashboard (avoids a
+    // redirect loop if the webhook hasn't processed yet).
+    settings: { successUrl: `${window.location.origin}/subscription?checkout=success` },
   })
   return true
 }

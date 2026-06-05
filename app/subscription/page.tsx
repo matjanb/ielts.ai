@@ -1,12 +1,14 @@
 'use client'
 
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import Link from 'next/link'
+import { useRouter } from 'next/navigation'
 import { ThemeProvider } from '@/components/providers/ThemeProvider'
 import { LanguageProvider, useLanguage } from '@/lib/i18n/LanguageContext'
 import { ThemeToggle } from '@/components/ui/ThemeToggle'
 import { openCheckout } from '@/lib/paddle/client'
-import { getUser } from '@/lib/services/auth'
+import { getUser, signOut } from '@/lib/services/auth'
+import { getProfile } from '@/lib/services/user'
 
 // Open the Paddle overlay checkout for the chosen plan.
 async function handleCheckout(planId: string) {
@@ -44,7 +46,51 @@ function CheckIcon() {
 
 function SubscriptionContent() {
   const { t } = useLanguage()
+  const router = useRouter()
   const [selected, setSelected] = useState('3mo')
+  const [activating, setActivating] = useState(false)
+
+  // After a successful Paddle checkout we land here with ?checkout=success.
+  // Poll the profile until the webhook flips the status to active, then go to
+  // the dashboard. Falls back to the dashboard after a timeout (middleware re-checks).
+  useEffect(() => {
+    if (typeof window === 'undefined') return
+    const params = new URLSearchParams(window.location.search)
+    if (params.get('checkout') !== 'success') return
+
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- one-time post-checkout state
+    setActivating(true)
+    let cancelled = false
+    let tries = 0
+
+    const tick = async () => {
+      if (cancelled) return
+      tries++
+      try {
+        const { user } = await getUser()
+        if (user) {
+          const profile = await getProfile(user.id)
+          const status = profile?.subscription_status
+          if (status === 'pro' || status === 'expert') { router.replace('/dashboard'); return }
+        }
+      } catch { /* keep polling */ }
+      if (tries < 15) setTimeout(tick, 2000)
+      else router.replace('/dashboard')
+    }
+    tick()
+    return () => { cancelled = true }
+  }, [router])
+
+  if (activating) {
+    return (
+      <div style={{ minHeight: '100vh', background: 'var(--bg)', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 16, padding: 24, textAlign: 'center' }}>
+        <div style={{ width: 36, height: 36, border: '3px solid var(--border)', borderTopColor: 'var(--accent)', borderRadius: '50%', animation: 'spin 0.8s linear infinite' }} />
+        <div style={{ fontSize: 18, fontWeight: 600, color: 'var(--text)' }}>Activating your subscription…</div>
+        <div style={{ fontSize: 14, color: 'var(--text-2)' }}>This only takes a few seconds.</div>
+        <style>{`@keyframes spin { to { transform: rotate(360deg) } }`}</style>
+      </div>
+    )
+  }
 
   return (
     <div style={{ minHeight: '100vh', background: 'var(--bg)' }}>
@@ -60,7 +106,15 @@ function SubscriptionContent() {
           </svg>
           {t('subscription.back')}
         </Link>
-        <ThemeToggle />
+        <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
+          <button
+            onClick={async () => { await signOut(); router.replace('/login') }}
+            style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-2)', fontSize: 14 }}
+          >
+            Sign out
+          </button>
+          <ThemeToggle />
+        </div>
       </header>
 
       <div style={{ maxWidth: 1180, margin: '0 auto', padding: '60px 32px 80px' }}>
