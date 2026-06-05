@@ -182,7 +182,8 @@ export default function DiagnosticPage() {
       try { await saveDiagnosticData(user.id) } catch { /* best effort */ }
       router.push('/dashboard')
     } else {
-      router.push('/signup')
+      // Anonymous visitors see their band + study-plan preview first, then sign up.
+      router.push('/diagnostic/result')
     }
   }
 
