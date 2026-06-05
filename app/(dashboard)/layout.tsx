@@ -12,6 +12,8 @@ import { NotificationsPanel } from '@/components/ui/NotificationsPanel'
 import { LanguageSwitcher } from '@/components/ui/LanguageSwitcher'
 import { SettingsModal } from '@/components/ui/SettingsModal'
 import { ProfileModal } from '@/components/ui/ProfileModal'
+import { PaywallOverlay } from '@/components/ui/PaywallOverlay'
+import { createClient } from '@/lib/supabase/client'
 import { signOut, getUser } from '@/lib/services/auth'
 import { getNotifications, type NotifItem } from '@/lib/services/notifications'
 import type { ReactNode } from 'react'
@@ -88,7 +90,11 @@ function DashboardLayoutInner({ children }: { children: ReactNode }) {
   // User info
   const [userName, setUserName] = useState('User')
   const [userEmail, setUserEmail] = useState('')
+  const [userId, setUserId] = useState<string | undefined>(undefined)
   const [userInitials, setUserInitials] = useState('U')
+
+  // Subscription gate: null = loading, true = active, false = paywalled
+  const [subscribed, setSubscribed] = useState<boolean | null>(null)
 
   // Notifications
   const [notifications, setNotifications] = useState<NotifItem[]>([])
@@ -103,7 +109,17 @@ function DashboardLayoutInner({ children }: { children: ReactNode }) {
       const name = user.user_metadata?.full_name ?? user.email ?? 'User'
       setUserName(name)
       setUserEmail(user.email ?? '')
+      setUserId(user.id)
       setUserInitials(name.split(' ').map((n: string) => n[0]).join('').slice(0, 2).toUpperCase())
+      try {
+        const { data: profile } = await createClient()
+          .from('profiles')
+          .select('subscription_status')
+          .eq('id', user.id)
+          .single<{ subscription_status: string }>()
+        const status = profile?.subscription_status
+        setSubscribed(status === 'pro' || status === 'expert')
+      } catch { /* leave unblurred on error — AI endpoints still enforce 403 */ }
       try {
         setNotifications(await getNotifications(user.id))
       } catch { /* notifications are best-effort */ }
@@ -444,9 +460,16 @@ function DashboardLayoutInner({ children }: { children: ReactNode }) {
           </div>
         </header>
 
-        {/* Page content — scrolls for normal pages; exam pages use flex:1 to fill */}
-        <div style={{ flex: 1, display: 'flex', flexDirection: 'column', minHeight: 0, overflowY: 'auto' }}>
-          {children}
+        {/* Page content — scrolls for normal pages; exam pages use flex:1 to fill.
+            Non-subscribers see it blurred behind the paywall overlay. */}
+        <div style={{ flex: 1, display: 'flex', flexDirection: 'column', minHeight: 0, overflowY: subscribed === false ? 'hidden' : 'auto', position: 'relative' }}>
+          <div style={{
+            flex: 1, display: 'flex', flexDirection: 'column', minHeight: 0,
+            ...(subscribed === false ? { filter: 'blur(6px)', pointerEvents: 'none', userSelect: 'none' } : {}),
+          }}>
+            {children}
+          </div>
+          {subscribed === false && <PaywallOverlay user={{ id: userId, email: userEmail }} />}
         </div>
       </main>
 

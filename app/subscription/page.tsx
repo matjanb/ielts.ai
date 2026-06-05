@@ -5,25 +5,15 @@ import Link from 'next/link'
 import { ThemeProvider } from '@/components/providers/ThemeProvider'
 import { LanguageProvider, useLanguage } from '@/lib/i18n/LanguageContext'
 import { ThemeToggle } from '@/components/ui/ThemeToggle'
-import { getPaddle, PADDLE_PRICE } from '@/lib/paddle/client'
+import { openCheckout } from '@/lib/paddle/client'
 import { getUser } from '@/lib/services/auth'
 
 // Open the Paddle overlay checkout for the chosen plan.
 async function handleCheckout(planId: string) {
   try {
-    const priceId = PADDLE_PRICE[planId]
-    const paddle = await getPaddle()
-    if (!paddle || !priceId) {
-      alert('Checkout is not available yet.')
-      return
-    }
     const { user } = await getUser()
-    paddle.Checkout.open({
-      items: [{ priceId, quantity: 1 }],
-      customer: user?.email ? { email: user.email } : undefined,
-      customData: user?.id ? { user_id: user.id } : undefined,
-      settings: { successUrl: `${window.location.origin}/dashboard?checkout=success` },
-    })
+    const opened = await openCheckout(planId, user)
+    if (!opened) alert('Checkout is not available yet.')
   } catch {
     alert('Network error. Please try again.')
   }

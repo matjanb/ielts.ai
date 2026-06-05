@@ -26,17 +26,22 @@ export async function updateSession(request: NextRequest) {
 
   const { pathname } = request.nextUrl
 
-  // Routes that require an ACTIVE paid subscription (dashboard + all practice/tests).
-  const SUBSCRIPTION_ROUTES = ['/dashboard', '/mock-tests', '/listening', '/reading', '/writing', '/vocabulary']
-  // Routes that only require being logged in — the free funnel before the paywall.
-  const AUTH_ONLY_ROUTES = ['/onboarding', '/diagnostic', '/subscription']
+  // Routes that require the user to be logged in. The dashboard and tests are
+  // reachable without a subscription — non-subscribers see them behind a paywall
+  // overlay (rendered in the dashboard layout). The actual AI endpoints are
+  // enforced server-side (hasActiveSubscription → 403).
+  // The landing page and the /diagnostic funnel stay fully public so anonymous
+  // visitors can run the placement test before signing up.
+  const AUTH_ROUTES = [
+    '/dashboard', '/mock-tests', '/listening', '/reading', '/writing', '/vocabulary',
+    '/onboarding', '/subscription',
+  ]
 
   const matches = (routes: string[]) =>
     routes.some(r => pathname === r || pathname.startsWith(r + '/'))
 
-  const needsSubscription = matches(SUBSCRIPTION_ROUTES)
-  const needsAuth         = needsSubscription || matches(AUTH_ONLY_ROUTES)
-  const isAuthRoute       = pathname === '/login' || pathname === '/signup'
+  const needsAuth   = matches(AUTH_ROUTES)
+  const isAuthRoute = pathname === '/login' || pathname === '/signup'
 
   if (needsAuth && !user) {
     return NextResponse.redirect(new URL('/login', request.url))
@@ -44,20 +49,6 @@ export async function updateSession(request: NextRequest) {
 
   if (isAuthRoute && user) {
     return NextResponse.redirect(new URL('/dashboard', request.url))
-  }
-
-  // Hard paywall: logged-in but non-subscribed users can't reach the dashboard/tests.
-  if (needsSubscription && user) {
-    const { data: profile } = await supabase
-      .from('profiles')
-      .select('subscription_status')
-      .eq('id', user.id)
-      .single<{ subscription_status: string }>()
-
-    const active = profile?.subscription_status === 'pro' || profile?.subscription_status === 'expert'
-    if (!active) {
-      return NextResponse.redirect(new URL('/subscription', request.url))
-    }
   }
 
   return supabaseResponse

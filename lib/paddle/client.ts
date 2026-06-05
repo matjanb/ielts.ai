@@ -41,3 +41,22 @@ export const PADDLE_PRICE: Record<string, string | undefined> = {
   '3mo':  process.env.NEXT_PUBLIC_PADDLE_PRICE_3MO,
   '12mo': process.env.NEXT_PUBLIC_PADDLE_PRICE_12MO,
 }
+
+/* Open the Paddle overlay checkout for a plan id. Attaches the user's email and
+ * id so the webhook can link the resulting subscription back to the account.
+ * Returns false when Paddle isn't ready or the price id is missing. */
+export async function openCheckout(
+  planId: string,
+  user?: { id?: string; email?: string } | null,
+): Promise<boolean> {
+  const priceId = PADDLE_PRICE[planId]
+  const paddle = await getPaddle()
+  if (!paddle || !priceId) return false
+  paddle.Checkout.open({
+    items: [{ priceId, quantity: 1 }],
+    customer: user?.email ? { email: user.email } : undefined,
+    customData: user?.id ? { user_id: user.id } : undefined,
+    settings: { successUrl: `${window.location.origin}/dashboard?checkout=success` },
+  })
+  return true
+}
