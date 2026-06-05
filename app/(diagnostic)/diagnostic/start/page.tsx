@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useMemo, useState } from 'react'
+import { useMemo, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 
@@ -153,17 +153,7 @@ export default function DiagnosticPage() {
   const [diagAnswers, setDiagAnswers] = useState<Answers>({})
   const [stepIdx, setStepIdx] = useState(0)
 
-  // Already-onboarded users skip straight to the dashboard.
-  useEffect(() => {
-    createClient().auth.getUser().then(async ({ data: { user } }) => {
-      if (!user) return
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const { data: profile } = await (createClient() as any)
-        .from('profiles').select('onboarding_completed').eq('id', user.id).single()
-      if (profile?.onboarding_completed) router.replace('/dashboard')
-    })
-  }, [router])
-
+  // Get Started always runs the diagnostic — no auto-skip for logged-in users.
   const visibleSteps = useMemo(() => DIAG_STEPS.filter(s => !s.showIf || s.showIf(diagAnswers)), [diagAnswers])
   const safeIdx = Math.min(stepIdx, visibleSteps.length - 1)
   const step = visibleSteps[safeIdx]
@@ -180,11 +170,9 @@ export default function DiagnosticPage() {
     if (user) {
       const { saveDiagnosticData } = await import('@/lib/services/diagnostic')
       try { await saveDiagnosticData(user.id) } catch { /* best effort */ }
-      router.push('/dashboard')
-    } else {
-      // Anonymous visitors see their band + study-plan preview first, then sign up.
-      router.push('/diagnostic/result')
     }
+    // Everyone sees their band + study-plan result; the CTA there adapts to auth.
+    router.push('/diagnostic/result')
   }
 
   const next = () => { if (safeIdx < total - 1) setStepIdx(safeIdx + 1); else finish() }

@@ -2,7 +2,7 @@
 
 import { useState, useRef, useEffect, useCallback } from 'react'
 import Link from 'next/link'
-import { usePathname, useRouter } from 'next/navigation'
+import { usePathname } from 'next/navigation'
 import { useTheme } from 'next-themes'
 import { ThemeProvider } from '@/components/providers/ThemeProvider'
 import { LanguageProvider, useLanguage } from '@/lib/i18n/LanguageContext'
@@ -67,7 +67,6 @@ function DashboardLayoutInner({ children }: { children: ReactNode }) {
   const { toast } = useToast()
   const { theme, setTheme } = useTheme()
   const pathname = usePathname()
-  const router = useRouter()
 
   // Sidebar hover state
   const [hover, setHover] = useState(false)
@@ -175,7 +174,8 @@ function DashboardLayoutInner({ children }: { children: ReactNode }) {
 
   const handleSignOut = async () => {
     await signOut()
-    router.push('/')
+    // Hard navigation so the server re-evaluates with the cleared session.
+    window.location.href = '/'
   }
 
   // Current page label for breadcrumb

@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
+import { createClient } from '@/lib/supabase/client'
 
 /* ── Minimal icons / logo (kept local to this funnel page) ─────────────────── */
 const ICONS: Record<string, React.ReactNode> = {
@@ -58,6 +59,7 @@ export default function DiagnosticResultPage() {
   // Diagnostic answers live in localStorage (client-only), so we read and derive
   // everything in an effect after mount; render stays pure.
   const [view, setView] = useState<Derived | null>(null)
+  const [loggedIn, setLoggedIn] = useState(false)
 
   useEffect(() => {
     let bg: Background | null = null
@@ -82,6 +84,9 @@ export default function DiagnosticResultPage() {
 
     // eslint-disable-next-line react-hooks/set-state-in-effect -- one-time client init
     setView({ current, target, gap, weeks, minutes, focus })
+
+    // CTA adapts to auth: logged-in users continue to the app, others sign up.
+    createClient().auth.getUser().then(({ data: { user } }) => setLoggedIn(!!user))
   }, [router])
 
   if (!view) {
@@ -165,13 +170,13 @@ export default function DiagnosticResultPage() {
             ))}
           </div>
 
-          {/* CTA */}
+          {/* CTA — logged-in users continue into the app, others sign up first */}
           <button
             className="btn btn-primary"
-            onClick={() => router.push('/signup')}
+            onClick={() => router.push(loggedIn ? '/dashboard' : '/signup')}
             style={{ width: '100%', justifyContent: 'center', fontSize: 16, padding: '14px 20px' }}
           >
-            Create my free account to save this plan<Icon name="arrowRight" size={16}/>
+            {loggedIn ? 'Continue' : 'Create my free account to save this plan'}<Icon name="arrowRight" size={16}/>
           </button>
           <p className="dim" style={{ fontSize: 13, textAlign: 'center', margin: '14px 0 0', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6 }}>
             <Icon name="lock" size={13}/>

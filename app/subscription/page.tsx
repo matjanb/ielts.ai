@@ -108,7 +108,7 @@ function SubscriptionContent() {
         </Link>
         <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
           <button
-            onClick={async () => { await signOut(); router.replace('/login') }}
+            onClick={async () => { await signOut(); window.location.href = '/login' }}
             style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-2)', fontSize: 14 }}
           >
             Sign out
