@@ -26,16 +26,38 @@ export async function updateSession(request: NextRequest) {
 
   const { pathname } = request.nextUrl
 
-  const isProtected   = pathname.startsWith('/dashboard') || pathname.startsWith('/onboarding') || pathname.startsWith('/mock-tests') || pathname.startsWith('/subscription')
-  const isAuthRoute   = pathname === '/login' || pathname === '/signup'
-  const isSubscription = pathname === '/subscription'
+  // Routes that require an ACTIVE paid subscription (dashboard + all practice/tests).
+  const SUBSCRIPTION_ROUTES = ['/dashboard', '/mock-tests', '/listening', '/reading', '/writing', '/vocabulary']
+  // Routes that only require being logged in — the free funnel before the paywall.
+  const AUTH_ONLY_ROUTES = ['/onboarding', '/diagnostic', '/subscription']
 
-  if (isProtected && !user) {
+  const matches = (routes: string[]) =>
+    routes.some(r => pathname === r || pathname.startsWith(r + '/'))
+
+  const needsSubscription = matches(SUBSCRIPTION_ROUTES)
+  const needsAuth         = needsSubscription || matches(AUTH_ONLY_ROUTES)
+  const isAuthRoute       = pathname === '/login' || pathname === '/signup'
+
+  if (needsAuth && !user) {
     return NextResponse.redirect(new URL('/login', request.url))
   }
 
   if (isAuthRoute && user) {
     return NextResponse.redirect(new URL('/dashboard', request.url))
+  }
+
+  // Hard paywall: logged-in but non-subscribed users can't reach the dashboard/tests.
+  if (needsSubscription && user) {
+    const { data: profile } = await supabase
+      .from('profiles')
+      .select('subscription_status')
+      .eq('id', user.id)
+      .single<{ subscription_status: string }>()
+
+    const active = profile?.subscription_status === 'pro' || profile?.subscription_status === 'expert'
+    if (!active) {
+      return NextResponse.redirect(new URL('/subscription', request.url))
+    }
   }
 
   return supabaseResponse

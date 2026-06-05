@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server'
 import openai from '@/lib/openai/client'
 import { createAdminClient } from '@/lib/supabase/admin'
-import { getApiUser, canUseFeature, recordUsage, err } from '@/lib/api/helpers'
+import { getApiUser, hasActiveSubscription, recordUsage, err } from '@/lib/api/helpers'
 
 /* Strict JSON schema — keeps the model's output in lockstep with what the
  * page renders (week.tasks[], each with day/skill/activity/minutes). */
@@ -42,8 +42,8 @@ export async function POST() {
   const user = await getApiUser()
   if (!user) return err('Unauthorized', 401)
 
-  const allowed = await canUseFeature(user.id, 'study_plan')
-  if (!allowed) return err('Study plan regeneration limit reached. Upgrade to Pro for unlimited access.', 429)
+  const allowed = await hasActiveSubscription(user.id)
+  if (!allowed) return err('Subscription required.', 403)
 
   const admin = createAdminClient()
 

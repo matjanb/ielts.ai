@@ -500,22 +500,6 @@ export default function DashboardPage() {
         <StreakCard streak={streak} />
         <CalendarStrip heatmap={heatmap} />
       </div>
-
-      {/* Upgrade nudge */}
-      {profile?.subscription_status === 'free' && (
-        <div style={{ marginTop: 16, padding: '20px 24px', borderRadius: 16, background: 'var(--accent-soft)', border: '1px solid var(--accent)', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 16 }}>
-          <div>
-            <div style={{ fontSize: 14, fontWeight: 600, color: 'var(--text)', marginBottom: 4 }}>{t('subscription.title')}</div>
-            <div style={{ fontSize: 13, color: 'var(--text-2)' }}>{t('subscription.subtitle')}</div>
-          </div>
-          <Link href="/subscription" style={{
-            padding: '8px 18px', borderRadius: 8, fontSize: 13, fontWeight: 600,
-            background: 'var(--accent)', color: 'var(--accent-fg)', textDecoration: 'none', flexShrink: 0,
-          }}>
-            {t('subscription.upgradeBtn')}
-          </Link>
-        </div>
-      )}
     </div>
   )
 }

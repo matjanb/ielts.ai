@@ -38,7 +38,8 @@ export async function POST(request: NextRequest) {
           await setStatus(userId, 'pro', customerId)
           break
         case 'subscription.updated': {
-          const active = data.status === 'active' || data.status === 'trialing'
+          // No free trial — only a genuinely active (paid) subscription grants access.
+          const active = data.status === 'active'
           await setStatus(userId, active ? 'pro' : 'cancelled', customerId)
           break
         }
