@@ -99,7 +99,8 @@ export default function SettingsPage() {
           <button
             type="submit"
             disabled={saving}
-            className="flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold btn-primary text-white disabled:opacity-60"
+            className="btn-primary text-white disabled:opacity-60"
+            style={{ display: 'inline-flex', alignItems: 'center', gap: 8, padding: '10px 18px', borderRadius: 12, fontSize: 14, fontWeight: 600 }}
           >
             {saving
               ? <><Loader2 size={14} className="animate-spin" /> {t('settings.saving')}</>
