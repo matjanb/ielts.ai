@@ -90,7 +90,7 @@ export default function SignupPage() {
   if (emailSent) {
     return (
       <div className="w-full max-w-md">
-        <div className="card text-center">
+        <div className="card text-center" style={{ padding: 32, boxShadow: 'var(--shadow-lg)' }}>
           <div className="flex items-center justify-center w-16 h-16 rounded-full bg-indigo-50 dark:bg-indigo-500/10 mx-auto mb-6">
             <Mail className="w-8 h-8 text-indigo-500" />
           </div>
@@ -129,7 +129,7 @@ export default function SignupPage() {
 
   return (
     <div className="w-full max-w-md">
-      <div className="card">
+      <div className="card" style={{ padding: 32, boxShadow: 'var(--shadow-lg)' }}>
 
         {/* Header */}
         <div className="text-center mb-8">
