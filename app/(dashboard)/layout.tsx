@@ -2,7 +2,7 @@
 
 import { useState, useRef, useEffect, useCallback } from 'react'
 import Link from 'next/link'
-import { usePathname } from 'next/navigation'
+import { usePathname, useRouter } from 'next/navigation'
 import { useTheme } from 'next-themes'
 import { ThemeProvider } from '@/components/providers/ThemeProvider'
 import { LanguageProvider, useLanguage } from '@/lib/i18n/LanguageContext'
@@ -10,8 +10,6 @@ import { ToastProvider, useToast } from '@/lib/toast'
 import { CommandPalette } from '@/components/ui/CommandPalette'
 import { NotificationsPanel } from '@/components/ui/NotificationsPanel'
 import { LanguageSwitcher } from '@/components/ui/LanguageSwitcher'
-import { SettingsModal } from '@/components/ui/SettingsModal'
-import { ProfileModal } from '@/components/ui/ProfileModal'
 import { signOut, getUser } from '@/lib/services/auth'
 import { getNotifications, type NotifItem } from '@/lib/services/notifications'
 import type { ReactNode } from 'react'
@@ -67,6 +65,7 @@ function DashboardLayoutInner({ children }: { children: ReactNode }) {
   const { toast } = useToast()
   const { theme, setTheme } = useTheme()
   const pathname = usePathname()
+  const router = useRouter()
 
   // Sidebar hover state
   const [hover, setHover] = useState(false)
@@ -80,8 +79,6 @@ function DashboardLayoutInner({ children }: { children: ReactNode }) {
   // Overlays
   const [paletteOpen, setPaletteOpen] = useState(false)
   const [notifOpen, setNotifOpen] = useState(false)
-  const [settingsOpen, setSettingsOpen] = useState(false)
-  const [profileOpen, setProfileOpen] = useState(false)
   const [userMenuOpen, setUserMenuOpen] = useState(false)
 
   // User info
@@ -322,8 +319,7 @@ function DashboardLayoutInner({ children }: { children: ReactNode }) {
                 {userEmail && <div style={{ fontSize: 11, color: 'var(--text-3)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{userEmail}</div>}
               </div>
               {[
-                { icon: 'user', label: 'Profile', action: () => { setProfileOpen(true); setUserMenuOpen(false) } },
-                { icon: 'settings', label: 'Settings', action: () => { setSettingsOpen(true); setUserMenuOpen(false) } },
+                { icon: 'settings', label: 'Settings', action: () => { router.push('/dashboard/settings'); setUserMenuOpen(false) } },
                 null,
                 { icon: 'logout', label: 'Sign out', action: handleSignOut, danger: true },
               ].map((item, i) => {
@@ -434,7 +430,7 @@ function DashboardLayoutInner({ children }: { children: ReactNode }) {
 
             {/* Settings gear */}
             <button
-              onClick={() => setSettingsOpen(true)}
+              onClick={() => router.push('/dashboard/settings')}
               style={{ width: 34, height: 34, display: 'flex', alignItems: 'center', justifyContent: 'center', borderRadius: 8, color: 'var(--text-2)', transition: 'background .15s' }}
               onMouseEnter={e => (e.currentTarget.style.background = 'var(--bg-soft)')}
               onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}
@@ -452,8 +448,6 @@ function DashboardLayoutInner({ children }: { children: ReactNode }) {
 
       {/* Global overlays */}
       <CommandPalette open={paletteOpen} onClose={() => setPaletteOpen(false)} />
-      <SettingsModal open={settingsOpen} onClose={() => setSettingsOpen(false)} />
-      <ProfileModal open={profileOpen} onClose={() => setProfileOpen(false)} name={userName} email={userEmail} />
     </div>
   )
 }
