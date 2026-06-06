@@ -1,8 +1,7 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 import { createClient } from '@/lib/supabase/client'
 
 function db() {
-  return createClient() as any
+  return createClient()
 }
 
 export interface DiagnosticBackground {

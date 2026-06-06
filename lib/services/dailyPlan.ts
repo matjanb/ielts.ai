@@ -1,13 +1,12 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 import { createClient } from '@/lib/supabase/client'
 import { getSubskillAccuracy } from '@/lib/services/tests'
 import { buildDailyPlan, dailyPlanSummary, dayOfYear, type DailyTask, type DailySummary } from '@/lib/dailyPlan'
 
-// FIXME: this service reads a `diagnostic_data` table (and columns like
-// daily_study_time / weakest_skills / exam_date) that do not exist in the live
-// DB, so it is effectively broken. Kept untyped until the schema is sorted out.
+// Reads diagnostic_data (placement test) when present, falling back to
+// onboarding_data + band history. Requires migrations 002 + 003 to be applied
+// so the diagnostic_data table exists.
 function db() {
-  return createClient() as any
+  return createClient()
 }
 
 export interface DailyPlanContext {
@@ -50,8 +49,8 @@ export async function getDailyPlanContext(userId: string): Promise<DailyPlanCont
     return eligible.length ? eligible[0].type : undefined // getSubskillAccuracy is sorted weakest-first
   }
   const weakType: Partial<Record<'reading' | 'listening', string>> = {}
-  const rt = weakestType(readAcc as any); if (rt) weakType.reading = rt
-  const lt = weakestType(listenAcc as any); if (lt) weakType.listening = lt
+  const rt = weakestType(readAcc); if (rt) weakType.reading = rt
+  const lt = weakestType(listenAcc); if (lt) weakType.listening = lt
 
   // Daily minutes
   let dailyMinutes = 60

@@ -161,6 +161,80 @@ export type Database = {
           },
         ]
       }
+      diagnostic_data: {
+        Row: {
+          id: string
+          user_id: string
+          taken_ielts_before: boolean | null
+          ielts_type: string | null
+          target_band: number | null
+          estimated_band: number | null
+          exam_date: string | null
+          daily_study_time: string | null
+          weakest_skills: string[] | null
+          biggest_struggle: string | null
+          diagnostic_score: number | null
+          recommended_plan: string | null
+          diagnostic_completed: boolean | null
+          completed_at: string | null
+          created_at: string | null
+          updated_at: string | null
+          speaking_transcript: string | null
+          speaking_feedback: Json | null
+          speaking_band_estimate: number | null
+        }
+        Insert: {
+          id?: string
+          user_id: string
+          taken_ielts_before?: boolean | null
+          ielts_type?: string | null
+          target_band?: number | null
+          estimated_band?: number | null
+          exam_date?: string | null
+          daily_study_time?: string | null
+          weakest_skills?: string[] | null
+          biggest_struggle?: string | null
+          diagnostic_score?: number | null
+          recommended_plan?: string | null
+          diagnostic_completed?: boolean | null
+          completed_at?: string | null
+          created_at?: string | null
+          updated_at?: string | null
+          speaking_transcript?: string | null
+          speaking_feedback?: Json | null
+          speaking_band_estimate?: number | null
+        }
+        Update: {
+          id?: string
+          user_id?: string
+          taken_ielts_before?: boolean | null
+          ielts_type?: string | null
+          target_band?: number | null
+          estimated_band?: number | null
+          exam_date?: string | null
+          daily_study_time?: string | null
+          weakest_skills?: string[] | null
+          biggest_struggle?: string | null
+          diagnostic_score?: number | null
+          recommended_plan?: string | null
+          diagnostic_completed?: boolean | null
+          completed_at?: string | null
+          created_at?: string | null
+          updated_at?: string | null
+          speaking_transcript?: string | null
+          speaking_feedback?: Json | null
+          speaking_band_estimate?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "diagnostic_data_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: true
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       processed_webhooks: {
         Row: {
           event_id: string
@@ -1163,7 +1237,6 @@ export const Constants = {
 // ─────────────────────────────────────────────────────────────────────────────
 // App-level aliases. The codebase imports these names; they derive from the
 // generated Database above so they stay in sync with the real schema.
-// (DiagnosticData intentionally omitted — no diagnostic_data table exists.)
 // ─────────────────────────────────────────────────────────────────────────────
 
 export type SkillType          = Database['public']['Enums']['skill_type']
@@ -1179,6 +1252,7 @@ export type ExamDate = 'within_1_month' | '1_3_months' | '3_6_months' | 'not_sur
 
 // Convenience row types
 export type Profile = Database['public']['Tables']['profiles']['Row']
+export type DiagnosticData = Database['public']['Tables']['diagnostic_data']['Row']
 export type OnboardingData = Database['public']['Tables']['onboarding_data']['Row']
 export type StudyPlan = Database['public']['Tables']['study_plans']['Row']
 export type WritingSubmission = Database['public']['Tables']['writing_submissions']['Row']
