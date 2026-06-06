@@ -30,7 +30,7 @@ export default function WritingIndexPage() {
         startHref={startHref}
       />
 
-      <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: 16, marginTop: 24 }}>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 300px), 1fr))', gap: 16, marginTop: 24 }}>
         <div className="card" style={{ padding: 28 }}>
           <div style={{ marginBottom: 18 }}>
             <h3 style={{ margin: 0, fontSize: 18, fontWeight: 600, color: 'var(--text)' }}>{t('writingHub.listTitle')}</h3>

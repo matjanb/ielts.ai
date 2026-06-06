@@ -466,13 +466,13 @@ export default function ProgressPage() {
       </div>
 
       {/* Row 1: trajectory + key stats */}
-      <div style={{ display: 'grid', gridTemplateColumns: '1.6fr 1fr', gap: 16 }}>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 300px), 1fr))', gap: 16 }}>
         <BandTrajectory data={d} overallBand={d.overallBand} targetBand={d.targetBand} />
         <KeyStats data={d} />
       </div>
 
       {/* Row 2: skill breakdown + study time */}
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16, marginTop: 16 }}>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 300px), 1fr))', gap: 16, marginTop: 16 }}>
         <SkillBreakdown data={d} />
         <StudyTime data={d} />
       </div>

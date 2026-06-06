@@ -481,14 +481,14 @@ export default function DashboardPage() {
       </div>
 
       {/* Main grid */}
-      <div style={{ display: 'grid', gridTemplateColumns: '2.1fr 1fr', gap: 16, marginBottom: 16 }}>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 300px), 1fr))', gap: 16, marginBottom: 16 }}>
         <TodayCard sessions={todaySessions} daily={dailyMode} note={dailyMode && dailySummary ? whyToday(t, dailySummary) : undefined} onToggle={dailyMode ? toggleDaily : undefined} />
         <BandPredictor current={overall} target={typeof target === 'number' ? target : 7.5} />
       </div>
 
       {/* Skill tiles */}
       {skills.length > 0 && (
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 14, marginBottom: 16 }}>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 150px), 1fr))', gap: 14, marginBottom: 16 }}>
           {skills.map(skill => (
             <SkillTile key={skill} skill={skill} score={scores[skill]} delta={deltas[skill] ?? 0} />
           ))}
@@ -496,7 +496,7 @@ export default function DashboardPage() {
       )}
 
       {/* Bottom grid */}
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 300px), 1fr))', gap: 16 }}>
         <StreakCard streak={streak} />
         <CalendarStrip heatmap={heatmap} />
       </div>

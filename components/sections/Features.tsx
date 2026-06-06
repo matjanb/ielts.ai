@@ -37,7 +37,7 @@ function MiniChatBubble() {
 function BentoCell({ span, accent, children }: { span: number; accent?: boolean; children: React.ReactNode }) {
   return (
     <div
-      className="card"
+      className="card bento-cell"
       style={{
         gridColumn: `span ${span}`,
         padding: 22,
@@ -61,13 +61,13 @@ export function Features() {
   const { t } = useLanguage()
 
   return (
-    <section id="features" style={{ maxWidth: 1080, margin: '0 auto', padding: '60px 32px' }}>
-      <h2 style={{ fontSize: 38, letterSpacing: '-0.025em', margin: '0 0 40px', fontWeight: 700, textAlign: 'center' }}>
+    <section id="features" className="section-pad" style={{ maxWidth: 1080, margin: '0 auto', padding: 'clamp(48px, 8vw, 60px) 32px' }}>
+      <h2 style={{ fontSize: 'clamp(28px, 5vw, 38px)', letterSpacing: '-0.025em', margin: '0 0 40px', fontWeight: 700, textAlign: 'center' }}>
         Everything the test throws at you.{' '}
         <span className="font-serif" style={{ color: 'var(--text-2)' }}>In one place.</span>
       </h2>
 
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(6, 1fr)', gridAutoRows: 'minmax(180px, auto)', gap: 12 }}>
+      <div className="bento-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(6, 1fr)', gridAutoRows: 'minmax(180px, auto)', gap: 12 }}>
 
         {/* Big AI coach — 4 cols */}
         <BentoCell span={4} accent>

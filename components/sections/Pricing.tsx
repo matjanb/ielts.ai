@@ -16,14 +16,14 @@ export function Pricing() {
   const { t } = useLanguage()
 
   return (
-    <section id="pricing" style={{ padding: '96px 32px' }}>
+    <section id="pricing" className="section-pad" style={{ padding: 'clamp(56px, 10vw, 96px) 32px' }}>
       <div style={{ maxWidth: 1080, margin: '0 auto' }}>
         {/* Header */}
         <div style={{ textAlign: 'center', marginBottom: 48 }}>
           <p style={{ fontSize: 12, fontWeight: 600, letterSpacing: '0.12em', textTransform: 'uppercase', color: 'var(--accent)', margin: '0 0 12px' }}>
             {t('pricing.sectionBadge')}
           </p>
-          <h2 style={{ fontSize: 38, fontWeight: 700, letterSpacing: '-0.025em', color: 'var(--text)', margin: '0 0 14px' }}>
+          <h2 style={{ fontSize: 'clamp(28px, 5vw, 38px)', fontWeight: 700, letterSpacing: '-0.025em', color: 'var(--text)', margin: '0 0 14px' }}>
             {t('pricing.sectionTitle')}
           </h2>
           <p style={{ fontSize: 16, color: 'var(--text-2)', maxWidth: 460, margin: '0 auto', lineHeight: 1.6 }}>
@@ -32,7 +32,7 @@ export function Pricing() {
         </div>
 
         {/* Tiers */}
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 16, maxWidth: 980, margin: '0 auto' }}>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 260px), 1fr))', gap: 16, maxWidth: 980, margin: '0 auto' }}>
           {PLANS.map(({ id, nameKey, price, discountPct, months, popular, best }) => {
             const perMonth = (price / months).toFixed(2)
             const original = (price / (1 - discountPct / 100)).toFixed(2)

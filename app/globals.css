@@ -221,3 +221,23 @@ input, textarea, select { font: inherit; color: inherit; }
 .gradient-text {
   color: var(--accent);
 }
+
+/* ── Mobile responsiveness helpers ──────────────────────── */
+/* Guard against horizontal overflow from fixed-width desktop layouts. */
+html, body { max-width: 100%; overflow-x: hidden; }
+
+/* Hide desktop-only decorative blocks on small screens. */
+@media (max-width: 820px) {
+  .mobile-hidden { display: none !important; }
+}
+
+/* Tighten section side padding on phones. */
+@media (max-width: 640px) {
+  .section-pad { padding-left: 18px !important; padding-right: 18px !important; }
+}
+
+/* Bento feature grid → single column on phones (cells use fixed column spans). */
+@media (max-width: 720px) {
+  .bento-grid { grid-template-columns: 1fr !important; grid-auto-rows: auto !important; }
+  .bento-cell { grid-column: auto !important; }
+}

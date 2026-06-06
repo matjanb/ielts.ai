@@ -11,14 +11,14 @@ const BENEFITS = [
 
 export function ForSchools() {
   return (
-    <section id="schools" style={{ background: 'var(--bg-soft)', borderTop: '1px solid var(--border)', borderBottom: '1px solid var(--border)', padding: '96px 32px' }}>
-      <div style={{ maxWidth: 1080, margin: '0 auto', display: 'grid', gridTemplateColumns: '1fr 1.1fr', gap: 56, alignItems: 'center' }}>
+    <section id="schools" className="section-pad" style={{ background: 'var(--bg-soft)', borderTop: '1px solid var(--border)', borderBottom: '1px solid var(--border)', padding: 'clamp(56px, 10vw, 96px) 32px' }}>
+      <div style={{ maxWidth: 1080, margin: '0 auto', display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 320px), 1fr))', gap: 'clamp(28px, 5vw, 56px)', alignItems: 'center' }}>
         {/* Left — pitch */}
         <div>
           <div style={{ display: 'inline-flex', alignItems: 'center', gap: 8, padding: '5px 12px', borderRadius: 999, background: 'var(--accent-soft)', color: 'var(--accent)', fontSize: 12, fontWeight: 600, letterSpacing: '0.06em', textTransform: 'uppercase', marginBottom: 18 }}>
             <Building2 size={13} /> For schools & teachers
           </div>
-          <h2 style={{ fontSize: 38, fontWeight: 700, letterSpacing: '-0.025em', color: 'var(--text)', margin: '0 0 16px', lineHeight: 1.1 }}>
+          <h2 style={{ fontSize: 'clamp(28px, 5vw, 38px)', fontWeight: 700, letterSpacing: '-0.025em', color: 'var(--text)', margin: '0 0 16px', lineHeight: 1.1 }}>
             Bring ielts<span style={{ color: 'var(--accent)' }}>.</span>camp to your{' '}
             <span style={{ fontFamily: 'var(--font-display)', fontStyle: 'italic', color: 'var(--accent)' }}>classroom</span>.
           </h2>

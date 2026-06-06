@@ -7,13 +7,13 @@ export function FinalCTA() {
   const { t } = useLanguage()
 
   return (
-    <section style={{ padding: '80px 32px' }}>
+    <section className="section-pad" style={{ padding: 'clamp(48px, 9vw, 80px) 32px' }}>
       <div style={{
-        maxWidth: 880, margin: '0 auto', padding: '60px 48px',
+        maxWidth: 880, margin: '0 auto', padding: 'clamp(40px, 7vw, 60px) clamp(24px, 5vw, 48px)',
         background: 'var(--accent)', color: 'var(--accent-fg)',
         borderRadius: 24, textAlign: 'center',
       }}>
-        <h2 style={{ fontSize: 40, letterSpacing: '-0.03em', margin: 0, fontWeight: 700, lineHeight: 1.05 }}>
+        <h2 style={{ fontSize: 'clamp(28px, 5.5vw, 40px)', letterSpacing: '-0.03em', margin: 0, fontWeight: 700, lineHeight: 1.05 }}>
           Ready when you are.
         </h2>
         <p style={{ fontSize: 16, opacity: 0.85, margin: '12px 0 28px' }}>

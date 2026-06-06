@@ -145,7 +145,7 @@ function FlashcardSession({
                   &ldquo;{card.example}&rdquo;
                 </div>
               )}
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16, marginBottom: 28 }}>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 240px), 1fr))', gap: 16, marginBottom: 28 }}>
                 {[{ label: 'vocab.synonyms', words: card.synonyms }, { label: 'vocab.antonyms', words: card.antonyms }].map(g => (
                   g.words?.length ? (
                     <div key={g.label}>
@@ -160,7 +160,7 @@ function FlashcardSession({
 
               <div style={{ paddingTop: 20, borderTop: '1px dashed var(--border)' }}>
                 <div style={{ fontSize: 11, textAlign: 'center', color: 'var(--text-3)', marginBottom: 14 }}>{t('vocab.howWell')}</div>
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 8 }}>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(50%, 120px), 1fr))', gap: 8 }}>
                   {SRS_BUTTONS.map(b => (
                     <button key={b.key} onClick={() => grade(b.key)} style={{
                       padding: '12px 8px', borderRadius: 10, textAlign: 'center',
@@ -284,7 +284,7 @@ export default function VocabularyPage() {
       )}
 
       {/* Stats */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 14, marginTop: 28 }}>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(50%, 150px), 1fr))', gap: 14, marginTop: 28 }}>
         {statCards.map(s => (
           <div key={s.label} className="card" style={{ padding: 22 }}>
             <div style={{ fontSize: 11, letterSpacing: '0.08em', color: 'var(--text-3)' }}>{t(s.label)}</div>
@@ -295,7 +295,7 @@ export default function VocabularyPage() {
       </div>
 
       {/* Deck grid */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 14, marginTop: 16 }}>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 220px), 1fr))', gap: 14, marginTop: 16 }}>
         {decks.map(d => {
           const pct = d.total ? (d.learned / d.total) * 100 : 0
           return (
@@ -331,7 +331,7 @@ export default function VocabularyPage() {
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 18 }}>
             <h3 style={{ margin: 0, fontSize: 16, fontWeight: 600, color: 'var(--text)' }}>{t('vocab.recentlyLearned')}</h3>
           </div>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 10 }}>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(50%, 130px), 1fr))', gap: 10 }}>
             {recent.map(v => (
               <div key={v.id} style={{ padding: 14, background: 'var(--bg-soft)', borderRadius: 10 }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 6 }}>

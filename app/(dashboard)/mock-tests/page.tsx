@@ -118,7 +118,7 @@ export default function MockTestsPage() {
 
       {/* Section time overview */}
       <div className="card" style={{ marginTop: 28, padding: 0, overflow: 'hidden' }}>
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)' }}>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(50%, 140px), 1fr))' }}>
           {[
             { name: 'Listening', time: '30 min', q: 40 },
             { name: 'Reading', time: '60 min', q: 40 },
@@ -134,7 +134,7 @@ export default function MockTestsPage() {
         </div>
       </div>
 
-      <div style={{ display: 'grid', gridTemplateColumns: '1.4fr 1fr', gap: 16, marginTop: 16 }}>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 300px), 1fr))', gap: 16, marginTop: 16 }}>
         {/* Composer */}
         <div className="card" style={{ padding: 28 }}>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 18 }}>

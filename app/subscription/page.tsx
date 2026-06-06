@@ -141,10 +141,10 @@ function SubscriptionContent() {
         </div>
       </header>
 
-      <div style={{ maxWidth: 1180, margin: '0 auto', padding: '60px 32px 80px' }}>
+      <div style={{ maxWidth: 1180, margin: '0 auto', padding: 'clamp(36px, 8vw, 60px) 20px 80px' }}>
         {/* Heading */}
         <div style={{ textAlign: 'center', marginBottom: 56 }}>
-          <h1 style={{ fontSize: 52, fontWeight: 700, letterSpacing: '-0.03em', margin: '0 0 14px', color: 'var(--text)' }}>
+          <h1 style={{ fontSize: 'clamp(30px, 7vw, 52px)', fontWeight: 700, letterSpacing: '-0.03em', margin: '0 0 14px', color: 'var(--text)' }}>
             {t('subscription.title')}
           </h1>
           <p style={{ fontSize: 17, color: 'var(--text-2)', margin: 0 }}>
@@ -153,7 +153,7 @@ function SubscriptionContent() {
         </div>
 
         {/* Plan cards */}
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 16, maxWidth: 1000, margin: '0 auto' }}>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 260px), 1fr))', gap: 16, maxWidth: 1000, margin: '0 auto' }}>
           {PLANS.map(plan => {
             const isSelected = selected === plan.id
             const perMonth = (plan.price / plan.months).toFixed(2)
