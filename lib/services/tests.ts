@@ -33,6 +33,26 @@ export async function getQuestionsBySectionIds(sectionIds: string[]): Promise<Qu
   return data ?? []
 }
 
+// Columns safe to send to the browser DURING a test. Deliberately omits
+// `correct_answer` so answers never reach the client before submission —
+// grading happens server-side via /api/attempts/grade.
+const SAFE_QUESTION_COLUMNS =
+  'id, section_id, question_number, question_type, question_text, image_url, options, points, passage_text, passage_group'
+
+/**
+ * Load a test's questions WITHOUT the correct answers, for the live test UI.
+ * Use this (not getQuestionsBySectionIds) anywhere a test is in progress.
+ */
+export async function getTestQuestions(sectionIds: string[]): Promise<Question[]> {
+  if (sectionIds.length === 0) return []
+  const { data } = await db()
+    .from('questions')
+    .select(SAFE_QUESTION_COLUMNS)
+    .in('section_id', sectionIds)
+    .order('question_number')
+  return data ?? []
+}
+
 export async function getListeningTests(): Promise<IeltsTest[]> {
   const { data } = await db()
     .from('tests')

@@ -6,11 +6,9 @@ import { Play, Pause, Volume2, AlertCircle, Loader2 } from 'lucide-react'
 import Image from 'next/image'
 import { useLanguage } from '@/lib/i18n/LanguageContext'
 import { TestTimer } from '@/components/test/TestTimer'
-import { listeningRawToBand } from '@/lib/utils/bandScore'
-import { isAnswerCorrect } from '@/lib/utils/answerChecking'
 import type { IeltsTest, TestSection, Question } from '@/lib/types/database'
-import { getTestById, getSectionsByTestId, getQuestionsBySectionIds } from '@/lib/services/tests'
-import { createAttempt, saveAnswer as saveAnswerService, saveAnswersWithResults, completeAttempt, saveBandScoreHistory, logStudySession } from '@/lib/services/attempts'
+import { getTestById, getSectionsByTestId, getTestQuestions } from '@/lib/services/tests'
+import { createAttempt, saveAnswer as saveAnswerService } from '@/lib/services/attempts'
 import { getUser } from '@/lib/services/auth'
 
 type QuestionWithSection = Question & { sectionNumber: number; sectionTitle: string }
@@ -1986,7 +1984,7 @@ export default function ListeningTestPage() {
         }
 
         const sectionIds = secs.map((s: TestSection) => s.id)
-        const questionsData = await getQuestionsBySectionIds(sectionIds)
+        const questionsData = await getTestQuestions(sectionIds)
 
         if (questionsData.length === 0) {
           setLoadError(t('listening.noQuestionsSeed'))
@@ -2058,43 +2056,35 @@ export default function ListeningTestPage() {
     if (submitting) return
     setSubmitting(true)
 
-    let totalCorrect = 0
-    const sectionCorrect: Record<number, { correct: number; total: number }> = {}
-    const answerRows: { questionId: string; userAnswer: string | null; isCorrect: boolean }[] = []
+    const durationSeconds = startedAtRef.current
+      ? Math.round((Date.now() - startedAtRef.current) / 1000)
+      : undefined
 
-    for (const q of questions) {
-      const n = q.sectionNumber
-      if (!sectionCorrect[n]) sectionCorrect[n] = { correct: 0, total: 0 }
-      sectionCorrect[n].total++
+    // Grading is server-side: the browser never holds the correct answers and
+    // the score can't be forged. We send only the user's answers.
+    let score = 0
+    let band = 0
+    let sections: Record<string, { correct: number; total: number }> = {}
+    let finalAttempt = attemptId
 
-      const correct = isAnswerCorrect(answers[q.id] ?? '', q.correct_answer ?? '')
-      if (correct) { totalCorrect++; sectionCorrect[n].correct++ }
-      answerRows.push({ questionId: q.id, userAnswer: answers[q.id] ?? null, isCorrect: correct })
-    }
+    try {
+      const res = await fetch('/api/attempts/grade', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ testId, skill: 'listening', answers, attemptId, durationSeconds }),
+      })
+      if (res.ok) {
+        const data = await res.json()
+        score = data.score ?? 0
+        band = data.band ?? 0
+        sections = data.sections ?? {}
+        finalAttempt = data.attemptId ?? attemptId
+      }
+    } catch { /* fall through to results; the attempt is still recoverable */ }
 
-    const band = listeningRawToBand(totalCorrect)
-    const sectionScores = Object.fromEntries(Object.entries(sectionCorrect))
-
-    // Persist everything in parallel — one batch upsert for all answers plus the
-    // independent attempt/band/session writes — instead of ~40 sequential requests.
-    if (attemptId) {
-      try {
-        const { user } = await getUser()
-        const mins = startedAtRef.current ? (Date.now() - startedAtRef.current) / 60000 : 30
-        await Promise.all([
-          saveAnswersWithResults(attemptId, answerRows),
-          completeAttempt(attemptId, totalCorrect, band, sectionScores),
-          ...(user ? [
-            saveBandScoreHistory(user.id, 'listening', band, attemptId),
-            logStudySession(user.id, 'listening', mins, 'mock_test'),
-          ] : []),
-        ])
-      } catch { /* silent */ }
-    }
-
-    const sectionParam = encodeURIComponent(JSON.stringify(sectionScores))
+    const sectionParam = encodeURIComponent(JSON.stringify(sections))
     router.push(
-      `/listening/${testId}/results?score=${totalCorrect}&band=${band}&sections=${sectionParam}&attempt=${attemptId ?? ''}`
+      `/listening/${testId}/results?score=${score}&band=${band}&sections=${sectionParam}&attempt=${finalAttempt ?? ''}`
     )
   }
 
