@@ -18,6 +18,22 @@ export async function POST(request: NextRequest) {
   try { event = JSON.parse(raw) } catch { return NextResponse.json({ error: 'Invalid body' }, { status: 400 }) }
 
   const admin = createAdminClient()
+
+  // Idempotency: claim this event_id once. A unique-violation means Paddle is
+  // retrying an event we already handled — ack and stop so the status can't
+  // flip-flop. Any other insert error is logged but we still process (don't drop
+  // a real event because the ledger hiccuped).
+  const eventId: string | undefined = typeof event?.event_id === 'string' ? event.event_id : undefined
+  if (eventId) {
+    const { error: claimErr } = await admin
+      .from('processed_webhooks')
+      .insert({ event_id: eventId, event_type: event?.event_type ?? null })
+    if (claimErr) {
+      if (claimErr.code === '23505') return NextResponse.json({ received: true, duplicate: true })
+      console.error('[paddle/webhook] dedup insert error', claimErr)
+    }
+  }
+
   async function setStatus(userId: string, status: 'pro' | 'free' | 'cancelled', customerId?: string) {
     const patch: any = { subscription_status: status, updated_at: new Date().toISOString() }
     if (customerId) patch.paddle_customer_id = customerId
