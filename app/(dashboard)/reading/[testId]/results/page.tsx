@@ -4,7 +4,7 @@ import { useSearchParams, useRouter, useParams } from 'next/navigation'
 import { useEffect, useState } from 'react'
 import { useLanguage } from '@/lib/i18n/LanguageContext'
 import type { Question, TestSection } from '@/lib/types/database'
-import { getSectionsByTestId, getQuestionsBySectionIds } from '@/lib/services/tests'
+import { getSectionsByTestId, getTestQuestions } from '@/lib/services/tests'
 import { getAttemptWithAnswers } from '@/lib/services/attempts'
 
 type QuestionWithSection = Question & { sectionNumber: number; sectionTitle: string }
@@ -27,18 +27,20 @@ export default function ReadingResultsPage() {
 
   const [questions,   setQuestions]   = useState<QuestionWithSection[]>([])
   const [userAnswers, setUserAnswers] = useState<Record<string, UserAnswer>>({})
+  const [correctAnswers, setCorrectAnswers] = useState<Record<string, string>>({})
   const [sections,    setSections]    = useState<TestSection[]>([])
   const [loading,     setLoading]     = useState(true)
   const [activePassage, setActivePassage] = useState(1)
 
-  // ── Keep all existing data loading unchanged ──────────────────────────────
   useEffect(() => {
     async function load() {
       try {
         const secs = await getSectionsByTestId(testId)
         setSections(secs)
         const sectionIds = secs.map((s: TestSection) => s.id)
-        const rawQ = await getQuestionsBySectionIds(sectionIds)
+        // Questions load WITHOUT correct answers; the correct answers come from
+        // the authorized results endpoint (owner + completed attempt only).
+        const rawQ = await getTestQuestions(sectionIds)
         const sectionMap = new Map(secs.map((s: TestSection) => [s.id, s]))
         const enriched: QuestionWithSection[] = rawQ.map((q: Question) => ({
           ...q,
@@ -51,6 +53,10 @@ export default function ReadingResultsPage() {
           const map: Record<string, UserAnswer> = {}
           for (const a of answers) map[a.question_id] = a
           setUserAnswers(map)
+          try {
+            const res = await fetch(`/api/attempts/${attemptId}/results`)
+            if (res.ok) setCorrectAnswers((await res.json()).correctAnswers ?? {})
+          } catch { /* correct answers stay hidden if this fails */ }
         }
       } catch { /* silent */ }
       finally { setLoading(false) }
@@ -203,7 +209,7 @@ export default function ReadingResultsPage() {
                     {!isCorrect && (
                       <span>
                         <span style={{ color: 'var(--accent)', fontWeight: 600 }}>Correct:</span>
-                        <span style={{ color: 'var(--accent)', marginLeft: 6 }}>{q.correct_answer}</span>
+                        <span style={{ color: 'var(--accent)', marginLeft: 6 }}>{correctAnswers[q.id]}</span>
                       </span>
                     )}
                   </div>

@@ -7,7 +7,7 @@ import { logStudySession } from '@/lib/services/attempts'
 import { isAnswerCorrect } from '@/lib/utils/answerChecking'
 import { useLanguage } from '@/lib/i18n/LanguageContext'
 import {
-  getPracticeFilters, getPracticeSet, questionTypeLabel,
+  getPracticeFilters, questionTypeLabel,
   type PracticeFilters, type PracticeGroup, type Difficulty,
 } from '@/lib/services/tests'
 import { QuestionRenderer } from './QuestionRenderer'
@@ -78,7 +78,17 @@ export function PracticeClient({ skill }: { skill: 'reading' | 'listening' }) {
   async function start() {
     if (!type) return
     setLoading(true)
-    const set = await getPracticeSet({ skill, questionType: type, difficulty, limit })
+    // Practice questions (which reveal answers) are served only through this
+    // subscription-gated endpoint, never from the public anon key.
+    let set: PracticeGroup[] = []
+    try {
+      const res = await fetch('/api/practice/set', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ skill, questionType: type, difficulty, limit }),
+      })
+      if (res.ok) set = (await res.json()).groups ?? []
+    } catch { /* leave set empty → "no match" view */ }
     setGroups(set)
     setAnswers({})
     setStep('run')
