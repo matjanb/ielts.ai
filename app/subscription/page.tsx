@@ -120,13 +120,13 @@ function SubscriptionContent() {
             {t('subscription.back')}
           </Link>
         ) : (
-          <span style={{ display: 'inline-flex', alignItems: 'center', gap: 8, fontWeight: 700, letterSpacing: '-0.02em', fontSize: 16, color: 'var(--text)' }}>
+          <Link href="/" style={{ display: 'inline-flex', alignItems: 'center', gap: 8, fontWeight: 700, letterSpacing: '-0.02em', fontSize: 16, color: 'var(--text)', textDecoration: 'none' }}>
             <svg width={20} height={20} viewBox="0 0 24 24" fill="none">
               <path d="M4 19L10 5l3 7 2.5-4L20 19" stroke="var(--accent)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
               <circle cx="20" cy="6" r="2" fill="var(--accent)"/>
             </svg>
             ielts<span style={{ color: 'var(--accent)' }}>.</span>camp
-          </span>
+          </Link>
         )}
         <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
           <button
