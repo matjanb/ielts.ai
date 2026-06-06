@@ -2,7 +2,6 @@
 
 import { useMemo, useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { createClient } from '@/lib/supabase/client'
 
 /* ── Icons (Feather-style, matching the design) ───────────────────────────── */
 type IconProps = { size?: number; stroke?: string; strokeWidth?: number }
@@ -164,14 +163,11 @@ export default function DiagnosticPage() {
   const hasAnswer = answer !== undefined && answer !== null && (!Array.isArray(answer) || answer.length > 0)
   const setAnswer = (val: unknown) => setDiagAnswers({ ...diagAnswers, [step.id]: val })
 
-  async function finish() {
+  function finish() {
     persist(diagAnswers)
-    const { data: { user } } = await createClient().auth.getUser()
-    if (user) {
-      const { saveDiagnosticData } = await import('@/lib/services/diagnostic')
-      try { await saveDiagnosticData(user.id) } catch { /* best effort */ }
-    }
-    // Everyone sees their band + study-plan result; the CTA there adapts to auth.
+    // Don't save here: saveDiagnosticData clears localStorage, which the result
+    // page needs to render the plan. DiagnosticSync persists it once the user
+    // lands back in the app (dashboard / subscription).
     router.push('/diagnostic/result')
   }
 
