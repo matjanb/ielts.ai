@@ -28,6 +28,15 @@ export async function POST(request: NextRequest) {
   if (!question_text?.trim() || !correct_answer) {
     return err('question_text and correct_answer are required', 400)
   }
+  // Upper bounds — passage is the only large field; the rest are short answers.
+  if (
+    question_text.length > 2000 ||
+    correct_answer.length > 2000 ||
+    (user_answer?.length ?? 0) > 2000 ||
+    (passage_text?.length ?? 0) > 12000
+  ) {
+    return err('Input is too long.', 413)
+  }
 
   try {
     const completion = await openai.chat.completions.create({

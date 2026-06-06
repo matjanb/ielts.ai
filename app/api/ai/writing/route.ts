@@ -64,6 +64,10 @@ export async function POST(request: NextRequest) {
   if (!content?.trim() || !task_type || !prompt?.trim()) {
     return err('content, task_type, and prompt are required', 400)
   }
+  // Upper bounds: a real essay is well under this. Caps token cost and blocks
+  // oversized payloads from running up the OpenAI bill or timing out.
+  if (content.length > 8000) return err('Response is too long (max ~8000 characters).', 413)
+  if (prompt.length > 3000)  return err('Prompt is too long (max 3000 characters).', 413)
 
   const wordCount = content.trim().split(/\s+/).filter(Boolean).length
   const minWords = task_type === '1' ? 150 : 250

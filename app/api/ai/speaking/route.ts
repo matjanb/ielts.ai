@@ -67,6 +67,9 @@ export async function POST(request: NextRequest) {
   let storePart: 1 | 2 | 3 = body.part ?? 1
   let storeTopic = body.topic ?? ''
 
+  if (Array.isArray(body.turns) && body.turns.length > 40) {
+    return err('Too many turns in the session.', 400)
+  }
   const turns = (body.turns ?? []).filter(tn => tn?.answer?.trim())
   if (turns.length > 0) {
     sessionMode = true
@@ -89,6 +92,10 @@ export async function POST(request: NextRequest) {
 
   if (candidateTranscript.split(/\s+/).filter(Boolean).length < 20) {
     return err('Response is too short to evaluate. Please answer more fully.', 400)
+  }
+  // Upper bound on the assembled transcript — caps token cost / timeout risk.
+  if (candidateTranscript.length > 16000) {
+    return err('Transcript is too long (max ~16000 characters).', 413)
   }
 
   const assessScope = sessionMode

@@ -29,6 +29,14 @@ export async function POST(request: NextRequest) {
   if (typeof correct !== 'number' || typeof total !== 'number' || total === 0) {
     return err('correct and total are required numeric fields', 400)
   }
+  // Sane bounds: a real test has a handful of sections and total ≤ a few hundred.
+  if (!Number.isFinite(correct) || !Number.isFinite(total) ||
+      total < 1 || total > 1000 || correct < 0 || correct > total) {
+    return err('Invalid score range', 400)
+  }
+  if (sections && Object.keys(sections).length > 50) {
+    return err('Too many sections', 400)
+  }
 
   const pct = (correct / total) * 100
 
