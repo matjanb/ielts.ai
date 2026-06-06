@@ -201,10 +201,10 @@ export default function LoginClient() {
           </button>
         </form>
 
-        {/* Sign up link */}
+        {/* Sign up → start with the diagnostic so the account gets a study plan */}
         <p style={{ textAlign: 'center', fontSize: 14, color: 'var(--text-2)', marginTop: 20, marginBottom: 0 }}>
           {t('auth.noAccount')}{' '}
-          <Link href="/signup" style={{ color: 'var(--accent)', fontWeight: 600 }}>
+          <Link href="/diagnostic/start" style={{ color: 'var(--accent)', fontWeight: 600 }}>
             {t('auth.signUpLink')}
           </Link>
         </p>
