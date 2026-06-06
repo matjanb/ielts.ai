@@ -150,7 +150,8 @@ export function Hero() {
       ref={ref}
       onMouseMove={onMove}
       id="home"
-      style={{ position: 'relative', maxWidth: 1280, margin: '0 auto', padding: '72px 32px 56px', overflow: 'hidden' }}
+      className="section-pad"
+      style={{ position: 'relative', maxWidth: 1280, margin: '0 auto', padding: 'clamp(40px, 8vw, 72px) 32px 56px', overflow: 'hidden' }}
     >
       {/* Spotlight */}
       <div aria-hidden style={{
@@ -160,7 +161,7 @@ export function Hero() {
         opacity: 0.8,
       }}/>
 
-      <div style={{ display: 'grid', gridTemplateColumns: '1.05fr 0.95fr', gap: 60, alignItems: 'center', position: 'relative' }}>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 340px), 1fr))', gap: 'clamp(28px, 5vw, 60px)', alignItems: 'center', position: 'relative' }}>
         {/* Left: text */}
         <div className="animate-fade-up">
           <div style={{
@@ -224,8 +225,10 @@ export function Hero() {
           </div>
         </div>
 
-        {/* Right: floating cards */}
-        <HeroCardStack />
+        {/* Right: floating cards (decorative — hidden on small screens) */}
+        <div className="mobile-hidden">
+          <HeroCardStack />
+        </div>
       </div>
     </section>
   )

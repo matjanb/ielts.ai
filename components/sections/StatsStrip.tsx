@@ -53,16 +53,16 @@ export function StatsStrip() {
   ]
 
   return (
-    <section style={{ maxWidth: 1080, margin: '0 auto', padding: '40px 32px 60px' }}>
+    <section className="section-pad" style={{ maxWidth: 1080, margin: '0 auto', padding: '40px 32px 60px' }}>
       <div style={{
-        display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)',
+        display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 120px), 1fr))', gap: 16,
         padding: '32px 0',
         borderTop: '1px solid var(--border)',
         borderBottom: '1px solid var(--border)',
       }}>
         {stats.map((s, i) => (
           <div key={i} style={{ textAlign: 'center' }}>
-            <div style={{ fontSize: 42, fontWeight: 700, letterSpacing: '-0.03em', lineHeight: 1 }}>
+            <div style={{ fontSize: 'clamp(28px, 6vw, 42px)', fontWeight: 700, letterSpacing: '-0.03em', lineHeight: 1 }}>
               {s.node}
             </div>
             <div style={{ color: 'var(--text-2)', fontSize: 13, marginTop: 8 }}>{s.label}</div>

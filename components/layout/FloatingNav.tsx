@@ -59,7 +59,7 @@ export function FloatingNav() {
           borderBottom: '1px solid color-mix(in srgb, var(--border) 60%, transparent)',
         }}
       >
-        <div style={{ maxWidth: 1240, margin: '0 auto', padding: '14px 32px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+        <div className="section-pad" style={{ maxWidth: 1240, margin: '0 auto', padding: '14px 32px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8 }}>
           {/* Logo */}
           <Link href="/" style={{ display: 'inline-flex', alignItems: 'center', gap: 8, fontWeight: 700, letterSpacing: '-0.02em', fontSize: 16 }}>
             <svg width={22} height={22} viewBox="0 0 24 24" fill="none">

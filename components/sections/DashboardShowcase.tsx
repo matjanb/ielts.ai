@@ -280,7 +280,7 @@ export function DashboardShowcase() {
   const [tab, setTab] = useState('overview')
 
   return (
-    <section style={{ maxWidth: 1180, margin: '0 auto', padding: '80px 32px' }}>
+    <section className="mobile-hidden" style={{ maxWidth: 1180, margin: '0 auto', padding: '80px 32px' }}>
       <div style={{ textAlign: 'center', marginBottom: 36 }}>
         <div style={{ fontSize: 12, letterSpacing: '0.1em', textTransform: 'uppercase', color: 'var(--text-3)' }}>Inside the app</div>
         <h2 style={{ fontSize: 38, letterSpacing: '-0.025em', margin: '12px 0 0', fontWeight: 700 }}>

@@ -13,17 +13,17 @@ export function HowItWorks() {
 
   return (
     <section id="how" style={{ background: 'var(--bg-soft)', borderTop: '1px solid var(--border)', borderBottom: '1px solid var(--border)' }}>
-      <div style={{ maxWidth: 1080, margin: '0 auto', padding: '88px 32px' }}>
+      <div className="section-pad" style={{ maxWidth: 1080, margin: '0 auto', padding: 'clamp(56px, 9vw, 88px) 32px' }}>
         <div style={{ textAlign: 'center', marginBottom: 48 }}>
           <div style={{ fontSize: 12, letterSpacing: '0.1em', textTransform: 'uppercase', color: 'var(--text-3)' }}>
             {t('howItWorks.sectionBadge')}
           </div>
-          <h2 style={{ fontSize: 40, letterSpacing: '-0.025em', margin: '12px 0 0', fontWeight: 700 }}>
+          <h2 style={{ fontSize: 'clamp(28px, 5vw, 40px)', letterSpacing: '-0.025em', margin: '12px 0 0', fontWeight: 700 }}>
             From day one to <span className="font-serif" style={{ color: 'var(--accent)' }}>exam day</span>, mapped.
           </h2>
         </div>
 
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 12 }}>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 240px), 1fr))', gap: 12 }}>
           {steps.map((step) => (
             <div key={step.n} className="card" style={{ padding: 32 }}>
               <div className="font-serif" style={{ fontSize: 64, lineHeight: 0.9, color: 'var(--accent)', fontWeight: 400 }}>
