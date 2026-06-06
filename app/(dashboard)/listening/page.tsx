@@ -39,7 +39,7 @@ export default function ListeningIndexPage() {
 
       <PracticeBanner skill="listening" />
 
-      <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: 16, marginTop: 24 }}>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 300px), 1fr))', gap: 16, marginTop: 24 }}>
         {/* Practice library */}
         <div className="card" style={{ padding: 28 }}>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 18 }}>

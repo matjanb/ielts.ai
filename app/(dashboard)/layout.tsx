@@ -82,6 +82,18 @@ function DashboardLayoutInner({ children }: { children: ReactNode }) {
   const [notifOpen, setNotifOpen] = useState(false)
   const [userMenuOpen, setUserMenuOpen] = useState(false)
 
+  // Mobile drawer
+  const [isMobile, setIsMobile] = useState(false)
+  const [mobileNavOpen, setMobileNavOpen] = useState(false)
+
+  useEffect(() => {
+    const mq = window.matchMedia('(max-width: 768px)')
+    const onChange = () => setIsMobile(mq.matches)
+    onChange()
+    mq.addEventListener('change', onChange)
+    return () => mq.removeEventListener('change', onChange)
+  }, [])
+
   // User info
   const [userName, setUserName] = useState('User')
   const [userEmail, setUserEmail] = useState('')
@@ -136,8 +148,9 @@ function DashboardLayoutInner({ children }: { children: ReactNode }) {
     hoverTimer.current = setTimeout(() => setHover(false), 450)
   }
 
-  const expanded = hover || pinned
-  const sidebarWidth = expanded ? EXPANDED_W : RAIL_W
+  // On phones the sidebar becomes a slide-in drawer (no hover); content is full-width.
+  const expanded = isMobile ? true : (hover || pinned)
+  const sidebarWidth = isMobile ? EXPANDED_W : (expanded ? EXPANDED_W : RAIL_W)
 
   // ⌘K shortcut
   useEffect(() => {
@@ -185,28 +198,40 @@ function DashboardLayoutInner({ children }: { children: ReactNode }) {
   return (
     <div style={{ position: 'relative', minHeight: '100vh', background: 'var(--bg)' }}>
 
-      {/* Invisible left-edge hover zone (always 8px) */}
-      <div
-        onMouseEnter={onEnter}
-        onMouseLeave={onLeave}
-        style={{
-          position: 'fixed', top: 0, left: 0, bottom: 0,
-          width: expanded ? sidebarWidth + 80 : 8,
-          zIndex: 30, pointerEvents: 'auto',
-        }}
-      />
+      {/* Invisible left-edge hover zone (desktop only) */}
+      {!isMobile && (
+        <div
+          onMouseEnter={onEnter}
+          onMouseLeave={onLeave}
+          style={{
+            position: 'fixed', top: 0, left: 0, bottom: 0,
+            width: expanded ? sidebarWidth + 80 : 8,
+            zIndex: 30, pointerEvents: 'auto',
+          }}
+        />
+      )}
+
+      {/* Mobile drawer backdrop */}
+      {isMobile && mobileNavOpen && (
+        <div
+          onClick={() => setMobileNavOpen(false)}
+          style={{ position: 'fixed', inset: 0, zIndex: 40, background: 'rgba(0,0,0,0.4)' }}
+        />
+      )}
 
       {/* Sidebar */}
       <aside
-        onMouseEnter={onEnter}
-        onMouseLeave={onLeave}
+        onMouseEnter={isMobile ? undefined : onEnter}
+        onMouseLeave={isMobile ? undefined : onLeave}
         style={{
-          position: 'fixed', top: 0, left: 0, bottom: 0, zIndex: 32,
+          position: 'fixed', top: 0, left: 0, bottom: 0,
+          zIndex: isMobile ? 50 : 32,
           width: sidebarWidth,
           background: 'var(--bg-elev)',
           borderRight: '1px solid var(--border)',
-          boxShadow: expanded && !pinned ? 'var(--shadow-lg)' : 'none',
-          transition: 'width .25s cubic-bezier(.2,.7,.2,1)',
+          boxShadow: (isMobile ? mobileNavOpen : (expanded && !pinned)) ? 'var(--shadow-lg)' : 'none',
+          transform: isMobile ? (mobileNavOpen ? 'translateX(0)' : 'translateX(-100%)') : 'none',
+          transition: 'width .25s cubic-bezier(.2,.7,.2,1), transform .25s cubic-bezier(.2,.7,.2,1)',
           overflow: 'hidden',
           display: 'flex', flexDirection: 'column',
         }}
@@ -246,7 +271,9 @@ function DashboardLayoutInner({ children }: { children: ReactNode }) {
           {NAV_ITEMS.map(({ href, icon, key }) => {
             const active = href === '/dashboard' ? pathname === '/dashboard' : pathname.startsWith(href)
             return (
-              <Link key={href} href={href} style={{
+              <Link key={href} href={href}
+                onClick={() => { if (isMobile) setMobileNavOpen(false) }}
+                style={{
                 display: 'flex', alignItems: 'center', gap: 12,
                 height: 40, padding: '0 12px', borderRadius: 8,
                 background: active ? 'var(--accent-soft)' : 'transparent',
@@ -348,7 +375,7 @@ function DashboardLayoutInner({ children }: { children: ReactNode }) {
 
       {/* Main content */}
       <main style={{
-        marginLeft: pinned ? EXPANDED_W : RAIL_W,
+        marginLeft: isMobile ? 0 : (pinned ? EXPANDED_W : RAIL_W),
         transition: 'margin-left .25s cubic-bezier(.2,.7,.2,1)',
         minHeight: '100vh', height: '100vh', display: 'flex', flexDirection: 'column', overflow: 'hidden',
       }}>
@@ -358,11 +385,22 @@ function DashboardLayoutInner({ children }: { children: ReactNode }) {
           backdropFilter: 'blur(20px)',
           background: 'color-mix(in srgb, var(--bg) 80%, transparent)',
           borderBottom: '1px solid var(--border)',
-          padding: '0 32px', height: 60,
+          padding: isMobile ? '0 14px' : '0 32px', height: 60,
           display: 'flex', alignItems: 'center', justifyContent: 'space-between',
         }}>
           {/* Breadcrumb */}
           <div style={{ display: 'flex', alignItems: 'center', gap: 10, fontSize: 14 }}>
+            {isMobile && (
+              <button
+                onClick={() => setMobileNavOpen(true)}
+                aria-label="Open menu"
+                style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: 34, height: 34, marginLeft: -6, borderRadius: 8, color: 'var(--text)' }}
+              >
+                <svg width={20} height={20} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M3 6h18M3 12h18M3 18h18"/>
+                </svg>
+              </button>
+            )}
             <span style={{ color: 'var(--text-3)' }}>Dashboard</span>
             {currentNav && currentNav.href !== '/dashboard' && (
               <>
@@ -387,8 +425,10 @@ function DashboardLayoutInner({ children }: { children: ReactNode }) {
               onMouseLeave={e => (e.currentTarget.style.borderColor = 'var(--border)')}
             >
               <NavIcon name="search" size={13} color="var(--text-3)" />
-              <span>Quick find</span>
-              <kbd style={{ fontFamily: 'var(--font-mono)', fontSize: 10, padding: '1px 5px', borderRadius: 5, background: 'var(--bg-elev)', border: '1px solid var(--border)', color: 'var(--text-3)' }}>⌘K</kbd>
+              {!isMobile && <>
+                <span>Quick find</span>
+                <kbd style={{ fontFamily: 'var(--font-mono)', fontSize: 10, padding: '1px 5px', borderRadius: 5, background: 'var(--bg-elev)', border: '1px solid var(--border)', color: 'var(--text-3)' }}>⌘K</kbd>
+              </>}
             </button>
 
             {/* Notifications bell */}

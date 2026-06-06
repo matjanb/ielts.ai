@@ -194,7 +194,7 @@ export default function DiagnosticPage() {
         <div style={{ width: '100%', maxWidth: 640 }} key={step.id}>
           <div className="fade-up">
             <div className="dim mono" style={{ fontSize: 12, letterSpacing: '0.08em' }}>QUESTION {String(safeIdx + 1).padStart(2, '0')} / {String(total).padStart(2, '0')}</div>
-            <h1 style={{ fontSize: 36, letterSpacing: '-0.025em', margin: '16px 0 10px', fontWeight: 700, lineHeight: 1.1 }}>{step.title}</h1>
+            <h1 style={{ fontSize: 'clamp(26px, 6vw, 36px)', letterSpacing: '-0.025em', margin: '16px 0 10px', fontWeight: 700, lineHeight: 1.1 }}>{step.title}</h1>
             <p className="muted" style={{ fontSize: 16, margin: '0 0 32px' }}>{step.sub}</p>
 
             <StepBody step={step} value={answer} onChange={setAnswer} onAdvance={next}/>
@@ -266,7 +266,7 @@ function StepBody({ step, value, onChange, onAdvance }: { step: Step; value: unk
       else if (picked.length < 2) onChange([...picked, v])
     }
     return (
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 10 }}>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 150px), 1fr))', gap: 10 }}>
         {step.options!.map(o => {
           const selected = picked.includes(o.value)
           return (
