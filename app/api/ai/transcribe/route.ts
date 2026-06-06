@@ -1,12 +1,18 @@
 import { NextRequest, NextResponse } from 'next/server'
 import openai from '@/lib/openai/client'
-import { getApiUser, err } from '@/lib/api/helpers'
+import { getApiUser, hasActiveSubscription, recordUsage, enforceAiLimits, err } from '@/lib/api/helpers'
 
 // Transcribes a short recorded answer with Whisper. The speaking page sends
 // the captured audio here, then the returned text is graded by /api/ai/speaking.
 export async function POST(request: NextRequest) {
   const user = await getApiUser()
   if (!user) return err('Unauthorized', 401)
+
+  const allowed = await hasActiveSubscription(user.id)
+  if (!allowed) return err('Subscription required.', 403)
+
+  const limited = await enforceAiLimits(user.id, 'transcribe')
+  if (limited) return limited
 
   let form: FormData
   try {
@@ -29,6 +35,7 @@ export async function POST(request: NextRequest) {
       model: 'whisper-1',
       language: 'en',
     })
+    await recordUsage(user.id, 'transcribe')
     return NextResponse.json({ transcript: transcription.text?.trim() ?? '' })
   } catch (e) {
     console.error('[AI transcribe]', e)

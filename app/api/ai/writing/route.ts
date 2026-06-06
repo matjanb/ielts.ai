@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import openai from '@/lib/openai/client'
 import { createAdminClient } from '@/lib/supabase/admin'
-import { getApiUser, hasActiveSubscription, recordUsage, err } from '@/lib/api/helpers'
+import { getApiUser, hasActiveSubscription, recordUsage, enforceAiLimits, err } from '@/lib/api/helpers'
 import { WRITING_TASK1_RUBRIC, WRITING_TASK2_RUBRIC, EXAMINER_PERSONA } from '@/lib/ielts/rubrics'
 import { clampBand, overallBand } from '@/lib/ielts/band'
 
@@ -49,6 +49,9 @@ export async function POST(request: NextRequest) {
 
   const allowed = await hasActiveSubscription(user.id)
   if (!allowed) return err('Subscription required.', 403)
+
+  const limited = await enforceAiLimits(user.id, 'writing')
+  if (limited) return limited
 
   let body: { content: string; task_type: '1' | '2'; prompt: string }
   try {
