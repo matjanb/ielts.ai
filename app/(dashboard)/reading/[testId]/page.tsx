@@ -72,7 +72,7 @@ function ReadingQuestion({
           onBlur={e => (e.currentTarget.style.borderColor = 'var(--border-strong)')}
         >
           <option value="">{t('reading.select')}</option>
-          <option>YES</option><option>NO</option><option>NOT GIVEN</option>
+          <option>TRUE</option><option>FALSE</option><option>NOT GIVEN</option>
         </select>
         <p style={{ fontSize: 14, color: 'var(--text)', lineHeight: 1.55, margin: 0 }}>{qText}</p>
       </div>
@@ -383,7 +383,7 @@ export default function ReadingTestPage() {
 
   function getGroupLabel(type: string, qs: QuestionWithSection[]) {
     const nums = `${t('reading.questions')} ${qs[0].question_number}${qs.length > 1 ? `-${qs[qs.length-1].question_number}` : ''}`
-    if (type === 'true_false') return `${nums} — YES / NO / NOT GIVEN`
+    if (type === 'true_false') return `${nums} — TRUE / FALSE / NOT GIVEN`
     if (type === 'multiple_choice') return `${nums} — ${t('reading.gChoose')}`
     if (type === 'matching') return `${nums} — ${t('reading.gMatch')}`
     if (type === 'fill_blank') return `${nums} — ${t('reading.gComplete')}`
