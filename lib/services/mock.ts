@@ -2,7 +2,7 @@
 import { createClient } from '@/lib/supabase/client'
 
 function db() {
-  return createClient() as any
+  return createClient()
 }
 
 const STORAGE_KEY = 'mock:current'

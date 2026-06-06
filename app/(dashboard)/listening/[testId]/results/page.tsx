@@ -5,7 +5,7 @@ import { useRouter, useParams, useSearchParams } from 'next/navigation'
 import { useLanguage } from '@/lib/i18n/LanguageContext'
 import type { Question, TestSection } from '@/lib/types/database'
 import { isAnswerCorrect } from '@/lib/utils/answerChecking'
-import { getSectionsByTestId, getQuestionsBySectionIds } from '@/lib/services/tests'
+import { getSectionsByTestId, getTestQuestions } from '@/lib/services/tests'
 import { getAttemptWithAnswers } from '@/lib/services/attempts'
 
 type QuestionWithSection = Question & { sectionNumber: number; sectionTitle: string }
@@ -28,6 +28,7 @@ export default function ListeningResultsPage() {
 
   const [questions, setQuestions]   = useState<QuestionWithSection[]>([])
   const [userAnswers, setUserAnswers] = useState<Record<string, string>>({})
+  const [correctAnswers, setCorrectAnswers] = useState<Record<string, string>>({})
   const [sections, setSections]     = useState<TestSection[]>([])
   const [reviewLoading, setReviewLoading] = useState(true)
 
@@ -39,7 +40,9 @@ export default function ListeningResultsPage() {
         setSections(secs)
         if (secs.length > 0) {
           const sectionIds = secs.map((s: TestSection) => s.id)
-          const questionsData = await getQuestionsBySectionIds(sectionIds)
+          // Questions load WITHOUT correct answers; correct answers come from the
+          // authorized results endpoint (owner + completed attempt only).
+          const questionsData = await getTestQuestions(sectionIds)
           const sectionMap = new Map(secs.map((s: TestSection) => [s.id, s]))
           const enriched: QuestionWithSection[] = (questionsData as Question[]).map(q => ({
             ...q,
@@ -53,6 +56,10 @@ export default function ListeningResultsPage() {
           const map: Record<string, string> = {}
           for (const a of answers) map[a.question_id] = a.user_answer ?? ''
           setUserAnswers(map)
+          try {
+            const res = await fetch(`/api/attempts/${attemptId}/results`)
+            if (res.ok) setCorrectAnswers((await res.json()).correctAnswers ?? {})
+          } catch { /* correct answers stay hidden if this fails */ }
         }
       } catch { /* review is best-effort */ }
       finally { setReviewLoading(false) }
@@ -149,7 +156,7 @@ export default function ListeningResultsPage() {
                 <div>
                   {qs.map((q, i) => {
                     const userAns = userAnswers[q.id] ?? ''
-                    const isCorrect = isAnswerCorrect(userAns, q.correct_answer ?? '')
+                    const isCorrect = isAnswerCorrect(userAns, correctAnswers[q.id] ?? '')
                     return (
                       <div key={q.id} style={{ padding: '14px 20px', borderTop: i === 0 ? 'none' : '1px solid var(--border)', display: 'flex', alignItems: 'flex-start', gap: 12 }}>
                         <div style={{ flexShrink: 0, marginTop: 1 }}>
@@ -170,7 +177,7 @@ export default function ListeningResultsPage() {
                             {!isCorrect && (
                               <span style={{ marginLeft: 14, color: 'var(--accent)' }}>
                                 <span style={{ fontWeight: 600 }}>{t('listening.correctAnswer')}:</span>
-                                <span style={{ marginLeft: 6 }}>{q.correct_answer}</span>
+                                <span style={{ marginLeft: 6 }}>{correctAnswers[q.id]}</span>
                               </span>
                             )}
                           </div>

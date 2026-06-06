@@ -12,6 +12,13 @@ function getOrigin(request: NextRequest): string {
   return new URL(request.url).origin
 }
 
+// Only allow same-origin absolute paths. Rejects absolute URLs and
+// protocol-relative paths (`//evil.com`) so `?next=` can't be an open redirect.
+function safeNext(raw: string | null): string {
+  if (!raw || !raw.startsWith('/') || raw.startsWith('//') || raw.startsWith('/\\')) return '/dashboard'
+  return raw
+}
+
 // Email confirmation via token_hash + verifyOtp (no PKCE verifier needed, so it
 // works even when the link is opened on a different device than sign-up).
 export async function GET(request: NextRequest) {
@@ -19,7 +26,7 @@ export async function GET(request: NextRequest) {
   const origin = getOrigin(request)
   const tokenHash = searchParams.get('token_hash')
   const type = searchParams.get('type') as EmailOtpType | null
-  const next = searchParams.get('next') ?? '/dashboard'
+  const next = safeNext(searchParams.get('next'))
 
   if (!tokenHash || !type) {
     return NextResponse.redirect(`${origin}/login?error=invalid_confirmation_link`)

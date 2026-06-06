@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import openai from '@/lib/openai/client'
 import { createAdminClient } from '@/lib/supabase/admin'
-import { getApiUser, hasActiveSubscription, recordUsage, err } from '@/lib/api/helpers'
+import { getApiUser, hasActiveSubscription, recordUsage, enforceAiLimits, err } from '@/lib/api/helpers'
 
 export async function POST(request: NextRequest) {
   const user = await getApiUser()
@@ -9,6 +9,9 @@ export async function POST(request: NextRequest) {
 
   const allowed = await hasActiveSubscription(user.id)
   if (!allowed) return err('Subscription required.', 403)
+
+  const limited = await enforceAiLimits(user.id, 'band_estimate')
+  if (limited) return limited
 
   let body: {
     correct: number
@@ -25,6 +28,14 @@ export async function POST(request: NextRequest) {
   const { correct, total, sections, test_id } = body
   if (typeof correct !== 'number' || typeof total !== 'number' || total === 0) {
     return err('correct and total are required numeric fields', 400)
+  }
+  // Sane bounds: a real test has a handful of sections and total ≤ a few hundred.
+  if (!Number.isFinite(correct) || !Number.isFinite(total) ||
+      total < 1 || total > 1000 || correct < 0 || correct > total) {
+    return err('Invalid score range', 400)
+  }
+  if (sections && Object.keys(sections).length > 50) {
+    return err('Too many sections', 400)
   }
 
   const pct = (correct / total) * 100

@@ -9,6 +9,7 @@ import { ThemeToggle } from '@/components/ui/ThemeToggle'
 import { openCheckout } from '@/lib/paddle/client'
 import { getUser, signOut } from '@/lib/services/auth'
 import { getProfile } from '@/lib/services/user'
+import { isSubscriptionActive } from '@/lib/subscription'
 import { DiagnosticSync } from '@/components/DiagnosticSync'
 
 // Open the Paddle overlay checkout for the chosen plan.
@@ -58,8 +59,7 @@ function SubscriptionContent() {
     getUser().then(async ({ user }) => {
       if (!user) return
       const profile = await getProfile(user.id)
-      const s = profile?.subscription_status
-      setSubscribed(s === 'pro' || s === 'expert')
+      setSubscribed(isSubscriptionActive(profile))
     })
   }, [])
 
@@ -83,8 +83,7 @@ function SubscriptionContent() {
         const { user } = await getUser()
         if (user) {
           const profile = await getProfile(user.id)
-          const status = profile?.subscription_status
-          if (status === 'pro' || status === 'expert') { router.replace('/dashboard'); return }
+          if (isSubscriptionActive(profile)) { router.replace('/dashboard'); return }
         }
       } catch { /* keep polling */ }
       if (tries < 15) setTimeout(tick, 2000)

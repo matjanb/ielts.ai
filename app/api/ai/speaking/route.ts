@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import openai from '@/lib/openai/client'
 import { createAdminClient } from '@/lib/supabase/admin'
-import { getApiUser, hasActiveSubscription, recordUsage, err } from '@/lib/api/helpers'
+import { getApiUser, hasActiveSubscription, recordUsage, enforceAiLimits, err } from '@/lib/api/helpers'
 import { SPEAKING_RUBRIC, EXAMINER_PERSONA } from '@/lib/ielts/rubrics'
 import { clampBand, overallBand } from '@/lib/ielts/band'
 
@@ -48,6 +48,9 @@ export async function POST(request: NextRequest) {
   const allowed = await hasActiveSubscription(user.id)
   if (!allowed) return err('Subscription required.', 403)
 
+  const limited = await enforceAiLimits(user.id, 'speaking')
+  if (limited) return limited
+
   interface Turn { part: number; question: string; answer: string }
   let body: { transcript?: string; part?: 1 | 2 | 3; topic?: string; turns?: Turn[] }
   try {
@@ -64,6 +67,9 @@ export async function POST(request: NextRequest) {
   let storePart: 1 | 2 | 3 = body.part ?? 1
   let storeTopic = body.topic ?? ''
 
+  if (Array.isArray(body.turns) && body.turns.length > 40) {
+    return err('Too many turns in the session.', 400)
+  }
   const turns = (body.turns ?? []).filter(tn => tn?.answer?.trim())
   if (turns.length > 0) {
     sessionMode = true
@@ -86,6 +92,10 @@ export async function POST(request: NextRequest) {
 
   if (candidateTranscript.split(/\s+/).filter(Boolean).length < 20) {
     return err('Response is too short to evaluate. Please answer more fully.', 400)
+  }
+  // Upper bound on the assembled transcript — caps token cost / timeout risk.
+  if (candidateTranscript.length > 16000) {
+    return err('Transcript is too long (max ~16000 characters).', 413)
   }
 
   const assessScope = sessionMode

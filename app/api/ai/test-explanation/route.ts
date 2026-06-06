@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import openai from '@/lib/openai/client'
-import { getApiUser, hasActiveSubscription, recordUsage, err } from '@/lib/api/helpers'
+import { getApiUser, hasActiveSubscription, recordUsage, enforceAiLimits, err } from '@/lib/api/helpers'
 
 export async function POST(request: NextRequest) {
   const user = await getApiUser()
@@ -8,6 +8,9 @@ export async function POST(request: NextRequest) {
 
   const allowed = await hasActiveSubscription(user.id)
   if (!allowed) return err('Subscription required.', 403)
+
+  const limited = await enforceAiLimits(user.id, 'test_explanation')
+  if (limited) return limited
 
   let body: {
     question_text: string
@@ -24,6 +27,15 @@ export async function POST(request: NextRequest) {
   const { question_text, correct_answer, user_answer, passage_text } = body
   if (!question_text?.trim() || !correct_answer) {
     return err('question_text and correct_answer are required', 400)
+  }
+  // Upper bounds — passage is the only large field; the rest are short answers.
+  if (
+    question_text.length > 2000 ||
+    correct_answer.length > 2000 ||
+    (user_answer?.length ?? 0) > 2000 ||
+    (passage_text?.length ?? 0) > 12000
+  ) {
+    return err('Input is too long.', 413)
   }
 
   try {

@@ -3,7 +3,7 @@ import { createClient } from '@/lib/supabase/client'
 import type { OnboardingData, Profile, SkillType } from '@/lib/types/database'
 
 function db() {
-  return createClient() as any
+  return createClient()
 }
 
 export async function getProfile(userId: string): Promise<Profile | null> {

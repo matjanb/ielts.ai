@@ -2,7 +2,7 @@
 import { createClient } from '@/lib/supabase/client'
 
 function db() {
-  return createClient() as any
+  return createClient()
 }
 
 export interface VocabDeck {
@@ -63,7 +63,7 @@ export async function getDecks(): Promise<VocabDeck[]> {
     .from('vocabulary_decks')
     .select('*')
     .order('sort_order', { ascending: true })
-  return data ?? []
+  return (data ?? []) as VocabDeck[]
 }
 
 export async function getDeckWords(deckId: string): Promise<VocabWord[]> {
@@ -122,7 +122,7 @@ export async function getStats(userId: string | null): Promise<VocabStats> {
     .from('user_vocabulary')
     .select('status, due_at')
     .eq('user_id', userId)
-  const rows: { status: VocabStatus; due_at: string }[] = data ?? []
+  const rows = (data ?? []) as { status: VocabStatus; due_at: string }[]
 
   const now = Date.now()
   const learned = rows.filter(r => r.status === 'learned').length
@@ -230,7 +230,7 @@ export async function reviewWord(userId: string, wordId: string, result: SrsResu
     .eq('word_id', wordId)
     .maybeSingle()
 
-  const next = computeNext(prev ?? null, result)
+  const next = computeNext((prev ?? null) as VocabProgress | null, result)
   await db()
     .from('user_vocabulary')
     .upsert(

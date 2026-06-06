@@ -3,7 +3,7 @@ import { createClient } from '@/lib/supabase/client'
 import type { IeltsTest, TestSection, Question } from '@/lib/types/database'
 
 function db() {
-  return createClient() as any
+  return createClient()
 }
 
 export async function getTestById(testId: string): Promise<IeltsTest | null> {
@@ -33,10 +33,31 @@ export async function getQuestionsBySectionIds(sectionIds: string[]): Promise<Qu
   return data ?? []
 }
 
+// Columns safe to send to the browser DURING a test. Deliberately omits
+// `correct_answer` so answers never reach the client before submission —
+// grading happens server-side via /api/attempts/grade.
+const SAFE_QUESTION_COLUMNS =
+  'id, section_id, question_number, question_type, question_text, image_url, options, points, passage_text, passage_group'
+
+/**
+ * Load a test's questions WITHOUT the correct answers, for the live test UI.
+ * Use this (not getQuestionsBySectionIds) anywhere a test is in progress.
+ */
+export async function getTestQuestions(sectionIds: string[]): Promise<Question[]> {
+  if (sectionIds.length === 0) return []
+  const { data } = await db()
+    .from('questions')
+    .select(SAFE_QUESTION_COLUMNS)
+    .in('section_id', sectionIds)
+    .order('question_number')
+  // Intentionally omits correct_answer; treated as Question for rendering.
+  return (data ?? []) as Question[]
+}
+
 export async function getListeningTests(): Promise<IeltsTest[]> {
   const { data } = await db()
     .from('tests')
-    .select('id, title, book_number, test_number, difficulty')
+    .select('id, title, book_number, test_number, difficulty, type, created_at')
     .eq('type', 'listening')
     .order('created_at', { ascending: true })
   return data ?? []
@@ -45,7 +66,7 @@ export async function getListeningTests(): Promise<IeltsTest[]> {
 export async function getReadingTests(): Promise<IeltsTest[]> {
   const { data } = await db()
     .from('tests')
-    .select('id, title, book_number, test_number, difficulty')
+    .select('id, title, book_number, test_number, difficulty, type, created_at')
     .eq('type', 'reading')
     .order('created_at', { ascending: true })
   return data ?? []
@@ -54,7 +75,7 @@ export async function getReadingTests(): Promise<IeltsTest[]> {
 export async function getWritingTests(): Promise<IeltsTest[]> {
   const { data } = await db()
     .from('tests')
-    .select('id, title, book_number, test_number, difficulty')
+    .select('id, title, book_number, test_number, difficulty, type, created_at')
     .eq('type', 'writing')
     .order('created_at', { ascending: true })
   return data ?? []

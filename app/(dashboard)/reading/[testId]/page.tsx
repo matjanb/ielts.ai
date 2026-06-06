@@ -5,8 +5,8 @@ import { useRouter, useParams } from 'next/navigation'
 import { Send, Clock, BookOpen, ChevronLeft, ChevronRight } from 'lucide-react'
 import { useLanguage } from '@/lib/i18n/LanguageContext'
 import type { IeltsTest, TestSection, Question } from '@/lib/types/database'
-import { getTestById, getSectionsByTestId, getQuestionsBySectionIds } from '@/lib/services/tests'
-import { createAttempt, saveAnswer as saveAnswerService, saveAnswersWithResults, completeAttempt, saveBandScoreHistory, logStudySession } from '@/lib/services/attempts'
+import { getTestById, getSectionsByTestId, getTestQuestions } from '@/lib/services/tests'
+import { createAttempt, saveAnswer as saveAnswerService } from '@/lib/services/attempts'
 import { getUser } from '@/lib/services/auth'
 
 type QuestionWithSection = Question & { sectionNumber: number; sectionTitle: string; passageText: string }
@@ -72,7 +72,7 @@ function ReadingQuestion({
           onBlur={e => (e.currentTarget.style.borderColor = 'var(--border-strong)')}
         >
           <option value="">{t('reading.select')}</option>
-          <option>YES</option><option>NO</option><option>NOT GIVEN</option>
+          <option>TRUE</option><option>FALSE</option><option>NOT GIVEN</option>
         </select>
         <p style={{ fontSize: 14, color: 'var(--text)', lineHeight: 1.55, margin: 0 }}>{qText}</p>
       </div>
@@ -264,7 +264,7 @@ export default function ReadingTestPage() {
         setSections(secs)
 
         const sectionIds = secs.map((s: TestSection) => s.id)
-        const rawQ = await getQuestionsBySectionIds(sectionIds)
+        const rawQ = await getTestQuestions(sectionIds)
 
         const sectionMap = new Map(secs.map((s: TestSection) => [s.id, s]))
         const enriched: QuestionWithSection[] = rawQ.map((q: Question) => ({
@@ -314,46 +314,33 @@ export default function ReadingTestPage() {
     if (submitting) return
     setSubmitting(true)
 
-    let totalCorrect = 0
-    const sectionCorrect: Record<number, { correct: number; total: number }> = {}
-    const answerRows: { questionId: string; userAnswer: string | null; isCorrect: boolean }[] = []
+    const durationSeconds = startedAtRef.current
+      ? Math.round((Date.now() - startedAtRef.current) / 1000)
+      : undefined
 
-    for (const q of questions) {
-      const n = q.sectionNumber
-      if (!sectionCorrect[n]) sectionCorrect[n] = { correct: 0, total: 0 }
-      sectionCorrect[n].total++
-      const isCorrect = (answers[q.id] ?? '').trim().toLowerCase() === (q.correct_answer ?? '').trim().toLowerCase()
-      if (isCorrect) { totalCorrect++; sectionCorrect[n].correct++ }
-      answerRows.push({ questionId: q.id, userAnswer: answers[q.id] ?? null, isCorrect })
-    }
+    // Grading is server-side: the browser never holds the correct answers and
+    // the score can't be forged. We send only the user's answers.
+    let score = 0
+    let band = 0
+    let sections: Record<string, { correct: number; total: number }> = {}
+    let finalAttempt = attemptId
 
-    const rawToBand = (raw: number) => {
-      if (raw >= 39) return 9.0; if (raw >= 37) return 8.5; if (raw >= 35) return 8.0
-      if (raw >= 32) return 7.5; if (raw >= 30) return 7.0; if (raw >= 26) return 6.5
-      if (raw >= 23) return 6.0; if (raw >= 18) return 5.5; if (raw >= 16) return 5.0
-      if (raw >= 13) return 4.5; if (raw >= 10) return 4.0; if (raw >= 8) return 3.5
-      if (raw >= 6) return 3.0; return 2.5
-    }
-    const band = rawToBand(totalCorrect)
+    try {
+      const res = await fetch('/api/attempts/grade', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ testId, skill: 'reading', answers, attemptId, durationSeconds }),
+      })
+      if (res.ok) {
+        const data = await res.json()
+        score = data.score ?? 0
+        band = data.band ?? 0
+        sections = data.sections ?? {}
+        finalAttempt = data.attemptId ?? attemptId
+      }
+    } catch { /* fall through to results; the attempt is still recoverable */ }
 
-    // Persist everything in parallel — one batch upsert for all answers plus the
-    // independent attempt/band/session writes — instead of ~40 sequential requests.
-    if (attemptId) {
-      try {
-        const { user } = await getUser()
-        const mins = startedAtRef.current ? (Date.now() - startedAtRef.current) / 60000 : 60
-        await Promise.all([
-          saveAnswersWithResults(attemptId, answerRows),
-          completeAttempt(attemptId, totalCorrect, band, sectionCorrect),
-          ...(user ? [
-            saveBandScoreHistory(user.id, 'reading', band, attemptId),
-            logStudySession(user.id, 'reading', mins, 'mock_test'),
-          ] : []),
-        ])
-      } catch { /* silent */ }
-    }
-
-    router.push(`/reading/${testId}/results?score=${totalCorrect}&band=${band}&sections=${encodeURIComponent(JSON.stringify(sectionCorrect))}&attempt=${attemptId ?? ''}`)
+    router.push(`/reading/${testId}/results?score=${score}&band=${band}&sections=${encodeURIComponent(JSON.stringify(sections))}&attempt=${finalAttempt ?? ''}`)
   }
 
   if (loading) return (
@@ -396,7 +383,7 @@ export default function ReadingTestPage() {
 
   function getGroupLabel(type: string, qs: QuestionWithSection[]) {
     const nums = `${t('reading.questions')} ${qs[0].question_number}${qs.length > 1 ? `-${qs[qs.length-1].question_number}` : ''}`
-    if (type === 'true_false') return `${nums} — YES / NO / NOT GIVEN`
+    if (type === 'true_false') return `${nums} — TRUE / FALSE / NOT GIVEN`
     if (type === 'multiple_choice') return `${nums} — ${t('reading.gChoose')}`
     if (type === 'matching') return `${nums} — ${t('reading.gMatch')}`
     if (type === 'fill_blank') return `${nums} — ${t('reading.gComplete')}`

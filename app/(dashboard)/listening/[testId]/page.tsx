@@ -6,11 +6,9 @@ import { Play, Pause, Volume2, AlertCircle, Loader2 } from 'lucide-react'
 import Image from 'next/image'
 import { useLanguage } from '@/lib/i18n/LanguageContext'
 import { TestTimer } from '@/components/test/TestTimer'
-import { listeningRawToBand } from '@/lib/utils/bandScore'
-import { isAnswerCorrect } from '@/lib/utils/answerChecking'
 import type { IeltsTest, TestSection, Question } from '@/lib/types/database'
-import { getTestById, getSectionsByTestId, getQuestionsBySectionIds } from '@/lib/services/tests'
-import { createAttempt, saveAnswer as saveAnswerService, saveAnswersWithResults, completeAttempt, saveBandScoreHistory, logStudySession } from '@/lib/services/attempts'
+import { getTestById, getSectionsByTestId, getTestQuestions } from '@/lib/services/tests'
+import { createAttempt, saveAnswer as saveAnswerService } from '@/lib/services/attempts'
 import { getUser } from '@/lib/services/auth'
 
 type QuestionWithSection = Question & { sectionNumber: number; sectionTitle: string }
@@ -1294,6 +1292,40 @@ function TableCard({
 
 // ── Diagram Table Card (Q38-42 style: 3-zone supermarket aisle layout) ─────────
 
+// One column of the diagram (entrance/aisle/exit): a stack of fill-in-the-blank
+// inputs. Declared at module scope (not inside DiagramTableCard) so it isn't
+// recreated on every render — that reset input state and tripped react-hooks.
+function ZoneQuestions({ qs, answers, onAnswer }: {
+  qs: QuestionWithSection[]
+  answers: Record<string, string>
+  onAnswer: (id: string, v: string) => void
+}) {
+  return (
+    <div className="px-3 py-3 space-y-4">
+      {qs.map(q => {
+        const raw = q.question_text.replace(/^(ENTRANCE|AISLE|EXIT)\s*[—\-]\s*/i, '')
+        const blankIdx = raw.indexOf('___')
+        const before = blankIdx >= 0 ? raw.slice(0, blankIdx) : raw
+        const after = blankIdx >= 0 ? raw.slice(blankIdx + 3) : ''
+        return (
+          <div key={q.id} className="space-y-1">
+            <div className="text-[10px] font-bold text-[var(--accent)]">({q.question_number})</div>
+            {before && <p className="text-xs text-[var(--text-2)] leading-snug">{before}</p>}
+            <input
+              type="text"
+              value={answers[q.id] ?? ''}
+              onChange={e => onAnswer(q.id, e.target.value)}
+              className="w-full border-b-2 border-[var(--border-strong)] bg-transparent focus:outline-none focus:border-[var(--accent)]  text-sm text-[var(--text)] placeholder-[var(--text-3)] text-center transition-colors pb-0.5"
+              placeholder="..."
+            />
+            {after && <p className="text-xs text-[var(--text-2)] leading-snug">{after}</p>}
+          </div>
+        )
+      })}
+    </div>
+  )
+}
+
 function DiagramTableCard({
   questions,
   answers,
@@ -1311,33 +1343,6 @@ function DiagramTableCard({
   const aisle = questions.filter(q => zoneOf(q) === 'AISLE')
   const exit = questions.filter(q => zoneOf(q) === 'EXIT')
 
-  function ZoneQuestions({ qs }: { qs: QuestionWithSection[] }) {
-    return (
-      <div className="px-3 py-3 space-y-4">
-        {qs.map(q => {
-          const raw = q.question_text.replace(/^(ENTRANCE|AISLE|EXIT)\s*[—\-]\s*/i, '')
-          const blankIdx = raw.indexOf('___')
-          const before = blankIdx >= 0 ? raw.slice(0, blankIdx) : raw
-          const after = blankIdx >= 0 ? raw.slice(blankIdx + 3) : ''
-          return (
-            <div key={q.id} className="space-y-1">
-              <div className="text-[10px] font-bold text-[var(--accent)]">({q.question_number})</div>
-              {before && <p className="text-xs text-[var(--text-2)] leading-snug">{before}</p>}
-              <input
-                type="text"
-                value={answers[q.id] ?? ''}
-                onChange={e => onAnswer(q.id, e.target.value)}
-                className="w-full border-b-2 border-[var(--border-strong)] bg-transparent focus:outline-none focus:border-[var(--accent)]  text-sm text-[var(--text)] placeholder-[var(--text-3)] text-center transition-colors pb-0.5"
-                placeholder="..."
-              />
-              {after && <p className="text-xs text-[var(--text-2)] leading-snug">{after}</p>}
-            </div>
-          )
-        })}
-      </div>
-    )
-  }
-
   return (
     <div className="border-2 border-[var(--border-strong)] rounded-sm overflow-hidden">
       {diagramTitle && (
@@ -1350,7 +1355,7 @@ function DiagramTableCard({
           <div className="px-3 py-2 border-b border-[var(--border-strong)] text-center">
             <span className="text-[10px] font-black uppercase tracking-widest text-[var(--text)]">ENTRANCE</span>
           </div>
-          <ZoneQuestions qs={entrance} />
+          <ZoneQuestions qs={entrance} answers={answers} onAnswer={onAnswer} />
         </div>
         <div className="bg-[var(--bg-soft)]/50">
           <div className="px-3 py-2 border-b border-[var(--border-strong)] flex items-center justify-between">
@@ -1358,13 +1363,13 @@ function DiagramTableCard({
             <span className="text-[10px] font-black uppercase tracking-widest text-[var(--text)]">AISLE</span>
             <span className="text-[var(--text-3)] text-sm">→</span>
           </div>
-          <ZoneQuestions qs={aisle} />
+          <ZoneQuestions qs={aisle} answers={answers} onAnswer={onAnswer} />
         </div>
         <div className="bg-[var(--bg-elev)]">
           <div className="px-3 py-2 border-b border-[var(--border-strong)] text-center">
             <span className="text-[10px] font-black uppercase tracking-widest text-[var(--text)]">EXIT</span>
           </div>
-          <ZoneQuestions qs={exit} />
+          <ZoneQuestions qs={exit} answers={answers} onAnswer={onAnswer} />
         </div>
       </div>
     </div>
@@ -1549,6 +1554,40 @@ function DiagramLabelsCard({
 
 // ── Diagram Card (Q40-41 style: left box — center image — right box) ──────────
 
+// Pure parse of a diagram-box question into its label + hint. Module scope so
+// it's a stable reference, not recreated per render of DiagramCard.
+function parseDiagramBox(q: QuestionWithSection): { level: string; hint: string } {
+  const text = q.question_text
+  const m = text.match(/—\s*(.+?)\s*\(([^)]+)\)\s*:\s*\(\d+\)/)
+  if (m) return { level: m[1].trim(), hint: m[2].trim() }
+  const clean = text.replace(/\(\d+\)\s*_*/, '').replace(/[:\s]+$/, '').trim()
+  return { level: clean, hint: '' }
+}
+
+// A single labelled diagram input. Declared at module scope (not inside
+// DiagramCard) so it isn't recreated on every render.
+function DiagramBox({ q, answers, onAnswer }: {
+  q: QuestionWithSection
+  answers: Record<string, string>
+  onAnswer: (id: string, v: string) => void
+}) {
+  const { level, hint } = parseDiagramBox(q)
+  return (
+    <div className="flex-1 border-2 border-[var(--border-strong)] rounded-lg p-3 text-center space-y-2">
+      <div className="text-[10px] font-bold text-[var(--accent)]">({q.question_number})</div>
+      <input
+        type="text"
+        value={answers[q.id] ?? ''}
+        onChange={e => onAnswer(q.id, e.target.value)}
+        className="w-full border-b-2 border-[var(--border-strong)] bg-transparent focus:outline-none focus:border-[var(--accent)]  text-sm text-[var(--text)] placeholder-[var(--text-3)] text-center transition-colors pb-0.5"
+        placeholder="..."
+      />
+      {level && <p className="text-[10px] text-[var(--text-2)] leading-tight">{level}</p>}
+      {hint && <p className="text-[10px] text-[var(--text-3)] leading-tight">({hint})</p>}
+    </div>
+  )
+}
+
 function DiagramCard({
   questions,
   answers,
@@ -1562,43 +1601,17 @@ function DiagramCard({
   const title = (firstOpts?.box_title as string) ?? ''
   const imageUrl = questions.find(q => q.image_url)?.image_url ?? null
 
-  function parseDiagramBox(q: QuestionWithSection) {
-    const text = q.question_text
-    const m = text.match(/—\s*(.+?)\s*\(([^)]+)\)\s*:\s*\(\d+\)/)
-    if (m) return { level: m[1].trim(), hint: m[2].trim() }
-    const clean = text.replace(/\(\d+\)\s*_*/, '').replace(/[:\s]+$/, '').trim()
-    return { level: clean, hint: '' }
-  }
-
-  function DiagramBox({ q }: { q: QuestionWithSection }) {
-    const { level, hint } = parseDiagramBox(q)
-    return (
-      <div className="flex-1 border-2 border-[var(--border-strong)] rounded-lg p-3 text-center space-y-2">
-        <div className="text-[10px] font-bold text-[var(--accent)]">({q.question_number})</div>
-        <input
-          type="text"
-          value={answers[q.id] ?? ''}
-          onChange={e => onAnswer(q.id, e.target.value)}
-          className="w-full border-b-2 border-[var(--border-strong)] bg-transparent focus:outline-none focus:border-[var(--accent)]  text-sm text-[var(--text)] placeholder-[var(--text-3)] text-center transition-colors pb-0.5"
-          placeholder="..."
-        />
-        {level && <p className="text-[10px] text-[var(--text-2)] leading-tight">{level}</p>}
-        {hint && <p className="text-[10px] text-[var(--text-3)] leading-tight">({hint})</p>}
-      </div>
-    )
-  }
-
   return (
     <div className="border-2 border-[var(--border-strong)] bg-[var(--bg-elev)] rounded-sm p-4">
       {title && <p className="text-sm font-bold italic text-[var(--text)] mb-4">{title}</p>}
       <div className="flex items-center gap-3 sm:gap-5">
-        {questions[0] && <DiagramBox q={questions[0]} />}
+        {questions[0] && <DiagramBox q={questions[0]} answers={answers} onAnswer={onAnswer} />}
         {imageUrl && (
           <div className="shrink-0 w-28 sm:w-40">
             <Image src={imageUrl} alt="Diagram" width={160} height={200} className="w-full h-auto object-contain" unoptimized />
           </div>
         )}
-        {questions[1] && <DiagramBox q={questions[1]} />}
+        {questions[1] && <DiagramBox q={questions[1]} answers={answers} onAnswer={onAnswer} />}
       </div>
     </div>
   )
@@ -1986,7 +1999,7 @@ export default function ListeningTestPage() {
         }
 
         const sectionIds = secs.map((s: TestSection) => s.id)
-        const questionsData = await getQuestionsBySectionIds(sectionIds)
+        const questionsData = await getTestQuestions(sectionIds)
 
         if (questionsData.length === 0) {
           setLoadError(t('listening.noQuestionsSeed'))
@@ -2058,43 +2071,35 @@ export default function ListeningTestPage() {
     if (submitting) return
     setSubmitting(true)
 
-    let totalCorrect = 0
-    const sectionCorrect: Record<number, { correct: number; total: number }> = {}
-    const answerRows: { questionId: string; userAnswer: string | null; isCorrect: boolean }[] = []
+    const durationSeconds = startedAtRef.current
+      ? Math.round((Date.now() - startedAtRef.current) / 1000)
+      : undefined
 
-    for (const q of questions) {
-      const n = q.sectionNumber
-      if (!sectionCorrect[n]) sectionCorrect[n] = { correct: 0, total: 0 }
-      sectionCorrect[n].total++
+    // Grading is server-side: the browser never holds the correct answers and
+    // the score can't be forged. We send only the user's answers.
+    let score = 0
+    let band = 0
+    let sections: Record<string, { correct: number; total: number }> = {}
+    let finalAttempt = attemptId
 
-      const correct = isAnswerCorrect(answers[q.id] ?? '', q.correct_answer ?? '')
-      if (correct) { totalCorrect++; sectionCorrect[n].correct++ }
-      answerRows.push({ questionId: q.id, userAnswer: answers[q.id] ?? null, isCorrect: correct })
-    }
+    try {
+      const res = await fetch('/api/attempts/grade', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ testId, skill: 'listening', answers, attemptId, durationSeconds }),
+      })
+      if (res.ok) {
+        const data = await res.json()
+        score = data.score ?? 0
+        band = data.band ?? 0
+        sections = data.sections ?? {}
+        finalAttempt = data.attemptId ?? attemptId
+      }
+    } catch { /* fall through to results; the attempt is still recoverable */ }
 
-    const band = listeningRawToBand(totalCorrect)
-    const sectionScores = Object.fromEntries(Object.entries(sectionCorrect))
-
-    // Persist everything in parallel — one batch upsert for all answers plus the
-    // independent attempt/band/session writes — instead of ~40 sequential requests.
-    if (attemptId) {
-      try {
-        const { user } = await getUser()
-        const mins = startedAtRef.current ? (Date.now() - startedAtRef.current) / 60000 : 30
-        await Promise.all([
-          saveAnswersWithResults(attemptId, answerRows),
-          completeAttempt(attemptId, totalCorrect, band, sectionScores),
-          ...(user ? [
-            saveBandScoreHistory(user.id, 'listening', band, attemptId),
-            logStudySession(user.id, 'listening', mins, 'mock_test'),
-          ] : []),
-        ])
-      } catch { /* silent */ }
-    }
-
-    const sectionParam = encodeURIComponent(JSON.stringify(sectionScores))
+    const sectionParam = encodeURIComponent(JSON.stringify(sections))
     router.push(
-      `/listening/${testId}/results?score=${totalCorrect}&band=${band}&sections=${sectionParam}&attempt=${attemptId ?? ''}`
+      `/listening/${testId}/results?score=${score}&band=${band}&sections=${sectionParam}&attempt=${finalAttempt ?? ''}`
     )
   }
 

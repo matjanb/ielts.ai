@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import openai from '@/lib/openai/client'
 import { createAdminClient } from '@/lib/supabase/admin'
-import { getApiUser, hasActiveSubscription, recordUsage, err } from '@/lib/api/helpers'
+import { getApiUser, hasActiveSubscription, recordUsage, enforceAiLimits, err } from '@/lib/api/helpers'
 import { WRITING_TASK1_RUBRIC, WRITING_TASK2_RUBRIC, EXAMINER_PERSONA } from '@/lib/ielts/rubrics'
 import { clampBand, overallBand } from '@/lib/ielts/band'
 
@@ -50,6 +50,9 @@ export async function POST(request: NextRequest) {
   const allowed = await hasActiveSubscription(user.id)
   if (!allowed) return err('Subscription required.', 403)
 
+  const limited = await enforceAiLimits(user.id, 'writing')
+  if (limited) return limited
+
   let body: { content: string; task_type: '1' | '2'; prompt: string }
   try {
     body = await request.json()
@@ -61,6 +64,10 @@ export async function POST(request: NextRequest) {
   if (!content?.trim() || !task_type || !prompt?.trim()) {
     return err('content, task_type, and prompt are required', 400)
   }
+  // Upper bounds: a real essay is well under this. Caps token cost and blocks
+  // oversized payloads from running up the OpenAI bill or timing out.
+  if (content.length > 8000) return err('Response is too long (max ~8000 characters).', 413)
+  if (prompt.length > 3000)  return err('Prompt is too long (max 3000 characters).', 413)
 
   const wordCount = content.trim().split(/\s+/).filter(Boolean).length
   const minWords = task_type === '1' ? 150 : 250
