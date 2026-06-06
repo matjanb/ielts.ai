@@ -2,6 +2,7 @@ import { createServerClient } from '@supabase/ssr'
 import { type NextRequest, NextResponse } from 'next/server'
 import type { Database } from '@/lib/types/database'
 import { isSubscriptionActive } from '@/lib/subscription'
+import { ACCESS_COOKIE, hasValidAccessCookie, signAccessCookie } from '@/lib/auth/accessCookie'
 
 export async function updateSession(request: NextRequest) {
   let supabaseResponse = NextResponse.next({ request })
@@ -54,13 +55,32 @@ export async function updateSession(request: NextRequest) {
   // Paywall: logged-in users without an active subscription are sent to the
   // subscription page (which lets them buy, then drops them into the dashboard).
   if (needsSubscription && user) {
-    const { data: profile } = await supabase
-      .from('profiles')
-      .select('subscription_status, subscription_expires_at')
-      .eq('id', user.id)
-      .single<{ subscription_status: string; subscription_expires_at: string | null }>()
+    // Fast path: a valid signed cookie means we already confirmed access within
+    // the last few minutes — skip the profiles DB read on the hot path. Cache
+    // miss falls back to the DB (source of truth) and re-primes the cookie.
+    let active = await hasValidAccessCookie(request.cookies.get(ACCESS_COOKIE)?.value, user.id)
+    if (!active) {
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('subscription_status, subscription_expires_at')
+        .eq('id', user.id)
+        .single<{ subscription_status: string; subscription_expires_at: string | null }>()
+      active = isSubscriptionActive(profile)
+      if (active) {
+        const c = await signAccessCookie(user.id)
+        if (c) {
+          supabaseResponse.cookies.set(c.name, c.value, {
+            httpOnly: true,
+            secure: process.env.NODE_ENV === 'production',
+            sameSite: 'lax',
+            maxAge: c.maxAge,
+            path: '/',
+          })
+        }
+      }
+    }
 
-    if (!isSubscriptionActive(profile)) {
+    if (!active) {
       return NextResponse.redirect(new URL('/subscription', request.url))
     }
   }
