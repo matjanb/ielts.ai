@@ -94,7 +94,7 @@ const DIAG_STEPS: Step[] = [
   {
     id: 'weak', type: 'multi',
     title: 'Which skills feel weakest?',
-    sub: "Pick up to two. We'll bias your plan there.",
+    sub: "Pick any. We'll bias your plan there.",
     options: [
       { value: 'listen', label: 'Listening', icon: 'headphones' },
       { value: 'read', label: 'Reading', icon: 'book' },
@@ -263,7 +263,7 @@ function StepBody({ step, value, onChange, onAdvance }: { step: Step; value: unk
     const picked = Array.isArray(value) ? (value as string[]) : []
     const toggle = (v: string) => {
       if (picked.includes(v)) onChange(picked.filter(x => x !== v))
-      else if (picked.length < 2) onChange([...picked, v])
+      else onChange([...picked, v])
     }
     return (
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 10 }}>
