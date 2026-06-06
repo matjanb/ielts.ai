@@ -34,9 +34,18 @@ export async function POST(request: NextRequest) {
     }
   }
 
-  async function setStatus(userId: string, status: 'pro' | 'free' | 'cancelled', customerId?: string) {
+  async function setStatus(
+    userId: string,
+    status: 'pro' | 'free' | 'cancelled',
+    customerId?: string,
+    periodEnd?: string,
+  ) {
     const patch: any = { subscription_status: status, updated_at: new Date().toISOString() }
     if (customerId) patch.paddle_customer_id = customerId
+    // Persist the paid-through date. Access is granted until this moment even
+    // after cancellation, so the user keeps what they paid for. See
+    // lib/subscription.ts (isSubscriptionActive).
+    if (periodEnd) patch.subscription_expires_at = periodEnd
     await (admin.from('profiles') as any).update(patch).eq('id', userId)
   }
 
@@ -45,22 +54,31 @@ export async function POST(request: NextRequest) {
     // user_id is attached as custom data at checkout time.
     const userId: string | undefined = data.custom_data?.user_id
     const customerId = typeof data.customer_id === 'string' ? data.customer_id : undefined
+    // End of the current paid period (Paddle Billing), with a sensible fallback.
+    const periodEnd: string | undefined =
+      (typeof data.current_billing_period?.ends_at === 'string' && data.current_billing_period.ends_at) ||
+      (typeof data.next_billed_at === 'string' && data.next_billed_at) ||
+      undefined
 
     if (userId) {
       switch (event.event_type) {
         case 'subscription.created':
         case 'subscription.activated':
         case 'transaction.completed':
-          await setStatus(userId, 'pro', customerId)
+          await setStatus(userId, 'pro', customerId, periodEnd)
           break
         case 'subscription.updated': {
-          // No free trial — only a genuinely active (paid) subscription grants access.
+          // While active, keep 'pro'. When not active (e.g. cancellation
+          // scheduled, paused, past_due), mark 'cancelled' but keep the
+          // paid-through date so access lasts until the period actually ends.
           const active = data.status === 'active'
-          await setStatus(userId, active ? 'pro' : 'cancelled', customerId)
+          await setStatus(userId, active ? 'pro' : 'cancelled', customerId, periodEnd)
           break
         }
         case 'subscription.canceled':
-          await setStatus(userId, 'free', customerId)
+          // Fires when the subscription truly ends. Keep periodEnd (now in the
+          // past) so isSubscriptionActive resolves to false from here on.
+          await setStatus(userId, 'free', customerId, periodEnd)
           break
         default:
           break

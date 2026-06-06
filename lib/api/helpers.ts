@@ -2,6 +2,7 @@ import 'server-only'
 import { NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
+import { isSubscriptionActive } from '@/lib/subscription'
 
 export async function getApiUser() {
   const supabase = await createClient()
@@ -15,12 +16,13 @@ export async function hasActiveSubscription(userId: string): Promise<boolean> {
 
   const { data: profile } = await admin
     .from('profiles')
-    .select('subscription_status')
+    .select('subscription_status, subscription_expires_at')
     .eq('id', userId)
     .single()
 
-  // Subscription-only — there is no free tier. Access requires an active paid plan.
-  return profile?.subscription_status === 'pro' || profile?.subscription_status === 'expert'
+  // Subscription-only — access requires an active paid plan, or a still-valid
+  // paid period after cancellation. See lib/subscription.ts.
+  return isSubscriptionActive(profile)
 }
 
 export async function recordUsage(userId: string, feature: string) {

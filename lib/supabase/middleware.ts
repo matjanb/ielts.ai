@@ -1,6 +1,7 @@
 import { createServerClient } from '@supabase/ssr'
 import { type NextRequest, NextResponse } from 'next/server'
 import type { Database } from '@/lib/types/database'
+import { isSubscriptionActive } from '@/lib/subscription'
 
 export async function updateSession(request: NextRequest) {
   let supabaseResponse = NextResponse.next({ request })
@@ -55,12 +56,11 @@ export async function updateSession(request: NextRequest) {
   if (needsSubscription && user) {
     const { data: profile } = await supabase
       .from('profiles')
-      .select('subscription_status')
+      .select('subscription_status, subscription_expires_at')
       .eq('id', user.id)
-      .single<{ subscription_status: string }>()
+      .single<{ subscription_status: string; subscription_expires_at: string | null }>()
 
-    const active = profile?.subscription_status === 'pro' || profile?.subscription_status === 'expert'
-    if (!active) {
+    if (!isSubscriptionActive(profile)) {
       return NextResponse.redirect(new URL('/subscription', request.url))
     }
   }
