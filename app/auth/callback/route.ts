@@ -13,6 +13,13 @@ function getOrigin(request: NextRequest): string {
   return new URL(request.url).origin
 }
 
+// Only allow same-origin absolute paths after login. Rejects absolute URLs and
+// protocol-relative paths (`//evil.com`) so `?next=` can't be an open redirect.
+function safeNext(raw: string | null): string {
+  if (!raw || !raw.startsWith('/') || raw.startsWith('//') || raw.startsWith('/\\')) return '/dashboard'
+  return raw
+}
+
 export async function GET(request: NextRequest) {
   const { searchParams } = new URL(request.url)
   const origin = getOrigin(request)
@@ -28,7 +35,7 @@ export async function GET(request: NextRequest) {
   }
 
   const code = searchParams.get('code')
-  const next = searchParams.get('next') ?? '/dashboard'
+  const next = safeNext(searchParams.get('next'))
 
   if (!code) {
     console.error('[auth/callback] No code in callback — redirecting to login')
