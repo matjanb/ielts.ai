@@ -129,7 +129,7 @@ export default function StudyPlanPage() {
 
         const data = await getStudyPlan(user.id)
         if (data) {
-          const sp = data as StudyPlan
+          const sp = data as unknown as StudyPlan
           setPlan(sp)
           setProgress(sp.progress ?? {})
           setActiveWeek(currentWeekOf(sp))

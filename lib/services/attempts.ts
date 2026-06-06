@@ -1,9 +1,9 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
+ 
 import { createClient } from '@/lib/supabase/client'
-import type { UserAttempt, UserAnswer } from '@/lib/types/database'
+import type { UserAttempt, UserAnswer, SkillType, Json } from '@/lib/types/database'
 
 function db() {
-  return createClient() as any
+  return createClient()
 }
 
 /** Log a completed study activity so streak & study-time stats reflect real usage. */
@@ -17,7 +17,7 @@ export async function logStudySession(
     .from('study_sessions')
     .insert({
       user_id: userId,
-      skill,
+      skill: skill as SkillType,
       activity_type: activityType,
       duration_minutes: Math.max(1, Math.round(durationMinutes)),
     })
@@ -84,7 +84,7 @@ export async function completeAttempt(
       completed_at: new Date().toISOString(),
       total_score: totalScore,
       band_score: bandScore,
-      section_scores: sectionScores,
+      section_scores: sectionScores as unknown as Json,
     })
     .eq('id', attemptId)
 }

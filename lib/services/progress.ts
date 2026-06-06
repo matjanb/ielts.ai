@@ -2,7 +2,7 @@
 import { createClient } from '@/lib/supabase/client'
 
 function db() {
-  return createClient() as any
+  return createClient()
 }
 
 export async function getDashboardData(userId: string) {

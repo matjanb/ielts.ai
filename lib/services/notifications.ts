@@ -2,7 +2,7 @@
 import { createClient } from '@/lib/supabase/client'
 
 function db() {
-  return createClient() as any
+  return createClient()
 }
 
 export interface NotifItem {
@@ -108,7 +108,7 @@ export async function getNotifications(userId: string): Promise<NotifItem[]> {
       title: band
         ? `Practice test completed — Band ${band}`
         : `Practice test completed`,
-      time: a.completed_at,
+      time: a.completed_at ?? '',
       href: '/dashboard/progress',
     })
   }

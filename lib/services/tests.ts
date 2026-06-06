@@ -3,7 +3,7 @@ import { createClient } from '@/lib/supabase/client'
 import type { IeltsTest, TestSection, Question } from '@/lib/types/database'
 
 function db() {
-  return createClient() as any
+  return createClient()
 }
 
 export async function getTestById(testId: string): Promise<IeltsTest | null> {
@@ -50,13 +50,14 @@ export async function getTestQuestions(sectionIds: string[]): Promise<Question[]
     .select(SAFE_QUESTION_COLUMNS)
     .in('section_id', sectionIds)
     .order('question_number')
-  return data ?? []
+  // Intentionally omits correct_answer; treated as Question for rendering.
+  return (data ?? []) as Question[]
 }
 
 export async function getListeningTests(): Promise<IeltsTest[]> {
   const { data } = await db()
     .from('tests')
-    .select('id, title, book_number, test_number, difficulty')
+    .select('id, title, book_number, test_number, difficulty, type, created_at')
     .eq('type', 'listening')
     .order('created_at', { ascending: true })
   return data ?? []
@@ -65,7 +66,7 @@ export async function getListeningTests(): Promise<IeltsTest[]> {
 export async function getReadingTests(): Promise<IeltsTest[]> {
   const { data } = await db()
     .from('tests')
-    .select('id, title, book_number, test_number, difficulty')
+    .select('id, title, book_number, test_number, difficulty, type, created_at')
     .eq('type', 'reading')
     .order('created_at', { ascending: true })
   return data ?? []
@@ -74,7 +75,7 @@ export async function getReadingTests(): Promise<IeltsTest[]> {
 export async function getWritingTests(): Promise<IeltsTest[]> {
   const { data } = await db()
     .from('tests')
-    .select('id, title, book_number, test_number, difficulty')
+    .select('id, title, book_number, test_number, difficulty, type, created_at')
     .eq('type', 'writing')
     .order('created_at', { ascending: true })
   return data ?? []

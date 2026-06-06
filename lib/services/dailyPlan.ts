@@ -3,6 +3,9 @@ import { createClient } from '@/lib/supabase/client'
 import { getSubskillAccuracy } from '@/lib/services/tests'
 import { buildDailyPlan, dailyPlanSummary, dayOfYear, type DailyTask, type DailySummary } from '@/lib/dailyPlan'
 
+// FIXME: this service reads a `diagnostic_data` table (and columns like
+// daily_study_time / weakest_skills / exam_date) that do not exist in the live
+// DB, so it is effectively broken. Kept untyped until the schema is sorted out.
 function db() {
   return createClient() as any
 }
