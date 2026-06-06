@@ -6,14 +6,22 @@ export async function signUp(email: string, password: string, fullName: string) 
 
   const supabase = createClient()
 
+  const origin =
+    typeof window !== 'undefined'
+      ? window.location.origin
+      : process.env.NEXT_PUBLIC_APP_URL
+
   // auth.signUp creates the user in auth.users.
   // The handle_new_user DB trigger automatically inserts a row in public.profiles.
   // No manual profile insert needed here.
+  // emailRedirectTo sends the confirmation link back through our callback,
+  // which exchanges the code and drops the user into the app.
   const { data, error } = await supabase.auth.signUp({
     email,
     password,
     options: {
       data: { full_name: fullName },
+      emailRedirectTo: `${origin}/auth/callback`,
     },
   })
 

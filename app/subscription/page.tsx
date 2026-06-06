@@ -9,6 +9,7 @@ import { ThemeToggle } from '@/components/ui/ThemeToggle'
 import { openCheckout } from '@/lib/paddle/client'
 import { getUser, signOut } from '@/lib/services/auth'
 import { getProfile } from '@/lib/services/user'
+import { DiagnosticSync } from '@/components/DiagnosticSync'
 
 // Open the Paddle overlay checkout for the chosen plan.
 async function handleCheckout(planId: string) {
@@ -106,6 +107,7 @@ function SubscriptionContent() {
 
   return (
     <div style={{ minHeight: '100vh', background: 'var(--bg)' }}>
+      <DiagnosticSync />
       {/* Header */}
       <header style={{
         padding: '20px 32px', borderBottom: '1px solid var(--border)',

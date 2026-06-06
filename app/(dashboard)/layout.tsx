@@ -10,6 +10,7 @@ import { ToastProvider, useToast } from '@/lib/toast'
 import { CommandPalette } from '@/components/ui/CommandPalette'
 import { NotificationsPanel } from '@/components/ui/NotificationsPanel'
 import { LanguageSwitcher } from '@/components/ui/LanguageSwitcher'
+import { DiagnosticSync } from '@/components/DiagnosticSync'
 import { signOut, getUser } from '@/lib/services/auth'
 import { getNotifications, type NotifItem } from '@/lib/services/notifications'
 import type { ReactNode } from 'react'
@@ -448,6 +449,7 @@ function DashboardLayoutInner({ children }: { children: ReactNode }) {
 
       {/* Global overlays */}
       <CommandPalette open={paletteOpen} onClose={() => setPaletteOpen(false)} />
+      <DiagnosticSync />
     </div>
   )
 }
