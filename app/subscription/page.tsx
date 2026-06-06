@@ -49,6 +49,18 @@ function SubscriptionContent() {
   const router = useRouter()
   const [selected, setSelected] = useState('3mo')
   const [activating, setActivating] = useState(false)
+  const [subscribed, setSubscribed] = useState(false)
+
+  // Know whether the visitor already has an active plan — only then does
+  // "Back to dashboard" make sense (non-subscribers would just bounce back here).
+  useEffect(() => {
+    getUser().then(async ({ user }) => {
+      if (!user) return
+      const profile = await getProfile(user.id)
+      const s = profile?.subscription_status
+      setSubscribed(s === 'pro' || s === 'expert')
+    })
+  }, [])
 
   // After a successful Paddle checkout we land here with ?checkout=success.
   // Poll the profile until the webhook flips the status to active, then go to
@@ -100,12 +112,22 @@ function SubscriptionContent() {
         display: 'flex', alignItems: 'center', justifyContent: 'space-between',
         background: 'var(--bg-elev)',
       }}>
-        <Link href="/dashboard" style={{ display: 'flex', alignItems: 'center', gap: 8, color: 'var(--text-2)', fontSize: 14, textDecoration: 'none' }}>
-          <svg width={14} height={14} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-            <path d="M19 12H5M11 19l-7-7 7-7"/>
-          </svg>
-          {t('subscription.back')}
-        </Link>
+        {subscribed ? (
+          <Link href="/dashboard" style={{ display: 'flex', alignItems: 'center', gap: 8, color: 'var(--text-2)', fontSize: 14, textDecoration: 'none' }}>
+            <svg width={14} height={14} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M19 12H5M11 19l-7-7 7-7"/>
+            </svg>
+            {t('subscription.back')}
+          </Link>
+        ) : (
+          <span style={{ display: 'inline-flex', alignItems: 'center', gap: 8, fontWeight: 700, letterSpacing: '-0.02em', fontSize: 16, color: 'var(--text)' }}>
+            <svg width={20} height={20} viewBox="0 0 24 24" fill="none">
+              <path d="M4 19L10 5l3 7 2.5-4L20 19" stroke="var(--accent)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+              <circle cx="20" cy="6" r="2" fill="var(--accent)"/>
+            </svg>
+            ielts<span style={{ color: 'var(--accent)' }}>.</span>camp
+          </span>
+        )}
         <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
           <button
             onClick={async () => { await signOut(); window.location.href = '/login' }}
