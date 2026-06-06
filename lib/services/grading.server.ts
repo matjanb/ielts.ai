@@ -1,5 +1,4 @@
 import 'server-only'
-/* eslint-disable @typescript-eslint/no-explicit-any */
 import { createAdminClient } from '@/lib/supabase/admin'
 import { isAnswerCorrect } from '@/lib/utils/answerChecking'
 import { listeningRawToBand } from '@/lib/utils/bandScore'
@@ -45,7 +44,7 @@ export interface GradeResult {
 
 export async function gradeAttempt(input: GradeAttemptInput): Promise<GradeResult> {
   const { userId, testId, skill, answers } = input
-  const admin = createAdminClient() as any
+  const admin = createAdminClient()
 
   // The test must exist and match the requested skill (defence against grading
   // a listening test as reading, etc.).
@@ -56,9 +55,9 @@ export async function gradeAttempt(input: GradeAttemptInput): Promise<GradeResul
   const { data: sections } = await admin
     .from('test_sections').select('id, section_number').eq('test_id', testId)
   const sectionNumberById = new Map<string, number>(
-    (sections ?? []).map((s: any) => [s.id, s.section_number]),
+    (sections ?? []).map(s => [s.id, s.section_number]),
   )
-  const sectionIds = (sections ?? []).map((s: any) => s.id)
+  const sectionIds = (sections ?? []).map(s => s.id)
   if (sectionIds.length === 0) throw new Error('Test has no sections')
 
   // Authoritative question set WITH the correct answers — server-only.
@@ -73,7 +72,7 @@ export async function gradeAttempt(input: GradeAttemptInput): Promise<GradeResul
 
   // Iterate the DB question set (not the client payload) so a client can't omit
   // questions to inflate its percentage.
-  for (const q of (questions ?? []) as any[]) {
+  for (const q of questions ?? []) {
     const n = sectionNumberById.get(q.section_id) ?? 0
     if (!sectionTally[n]) sectionTally[n] = { correct: 0, total: 0 }
     sectionTally[n].total++

@@ -1,5 +1,4 @@
 import { NextRequest, NextResponse } from 'next/server'
-/* eslint-disable @typescript-eslint/no-explicit-any */
 import { getApiUser, err } from '@/lib/api/helpers'
 import { createAdminClient } from '@/lib/supabase/admin'
 
@@ -20,7 +19,7 @@ export async function GET(
   const { attemptId } = await params
   if (!attemptId) return err('attemptId is required', 400)
 
-  const admin = createAdminClient() as any
+  const admin = createAdminClient()
 
   const { data: attempt } = await admin
     .from('user_attempts')
@@ -33,14 +32,14 @@ export async function GET(
 
   const { data: sections } = await admin
     .from('test_sections').select('id').eq('test_id', attempt.test_id)
-  const sectionIds = (sections ?? []).map((s: any) => s.id)
+  const sectionIds = (sections ?? []).map(s => s.id)
   if (sectionIds.length === 0) return NextResponse.json({ correctAnswers: {} })
 
   const { data: questions } = await admin
     .from('questions').select('id, correct_answer').in('section_id', sectionIds)
 
   const correctAnswers: Record<string, string> = {}
-  for (const q of (questions ?? []) as any[]) {
+  for (const q of questions ?? []) {
     correctAnswers[q.id] = q.correct_answer ?? ''
   }
 

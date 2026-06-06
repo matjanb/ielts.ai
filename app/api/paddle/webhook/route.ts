@@ -2,6 +2,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { verifyPaddleSignature } from '@/lib/paddle/server'
 import { createAdminClient } from '@/lib/supabase/admin'
+import type { Database } from '@/lib/types/database'
 
 export const runtime = 'nodejs'
 
@@ -40,13 +41,20 @@ export async function POST(request: NextRequest) {
     customerId?: string,
     periodEnd?: string,
   ) {
-    const patch: any = { subscription_status: status, updated_at: new Date().toISOString() }
-    if (customerId) patch.paddle_customer_id = customerId
+    const patch: Database['public']['Tables']['profiles']['Update'] = {
+      subscription_status: status,
+      updated_at: new Date().toISOString(),
+    }
+    // NOTE: the live DB column is still named `stripe_customer_id` (the Paddle
+    // rename migration 012 was never applied). We store the Paddle customer id
+    // here so the whole update doesn't fail on an unknown column. Apply
+    // migration 012 to rename it to paddle_customer_id, then update this line.
+    if (customerId) patch.stripe_customer_id = customerId
     // Persist the paid-through date. Access is granted until this moment even
     // after cancellation, so the user keeps what they paid for. See
     // lib/subscription.ts (isSubscriptionActive).
     if (periodEnd) patch.subscription_expires_at = periodEnd
-    await (admin.from('profiles') as any).update(patch).eq('id', userId)
+    await admin.from('profiles').update(patch).eq('id', userId)
   }
 
   try {

@@ -1,5 +1,4 @@
 import 'server-only'
-/* eslint-disable @typescript-eslint/no-explicit-any */
 import { createAdminClient } from '@/lib/supabase/admin'
 import type { Question } from '@/lib/types/database'
 import type { Difficulty, PracticeGroup } from '@/lib/services/tests'
@@ -16,10 +15,10 @@ export async function getPracticeSetServer(opts: {
   difficulty: Difficulty | 'any'
   limit: number
 }): Promise<PracticeGroup[]> {
-  const admin = createAdminClient() as any
+  const admin = createAdminClient()
 
   const { data: tests } = await admin.from('tests').select('id').eq('type', opts.skill)
-  const testIds = (tests ?? []).map((t: any) => t.id)
+  const testIds = (tests ?? []).map(t => t.id)
   if (testIds.length === 0) return []
 
   let sectionsQuery = admin
@@ -28,7 +27,7 @@ export async function getPracticeSetServer(opts: {
     .in('test_id', testIds)
   if (opts.difficulty !== 'any') sectionsQuery = sectionsQuery.eq('difficulty', opts.difficulty)
   const { data: sections } = await sectionsQuery
-  const sectionList = (sections ?? []) as any[]
+  const sectionList = sections ?? []
   if (sectionList.length === 0) return []
 
   const { data: questionRows } = await admin
@@ -36,7 +35,7 @@ export async function getPracticeSetServer(opts: {
     .select('*')
     .in('section_id', sectionList.map(s => s.id))
     .order('question_number')
-  const questions = (questionRows ?? []) as Question[]
+  const questions: Question[] = questionRows ?? []
 
   const bySection = new Map<string, Question[]>()
   for (const q of questions) {
@@ -61,7 +60,7 @@ export async function getPracticeSetServer(opts: {
       title: s.title,
       passage: opts.skill === 'reading' ? (s.instructions ?? null) : null,
       audioUrl: s.audio_url ?? null,
-      difficulty: s.difficulty ?? null,
+      difficulty: (s.difficulty ?? null) as Difficulty | null,
       questions: qs,
     })
     count += qs.length
