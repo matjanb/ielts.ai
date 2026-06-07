@@ -640,7 +640,8 @@
     "qrSelect": "Tanlang",
     "qrYourAnswer": "Javobingiz",
     "qrType": "Javobni kiriting",
-    "qrCorrect": "To‘g‘ri javob"
+    "qrCorrect": "To‘g‘ri javob",
+    "chooseN": "{{n}} ta tanlang"
   },
   "mock": {
     "eyebrow": "To‘liq IELTS Academic sinov",

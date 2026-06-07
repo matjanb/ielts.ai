@@ -685,7 +685,8 @@
     "qrSelect": "Select",
     "qrYourAnswer": "Your answer",
     "qrType": "Type your answer",
-    "qrCorrect": "Correct answer"
+    "qrCorrect": "Correct answer",
+    "chooseN": "Choose {{n}}"
   },
   "mock": {
     "eyebrow": "Full IELTS Academic mock",

@@ -679,7 +679,8 @@
     "qrSelect": "Таңдау",
     "qrYourAnswer": "Жауабыңыз",
     "qrType": "Жауапты теріңіз",
-    "qrCorrect": "Дұрыс жауап"
+    "qrCorrect": "Дұрыс жауап",
+    "chooseN": "{{n}} таңда"
   },
   "mock": {
     "eyebrow": "Толық IELTS Academic сынақ",

@@ -11,6 +11,8 @@ import {
   type PracticeFilters, type PracticeGroup, type Difficulty,
 } from '@/lib/services/tests'
 import { QuestionRenderer } from './QuestionRenderer'
+import { MultiSelectQuestion } from './MultiSelectQuestion'
+import { groupQuestions } from '@/lib/utils/multiSelect'
 
 const DIFFS: Difficulty[] = ['easy', 'medium', 'hard']
 const COUNTS = [10, 20, 9999] as const
@@ -250,12 +252,20 @@ export function PracticeClient({ skill }: { skill: 'reading' | 'listening' }) {
             )}
 
             <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-              {g.questions.map(q => (
+              {groupQuestions(g.questions).map(item => item.kind === 'multi' ? (
+                <MultiSelectQuestion
+                  key={item.questions[0].id}
+                  questions={item.questions}
+                  answers={answers}
+                  onChange={(id, v) => setAnswers(a => ({ ...a, [id]: v }))}
+                  revealed={revealed}
+                />
+              ) : (
                 <QuestionRenderer
-                  key={q.id}
-                  question={q}
-                  value={answers[q.id] ?? ''}
-                  onChange={v => setAnswers(a => ({ ...a, [q.id]: v }))}
+                  key={item.question.id}
+                  question={item.question}
+                  value={answers[item.question.id] ?? ''}
+                  onChange={v => setAnswers(a => ({ ...a, [item.question.id]: v }))}
                   revealed={revealed}
                 />
               ))}
