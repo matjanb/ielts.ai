@@ -242,7 +242,7 @@ function DashboardLayoutInner({ children }: { children: ReactNode }) {
           borderBottom: expanded ? '1px solid var(--border)' : 'none',
           gap: 8, flexShrink: 0,
         }}>
-          <Link href="/" style={{ display: 'flex', alignItems: 'center', gap: 8, flex: 1, minWidth: 0, fontWeight: 700, letterSpacing: '-0.02em', fontSize: 15 }}>
+          <Link href="/dashboard" style={{ display: 'flex', alignItems: 'center', gap: 8, flex: 1, minWidth: 0, fontWeight: 700, letterSpacing: '-0.02em', fontSize: 15 }}>
             <svg width={22} height={22} viewBox="0 0 24 24" fill="none" style={{ flexShrink: 0 }}>
               <path d="M4 19L10 5l3 7 2.5-4L20 19" stroke="var(--accent)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
               <circle cx="20" cy="6" r="2" fill="var(--accent)"/>
