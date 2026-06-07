@@ -61,7 +61,7 @@ export default function ListeningIndexPage() {
             {t('listening.noTests')}
           </div>
         ) : (
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(min(100%, 320px), 1fr))', gap: 8 }}>
+          <div style={{ display: 'grid', gap: 8 }}>
             {tests.map(test => (
               <TestCard
                 key={test.id}
