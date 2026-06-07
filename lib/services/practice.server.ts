@@ -30,16 +30,19 @@ export async function getPracticeSetServer(opts: {
   const sectionList = sections ?? []
   if (sectionList.length === 0) return []
 
+  // Filter to the requested type IN the query (not in memory) and pull only the
+  // section ids we actually have — otherwise this fetched every question of every
+  // test (hundreds of heavy rows) just to drill one type. Big latency win.
   const { data: questionRows } = await admin
     .from('questions')
     .select('*')
     .in('section_id', sectionList.map(s => s.id))
+    .eq('question_type', opts.questionType)
     .order('question_number')
   const questions: Question[] = questionRows ?? []
 
   const bySection = new Map<string, Question[]>()
   for (const q of questions) {
-    if (q.question_type !== opts.questionType) continue
     if (!bySection.has(q.section_id)) bySection.set(q.section_id, [])
     bySection.get(q.section_id)!.push(q)
   }
