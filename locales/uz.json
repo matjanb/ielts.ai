@@ -641,7 +641,12 @@
     "qrYourAnswer": "Javobingiz",
     "qrType": "Javobni kiriting",
     "qrCorrect": "To‘g‘ri javob",
-    "chooseN": "{{n}} ta tanlang"
+    "chooseN": "{{n}} ta tanlang",
+    "focusTitle": "Zaif joylaringni mashq qil",
+    "focusSub": "Savol turini bos — mashq darhol boshlanadi",
+    "focusBadge": "Fokus",
+    "notTried": "Hali urinilmagan",
+    "go": "Mashq qilish"
   },
   "mock": {
     "eyebrow": "To‘liq IELTS Academic sinov",

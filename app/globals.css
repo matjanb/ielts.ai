@@ -210,6 +210,9 @@ input, textarea, select { font: inherit; color: inherit; }
 .btn-ghost:hover { background: var(--bg-soft); }
 .btn-sm { padding: 6px 10px; font-size: 13px; border-radius: var(--radius-sm); }
 
+/* Weak-spot practice rows on the Reading/Listening hubs. */
+.focus-row:hover { border-color: var(--accent) !important; background: var(--accent-soft) !important; }
+
 /* Text utilities from the design system */
 .dim { color: var(--text-3); }
 .muted { color: var(--text-2); }
