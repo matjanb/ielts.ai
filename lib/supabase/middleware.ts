@@ -33,7 +33,7 @@ export async function updateSession(request: NextRequest) {
   // Routes that only require being logged in (the paywall page + account settings).
   // The landing page and the /diagnostic funnel stay fully public so anonymous
   // visitors can run the placement test before signing up.
-  const AUTH_ONLY_ROUTES = ['/onboarding', '/subscription']
+  const AUTH_ONLY_ROUTES = ['/onboarding', '/subscription', '/admin']
 
   const matches = (routes: string[]) =>
     routes.some(r => pathname === r || pathname.startsWith(r + '/'))

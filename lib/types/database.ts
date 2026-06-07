@@ -261,6 +261,7 @@ export type Database = {
           current_level: Database["public"]["Enums"]["current_level"] | null
           full_name: string | null
           id: string
+          is_admin: boolean
           onboarding_completed: boolean
           stripe_customer_id: string | null
           subscription_expires_at: string | null
@@ -275,6 +276,7 @@ export type Database = {
           current_level?: Database["public"]["Enums"]["current_level"] | null
           full_name?: string | null
           id: string
+          is_admin?: boolean
           onboarding_completed?: boolean
           stripe_customer_id?: string | null
           subscription_expires_at?: string | null
@@ -289,6 +291,7 @@ export type Database = {
           current_level?: Database["public"]["Enums"]["current_level"] | null
           full_name?: string | null
           id?: string
+          is_admin?: boolean
           onboarding_completed?: boolean
           stripe_customer_id?: string | null
           subscription_expires_at?: string | null
@@ -1051,7 +1054,17 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      admin_list_users: {
+        Args: { search?: string | null; lim?: number }
+        Returns: {
+          id: string
+          email: string
+          subscription_status: string
+          subscription_expires_at: string | null
+          created_at: string
+          is_admin: boolean
+        }[]
+      }
     }
     Enums: {
       band_score_source:
