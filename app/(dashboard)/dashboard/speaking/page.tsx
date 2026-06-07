@@ -232,6 +232,11 @@ function LiveExam({ set, loading, error, onComplete, onExit }: {
   const [micError, setMicError] = useState('')
   const mediaRef = useRef<MediaRecorder | null>(null)
   const chunksRef = useRef<Blob[]>([])
+  // Live mic visualiser (Web Audio) — drives the equalizer bars from the voice.
+  const barsRef = useRef<HTMLDivElement>(null)
+  const audioCtxRef = useRef<AudioContext | null>(null)
+  const analyserRef = useRef<AnalyserNode | null>(null)
+  const rafRef = useRef<number | null>(null)
 
   const turn = turns[idx]
   const answer = answers[idx] ?? ''
@@ -243,6 +248,37 @@ function LiveExam({ set, loading, error, onComplete, onExit }: {
   useEffect(() => { const id = setInterval(() => setElapsed(s => s + 1), 1000); return () => clearInterval(id) }, [])
   useEffect(() => () => { mediaRef.current?.stream?.getTracks().forEach(t => t.stop()) }, [])
   useEffect(() => { if (recState !== 'recording') return; const id = setInterval(() => setRecSeconds(s => s + 1), 1000); return () => clearInterval(id) }, [recState])
+  // Drive the equalizer bars from live mic levels while recording. We write bar
+  // heights directly to the DOM each frame (no React re-render per frame), and
+  // tear the audio graph down on stop.
+  useEffect(() => {
+    if (recState !== 'recording') return
+    const analyser = analyserRef.current
+    const container = barsRef.current
+    if (!analyser || !container) return
+    const data = new Uint8Array(analyser.frequencyBinCount)
+    const usableBins = Math.floor(data.length * 0.7) // voice lives in the lower band
+    const draw = () => {
+      analyser.getByteFrequencyData(data)
+      const bars = container.children
+      const n = bars.length
+      for (let i = 0; i < n; i++) {
+        const v = (data[Math.floor((i / n) * usableBins)] ?? 0) / 255
+        const el = bars[i] as HTMLElement
+        el.style.height = `${6 + v * 32}px`
+        el.style.opacity = `${0.4 + v * 0.6}`
+      }
+      rafRef.current = requestAnimationFrame(draw)
+    }
+    draw()
+    return () => {
+      if (rafRef.current) cancelAnimationFrame(rafRef.current)
+      rafRef.current = null
+      analyserRef.current = null
+      audioCtxRef.current?.close().catch(() => {})
+      audioCtxRef.current = null
+    }
+  }, [recState])
   useEffect(() => {
     if (!prepActive) return
     const id = setInterval(() => setPrepLeft(s => {
@@ -262,6 +298,23 @@ function LiveExam({ set, loading, error, onComplete, onExit }: {
     if (typeof navigator === 'undefined' || !navigator.mediaDevices?.getUserMedia) { setMicError(t('speak.errUnsupported')); return }
     try {
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true })
+
+      // Tap the mic stream for a real-time level analyser (visualiser only).
+      try {
+        const Ctx = window.AudioContext
+          || (window as Window & { webkitAudioContext?: typeof AudioContext }).webkitAudioContext
+        if (Ctx) {
+          const audioCtx = new Ctx()
+          const source = audioCtx.createMediaStreamSource(stream)
+          const analyser = audioCtx.createAnalyser()
+          analyser.fftSize = 128
+          analyser.smoothingTimeConstant = 0.75
+          source.connect(analyser)
+          audioCtxRef.current = audioCtx
+          analyserRef.current = analyser
+        }
+      } catch { /* visualiser is optional — recording still works */ }
+
       const mr = new MediaRecorder(stream)
       chunksRef.current = []; setRecSeconds(0)
       mr.ondataavailable = e => { if (e.data.size > 0) chunksRef.current.push(e.data) }
@@ -406,8 +459,8 @@ function LiveExam({ set, loading, error, onComplete, onExit }: {
 
           {/* middle: equalizer while recording */}
           {recState === 'recording' ? (
-            <div style={{ flex: 1, display: 'flex', alignItems: 'center', gap: 3, height: 38 }}>
-              {Array.from({ length: 36 }).map((_, i) => <div key={i} style={{ flex: 1, background: 'var(--accent)', borderRadius: 2, animation: `eq 0.9s ease-in-out ${i * 0.035}s infinite alternate`, height: 8 }}/>)}
+            <div ref={barsRef} style={{ flex: 1, display: 'flex', alignItems: 'center', gap: 3, height: 38 }}>
+              {Array.from({ length: 36 }).map((_, i) => <div key={i} style={{ flex: 1, background: 'var(--accent)', borderRadius: 2, height: 6, opacity: 0.45, transition: 'height 0.07s ease-out, opacity 0.07s ease-out' }}/>)}
               <span style={{ fontSize: 13, color: 'var(--accent)', fontFamily: 'var(--font-mono)', marginLeft: 8, minWidth: 44, textAlign: 'right' }}>{String(Math.floor(recSeconds / 60)).padStart(2, '0')}:{String(recSeconds % 60).padStart(2, '0')}</span>
             </div>
           ) : (
@@ -430,7 +483,6 @@ function LiveExam({ set, loading, error, onComplete, onExit }: {
         </div>
       </div>
 
-      <style>{`@keyframes eq { from { height: 6px; opacity: .45 } to { height: 32px; opacity: 1 } }`}</style>
     </div>
   )
 }
