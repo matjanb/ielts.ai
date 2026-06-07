@@ -78,7 +78,7 @@ export default function LoginClient() {
   }
 
   async function handleGoogleSignIn() {
-    const { error: authError } = await signInWithGoogle()
+    const { error: authError } = await signInWithGoogle('signin')
     if (authError) {
       console.error('[login] Google signIn error:', authError)
       setError(authError.message)

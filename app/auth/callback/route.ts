@@ -1,4 +1,5 @@
 import { createServerClient } from '@supabase/ssr'
+import { createClient as createServiceClient } from '@supabase/supabase-js'
 import { cookies } from 'next/headers'
 import { NextResponse, type NextRequest } from 'next/server'
 
@@ -35,6 +36,7 @@ export async function GET(request: NextRequest) {
   }
 
   const code = searchParams.get('code')
+  const mode = searchParams.get('mode') // 'signin' | 'signup' | null
   const next = safeNext(searchParams.get('next'))
 
   if (!code) {
@@ -65,6 +67,30 @@ export async function GET(request: NextRequest) {
       return NextResponse.redirect(
         `${origin}/login?error=${encodeURIComponent(error.message)}`
       )
+    }
+
+    // If this came from the Sign In page, block users who haven't completed onboarding
+    if (mode === 'signin') {
+      const { data: { user } } = await supabase.auth.getUser()
+      if (user) {
+        const service = createServiceClient(
+          process.env.NEXT_PUBLIC_SUPABASE_URL!,
+          process.env.SUPABASE_SERVICE_ROLE_KEY!
+        )
+        const { data: profile } = await service
+          .from('profiles')
+          .select('onboarding_completed')
+          .eq('id', user.id)
+          .single()
+
+        if (!profile?.onboarding_completed) {
+          // Sign the user out and send them back with a clear error
+          await supabase.auth.signOut()
+          return NextResponse.redirect(
+            `${origin}/login?error=${encodeURIComponent('Account not found. Please sign up and complete the initial setup before signing in.')}`
+          )
+        }
+      }
     }
 
     return NextResponse.redirect(`${origin}${next}`)

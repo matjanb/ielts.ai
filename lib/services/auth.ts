@@ -43,7 +43,7 @@ export async function signIn(email: string, password: string) {
   return { data, error }
 }
 
-export async function signInWithGoogle() {
+export async function signInWithGoogle(mode?: 'signin' | 'signup') {
   const supabase = createClient()
 
   const origin =
@@ -51,11 +51,13 @@ export async function signInWithGoogle() {
       ? window.location.origin
       : process.env.NEXT_PUBLIC_APP_URL
 
+  const redirectTo = mode
+    ? `${origin}/auth/callback?mode=${mode}`
+    : `${origin}/auth/callback`
+
   const { data, error } = await supabase.auth.signInWithOAuth({
     provider: 'google',
-    options: {
-      redirectTo: `${origin}/auth/callback`,
-    },
+    options: { redirectTo },
   })
 
   return { data, error }
