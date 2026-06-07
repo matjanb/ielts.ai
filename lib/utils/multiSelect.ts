@@ -22,29 +22,32 @@ function optionsObj(q: QLike): Record<string, unknown> | null {
   return o && typeof o === 'object' && !Array.isArray(o) ? (o as Record<string, unknown>) : null
 }
 
-const WORD_TO_N: Record<string, number> = { two: 2, three: 3, four: 4, five: 5 }
-
-/** Is this a "choose N letters, in either order" multi-select question? */
-export function isMultiSelect(q: QLike): boolean {
-  if (optionsObj(q)?.multi === true) return true
-  return /\bchoose\s+(two|three|four|five|\d+)\s+letters/i.test(q.question_text)
+/** Normalised stem (the shared wording, without the inline "A) … B) …" options). */
+function stemKey(q: QLike): string {
+  return mcQuestionText(q.question_text).toLowerCase().replace(/\s+/g, ' ').trim()
 }
-
-/** How many letters the group expects (select_count, the bracket word, or 2). */
-export function multiCount(q: QLike): number {
-  const sc = optionsObj(q)?.select_count
-  if (typeof sc === 'number' && sc > 0) return sc
-  const m = q.question_text.match(/\bchoose\s+(two|three|four|five|\d+)\s+letters/i)
-  if (m) return (WORD_TO_N[m[1].toLowerCase()] ?? parseInt(m[1], 10)) || 2
-  return 2
+/** Signature of the parsed option set — to test "do these rows share options?". */
+function optsKey(q: QLike): string {
+  return parseMcOptions(q).map(o => `${o.letter}:${o.text}`).join('|')
 }
-
-/** True when `next` is a companion slot of the multi-select group started by `primary`. */
-function isLinkedSecondary(next: QLike, primary: QLike): boolean {
-  const no = optionsObj(next)
-  if (no?.multi === true && no?.hidden_label === true) return true
-  // Reading: same shared stem, also flagged as a "choose N letters" row.
-  return isMultiSelect(next) && mcQuestionText(next.question_text) === mcQuestionText(primary.question_text)
+/** Listening companion slot: explicit metadata, no options of its own. */
+function isCompanion(q: QLike): boolean {
+  const o = optionsObj(q)
+  return o?.multi === true && o?.hidden_label === true
+}
+/** Listening primary: explicit multi metadata, carries the options. */
+function isMultiPrimary(q: QLike): boolean {
+  return optionsObj(q)?.multi === true && parseMcOptions(q).length > 0
+}
+/**
+ * Two consecutive rows belong to the same multi-select block when they share the
+ * exact same stem AND the same options — that only happens for a split "choose N"
+ * question, never for two genuinely different ones. Works for any wording
+ * ("Choose TWO letters…" or "Which TWO of the following…").
+ */
+function sameStemOpts(a: QLike, b: QLike): boolean {
+  const sk = stemKey(a)
+  return sk.length > 0 && sk === stemKey(b) && optsKey(a).length > 0 && optsKey(a) === optsKey(b)
 }
 
 export type GroupedItem<T> =
@@ -53,21 +56,27 @@ export type GroupedItem<T> =
 
 /**
  * Collapse linked "choose N letters" rows into single multi-select items, leaving
- * every other question on its own. Stable and order-preserving. Generic so it
- * keeps the caller's row type (e.g. QuestionWithSection).
+ * every other question on its own. A group is detected purely from structure:
+ * consecutive rows that repeat the same stem+options (Reading), or a primary with
+ * multi metadata followed by its hidden companions (Listening). Order-preserving,
+ * generic so it keeps the caller's row type (e.g. QuestionWithSection).
  */
 export function groupQuestions<T extends QLike & { question_number: number; id: string }>(qs: T[]): GroupedItem<T>[] {
   const items: GroupedItem<T>[] = []
   let i = 0
   while (i < qs.length) {
     const q = qs[i]
-    // A group starts at a primary row that actually carries options.
-    if (isMultiSelect(q) && parseMcOptions(q).length > 0) {
-      const count = multiCount(q)
+    if (parseMcOptions(q).length > 0) {
+      const cap = optionsObj(q)?.select_count
+      const maxLen = typeof cap === 'number' && cap > 0 ? cap : Infinity
       const group = [q]
       let j = i + 1
-      while (j < qs.length && group.length < count && isLinkedSecondary(qs[j], q)) {
-        group.push(qs[j]); j++
+      while (j < qs.length && group.length < maxLen) {
+        const next = qs[j]
+        // Listening companion (metadata) or Reading repeated stem+options.
+        if ((isMultiPrimary(q) && isCompanion(next)) || sameStemOpts(q, next)) {
+          group.push(next); j++
+        } else break
       }
       if (group.length >= 2) { items.push({ kind: 'multi', questions: group }); i = j; continue }
     }
