@@ -256,21 +256,33 @@ function LiveExam({ set, loading, error, onComplete, onExit }: {
     const analyser = analyserRef.current
     const container = barsRef.current
     if (!analyser || !container) return
-    const data = new Uint8Array(analyser.frequencyBinCount)
-    const usableBins = Math.floor(data.length * 0.7) // voice lives in the lower band
-    const draw = () => {
-      analyser.getByteFrequencyData(data)
-      const bars = container.children
-      const n = bars.length
-      for (let i = 0; i < n; i++) {
-        const v = (data[Math.floor((i / n) * usableBins)] ?? 0) / 255
-        const el = bars[i] as HTMLElement
-        el.style.height = `${6 + v * 32}px`
-        el.style.opacity = `${0.4 + v * 0.6}`
+    const n = container.children.length
+    const time = new Uint8Array(analyser.fftSize)
+    const levels: number[] = new Array(n).fill(0)
+    let lastTick = 0
+    const draw = (ts: number) => {
+      // RMS amplitude of the current frame (0..1), boosted for speech levels.
+      analyser.getByteTimeDomainData(time)
+      let sum = 0
+      for (let i = 0; i < time.length; i++) { const x = (time[i] - 128) / 128; sum += x * x }
+      const level = Math.min(1, Math.sqrt(sum / time.length) * 3.4)
+      // Scroll one new sample in every ~45ms: the newest level enters on the
+      // right and the whole wave flows left, Telegram-style.
+      if (ts - lastTick > 45) {
+        lastTick = ts
+        levels.shift()
+        levels.push(level)
+        const bars = container.children
+        for (let i = 0; i < n; i++) {
+          const v = levels[i]
+          const el = bars[i] as HTMLElement
+          el.style.height = `${4 + v * 34}px`
+          el.style.opacity = `${0.4 + v * 0.6}`
+        }
       }
       rafRef.current = requestAnimationFrame(draw)
     }
-    draw()
+    rafRef.current = requestAnimationFrame(draw)
     return () => {
       if (rafRef.current) cancelAnimationFrame(rafRef.current)
       rafRef.current = null
@@ -459,8 +471,8 @@ function LiveExam({ set, loading, error, onComplete, onExit }: {
 
           {/* middle: equalizer while recording */}
           {recState === 'recording' ? (
-            <div ref={barsRef} style={{ flex: 1, display: 'flex', alignItems: 'center', gap: 3, height: 38 }}>
-              {Array.from({ length: 36 }).map((_, i) => <div key={i} style={{ flex: 1, background: 'var(--accent)', borderRadius: 2, height: 6, opacity: 0.45, transition: 'height 0.07s ease-out, opacity 0.07s ease-out' }}/>)}
+            <div ref={barsRef} style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 3, height: 40 }}>
+              {Array.from({ length: 40 }).map((_, i) => <div key={i} style={{ flex: 1, maxWidth: 3.5, background: 'var(--accent)', borderRadius: 999, height: 4, opacity: 0.4, transition: 'height 0.12s cubic-bezier(.25,.8,.25,1), opacity 0.12s ease-out' }}/>)}
               <span style={{ fontSize: 13, color: 'var(--accent)', fontFamily: 'var(--font-mono)', marginLeft: 8, minWidth: 44, textAlign: 'right' }}>{String(Math.floor(recSeconds / 60)).padStart(2, '0')}:{String(recSeconds % 60).padStart(2, '0')}</span>
             </div>
           ) : (
