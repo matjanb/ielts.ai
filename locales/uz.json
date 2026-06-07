@@ -758,6 +758,7 @@
     "day": "kun",
     "days": "kun",
     "skillBreakdown": "Ko‘nikmalar bo‘yicha",
+    "trajectoryEmpty": "Band baho dinamikasini ko'rish uchun sinov testi yoki mashq sessiyasini yakunlang.",
     "skillEmpty": "Har bir ko‘nikma bo‘yicha progressni ko‘rish uchun testlar bajaring va ishlar yuboring.",
     "studyTime": "Mashq vaqti",
     "activityLog": "Faollik jurnali",

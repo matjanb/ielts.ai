@@ -803,6 +803,7 @@
     "day": "day",
     "days": "days",
     "skillBreakdown": "Skill breakdown",
+    "trajectoryEmpty": "Complete a mock test or practice session to see your band score trajectory.",
     "skillEmpty": "Complete tests and submissions to see your band progress per skill.",
     "studyTime": "Study time",
     "activityLog": "Activity log",

@@ -28,6 +28,8 @@ const SKILL_META = [
   { key: 'reading', label: 'Reading' }, { key: 'listening', label: 'Listening' },
 ]
 
+const roundToHalf = (n: number) => Math.round(n * 2) / 2
+
 /* ── SVG Icon helper ──────────────────────────────────────────────────────── */
 const ICON_PATHS: Record<string, React.ReactNode> = {
   flame:     <path d="M12 22c4 0 7-3 7-7 0-3-2-5-3-7-1.5 2-3 3-3 5 0-2-1-4-3-6-1 2-5 4-5 9 0 4 3 6 7 6z"/>,
@@ -52,12 +54,32 @@ function Icon({ name, size = 16, color = 'currentColor' }: { name: string; size?
 /* ── BandTrajectory ───────────────────────────────────────────────────────── */
 function BandTrajectory({ data, overallBand, targetBand }: { data: PageData; overallBand: number; targetBand: number }) {
   const { t } = useLanguage()
-  // Use real band history if available, else show placeholder
-  const history = data.skillRows.some(s => s.sparkline.length > 0)
-    ? data.skillRows.find(s => s.key === 'listening')?.sparkline ?? []
-    : [5.0, 5.5, 5.5, 6.0, 6.0, 6.5, 6.5, 7.0]
+  const history = data.skillRows.find(s => s.key === 'listening')?.sparkline ?? []
+  const hasRealData = history.length >= 2
 
-  const points = history.length >= 2 ? history : [5.0, 5.5, 5.5, 6.0, 6.0, 6.5, 6.5, overallBand || 7.0]
+  if (!hasRealData) {
+    return (
+      <div className="card" style={{ padding: 28 }}>
+        <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between' }}>
+          <div>
+            <div style={{ fontSize: 11, letterSpacing: '0.1em', textTransform: 'uppercase', color: 'var(--text-3)' }}>{t('progress.trajectory')}</div>
+            <div style={{ display: 'flex', alignItems: 'baseline', gap: 10, marginTop: 6 }}>
+              <span style={{ fontFamily: 'var(--font-display)', fontStyle: 'italic', fontSize: 52, lineHeight: 1, color: 'var(--text-3)', fontWeight: 500 }}>—</span>
+            </div>
+          </div>
+          <div style={{ textAlign: 'right' }}>
+            <div style={{ fontSize: 11, color: 'var(--text-3)' }}>{t('progress.targetBand')}</div>
+            <div style={{ fontSize: 24, fontWeight: 700, fontVariantNumeric: 'tabular-nums', color: 'var(--text)' }}>{(targetBand || 7.5).toFixed(1)}</div>
+          </div>
+        </div>
+        <p style={{ fontSize: 13, color: 'var(--text-3)', marginTop: 20, lineHeight: 1.55 }}>
+          {t('progress.trajectoryEmpty')}
+        </p>
+      </div>
+    )
+  }
+
+  const points = history
   const labels = points.map((_, i) => i === points.length - 1 ? t('progress.today') : `W${i + 1}`)
   const target = targetBand || 7.5
   const W = 600, H = 220
@@ -69,7 +91,7 @@ function BandTrajectory({ data, overallBand, targetBand }: { data: PageData; ove
   const path = xs.map((x, i) => `${i === 0 ? 'M' : 'L'}${x},${ys[i]}`).join(' ')
   const area = `${path} L${xs[xs.length - 1]},${padT + h} L${xs[0]},${padT + h} Z`
   const ty = padT + (1 - (target - min) / (max - min)) * h
-  const displayBand = overallBand > 0 ? overallBand.toFixed(1) : points.at(-1)?.toFixed(1) ?? '—'
+  const displayBand = overallBand > 0 ? overallBand.toFixed(1) : '—'
   const delta = points.length >= 2 ? +(points.at(-1)! - points[0]).toFixed(1) : 0
 
   return (
@@ -365,17 +387,22 @@ export default function ProgressPage() {
       const firstScore  = (sk: string) => bySkill[sk]?.[0] ?? latestScore(sk)
       const sparkline   = (sk: string) => (bySkill[sk] ?? []).slice(-7)
 
-      const skillRows: SkillRow[] = SKILL_META.map(m => ({
-        ...m,
-        band:  latestScore(m.key),
-        start: firstScore(m.key),
-        target: targetBand,
-        delta: +(latestScore(m.key) - prevScore(m.key)).toFixed(1),
-        sparkline: sparkline(m.key),
-      }))
+      const skillRows: SkillRow[] = SKILL_META.map(m => {
+        const latest = latestScore(m.key)
+        const prev   = prevScore(m.key)
+        const first  = firstScore(m.key)
+        return {
+          ...m,
+          band:  latest > 0 ? roundToHalf(latest) : 0,
+          start: first  > 0 ? roundToHalf(first)  : 0,
+          target: targetBand,
+          delta: +(roundToHalf(latest) - roundToHalf(prev)).toFixed(1),
+          sparkline: sparkline(m.key).map(v => roundToHalf(v)),
+        }
+      })
 
       const overallBand = skillRows.some(s => s.band > 0)
-        ? +(skillRows.reduce((s, r) => s + r.band, 0) / skillRows.filter(r => r.band > 0).length).toFixed(1)
+        ? roundToHalf(skillRows.reduce((s, r) => s + r.band, 0) / skillRows.filter(r => r.band > 0).length)
         : 0
 
       const mockLine = history
