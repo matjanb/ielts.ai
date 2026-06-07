@@ -262,9 +262,12 @@ export type Database = {
           full_name: string | null
           id: string
           is_admin: boolean
+          lifetime_access: boolean
           onboarding_completed: boolean
           stripe_customer_id: string | null
           subscription_expires_at: string | null
+          subscription_plan: string | null
+          subscription_source: string | null
           subscription_status: Database["public"]["Enums"]["subscription_status"]
           target_band_score: number | null
           updated_at: string
@@ -277,9 +280,12 @@ export type Database = {
           full_name?: string | null
           id: string
           is_admin?: boolean
+          lifetime_access?: boolean
           onboarding_completed?: boolean
           stripe_customer_id?: string | null
           subscription_expires_at?: string | null
+          subscription_plan?: string | null
+          subscription_source?: string | null
           subscription_status?: Database["public"]["Enums"]["subscription_status"]
           target_band_score?: number | null
           updated_at?: string
@@ -292,9 +298,12 @@ export type Database = {
           full_name?: string | null
           id?: string
           is_admin?: boolean
+          lifetime_access?: boolean
           onboarding_completed?: boolean
           stripe_customer_id?: string | null
           subscription_expires_at?: string | null
+          subscription_plan?: string | null
+          subscription_source?: string | null
           subscription_status?: Database["public"]["Enums"]["subscription_status"]
           target_band_score?: number | null
           updated_at?: string
@@ -1061,6 +1070,9 @@ export type Database = {
           email: string
           subscription_status: string
           subscription_expires_at: string | null
+          lifetime_access: boolean
+          subscription_plan: string | null
+          subscription_source: string | null
           created_at: string
           is_admin: boolean
         }[]

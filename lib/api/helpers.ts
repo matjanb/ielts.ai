@@ -16,7 +16,7 @@ export async function hasActiveSubscription(userId: string): Promise<boolean> {
 
   const { data: profile } = await admin
     .from('profiles')
-    .select('subscription_status, subscription_expires_at')
+    .select('subscription_status, subscription_expires_at, lifetime_access')
     .eq('id', userId)
     .single()
 

@@ -8,6 +8,9 @@ interface AdminUser {
   email: string
   subscription_status: string
   subscription_expires_at: string | null
+  lifetime_access: boolean
+  subscription_plan: string | null
+  subscription_source: string | null
   created_at: string
   is_admin: boolean
 }
@@ -32,8 +35,14 @@ const DAY_MS = 864e5
 const PERIOD_DAYS: Record<string, number> = { month: 30, '3months': 90, year: 365 }
 
 const isActive = (u: AdminUser) =>
-  u.subscription_status === 'pro' ||
+  u.lifetime_access ||
   (u.subscription_expires_at != null && new Date(u.subscription_expires_at).getTime() > Date.now())
+
+const PLAN_LABEL: Record<string, string> = {
+  '1mo': '1 month', '3mo': '3 months', '12mo': '1 year', admin: 'Admin grant',
+}
+const planLabel = (u: AdminUser) =>
+  u.subscription_plan ? (PLAN_LABEL[u.subscription_plan] ?? u.subscription_plan) : '—'
 
 function expiresFor(period: Period): string | null {
   if (period === 'forever' || period === 'revoke') return null
@@ -83,8 +92,11 @@ export function AdminClient() {
       // Optimistically reflect the new access state.
       const expires = expiresFor(period)
       const status = period === 'forever' ? 'pro' : 'free'
+      const lifetime = period === 'forever'
+      const plan = period === 'revoke' ? null : 'admin'
+      const source = period === 'revoke' ? null : 'admin'
       setUsers(prev => prev.map(u => u.id === userId
-        ? { ...u, subscription_status: status, subscription_expires_at: expires } : u))
+        ? { ...u, subscription_status: status, subscription_expires_at: expires, lifetime_access: lifetime, subscription_plan: plan, subscription_source: source } : u))
       loadStats()
     } catch { setError('Network error') }
     finally { setBusy(null) }
@@ -147,6 +159,7 @@ export function AdminClient() {
             <tr style={{ background: 'var(--bg-soft)' }}>
               <th style={{ ...cell, fontWeight: 700, color: 'var(--text-2)' }}>Email</th>
               <th style={{ ...cell, fontWeight: 700, color: 'var(--text-2)' }}>Access</th>
+              <th style={{ ...cell, fontWeight: 700, color: 'var(--text-2)' }}>Plan</th>
               <th style={{ ...cell, fontWeight: 700, color: 'var(--text-2)' }}>Until</th>
               <th style={{ ...cell, fontWeight: 700, color: 'var(--text-2)' }}>Joined</th>
               <th style={{ ...cell, fontWeight: 700, color: 'var(--text-2)', textAlign: 'right' }}>Set access</th>
@@ -154,13 +167,14 @@ export function AdminClient() {
           </thead>
           <tbody>
             {loading ? (
-              <tr><td style={{ ...cell, color: 'var(--text-3)' }} colSpan={5}>Loading…</td></tr>
+              <tr><td style={{ ...cell, color: 'var(--text-3)' }} colSpan={6}>Loading…</td></tr>
             ) : users.length === 0 ? (
-              <tr><td style={{ ...cell, color: 'var(--text-3)' }} colSpan={5}>No users found.</td></tr>
+              <tr><td style={{ ...cell, color: 'var(--text-3)' }} colSpan={6}>No users found.</td></tr>
             ) : users.map(u => {
               const active = isActive(u)
-              const until = u.subscription_status === 'pro' ? 'forever'
+              const until = u.lifetime_access ? 'forever'
                 : u.subscription_expires_at ? new Date(u.subscription_expires_at).toISOString().slice(0, 10) : '—'
+              const source = u.subscription_source ? ` · ${u.subscription_source}` : ''
               return (
                 <tr key={u.id}>
                   <td style={cell}>
@@ -171,6 +185,7 @@ export function AdminClient() {
                       {active ? 'active' : 'none'}
                     </span>
                   </td>
+                  <td style={{ ...cell, color: 'var(--text-3)' }}>{active ? `${planLabel(u)}${source}` : '—'}</td>
                   <td style={{ ...cell, color: 'var(--text-3)', fontVariantNumeric: 'tabular-nums' }}>{active ? until : '—'}</td>
                   <td style={{ ...cell, color: 'var(--text-3)', fontVariantNumeric: 'tabular-nums' }}>{new Date(u.created_at).toISOString().slice(0, 10)}</td>
                   <td style={{ ...cell, textAlign: 'right' }}>

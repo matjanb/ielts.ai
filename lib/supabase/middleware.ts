@@ -62,9 +62,9 @@ export async function updateSession(request: NextRequest) {
     if (!active) {
       const { data: profile } = await supabase
         .from('profiles')
-        .select('subscription_status, subscription_expires_at')
+        .select('subscription_status, subscription_expires_at, lifetime_access')
         .eq('id', user.id)
-        .single<{ subscription_status: string; subscription_expires_at: string | null }>()
+        .single<{ subscription_status: string; subscription_expires_at: string | null; lifetime_access: boolean | null }>()
       active = isSubscriptionActive(profile)
       if (active) {
         const c = await signAccessCookie(user.id)

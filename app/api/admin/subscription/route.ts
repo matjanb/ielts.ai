@@ -26,21 +26,28 @@ export async function POST(request: NextRequest) {
   if (!userId || !period) return err('userId and period are required', 400)
 
   const now = new Date().toISOString()
-  const patch: ProfileUpdate = { updated_at: now }
+  const patch: ProfileUpdate = { updated_at: now, subscription_source: 'admin' }
 
   if (period === 'forever') {
-    // Permanent access: status 'pro' grants regardless of any expiry date.
+    // Permanent access: the explicit lifetime flag is the ONLY thing that grants
+    // forever (see lib/subscription.ts). No expiry date needed.
     patch.subscription_status = 'pro'
+    patch.lifetime_access = true
     patch.subscription_expires_at = null
+    patch.subscription_plan = 'admin'
   } else if (period === 'revoke') {
     patch.subscription_status = 'free'
+    patch.lifetime_access = false
     patch.subscription_expires_at = null
+    patch.subscription_plan = null
+    patch.subscription_source = null
   } else if (period in PERIOD_DAYS) {
     // Time-limited: access runs via subscription_expires_at and lapses when it
-    // passes (same model as "paid through period end"). Status stays non-pro so
-    // it doesn't grant forever.
+    // passes. lifetime stays off so it can't grant forever.
     patch.subscription_status = 'free'
+    patch.lifetime_access = false
     patch.subscription_expires_at = new Date(Date.now() + PERIOD_DAYS[period] * DAY_MS).toISOString()
+    patch.subscription_plan = 'admin'
   } else {
     return err('period must be one of: month, 3months, year, forever, revoke', 400)
   }
