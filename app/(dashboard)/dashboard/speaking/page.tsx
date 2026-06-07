@@ -317,10 +317,13 @@ function LiveExam({ set, loading, error, onComplete, onExit }: {
           || (window as Window & { webkitAudioContext?: typeof AudioContext }).webkitAudioContext
         if (Ctx) {
           const audioCtx = new Ctx()
+          // Browsers often start the context suspended; without resuming, the
+          // analyser only ever sees silence and the bars stay flat.
+          if (audioCtx.state === 'suspended') await audioCtx.resume().catch(() => {})
           const source = audioCtx.createMediaStreamSource(stream)
           const analyser = audioCtx.createAnalyser()
-          analyser.fftSize = 128
-          analyser.smoothingTimeConstant = 0.75
+          analyser.fftSize = 256
+          analyser.smoothingTimeConstant = 0.6
           source.connect(analyser)
           audioCtxRef.current = audioCtx
           analyserRef.current = analyser
