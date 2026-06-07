@@ -1065,6 +1065,19 @@ export type Database = {
           is_admin: boolean
         }[]
       }
+      admin_stats: {
+        Args: Record<string, never>
+        Returns: {
+          total_users: number
+          active_subscribers: number
+          new_today: number
+          new_7d: number
+          ai_today: number
+          writing_total: number
+          speaking_total: number
+          attempts_total: number
+        }[]
+      }
     }
     Enums: {
       band_score_source:

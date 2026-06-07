@@ -36,3 +36,35 @@ $$;
 
 revoke all on function admin_list_users(text, int) from public, anon, authenticated;
 grant execute on function admin_list_users(text, int) to service_role;
+
+-- Aggregate stats for the admin dashboard. Same lockdown: service_role only.
+create or replace function admin_stats()
+returns table (
+  total_users        bigint,
+  active_subscribers bigint,
+  new_today          bigint,
+  new_7d             bigint,
+  ai_today           bigint,
+  writing_total      bigint,
+  speaking_total     bigint,
+  attempts_total     bigint
+)
+language sql
+security definer
+set search_path = public, auth
+as $$
+  select
+    (select count(*) from auth.users),
+    (select count(*) from public.profiles
+       where subscription_status = 'pro'
+          or (subscription_expires_at is not null and subscription_expires_at > now())),
+    (select count(*) from auth.users where created_at >= date_trunc('day', now())),
+    (select count(*) from auth.users where created_at >= now() - interval '7 days'),
+    (select count(*) from public.ai_usage where created_at >= date_trunc('day', now())),
+    (select count(*) from public.writing_submissions),
+    (select count(*) from public.speaking_submissions),
+    (select count(*) from public.user_attempts where completed_at is not null)
+$$;
+
+revoke all on function admin_stats() from public, anon, authenticated;
+grant execute on function admin_stats() to service_role;

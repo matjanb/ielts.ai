@@ -12,13 +12,38 @@ interface AdminUser {
   is_admin: boolean
 }
 
+interface Stats {
+  total_users: number
+  active_subscribers: number
+  new_today: number
+  new_7d: number
+  ai_today: number
+  writing_total: number
+  speaking_total: number
+  attempts_total: number
+}
+
+type Period = 'month' | '3months' | 'year' | 'forever' | 'revoke'
+
+const PERIOD_LABEL: Record<Period, string> = {
+  month: '1 month', '3months': '3 months', year: '1 year', forever: 'Forever', revoke: 'Revoke',
+}
+const DAY_MS = 864e5
+const PERIOD_DAYS: Record<string, number> = { month: 30, '3months': 90, year: 365 }
+
 const isActive = (u: AdminUser) =>
   u.subscription_status === 'pro' ||
   (u.subscription_expires_at != null && new Date(u.subscription_expires_at).getTime() > Date.now())
 
+function expiresFor(period: Period): string | null {
+  if (period === 'forever' || period === 'revoke') return null
+  return new Date(Date.now() + PERIOD_DAYS[period] * DAY_MS).toISOString()
+}
+
 export function AdminClient() {
   const [q, setQ] = useState('')
   const [users, setUsers] = useState<AdminUser[]>([])
+  const [stats, setStats] = useState<Stats | null>(null)
   const [loading, setLoading] = useState(true)
   const [busy, setBusy] = useState<string | null>(null)
   const [error, setError] = useState('')
@@ -34,42 +59,75 @@ export function AdminClient() {
     finally { setLoading(false) }
   }, [])
 
-  // eslint-disable-next-line react-hooks/set-state-in-effect -- one-time initial load
-  useEffect(() => { load('') }, [load])
+  const loadStats = useCallback(async () => {
+    try {
+      const res = await fetch('/api/admin/stats')
+      const data = await res.json()
+      if (res.ok) setStats(data.stats ?? null)
+    } catch { /* stats are best-effort */ }
+  }, [])
 
-  async function setStatus(userId: string, status: 'pro' | 'free') {
+  // eslint-disable-next-line react-hooks/set-state-in-effect -- one-time initial load
+  useEffect(() => { load(''); loadStats() }, [load, loadStats])
+
+  async function apply(userId: string, period: Period) {
     setBusy(userId); setError('')
     try {
       const res = await fetch('/api/admin/subscription', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ userId, status }),
+        body: JSON.stringify({ userId, period }),
       })
       const data = await res.json()
-      if (!res.ok) setError(data.error ?? 'Update failed')
-      else setUsers(prev => prev.map(u => u.id === userId
-        ? { ...u, subscription_status: status, subscription_expires_at: status === 'pro' ? new Date(Date.now() + 365 * 864e5).toISOString() : null }
-        : u))
+      if (!res.ok) { setError(data.error ?? 'Update failed'); return }
+      // Optimistically reflect the new access state.
+      const expires = expiresFor(period)
+      const status = period === 'forever' ? 'pro' : 'free'
+      setUsers(prev => prev.map(u => u.id === userId
+        ? { ...u, subscription_status: status, subscription_expires_at: expires } : u))
+      loadStats()
     } catch { setError('Network error') }
     finally { setBusy(null) }
   }
 
   const cell: React.CSSProperties = { padding: '10px 12px', fontSize: 13, borderBottom: '1px solid var(--border)', textAlign: 'left', verticalAlign: 'middle' }
 
+  const statCards: { label: string; value: number | undefined }[] = [
+    { label: 'Total users', value: stats?.total_users },
+    { label: 'Active subs', value: stats?.active_subscribers },
+    { label: 'New today', value: stats?.new_today },
+    { label: 'New · 7 days', value: stats?.new_7d },
+    { label: 'AI calls today', value: stats?.ai_today },
+    { label: 'Tests done', value: stats?.attempts_total },
+    { label: 'Writing graded', value: stats?.writing_total },
+    { label: 'Speaking graded', value: stats?.speaking_total },
+  ]
+
   return (
-    <div style={{ maxWidth: 980, margin: '0 auto', padding: '32px 24px 80px' }}>
+    <div style={{ maxWidth: 1000, margin: '0 auto', padding: '32px 24px 80px' }}>
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 6, gap: 12, flexWrap: 'wrap' }}>
-        <h1 style={{ fontSize: 24, fontWeight: 700, color: 'var(--text)', margin: 0 }}>Admin · Users</h1>
+        <h1 style={{ fontSize: 24, fontWeight: 700, color: 'var(--text)', margin: 0 }}>Admin</h1>
         <Link href="/dashboard" style={{ fontSize: 13, color: 'var(--text-3)', textDecoration: 'none' }}>← Dashboard</Link>
       </div>
-      <p style={{ fontSize: 13, color: 'var(--text-3)', margin: '0 0 20px' }}>
-        Find a user by email and grant or revoke access. Granting gives one year of <strong>pro</strong>.
+
+      {/* Stats */}
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))', gap: 10, margin: '16px 0 26px' }}>
+        {statCards.map(s => (
+          <div key={s.label} className="card" style={{ padding: '14px 16px' }}>
+            <div style={{ fontSize: 11, color: 'var(--text-3)', letterSpacing: '0.04em', textTransform: 'uppercase' }}>{s.label}</div>
+            <div style={{ fontSize: 24, fontWeight: 700, color: 'var(--text)', marginTop: 4, fontVariantNumeric: 'tabular-nums' }}>
+              {s.value ?? '—'}
+            </div>
+          </div>
+        ))}
+      </div>
+
+      <h2 style={{ fontSize: 16, fontWeight: 700, color: 'var(--text)', margin: '0 0 4px' }}>Users</h2>
+      <p style={{ fontSize: 13, color: 'var(--text-3)', margin: '0 0 14px' }}>
+        Find a user by email, then grant access for a period or revoke it.
       </p>
 
-      <form
-        onSubmit={e => { e.preventDefault(); load(q.trim()) }}
-        style={{ display: 'flex', gap: 8, marginBottom: 16 }}
-      >
+      <form onSubmit={e => { e.preventDefault(); load(q.trim()) }} style={{ display: 'flex', gap: 8, marginBottom: 16 }}>
         <input
           value={q}
           onChange={e => setQ(e.target.value)}
@@ -88,18 +146,21 @@ export function AdminClient() {
           <thead>
             <tr style={{ background: 'var(--bg-soft)' }}>
               <th style={{ ...cell, fontWeight: 700, color: 'var(--text-2)' }}>Email</th>
-              <th style={{ ...cell, fontWeight: 700, color: 'var(--text-2)' }}>Status</th>
+              <th style={{ ...cell, fontWeight: 700, color: 'var(--text-2)' }}>Access</th>
+              <th style={{ ...cell, fontWeight: 700, color: 'var(--text-2)' }}>Until</th>
               <th style={{ ...cell, fontWeight: 700, color: 'var(--text-2)' }}>Joined</th>
-              <th style={{ ...cell, fontWeight: 700, color: 'var(--text-2)', textAlign: 'right' }}>Action</th>
+              <th style={{ ...cell, fontWeight: 700, color: 'var(--text-2)', textAlign: 'right' }}>Set access</th>
             </tr>
           </thead>
           <tbody>
             {loading ? (
-              <tr><td style={{ ...cell, color: 'var(--text-3)' }} colSpan={4}>Loading…</td></tr>
+              <tr><td style={{ ...cell, color: 'var(--text-3)' }} colSpan={5}>Loading…</td></tr>
             ) : users.length === 0 ? (
-              <tr><td style={{ ...cell, color: 'var(--text-3)' }} colSpan={4}>No users found.</td></tr>
+              <tr><td style={{ ...cell, color: 'var(--text-3)' }} colSpan={5}>No users found.</td></tr>
             ) : users.map(u => {
               const active = isActive(u)
+              const until = u.subscription_status === 'pro' ? 'forever'
+                : u.subscription_expires_at ? new Date(u.subscription_expires_at).toISOString().slice(0, 10) : '—'
               return (
                 <tr key={u.id}>
                   <td style={cell}>
@@ -107,20 +168,25 @@ export function AdminClient() {
                   </td>
                   <td style={cell}>
                     <span style={{ fontSize: 12, fontWeight: 600, padding: '2px 8px', borderRadius: 999, background: active ? 'var(--accent-soft)' : 'var(--bg-soft)', color: active ? 'var(--accent)' : 'var(--text-3)' }}>
-                      {active ? 'pro' : u.subscription_status}
+                      {active ? 'active' : 'none'}
                     </span>
                   </td>
+                  <td style={{ ...cell, color: 'var(--text-3)', fontVariantNumeric: 'tabular-nums' }}>{active ? until : '—'}</td>
                   <td style={{ ...cell, color: 'var(--text-3)', fontVariantNumeric: 'tabular-nums' }}>{new Date(u.created_at).toISOString().slice(0, 10)}</td>
                   <td style={{ ...cell, textAlign: 'right' }}>
-                    {active ? (
-                      <button disabled={busy === u.id} onClick={() => setStatus(u.id, 'free')} style={{ padding: '6px 12px', borderRadius: 8, border: '1px solid var(--border-strong)', background: 'transparent', color: 'var(--text-2)', fontSize: 12.5, fontWeight: 600, cursor: 'pointer', opacity: busy === u.id ? 0.5 : 1 }}>
-                        {busy === u.id ? '…' : 'Revoke'}
-                      </button>
-                    ) : (
-                      <button disabled={busy === u.id} onClick={() => setStatus(u.id, 'pro')} style={{ padding: '6px 12px', borderRadius: 8, border: 'none', background: 'var(--accent)', color: 'var(--accent-fg)', fontSize: 12.5, fontWeight: 700, cursor: 'pointer', opacity: busy === u.id ? 0.5 : 1 }}>
-                        {busy === u.id ? '…' : 'Grant pro'}
-                      </button>
-                    )}
+                    <select
+                      disabled={busy === u.id}
+                      value=""
+                      onChange={e => { const v = e.target.value as Period; if (v) apply(u.id, v) }}
+                      style={{ padding: '6px 10px', borderRadius: 8, border: '1px solid var(--border-strong)', background: 'var(--bg-elev)', color: 'var(--text)', fontSize: 12.5, fontWeight: 600, cursor: 'pointer', opacity: busy === u.id ? 0.5 : 1 }}
+                    >
+                      <option value="">{busy === u.id ? '…' : 'Grant / revoke…'}</option>
+                      <option value="month">{PERIOD_LABEL.month}</option>
+                      <option value="3months">{PERIOD_LABEL['3months']}</option>
+                      <option value="year">{PERIOD_LABEL.year}</option>
+                      <option value="forever">{PERIOD_LABEL.forever}</option>
+                      <option value="revoke">{PERIOD_LABEL.revoke}</option>
+                    </select>
                   </td>
                 </tr>
               )
