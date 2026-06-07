@@ -679,7 +679,8 @@
     "qrSelect": "Выбрать",
     "qrYourAnswer": "Ваш ответ",
     "qrType": "Введите ответ",
-    "qrCorrect": "Правильный ответ"
+    "qrCorrect": "Правильный ответ",
+    "chooseN": "Выбери {{n}}"
   },
   "mock": {
     "eyebrow": "Полный пробный IELTS Academic",

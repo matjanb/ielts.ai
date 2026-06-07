@@ -8,6 +8,8 @@ import type { IeltsTest, TestSection, Question } from '@/lib/types/database'
 import { getTestById, getSectionsByTestId, getTestQuestions } from '@/lib/services/tests'
 import { createAttempt, saveAnswer as saveAnswerService } from '@/lib/services/attempts'
 import { getUser } from '@/lib/services/auth'
+import { groupQuestions as groupMultiSelect } from '@/lib/utils/multiSelect'
+import { MultiSelectQuestion } from '@/components/practice/MultiSelectQuestion'
 
 type QuestionWithSection = Question & { sectionNumber: number; sectionTitle: string; passageText: string }
 
@@ -441,27 +443,41 @@ export default function ReadingTestPage() {
                   {group.label}
                 </div>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 18 }}>
-                  {group.questions.map(q => (
-                    <div key={q.id}
-                      onClick={() => setActiveQuestion(q.id)}
-                      style={{
-                        padding: '14px 16px', borderRadius: 10, border: `1px solid ${activeQuestion === q.id ? 'var(--accent)' : 'transparent'}`,
-                        background: activeQuestion === q.id ? 'var(--accent-soft)' : 'transparent',
-                        cursor: 'pointer', transition: 'all .15s',
-                      }}>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8 }}>
-                        <span style={{
-                          width: 22, height: 22, borderRadius: 6, display: 'flex', alignItems: 'center', justifyContent: 'center',
-                          fontSize: 11, fontWeight: 700, flexShrink: 0,
-                          background: answers[q.id] ? 'var(--accent)' : 'var(--bg-soft)',
-                          color: answers[q.id] ? 'var(--accent-fg)' : 'var(--text-3)',
+                  {groupMultiSelect(group.questions).map(item => {
+                    if (item.kind === 'multi') {
+                      return (
+                        <MultiSelectQuestion
+                          key={item.questions[0].id}
+                          questions={item.questions}
+                          answers={answers}
+                          onChange={setAnswer}
+                          revealed={false}
+                        />
+                      )
+                    }
+                    const q = item.question
+                    return (
+                      <div key={q.id}
+                        onClick={() => setActiveQuestion(q.id)}
+                        style={{
+                          padding: '14px 16px', borderRadius: 10, border: `1px solid ${activeQuestion === q.id ? 'var(--accent)' : 'transparent'}`,
+                          background: activeQuestion === q.id ? 'var(--accent-soft)' : 'transparent',
+                          cursor: 'pointer', transition: 'all .15s',
                         }}>
-                          {q.question_number}
-                        </span>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8 }}>
+                          <span style={{
+                            width: 22, height: 22, borderRadius: 6, display: 'flex', alignItems: 'center', justifyContent: 'center',
+                            fontSize: 11, fontWeight: 700, flexShrink: 0,
+                            background: answers[q.id] ? 'var(--accent)' : 'var(--bg-soft)',
+                            color: answers[q.id] ? 'var(--accent-fg)' : 'var(--text-3)',
+                          }}>
+                            {q.question_number}
+                          </span>
+                        </div>
+                        <ReadingQuestion question={q} answer={answers[q.id] ?? ''} onChange={v => setAnswer(q.id, v)} />
                       </div>
-                      <ReadingQuestion question={q} answer={answers[q.id] ?? ''} onChange={v => setAnswer(q.id, v)} />
-                    </div>
-                  ))}
+                    )
+                  })}
                 </div>
               </div>
             ))}
