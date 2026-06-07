@@ -151,9 +151,10 @@ export function Hero() {
       onMouseMove={onMove}
       id="home"
       className="section-pad"
-      style={{ position: 'relative', maxWidth: 1280, margin: '0 auto', padding: 'clamp(40px, 8vw, 72px) 32px 56px', overflow: 'hidden' }}
+      style={{ position: 'relative', padding: 'clamp(40px, 8vw, 72px) 0 56px', overflow: 'hidden' }}
     >
-      {/* Spotlight */}
+      {/* Spotlight — full-bleed so the cursor glow runs wall to wall with no
+          visible container edges; the content below stays centered. */}
       <div aria-hidden style={{
         position: 'absolute', inset: 0, pointerEvents: 'none',
         background: `radial-gradient(circle 380px at ${mouse.x}% ${mouse.y}%, color-mix(in srgb, var(--accent) 12%, transparent), transparent 70%)`,
@@ -161,7 +162,7 @@ export function Hero() {
         opacity: 0.8,
       }}/>
 
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 340px), 1fr))', gap: 'clamp(28px, 5vw, 60px)', alignItems: 'center', position: 'relative' }}>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 340px), 1fr))', gap: 'clamp(28px, 5vw, 60px)', alignItems: 'center', position: 'relative', maxWidth: 1280, margin: '0 auto', padding: '0 32px' }}>
         {/* Left: text */}
         <div className="animate-fade-up">
           <div style={{
