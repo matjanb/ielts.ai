@@ -686,7 +686,12 @@
     "qrYourAnswer": "Your answer",
     "qrType": "Type your answer",
     "qrCorrect": "Correct answer",
-    "chooseN": "Choose {{n}}"
+    "chooseN": "Choose {{n}}",
+    "focusTitle": "Practice your weak spots",
+    "focusSub": "Tap a question type — practice starts right away",
+    "focusBadge": "Focus",
+    "notTried": "Not tried yet",
+    "go": "Practice"
   },
   "mock": {
     "eyebrow": "Full IELTS Academic mock",

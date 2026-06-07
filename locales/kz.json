@@ -680,7 +680,12 @@
     "qrYourAnswer": "Жауабыңыз",
     "qrType": "Жауапты теріңіз",
     "qrCorrect": "Дұрыс жауап",
-    "chooseN": "{{n}} таңда"
+    "chooseN": "{{n}} таңда",
+    "focusTitle": "Әлсіз тұстарыңды жаттық",
+    "focusSub": "Сұрақ түрін бас — жаттығу бірден басталады",
+    "focusBadge": "Фокус",
+    "notTried": "Әлі байқалмаған",
+    "go": "Жаттығу"
   },
   "mock": {
     "eyebrow": "Толық IELTS Academic сынақ",
