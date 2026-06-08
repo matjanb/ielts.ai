@@ -6,6 +6,7 @@ import { useLanguage } from '@/lib/i18n/LanguageContext'
 import { SkillHubHeader, TestCard, HubSpinner } from '@/components/dashboard/SkillHub'
 import { WritingFocus } from '@/components/writing/WritingFocus'
 import { WritingCoach } from '@/components/writing/WritingCoach'
+import { WritingHistory } from '@/components/writing/WritingHistory'
 import type { IeltsTest } from '@/lib/types/database'
 
 export default function WritingIndexPage() {
@@ -37,6 +38,9 @@ export default function WritingIndexPage() {
         <WritingFocus startHref={startHref} />
         <WritingCoach />
       </div>
+
+      {/* Past essays with full breakdown */}
+      <WritingHistory />
 
       {/* Tests */}
       <div className="card" style={{ padding: 28, marginTop: 16 }}>

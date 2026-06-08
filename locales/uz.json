@@ -864,7 +864,11 @@
     "nextTask1": "Maʼlumot tendentsiyalarini aniq taqqoslashlar bilan umumlashtirishni mashq qiling.",
     "offTopic": "Mavzudan tashqari / shablon",
     "taskChecks": "Topshiriq talablari",
-    "corrections": "Aniq tuzatishlar"
+    "corrections": "Aniq tuzatishlar",
+    "graded": "Tekshirildi",
+    "backToEssay": "Essega",
+    "viewResult": "Natija",
+    "yourEssay": "Sening esseng"
   },
   "daily": {
     "vocabulary0": "So‘zlarni takrorlash (kartalar)",
@@ -915,5 +919,10 @@
     "empty": "Avval esse yozib, tekshir — keyin shaxsiy maslahat olasan.",
     "focusLabel": "Fokus",
     "error": "Bo'lmadi. Qayta urinib ko'r."
+  },
+  "writingHistory": {
+    "title": "Esselaring",
+    "sub": "O'tgan ishlar — to'liq tahlilni ko'rish uchun istalganini och",
+    "empty": "Bu yerda tekshirilgan esselar paydo bo'ladi."
   }
 }

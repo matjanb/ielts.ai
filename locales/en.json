@@ -909,7 +909,11 @@
     "nextTask1": "Practice summarising data trends with accurate comparisons.",
     "offTopic": "Off-topic / memorised",
     "taskChecks": "Task requirements",
-    "corrections": "Specific corrections"
+    "corrections": "Specific corrections",
+    "graded": "Graded",
+    "backToEssay": "Back to essay",
+    "viewResult": "View result",
+    "yourEssay": "Your essay"
   },
   "daily": {
     "vocabulary0": "Vocabulary review (flashcards)",
@@ -960,5 +964,10 @@
     "empty": "Write and grade an essay first to get personal advice.",
     "focusLabel": "Focus next",
     "error": "Couldn't generate advice. Try again."
+  },
+  "writingHistory": {
+    "title": "Your essays",
+    "sub": "Past submissions — open any to see the full breakdown",
+    "empty": "Your graded essays will appear here."
   }
 }
