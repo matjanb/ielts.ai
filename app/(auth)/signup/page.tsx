@@ -61,6 +61,8 @@ export default function SignupPage() {
         if (user) {
           await saveDiagnosticData(user.id)
         }
+        // This path skips /auth/callback, so attribute the referral here.
+        await fetch('/api/referral/claim', { method: 'POST' })
       } catch {
         // non-fatal — proceed to dashboard anyway
       }
