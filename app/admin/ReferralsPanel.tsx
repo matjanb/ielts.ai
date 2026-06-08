@@ -1,6 +1,6 @@
 'use client'
 
-import { useCallback, useEffect, useState } from 'react'
+import { Fragment, useCallback, useEffect, useState } from 'react'
 
 interface Referrer {
   code: string
@@ -11,6 +11,14 @@ interface Referrer {
   paid: number
 }
 
+interface ReferredUser {
+  email: string
+  referred_at: string | null
+  created_at: string
+  has_paid: boolean
+  subscription_status: string
+}
+
 export function ReferralsPanel() {
   const [rows, setRows] = useState<Referrer[]>([])
   const [code, setCode] = useState('')
@@ -18,6 +26,9 @@ export function ReferralsPanel() {
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState('')
   const [copied, setCopied] = useState('')
+  const [expanded, setExpanded] = useState<string | null>(null)
+  const [usersByCode, setUsersByCode] = useState<Record<string, ReferredUser[]>>({})
+  const [loadingUsers, setLoadingUsers] = useState<string | null>(null)
 
   const origin = typeof window !== 'undefined' ? window.location.origin : ''
 
@@ -54,6 +65,20 @@ export function ReferralsPanel() {
     navigator.clipboard?.writeText(link).then(() => {
       setCopied(c); setTimeout(() => setCopied(''), 1500)
     }).catch(() => {})
+  }
+
+  async function toggle(c: string) {
+    if (expanded === c) { setExpanded(null); return }
+    setExpanded(c)
+    if (!usersByCode[c]) {
+      setLoadingUsers(c)
+      try {
+        const res = await fetch(`/api/admin/referrals?code=${encodeURIComponent(c)}`)
+        const data = await res.json()
+        if (res.ok) setUsersByCode(prev => ({ ...prev, [c]: data.users ?? [] }))
+      } catch { /* best-effort */ }
+      finally { setLoadingUsers(null) }
+    }
   }
 
   const cell: React.CSSProperties = { padding: '10px 12px', fontSize: 13, borderBottom: '1px solid var(--border)', textAlign: 'left', verticalAlign: 'middle' }
@@ -100,19 +125,53 @@ export function ReferralsPanel() {
           <tbody>
             {rows.length === 0 ? (
               <tr><td style={{ ...cell, color: 'var(--text-3)' }} colSpan={5}>No referral codes yet.</td></tr>
-            ) : rows.map(r => (
-              <tr key={r.code}>
-                <td style={{ ...cell, fontWeight: 700, color: 'var(--text)' }}>{r.code}</td>
-                <td style={{ ...cell, color: 'var(--text-2)' }}>{r.name ?? '—'}</td>
-                <td style={cell}>
-                  <button onClick={() => copy(r.code)} style={{ fontSize: 12, fontWeight: 600, color: 'var(--accent)', background: 'var(--accent-soft)', border: 'none', padding: '4px 10px', borderRadius: 8, cursor: 'pointer' }}>
-                    {copied === r.code ? 'Copied!' : 'Copy link'}
-                  </button>
-                </td>
-                <td style={{ ...cell, textAlign: 'right', fontVariantNumeric: 'tabular-nums', color: 'var(--text)' }}>{r.signups}</td>
-                <td style={{ ...cell, textAlign: 'right', fontVariantNumeric: 'tabular-nums', fontWeight: 700, color: r.paid > 0 ? 'var(--accent)' : 'var(--text-3)' }}>{r.paid}</td>
-              </tr>
-            ))}
+            ) : rows.map(r => {
+              const open = expanded === r.code
+              const people = usersByCode[r.code]
+              return (
+                <Fragment key={r.code}>
+                  <tr onClick={() => toggle(r.code)} style={{ cursor: 'pointer', background: open ? 'var(--bg-soft)' : 'transparent' }}>
+                    <td style={{ ...cell, fontWeight: 700, color: 'var(--text)' }}>
+                      <span style={{ display: 'inline-block', width: 14, color: 'var(--text-3)', transform: open ? 'rotate(90deg)' : 'none', transition: 'transform .15s' }}>›</span>
+                      {r.code}
+                    </td>
+                    <td style={{ ...cell, color: 'var(--text-2)' }}>{r.name ?? '—'}</td>
+                    <td style={cell}>
+                      <button onClick={e => { e.stopPropagation(); copy(r.code) }} style={{ fontSize: 12, fontWeight: 600, color: 'var(--accent)', background: 'var(--accent-soft)', border: 'none', padding: '4px 10px', borderRadius: 8, cursor: 'pointer' }}>
+                        {copied === r.code ? 'Copied!' : 'Copy link'}
+                      </button>
+                    </td>
+                    <td style={{ ...cell, textAlign: 'right', fontVariantNumeric: 'tabular-nums', color: 'var(--text)' }}>{r.signups}</td>
+                    <td style={{ ...cell, textAlign: 'right', fontVariantNumeric: 'tabular-nums', fontWeight: 700, color: r.paid > 0 ? 'var(--accent)' : 'var(--text-3)' }}>{r.paid}</td>
+                  </tr>
+                  {open && (
+                    <tr>
+                      <td colSpan={5} style={{ padding: 0, borderBottom: '1px solid var(--border)', background: 'var(--bg-soft)' }}>
+                        {loadingUsers === r.code ? (
+                          <div style={{ padding: '14px 16px', fontSize: 13, color: 'var(--text-3)' }}>Loading…</div>
+                        ) : !people || people.length === 0 ? (
+                          <div style={{ padding: '14px 16px', fontSize: 13, color: 'var(--text-3)' }}>Nobody signed up with this code yet.</div>
+                        ) : (
+                          <div style={{ padding: '6px 12px 12px' }}>
+                            {people.map((u, i) => (
+                              <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '8px 8px', borderBottom: i < people.length - 1 ? '1px solid var(--border)' : 'none' }}>
+                                <span style={{ flex: 1, fontSize: 13, color: 'var(--text)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{u.email}</span>
+                                <span style={{ fontSize: 11.5, color: 'var(--text-3)', fontVariantNumeric: 'tabular-nums' }}>
+                                  {(u.referred_at ?? u.created_at).slice(0, 10)}
+                                </span>
+                                <span style={{ flexShrink: 0, fontSize: 11, fontWeight: 700, padding: '2px 9px', borderRadius: 999, background: u.has_paid ? 'var(--accent-soft)' : 'var(--bg-elev)', color: u.has_paid ? 'var(--accent)' : 'var(--text-3)' }}>
+                                  {u.has_paid ? 'paid' : 'free'}
+                                </span>
+                              </div>
+                            ))}
+                          </div>
+                        )}
+                      </td>
+                    </tr>
+                  )}
+                </Fragment>
+              )
+            })}
           </tbody>
         </table>
       </div>

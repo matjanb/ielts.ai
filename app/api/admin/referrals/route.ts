@@ -5,12 +5,24 @@ import { err } from '@/lib/api/helpers'
 
 export const runtime = 'nodejs'
 
-// List every referral code with its funnel (signups + paid).
-export async function GET() {
+// Without ?code → every referral code with its funnel (signups + paid).
+// With ?code=<code> → the actual people that code brought in (email + paid).
+export async function GET(request: NextRequest) {
   const admin = await getAdminUser()
   if (!admin) return err('Forbidden', 403)
 
   const db = createAdminClient()
+  const code = request.nextUrl.searchParams.get('code')?.trim().toLowerCase()
+
+  if (code) {
+    const { data, error } = await db.rpc('admin_referral_users', { ref_code: code })
+    if (error) {
+      console.error('[admin/referrals] users', error)
+      return err('Failed to load referred users', 500)
+    }
+    return NextResponse.json({ users: data ?? [] })
+  }
+
   const { data, error } = await db.rpc('admin_referral_stats', {})
   if (error) {
     console.error('[admin/referrals]', error)

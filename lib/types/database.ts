@@ -1107,6 +1107,16 @@ export type Database = {
           paid: number
         }[]
       }
+      admin_referral_users: {
+        Args: { ref_code: string }
+        Returns: {
+          email: string
+          referred_at: string | null
+          created_at: string
+          has_paid: boolean
+          subscription_status: string
+        }[]
+      }
       admin_list_users: {
         Args: { search?: string | null; lim?: number }
         Returns: {
