@@ -260,6 +260,7 @@ export type Database = {
           created_at: string
           current_level: Database["public"]["Enums"]["current_level"] | null
           full_name: string | null
+          has_paid: boolean
           id: string
           is_admin: boolean
           lifetime_access: boolean
@@ -280,6 +281,7 @@ export type Database = {
           created_at?: string
           current_level?: Database["public"]["Enums"]["current_level"] | null
           full_name?: string | null
+          has_paid?: boolean
           id: string
           is_admin?: boolean
           lifetime_access?: boolean
@@ -300,6 +302,7 @@ export type Database = {
           created_at?: string
           current_level?: Database["public"]["Enums"]["current_level"] | null
           full_name?: string | null
+          has_paid?: boolean
           id?: string
           is_admin?: boolean
           lifetime_access?: boolean

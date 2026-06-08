@@ -69,7 +69,7 @@ export async function POST(request: NextRequest) {
   async function setStatus(
     userId: string,
     status: 'pro' | 'free' | 'cancelled',
-    opts: { customerId?: string; expiresAt?: string; plan?: string; source?: 'paddle' } = {},
+    opts: { customerId?: string; expiresAt?: string; plan?: string; source?: 'paddle'; paid?: boolean } = {},
   ) {
     const patch: Database['public']['Tables']['profiles']['Update'] = {
       subscription_status: status,
@@ -77,6 +77,9 @@ export async function POST(request: NextRequest) {
       lifetime_access: false,
       updated_at: new Date().toISOString(),
     }
+    // A real payment marks the account as having paid at least once (for referral
+    // conversion counts). We only ever set it true — it never gets cleared.
+    if (opts.paid) patch.has_paid = true
     // NOTE: the live DB column is still named `stripe_customer_id` (the Paddle
     // rename migration 012 was never applied). We store the Paddle customer id
     // here so the whole update doesn't fail on an unknown column. Apply
@@ -118,7 +121,7 @@ export async function POST(request: NextRequest) {
         case 'subscription.created':
         case 'subscription.activated':
         case 'transaction.completed':
-          await setStatus(userId, 'pro', { customerId, expiresAt: grantExpiry(), plan, source: 'paddle' })
+          await setStatus(userId, 'pro', { customerId, expiresAt: grantExpiry(), plan, source: 'paddle', paid: true })
           break
         case 'subscription.updated': {
           // While active, keep 'pro' and extend the paid-through date. When not
@@ -126,7 +129,7 @@ export async function POST(request: NextRequest) {
           // but keep Paddle's period end so access lasts until it actually ends.
           const active = data.status === 'active'
           if (active) {
-            await setStatus(userId, 'pro', { customerId, expiresAt: grantExpiry(), plan, source: 'paddle' })
+            await setStatus(userId, 'pro', { customerId, expiresAt: grantExpiry(), plan, source: 'paddle', paid: true })
           } else {
             await setStatus(userId, 'cancelled', { customerId, expiresAt: paddlePeriodEnd, plan, source: 'paddle' })
           }
