@@ -906,7 +906,10 @@
     "band8": "BAND-8 VERSION",
     "nextStep": "NEXT STEP",
     "nextTask2": "Two more discussion essays this week, then move to Problem-Solution.",
-    "nextTask1": "Practice summarising data trends with accurate comparisons."
+    "nextTask1": "Practice summarising data trends with accurate comparisons.",
+    "offTopic": "Off-topic / memorised",
+    "taskChecks": "Task requirements",
+    "corrections": "Specific corrections"
   },
   "daily": {
     "vocabulary0": "Vocabulary review (flashcards)",
@@ -936,5 +939,26 @@
     "whyWeekHigh": "This week is exam prep: most sessions target your weakest sections ({{skills}}) plus timed mocks.",
     "whyWeekMed": "This week leans into your weak sections ({{skills}}) while keeping every skill active.",
     "whyWeekLow": "This week builds all skills evenly, with a little extra on {{skills}}."
+  },
+  "writingFocus": {
+    "title": "Your writing weak spots",
+    "sub": "Average band per criterion across your essays",
+    "badge": "Focus",
+    "cta": "Write an essay",
+    "empty": "Write your first essay and your weak spots across the 4 criteria will show here.",
+    "tipTask": "Answer every part of the prompt and develop each idea with specific examples.",
+    "tipCoherence": "Use clear paragraphs (one idea each) and varied, accurate linking words.",
+    "tipLexical": "Use precise, less-common vocabulary and correct collocations; avoid repetition.",
+    "tipGrammar": "Mix simple and complex sentences, and proofread to cut errors."
+  },
+  "writingCoach": {
+    "title": "AI coach",
+    "sub": "Personal advice from your grades and recurring mistakes",
+    "button": "Get advice",
+    "refresh": "Refresh advice",
+    "loading": "Analysing your essays…",
+    "empty": "Write and grade an essay first to get personal advice.",
+    "focusLabel": "Focus next",
+    "error": "Couldn't generate advice. Try again."
   }
 }

@@ -36,6 +36,7 @@ export async function recordUsage(userId: string, feature: string) {
 // runaway loop or a shared account can't run up an unbounded OpenAI bill.
 export const AI_DAILY_LIMITS: Record<string, number> = {
   writing:          40,
+  writing_coach:    20,
   speaking:         40,
   study_plan:       15,
   band_estimate:    80,

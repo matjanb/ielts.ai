@@ -16,9 +16,32 @@ const criterion = {
   },
 } as const
 
+// One concrete error: the exact text, what's wrong, and the corrected version.
+const correction = {
+  type: 'object', additionalProperties: false,
+  required: ['quote', 'issue', 'fix', 'type'],
+  properties: {
+    quote: { type: 'string', description: 'Exact phrase copied verbatim from the candidate response' },
+    issue: { type: 'string', description: 'What is wrong, briefly' },
+    fix: { type: 'string', description: 'The corrected or improved version of that phrase' },
+    type: { type: 'string', enum: ['grammar', 'vocabulary', 'spelling', 'cohesion', 'task'] },
+  },
+} as const
+
+// A task-type-specific requirement (e.g. Task 1 overview, Task 2 clear position).
+const taskCheck = {
+  type: 'object', additionalProperties: false,
+  required: ['label', 'passed', 'note'],
+  properties: {
+    label: { type: 'string', description: 'The requirement being checked' },
+    passed: { type: 'boolean' },
+    note: { type: 'string', description: 'One short sentence of explanation' },
+  },
+} as const
+
 const WRITING_SCHEMA = {
   type: 'object', additionalProperties: false,
-  required: ['criteria', 'overview', 'strengths', 'improvements', 'next_band_tip', 'rewritten_paragraph'],
+  required: ['criteria', 'overview', 'strengths', 'improvements', 'corrections', 'task_checks', 'off_topic', 'next_band_tip', 'rewritten_paragraph'],
   properties: {
     criteria: {
       type: 'object', additionalProperties: false,
@@ -28,17 +51,32 @@ const WRITING_SCHEMA = {
     overview: { type: 'string', description: '2–3 sentence examiner summary referencing the descriptors' },
     strengths: { type: 'array', items: { type: 'string' } },
     improvements: { type: 'array', items: { type: 'string' }, description: 'Specific, each with a concrete example from the text' },
+    corrections: { type: 'array', items: correction, description: '3–8 of the most important concrete errors, each quoting the exact text and giving the fix' },
+    task_checks: { type: 'array', items: taskCheck, description: 'The task-type-specific requirements, each marked passed or not' },
+    off_topic: {
+      type: 'object', additionalProperties: false,
+      required: ['flag', 'note'],
+      properties: {
+        flag: { type: 'boolean', description: 'True if the response is off-topic, or leans on memorised/template chunks not answering THIS prompt' },
+        note: { type: 'string', description: 'Brief explanation; empty string if not flagged' },
+      },
+    },
     next_band_tip: { type: 'string', description: 'The single most important change to reach the next half band' },
     rewritten_paragraph: { type: 'string', description: 'A model rewrite of the opening paragraph at one band higher' },
   },
 } as const
 
 interface CriterionResult { band: number; evidence: string }
+interface Correction { quote: string; issue: string; fix: string; type: string }
+interface TaskCheck { label: string; passed: boolean; note: string }
 interface WritingResult {
   criteria: { task: CriterionResult; coherence: CriterionResult; lexical: CriterionResult; grammar: CriterionResult }
   overview: string
   strengths: string[]
   improvements: string[]
+  corrections: Correction[]
+  task_checks: TaskCheck[]
+  off_topic: { flag: boolean; note: string }
   next_band_tip: string
   rewritten_paragraph: string
 }
@@ -78,11 +116,24 @@ export async function POST(request: NextRequest) {
   const rubric = task_type === '1' ? WRITING_TASK1_RUBRIC : WRITING_TASK2_RUBRIC
   const taskCriterionName = task_type === '1' ? 'Task Achievement' : 'Task Response'
 
+  // Task-type-specific requirements the model must explicitly check (task_checks).
+  const TASK_CHECKS = task_type === '1'
+    ? `- A clear OVERVIEW of the main trends/stages is present (its absence caps Task Achievement at 5).
+- Key features are reported accurately with correctly read figures/units.
+- Data is grouped and compared, not listed mechanically.
+- No personal opinions, causes or speculation (Task 1 reports data only).
+- Appropriate paragraphing (intro/overview/body).`
+    : `- A clear POSITION is stated in the introduction and maintained throughout.
+- ALL parts of the question are addressed (both views + opinion, or every sub-question).
+- Main ideas are developed with explanation and specific examples, not just listed.
+- A conclusion restates the position.
+- Logical paragraphing, one central idea per paragraph.`
+
   try {
     const completion = await openai.chat.completions.create({
       model: 'gpt-4o',
       temperature: 0.2,
-      max_tokens: 1600,
+      max_tokens: 2600,
       response_format: {
         type: 'json_schema',
         json_schema: { name: 'ielts_writing_assessment', strict: true, schema: WRITING_SCHEMA },
@@ -94,7 +145,20 @@ export async function POST(request: NextRequest) {
 
 ${rubric}
 
-Assess this IELTS Academic Writing Task ${task_type} response. For each of the four criteria (criteria.task = ${taskCriterionName}, coherence = Coherence & Cohesion, lexical = Lexical Resource, grammar = Grammatical Range & Accuracy) award a band and cite concrete evidence from the text against the descriptor. Penalise under-length responses on the task criterion. Do not average the criteria yourself — the overall band is computed separately. Keep feedback specific and actionable.`,
+Assess this IELTS Academic Writing Task ${task_type} response.
+
+CRITERIA: For each of the four criteria (criteria.task = ${taskCriterionName}, coherence = Coherence & Cohesion, lexical = Lexical Resource, grammar = Grammatical Range & Accuracy) award a band and cite concrete evidence from the text against the descriptor. Do not average the criteria yourself — the overall band is computed separately.
+
+TASK CHECKS: Evaluate each of these task-specific requirements and return them in task_checks (label, passed, short note):
+${TASK_CHECKS}
+
+CORRECTIONS: Return 3–8 of the highest-impact errors in 'corrections'. Each MUST copy the exact wording from the response into 'quote', name the problem in 'issue', and give the corrected/upgraded version in 'fix'. Cover grammar, vocabulary/collocation, spelling and cohesion errors actually present — never invent text that isn't there.
+
+OFF-TOPIC / MEMORISED: Set off_topic.flag = true if the response does not answer THIS prompt or pads with memorised template sentences that don't engage the question; explain in note. If flagged, ${taskCriterionName} MUST be 4 or lower regardless of language quality.
+
+LENGTH: Penalise under-length responses (below ${minWords} words) on the task criterion.
+
+Keep all feedback specific and actionable.`,
         },
         {
           role: 'user',
@@ -132,6 +196,9 @@ ${content}`,
       overview: result.overview,
       strengths: result.strengths,
       improvements: result.improvements,
+      corrections: result.corrections,
+      task_checks: result.task_checks,
+      off_topic: result.off_topic,
       rewritten_paragraph: result.rewritten_paragraph,
       next_band_tip: result.next_band_tip,
       criteria: result.criteria,

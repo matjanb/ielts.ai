@@ -13,7 +13,15 @@ interface FeedbackResult {
   coherence_cohesion: number
   lexical_resource: number
   grammatical_accuracy: number
-  feedback: { overview: string; strengths: string[]; improvements: string[]; rewritten_paragraph: string }
+  feedback: {
+    overview: string
+    strengths: string[]
+    improvements: string[]
+    rewritten_paragraph: string
+    corrections?: { quote: string; issue: string; fix: string; type: string }[]
+    task_checks?: { label: string; passed: boolean; note: string }[]
+    off_topic?: { flag: boolean; note: string }
+  }
 }
 
 export default function WritingTestPage() {
@@ -282,9 +290,28 @@ export default function WritingTestPage() {
               ))}
             </div>
 
+            {result.feedback.off_topic?.flag && (
+              <div style={{ marginTop: 16, padding: 14, background: 'rgba(217,122,100,0.12)', border: '1px solid rgba(217,122,100,0.4)', borderRadius: 10 }}>
+                <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: '0.08em', color: '#d97a64', marginBottom: 6 }}>⚠ {t('wtest.offTopic')}</div>
+                <p style={{ fontSize: 12.5, lineHeight: 1.55, margin: 0, opacity: 0.9 }}>{result.feedback.off_topic.note}</p>
+              </div>
+            )}
+
             {result.feedback.overview && (
               <div style={{ marginTop: 16, padding: 14, background: '#16191b', borderRadius: 10 }}>
                 <p style={{ fontSize: 12.5, lineHeight: 1.6, margin: 0, opacity: 0.85 }}>{result.feedback.overview}</p>
+              </div>
+            )}
+
+            {result.feedback.task_checks && result.feedback.task_checks.length > 0 && (
+              <div style={{ marginTop: 10, padding: 14, background: '#16191b', borderRadius: 10 }}>
+                <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: '0.08em', color: '#3aa278', marginBottom: 8 }}>{t('wtest.taskChecks')}</div>
+                {result.feedback.task_checks.map((c, i) => (
+                  <div key={i} style={{ display: 'flex', gap: 8, alignItems: 'flex-start', marginBottom: 6, fontSize: 12, lineHeight: 1.5, opacity: 0.85 }}>
+                    <span style={{ flexShrink: 0, color: c.passed ? '#3aa278' : '#d97a64', fontWeight: 700 }}>{c.passed ? '✓' : '✗'}</span>
+                    <span><strong style={{ opacity: 0.95 }}>{c.label}.</strong> {c.note}</span>
+                  </div>
+                ))}
               </div>
             )}
 
@@ -299,6 +326,23 @@ export default function WritingTestPage() {
               <div style={{ marginTop: 10, padding: 14, background: '#16191b', borderRadius: 10 }}>
                 <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: '0.08em', color: '#e4b54f', marginBottom: 8 }}>{t('wtest.improve')}</div>
                 {result.feedback.improvements.map((s, i) => <div key={i} style={{ fontSize: 12, lineHeight: 1.5, marginBottom: 5, opacity: 0.8 }}>→ {s}</div>)}
+              </div>
+            )}
+
+            {result.feedback.corrections && result.feedback.corrections.length > 0 && (
+              <div style={{ marginTop: 10, padding: 14, background: '#16191b', borderRadius: 10 }}>
+                <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: '0.08em', color: '#e4b54f', marginBottom: 10 }}>{t('wtest.corrections')}</div>
+                <div style={{ display: 'grid', gap: 10 }}>
+                  {result.feedback.corrections.map((c, i) => (
+                    <div key={i} style={{ borderLeft: '2px solid rgba(228,181,79,0.5)', paddingLeft: 10 }}>
+                      <div style={{ fontSize: 11.5, lineHeight: 1.5, color: '#d97a64', textDecoration: 'line-through', opacity: 0.8 }}>{c.quote}</div>
+                      <div style={{ fontSize: 11.5, lineHeight: 1.5, color: '#3aa278', marginTop: 2 }}>{c.fix}</div>
+                      <div style={{ fontSize: 11, lineHeight: 1.45, opacity: 0.6, marginTop: 3 }}>
+                        <span style={{ textTransform: 'uppercase', letterSpacing: '0.04em', fontWeight: 700, fontSize: 9.5 }}>{c.type}</span> · {c.issue}
+                      </div>
+                    </div>
+                  ))}
+                </div>
               </div>
             )}
 

@@ -861,7 +861,10 @@
     "band8": "BAND-8 VERSIYASI",
     "nextStep": "KEYINGI QADAM",
     "nextTask2": "Bu hafta yana ikkita munozara inshosi, so‘ng Problem-Solution-ga o‘ting.",
-    "nextTask1": "Maʼlumot tendentsiyalarini aniq taqqoslashlar bilan umumlashtirishni mashq qiling."
+    "nextTask1": "Maʼlumot tendentsiyalarini aniq taqqoslashlar bilan umumlashtirishni mashq qiling.",
+    "offTopic": "Mavzudan tashqari / shablon",
+    "taskChecks": "Topshiriq talablari",
+    "corrections": "Aniq tuzatishlar"
   },
   "daily": {
     "vocabulary0": "So‘zlarni takrorlash (kartalar)",
@@ -891,5 +894,26 @@
     "whyWeekHigh": "Bu hafta — imtihonga tayyorgarlik: ko‘p mashg‘ulotlar zaif bo‘limlarga ({{skills}}) va vaqtli sinovlarga qaratilgan.",
     "whyWeekMed": "Bu hafta zaif bo‘limlarga ({{skills}}) e’tibor qaratadi, boshqa ko‘nikmalarni ham unutmaydi.",
     "whyWeekLow": "Bu hafta barcha ko‘nikmalarni bir tekis rivojlantiradi, {{skills}}ga ozgina ko‘proq."
+  },
+  "writingFocus": {
+    "title": "Yozuvdagi zaif joylaring",
+    "sub": "Esselaring bo'yicha 4 mezon o'rtacha bali",
+    "badge": "Fokus",
+    "cta": "Esse yozish",
+    "empty": "Birinchi essengni yoz — bu yerda 4 mezon bo'yicha zaif joylaring chiqadi.",
+    "tipTask": "Topshiriqning har bir qismiga javob ber va har bir fikrni aniq misol bilan rivojlantir.",
+    "tipCoherence": "Aniq paragraflar (har birida bitta fikr) va xilma-xil aniq bog'lovchilar.",
+    "tipLexical": "Aniq, kam uchraydigan leksika va to'g'ri birikmalar; takrordan saqlan.",
+    "tipGrammar": "Oddiy va murakkab gaplarni aralashtir, xatolarni tekshir."
+  },
+  "writingCoach": {
+    "title": "AI murabbiy",
+    "sub": "Ballaring va takrorlanuvchi xatolaringga asoslangan maslahat",
+    "button": "Maslahat olish",
+    "refresh": "Yangilash",
+    "loading": "Esselaringni tahlil qilyapman…",
+    "empty": "Avval esse yozib, tekshir — keyin shaxsiy maslahat olasan.",
+    "focusLabel": "Fokus",
+    "error": "Bo'lmadi. Qayta urinib ko'r."
   }
 }
