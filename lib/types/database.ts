@@ -355,6 +355,7 @@ export type Database = {
           question_number: number
           question_text: string
           question_type: string
+          question_subtype: string | null
           section_id: string
         }
         Insert: {
@@ -368,6 +369,7 @@ export type Database = {
           question_number: number
           question_text: string
           question_type: string
+          question_subtype?: string | null
           section_id: string
         }
         Update: {
@@ -381,6 +383,7 @@ export type Database = {
           question_number?: number
           question_text?: string
           question_type?: string
+          question_subtype?: string | null
           section_id?: string
         }
         Relationships: [

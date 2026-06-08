@@ -52,7 +52,11 @@ const SKILL_COLOR: Record<string, string> = {
   speaking: 'var(--danger)', vocabulary: '#6b46c1', mock: '#0891b2',
   grammar: '#0d9488', review: '#475569', mixed: 'var(--text-3)',
 }
-const DRILL_TYPES = new Set(['true_false', 'multiple_choice', 'matching', 'matching_headings', 'fill_blank'])
+const DRILL_TYPES = new Set([
+  'true_false', 'multiple_choice', 'matching', 'matching_headings', 'fill_blank',
+  'note_completion', 'form_completion', 'table_completion', 'summary_completion',
+  'sentence_completion', 'flow_chart_completion', 'map_labelling', 'diagram_labelling', 'short_answer',
+])
 /* A reading/listening task with a weak question type deep-links straight into
  * that targeted-practice drill; everything else goes to the skill hub. */
 function taskHref(task: { skill: string; qtype?: string }): string {

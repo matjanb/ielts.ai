@@ -30,14 +30,15 @@ export async function getPracticeSetServer(opts: {
   const sectionList = sections ?? []
   if (sectionList.length === 0) return []
 
-  // Filter to the requested type IN the query (not in memory) and pull only the
-  // section ids we actually have — otherwise this fetched every question of every
-  // test (hundreds of heavy rows) just to drill one type. Big latency win.
+  // Filter to the requested type IN the query (not in memory). Match the granular
+  // listening subtype when set, otherwise fall back to the coarse question_type —
+  // so reading (no subtype) and listening (subtype) both work. Still server-side.
+  const t = opts.questionType
   const { data: questionRows } = await admin
     .from('questions')
     .select('*')
     .in('section_id', sectionList.map(s => s.id))
-    .eq('question_type', opts.questionType)
+    .or(`question_subtype.eq.${t},and(question_subtype.is.null,question_type.eq.${t})`)
     .order('question_number')
   const questions: Question[] = questionRows ?? []
 

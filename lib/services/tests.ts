@@ -192,6 +192,16 @@ const QTYPE_LABELS: Record<string, string> = {
   matching:          'Matching',
   matching_headings: 'Matching headings',
   fill_blank:        'Sentence / form completion',
+  // Granular listening subtypes (from question_subtype).
+  note_completion:       'Note completion',
+  form_completion:       'Form completion',
+  table_completion:      'Table completion',
+  summary_completion:    'Summary completion',
+  sentence_completion:   'Sentence completion',
+  flow_chart_completion: 'Flow-chart completion',
+  map_labelling:         'Map / plan labelling',
+  diagram_labelling:     'Diagram labelling',
+  short_answer:          'Short answer',
 }
 
 export function questionTypeLabel(type: string): string {
@@ -227,17 +237,20 @@ export async function getPracticeFilters(skill: 'listening' | 'reading'): Promis
   if (sectionIds.length === 0) return { types: [], countByTypeDifficulty: {} }
 
   const { data: questions } = await supabase
-    .from('questions').select('section_id, question_type').in('section_id', sectionIds)
+    .from('questions').select('section_id, question_type, question_subtype').in('section_id', sectionIds)
 
   const total: Record<string, number> = {}
   const matrix: Record<string, Partial<Record<Difficulty, number>>> = {}
   for (const q of (questions ?? []) as any[]) {
     if (q.question_type === 'essay') continue
-    total[q.question_type] = (total[q.question_type] ?? 0) + 1
+    // Effective type: the granular subtype (listening) when present, else the
+    // coarse question_type (reading already has granular types).
+    const type = q.question_subtype ?? q.question_type
+    total[type] = (total[type] ?? 0) + 1
     const diff = diffBySection.get(q.section_id)
     if (diff) {
-      matrix[q.question_type] ??= {}
-      matrix[q.question_type][diff] = (matrix[q.question_type][diff] ?? 0) + 1
+      matrix[type] ??= {}
+      matrix[type][diff] = (matrix[type][diff] ?? 0) + 1
     }
   }
 
@@ -352,9 +365,10 @@ export async function getSubskillAccuracy(userId: string, skill: 'listening' | '
   const questionIds = [...new Set((answers as any[]).map(a => a.question_id))]
   const { data: questions } = await supabase
     .from('questions')
-    .select('id, question_type')
+    .select('id, question_type, question_subtype')
     .in('id', questionIds)
-  const typeById = new Map<string, string>((questions ?? []).map((q: any) => [q.id, q.question_type]))
+  // Effective type: granular subtype (listening) when present, else question_type.
+  const typeById = new Map<string, string>((questions ?? []).map((q: any) => [q.id, q.question_subtype ?? q.question_type]))
 
   // 5. Group by type
   const buckets: Record<string, { correct: number; total: number }> = {}

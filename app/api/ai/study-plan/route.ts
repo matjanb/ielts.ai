@@ -44,6 +44,10 @@ const PLAN_SCHEMA = {
 const QT_READABLE: Record<string, string> = {
   true_false: 'True/False/Not Given', multiple_choice: 'Multiple choice',
   matching: 'Matching', matching_headings: 'Matching headings', fill_blank: 'Sentence/note completion',
+  note_completion: 'Note completion', form_completion: 'Form completion', table_completion: 'Table completion',
+  summary_completion: 'Summary completion', sentence_completion: 'Sentence completion',
+  flow_chart_completion: 'Flow-chart completion', map_labelling: 'Map/plan labelling',
+  diagram_labelling: 'Diagram labelling', short_answer: 'Short answer',
 }
 const WRITING_CRITERIA = [
   { key: 'task_achievement', label: 'Task Achievement/Response' },
@@ -125,8 +129,9 @@ export async function POST() {
       .from('user_answers').select('question_id, is_correct').in('attempt_id', attemptIds)
     if (!answers?.length) return []
     const qIds = [...new Set(answers.map(a => a.question_id))]
-    const { data: questions } = await admin.from('questions').select('id, question_type').in('id', qIds)
-    const typeById = new Map((questions ?? []).map(q => [q.id, q.question_type]))
+    const { data: questions } = await admin.from('questions').select('id, question_type, question_subtype').in('id', qIds)
+    // Effective type: granular listening subtype when present, else question_type.
+    const typeById = new Map((questions ?? []).map(q => [q.id, q.question_subtype ?? q.question_type]))
     const bucket: Record<string, { c: number; t: number }> = {}
     for (const a of answers) {
       const qt = typeById.get(a.question_id); if (!qt) continue
