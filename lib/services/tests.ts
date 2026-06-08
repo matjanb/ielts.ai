@@ -208,6 +208,11 @@ export function questionTypeLabel(type: string): string {
   return QTYPE_LABELS[type] ?? type
 }
 
+// Types that can't be practised as standalone drills: map/diagram labelling need
+// the shared map/diagram image and letter answers, which only make sense inside
+// the full test. They're excluded from the weak-spots drill list.
+const NON_DRILLABLE = new Set(['map_labelling', 'diagram_labelling'])
+
 export type Difficulty = 'easy' | 'medium' | 'hard'
 
 export interface PracticeFilters {
@@ -246,6 +251,7 @@ export async function getPracticeFilters(skill: 'listening' | 'reading'): Promis
     // Effective type: the granular subtype (listening) when present, else the
     // coarse question_type (reading already has granular types).
     const type = q.question_subtype ?? q.question_type
+    if (NON_DRILLABLE.has(type)) continue
     total[type] = (total[type] ?? 0) + 1
     const diff = diffBySection.get(q.section_id)
     if (diff) {
@@ -374,7 +380,7 @@ export async function getSubskillAccuracy(userId: string, skill: 'listening' | '
   const buckets: Record<string, { correct: number; total: number }> = {}
   for (const a of answers as any[]) {
     const qtype = typeById.get(a.question_id)
-    if (!qtype) continue
+    if (!qtype || NON_DRILLABLE.has(qtype)) continue
     if (!buckets[qtype]) buckets[qtype] = { correct: 0, total: 0 }
     buckets[qtype].total++
     if (a.is_correct) buckets[qtype].correct++

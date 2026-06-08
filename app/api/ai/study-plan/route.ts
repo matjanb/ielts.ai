@@ -137,9 +137,12 @@ export async function POST() {
       const qt = typeById.get(a.question_id); if (!qt) continue
       const b = (bucket[qt] ??= { c: 0, t: 0 }); b.t++; if (a.is_correct) b.c++
     }
+    // map/diagram labelling can't be drilled standalone (they need the shared
+    // map image), so never surface them as a weak-type drill target.
+    const NON_DRILLABLE = new Set(['map_labelling', 'diagram_labelling'])
     return Object.entries(bucket)
       .map(([type, b]) => ({ type, accuracy: b.c / b.t, total: b.t }))
-      .filter(b => b.total >= 4 && b.accuracy < 0.7)
+      .filter(b => b.total >= 4 && b.accuracy < 0.7 && !NON_DRILLABLE.has(b.type))
       .sort((a, b) => a.accuracy - b.accuracy)
   }
   const [readWeak, listenWeak] = await Promise.all([weakTypes('reading'), weakTypes('listening')])
