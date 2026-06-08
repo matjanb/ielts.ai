@@ -158,6 +158,8 @@ OFF-TOPIC / MEMORISED: Set off_topic.flag = true if the response does not answer
 
 LENGTH: Penalise under-length responses (below ${minWords} words) on the task criterion.
 
+ENGLISH ONLY: IELTS Writing must be written in English. If the response is wholly or mostly in another language, it CANNOT be assessed as an IELTS answer — award ${taskCriterionName} and all four criteria band 1–2, set off_topic.flag = true with a note that the response is not in English, and do NOT translate it to grade it. Writing in another language is a serious failure, never a minor issue.
+
 Keep all feedback specific and actionable.`,
         },
         {

@@ -127,7 +127,9 @@ SPEAKING BAND ANCHORS (apply strictly):
 - Band 7+: fluent, flexible and largely accurate, with well-developed answers.
 A test of very short, repetitive, error-heavy one-line answers is band 3 — not 4 or 5.
 
-${assessScope} The input is a transcript only (no audio is available), so judge fluency from hesitation/repetition markers and sentence flow in the text, and judge pronunciation conservatively per the text-only note in the descriptors — never invent a confident pronunciation band. For each criterion (fluency = Fluency & Coherence, lexical = Lexical Resource, grammar = Grammatical Range & Accuracy, pronunciation) award a band and cite evidence. Do not average the criteria yourself.`,
+${assessScope} The input is a transcript only (no audio is available), so judge fluency from hesitation/repetition markers and sentence flow in the text, and judge pronunciation conservatively per the text-only note in the descriptors — never invent a confident pronunciation band. For each criterion (fluency = Fluency & Coherence, lexical = Lexical Resource, grammar = Grammatical Range & Accuracy, pronunciation) award a band and cite evidence. Do not average the criteria yourself.
+
+ENGLISH ONLY: IELTS Speaking is assessed in English. If the candidate's answers are wholly or mostly not in English, they cannot be assessed — award band 1–2 on every criterion and state this in the feedback. NEVER translate non-English answers in order to score them.`,
         },
         {
           role: 'user',
