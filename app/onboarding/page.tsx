@@ -9,7 +9,7 @@ import { LanguageProvider } from '@/lib/i18n/LanguageContext'
 import { ThemeToggle } from '@/components/ui/ThemeToggle'
 import { LanguageSwitcher } from '@/components/ui/LanguageSwitcher'
 import { createClient } from '@/lib/supabase/client'
-import { saveOnboardingData, generateAndSaveStudyPlan, completeOnboarding } from '@/lib/services/user'
+import { saveOnboardingData, completeOnboarding } from '@/lib/services/user'
 import type { SkillType, StudyGoal, CurrentLevel, Timeline, StudyHours, ExperienceLevel } from '@/lib/types/database'
 import Link from 'next/link'
 
@@ -70,14 +70,9 @@ function OnboardingContent() {
       daily_hours: answers.dailyHours,
     })
 
-    await generateAndSaveStudyPlan(
-      user.id,
-      answers.targetBand,
-      answers.focusSkills.length ? answers.focusSkills : ['writing', 'speaking', 'reading', 'listening'],
-      answers.dailyHours ?? '1_hour',
-      answers.timeline ?? 'not_sure'
-    )
-
+    // No placeholder plan here — the real, AI-generated plan is created on demand
+    // from the Study Plan page, which produces the shape that page renders. New
+    // users see a clean "Generate plan" empty state.
     await completeOnboarding(user.id)
     router.push('/dashboard')
   }

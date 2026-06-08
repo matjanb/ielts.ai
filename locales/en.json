@@ -858,7 +858,8 @@
     "skillReview": "Review",
     "skillVocab": "Vocabulary",
     "skillMixed": "Mixed",
-    "tasksDoneShort": "done today"
+    "tasksDoneShort": "done today",
+    "targetChanged": "Your target band is now {{band}}. Regenerate to refresh the plan for your new goal."
   },
   "settings": {
     "subtitle": "Manage your profile, preferences, and subscription.",

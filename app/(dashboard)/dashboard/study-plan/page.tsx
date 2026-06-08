@@ -7,7 +7,7 @@ import { useLanguage } from '@/lib/i18n/LanguageContext'
 import { getDailyPlan } from '@/lib/services/dailyPlan'
 import type { DailySummary, TaskReason } from '@/lib/dailyPlan'
 
-interface Task { day: string; skill: string; activity: string; minutes: number }
+interface Task { day: string; skill: string; activity: string; minutes: number; qtype?: string }
 interface WeekPlan {
   week: number
   theme: string
@@ -52,6 +52,15 @@ const SKILL_COLOR: Record<string, string> = {
   speaking: 'var(--danger)', vocabulary: '#6b46c1', mock: '#0891b2',
   grammar: '#0d9488', review: '#475569', mixed: 'var(--text-3)',
 }
+const DRILL_TYPES = new Set(['true_false', 'multiple_choice', 'matching', 'matching_headings', 'fill_blank'])
+/* A reading/listening task with a weak question type deep-links straight into
+ * that targeted-practice drill; everything else goes to the skill hub. */
+function taskHref(task: { skill: string; qtype?: string }): string {
+  if ((task.skill === 'reading' || task.skill === 'listening') && task.qtype && DRILL_TYPES.has(task.qtype)) {
+    return `/${task.skill}/practice?type=${task.qtype}`
+  }
+  return SKILL_ROUTE[task.skill] ?? '/dashboard'
+}
 
 export default function StudyPlanPage() {
   const { t } = useLanguage()
@@ -62,6 +71,9 @@ export default function StudyPlanPage() {
   const [generating, setGenerating] = useState(false)
   const [error, setError]       = useState('')
   const [activeWeek, setActiveWeek] = useState(1)
+  // Live target band from the profile (the single source Settings updates), so
+  // this page stays in sync instead of showing the plan's frozen snapshot.
+  const [liveTarget, setLiveTarget] = useState<number | null>(null)
   // Adaptive "today" — same engine, day-seed and localStorage key as the Overview.
   const [dailyTasks, setDailyTasks]     = useState<DailyView[] | null>(null)
   const [dailySummary, setDailySummary] = useState<DailySummary | null>(null)
@@ -103,10 +115,15 @@ export default function StudyPlanPage() {
     async function loadPlan() {
       try {
         const { getUser } = await import('@/lib/services/auth')
-        const { getStudyPlan } = await import('@/lib/services/user')
+        const { getStudyPlan, getProfile } = await import('@/lib/services/user')
         const { user } = await getUser()
         if (!user) return
         setUserId(user.id)
+
+        try {
+          const profile = await getProfile(user.id)
+          if (typeof profile?.target_band_score === 'number') setLiveTarget(profile.target_band_score)
+        } catch { /* target falls back to the plan snapshot */ }
 
         // Adaptive daily plan — shown even if no weekly roadmap exists yet.
         try {
@@ -191,9 +208,14 @@ export default function StudyPlanPage() {
   const doneToday = dailyTasks ? dailyTasks.filter((_, i) => dailyDone[i]).length : 0
   const allDoneToday = !!dailyTasks && dailyTasks.length > 0 && doneToday === dailyTasks.length
 
+  // Show the live target everywhere; the plan's own number is just the snapshot
+  // it was generated for. If they differ, the plan is stale → prompt a refresh.
+  const shownTarget = liveTarget ?? plan?.target_band ?? null
+  const targetStale = !!plan && liveTarget != null && Math.abs(liveTarget - plan.target_band) >= 0.25
+
   const stats = plan ? [
     { key: 'duration', label: t('plan.duration'),    value: `${plan.weeks_duration} ${t('plan.weeks')}`, color: 'var(--accent)' },
-    { key: 'target',   label: t('plan.targetBand'),  value: plan.target_band.toFixed(1),    color: 'var(--info)' },
+    { key: 'target',   label: t('plan.targetBand'),  value: (shownTarget ?? plan.target_band).toFixed(1),    color: 'var(--info)' },
     { key: 'daily',    label: t('plan.dailyStudy'),  value: `${plan.daily_minutes} ${t('plan.min')}`,    color: 'var(--warn)' },
     { key: 'focus',    label: t('plan.focusSkills'), value: plan.focus_skills.join(', ') || t('plan.allSkills'), color: '#6b46c1' },
   ] : []
@@ -222,7 +244,7 @@ export default function StudyPlanPage() {
           <div style={{ fontSize: 13.5, color: done ? 'var(--text-3)' : 'var(--text)', lineHeight: 1.45, textDecoration: done ? 'line-through' : 'none' }}>{task.activity}</div>
         </div>
 
-        <Link href={SKILL_ROUTE[task.skill] ?? '/dashboard'} style={{
+        <Link href={taskHref(task)} style={{
           flexShrink: 0, display: 'inline-flex', alignItems: 'center', gap: 5, padding: '6px 12px', borderRadius: 8,
           fontSize: 12, fontWeight: 600, color: 'var(--accent)', background: 'var(--accent-soft)', textDecoration: 'none',
         }}>
@@ -276,7 +298,7 @@ export default function StudyPlanPage() {
           </h1>
           <p style={{ fontSize: 15, color: 'var(--text-2)', margin: '6px 0 0', maxWidth: 620, lineHeight: 1.5 }}>
             {plan
-              ? (overview || t('plan.roadmapSub', { weeks: String(plan.weeks_duration), band: plan.target_band.toFixed(1), tasks: String(totalTasks) }))
+              ? (overview || t('plan.roadmapSub', { weeks: String(plan.weeks_duration), band: (shownTarget ?? plan.target_band).toFixed(1), tasks: String(totalTasks) }))
               : t('plan.generateSub')}
           </p>
         </div>
@@ -296,6 +318,24 @@ export default function StudyPlanPage() {
         <div style={{ display: 'flex', alignItems: 'flex-start', gap: 10, padding: '12px 16px', borderRadius: 10, marginBottom: 16, fontSize: 14, color: 'var(--danger)', background: 'color-mix(in srgb, var(--danger) 10%, transparent)', border: '1px solid color-mix(in srgb, var(--danger) 30%, transparent)' }}>
           <AlertCircle size={16} style={{ flexShrink: 0, marginTop: 1 }} />
           {error}
+        </div>
+      )}
+
+      {/* Target band changed in Settings since this plan was generated */}
+      {targetStale && (
+        <div style={{ display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap', justifyContent: 'space-between', padding: '12px 16px', borderRadius: 10, marginBottom: 16, fontSize: 13.5, color: 'var(--text-2)', background: 'color-mix(in srgb, var(--info) 10%, transparent)', border: '1px solid color-mix(in srgb, var(--info) 30%, transparent)' }}>
+          <div style={{ display: 'flex', alignItems: 'flex-start', gap: 10 }}>
+            <Info size={16} style={{ flexShrink: 0, marginTop: 1, color: 'var(--info)' }} />
+            <span>{t('plan.targetChanged', { band: (shownTarget ?? 0).toFixed(1) })}</span>
+          </div>
+          <button onClick={handleGenerate} disabled={generating} style={{
+            display: 'inline-flex', alignItems: 'center', gap: 6, flexShrink: 0,
+            padding: '8px 14px', borderRadius: 8, fontSize: 13, fontWeight: 600,
+            background: 'var(--accent)', color: 'var(--accent-fg)', border: 'none',
+            cursor: generating ? 'not-allowed' : 'pointer', opacity: generating ? 0.6 : 1,
+          }}>
+            {generating ? <><Loader2 size={14} className="animate-spin" /> {t('plan.generating')}</> : <><RefreshCw size={14} /> {t('plan.regenerate')}</>}
+          </button>
         </div>
       )}
 

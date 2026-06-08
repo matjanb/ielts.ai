@@ -813,7 +813,8 @@
     "skillReview": "Takrorlash",
     "skillVocab": "Lug‘at",
     "skillMixed": "Aralash",
-    "tasksDoneShort": "bugun bajarildi"
+    "tasksDoneShort": "bugun bajarildi",
+    "targetChanged": "Maqsadli ballingiz endi {{band}}. Rejani yangi maqsadingizga moslash uchun qayta yarating."
   },
   "settings": {
     "subtitle": "Profil, sozlamalar va obunani boshqaring.",
