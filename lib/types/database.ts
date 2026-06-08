@@ -264,6 +264,8 @@ export type Database = {
           is_admin: boolean
           lifetime_access: boolean
           onboarding_completed: boolean
+          referred_at: string | null
+          referred_by: string | null
           stripe_customer_id: string | null
           subscription_expires_at: string | null
           subscription_plan: string | null
@@ -282,6 +284,8 @@ export type Database = {
           is_admin?: boolean
           lifetime_access?: boolean
           onboarding_completed?: boolean
+          referred_at?: string | null
+          referred_by?: string | null
           stripe_customer_id?: string | null
           subscription_expires_at?: string | null
           subscription_plan?: string | null
@@ -300,6 +304,8 @@ export type Database = {
           is_admin?: boolean
           lifetime_access?: boolean
           onboarding_completed?: boolean
+          referred_at?: string | null
+          referred_by?: string | null
           stripe_customer_id?: string | null
           subscription_expires_at?: string | null
           subscription_plan?: string | null
@@ -307,6 +313,30 @@ export type Database = {
           subscription_status?: Database["public"]["Enums"]["subscription_status"]
           target_band_score?: number | null
           updated_at?: string
+        }
+        Relationships: []
+      }
+      referrers: {
+        Row: {
+          id: string
+          code: string
+          name: string | null
+          is_active: boolean
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          code: string
+          name?: string | null
+          is_active?: boolean
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          code?: string
+          name?: string | null
+          is_active?: boolean
+          created_at?: string
         }
         Relationships: []
       }
@@ -1063,6 +1093,17 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      admin_referral_stats: {
+        Args: Record<string, never>
+        Returns: {
+          code: string
+          name: string | null
+          is_active: boolean
+          created_at: string
+          signups: number
+          paid: number
+        }[]
+      }
       admin_list_users: {
         Args: { search?: string | null; lim?: number }
         Returns: {

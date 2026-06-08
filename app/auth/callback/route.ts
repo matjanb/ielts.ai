@@ -69,6 +69,33 @@ export async function GET(request: NextRequest) {
       )
     }
 
+    // Referral attribution (first-touch): if a ref_code cookie is present and maps
+    // to a real active creator, stamp it on the profile — but only when it isn't
+    // set yet, so it never changes on later logins.
+    const refCode = cookieStore.get('ref_code')?.value
+    if (refCode) {
+      try {
+        const { data: { user } } = await supabase.auth.getUser()
+        if (user) {
+          const service = createServiceClient(
+            process.env.NEXT_PUBLIC_SUPABASE_URL!,
+            process.env.SUPABASE_SERVICE_ROLE_KEY!
+          )
+          const { data: ref } = await service
+            .from('referrers').select('code').eq('code', refCode).eq('is_active', true).maybeSingle()
+          const { data: prof } = await service
+            .from('profiles').select('referred_by').eq('id', user.id).maybeSingle()
+          if (ref && prof && !prof.referred_by) {
+            await service.from('profiles')
+              .update({ referred_by: ref.code, referred_at: new Date().toISOString() })
+              .eq('id', user.id)
+          }
+        }
+      } catch (e) {
+        console.error('[auth/callback] referral attribution failed', e)
+      }
+    }
+
     // If this came from the Sign In page, block users who haven't completed onboarding
     if (mode === 'signin') {
       const { data: { user } } = await supabase.auth.getUser()

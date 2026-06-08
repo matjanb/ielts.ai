@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useState } from 'react'
 import Link from 'next/link'
+import { ReferralsPanel } from './ReferralsPanel'
 
 interface AdminUser {
   id: string
@@ -209,6 +210,8 @@ export function AdminClient() {
           </tbody>
         </table>
       </div>
+
+      <ReferralsPanel />
     </div>
   )
 }

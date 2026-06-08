@@ -85,5 +85,18 @@ export async function updateSession(request: NextRequest) {
     }
   }
 
+  // Referral capture: first visit with ?ref=<code> drops a 60-day cookie that the
+  // auth callback later reads to stamp the new account (first-touch attribution).
+  const ref = request.nextUrl.searchParams.get('ref')
+  if (ref && /^[a-z0-9_-]{2,40}$/i.test(ref) && !request.cookies.get('ref_code')) {
+    supabaseResponse.cookies.set('ref_code', ref.toLowerCase(), {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'lax',
+      maxAge: 60 * 24 * 60 * 60, // 60 days
+      path: '/',
+    })
+  }
+
   return supabaseResponse
 }
