@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback, useRef } from 'react'
 import { useRouter, useParams } from 'next/navigation'
-import { Play, Pause, Volume2, AlertCircle, Loader2 } from 'lucide-react'
+import { Play, Pause, Volume2, VolumeX, AlertCircle, Loader2 } from 'lucide-react'
 import Image from 'next/image'
 import { useLanguage } from '@/lib/i18n/LanguageContext'
 import { TestTimer } from '@/components/test/TestTimer'
@@ -31,6 +31,7 @@ function AudioPlayer({
   const [progress, setProgress] = useState(0)
   const [duration, setDuration] = useState(0)
   const [speed, setSpeed] = useState(1)
+  const [muted, setMuted] = useState(false)
   const [autoPlayBlocked, setAutoPlayBlocked] = useState(false)
 
   // Reset state when audio source changes
@@ -88,6 +89,13 @@ function AudioPlayer({
     el.currentTime = Number(e.target.value)
   }
 
+  function toggleMute() {
+    const el = audioRef.current
+    if (!el) return
+    el.muted = !el.muted
+    setMuted(el.muted)
+  }
+
   function cycleSpeed() {
     const idx = SPEEDS.indexOf(speed)
     const next = SPEEDS[(idx + 1) % SPEEDS.length]
@@ -121,7 +129,9 @@ function AudioPlayer({
           }}>
             {playing ? <Pause size={14} stroke="#000" /> : <Play size={14} stroke="#000" />}
           </button>
-          <Volume2 size={16} stroke="#333" style={{ flexShrink: 0 }} />
+          <button onClick={toggleMute} style={{ background: 'none', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', padding: 2, flexShrink: 0 }}>
+            {muted ? <VolumeX size={16} stroke="#c00" /> : <Volume2 size={16} stroke="#333" />}
+          </button>
           <input
             type="range" min={0} max={duration || 1} value={progress} onChange={seek}
             style={{ flex: 1, minWidth: 0, height: 6, accentColor: '#0066b3', cursor: 'pointer' }}
