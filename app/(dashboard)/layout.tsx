@@ -206,7 +206,7 @@ function DashboardLayoutInner({ children }: { children: ReactNode }) {
           style={{
             position: 'fixed', top: 0, left: 0, bottom: 0,
             width: expanded ? sidebarWidth + 80 : 8,
-            zIndex: 30, pointerEvents: 'auto',
+            zIndex: 53, pointerEvents: 'auto',
           }}
         />
       )}
@@ -225,7 +225,7 @@ function DashboardLayoutInner({ children }: { children: ReactNode }) {
         onMouseLeave={isMobile ? undefined : onLeave}
         style={{
           position: 'fixed', top: 0, left: 0, bottom: 0,
-          zIndex: isMobile ? 50 : 32,
+          zIndex: isMobile ? 50 : 55,
           width: sidebarWidth,
           background: 'var(--bg-elev)',
           borderRight: '1px solid var(--border)',
