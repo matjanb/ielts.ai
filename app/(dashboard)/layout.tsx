@@ -381,12 +381,11 @@ function DashboardLayoutInner({ children }: { children: ReactNode }) {
       }}>
         {/* Topbar */}
         <header style={{
-          position: 'sticky', top: 0, zIndex: 20,
-          backdropFilter: 'blur(20px)',
-          background: 'color-mix(in srgb, var(--bg) 80%, transparent)',
           borderBottom: '1px solid var(--border)',
+          background: 'var(--bg)',
           padding: isMobile ? '0 14px' : '0 32px', height: 60,
           display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+          flexShrink: 0,
         }}>
           {/* Breadcrumb */}
           <div style={{ display: 'flex', alignItems: 'center', gap: 10, fontSize: 14 }}>
