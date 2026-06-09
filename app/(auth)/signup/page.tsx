@@ -252,7 +252,11 @@ export default function SignupPage() {
           <button
             type="submit"
             disabled={loading}
-            className="w-full py-3 rounded-xl text-sm font-semibold btn-primary text-white disabled:opacity-60 mt-2"
+            style={{
+              width: '100%', padding: '12px', borderRadius: 10, fontSize: 14, fontWeight: 700,
+              background: 'var(--accent)', color: 'var(--accent-fg)', border: 'none', cursor: 'pointer',
+              opacity: loading ? 0.6 : 1, marginTop: 4, transition: 'background .15s',
+            }}
           >
             {loading ? t('auth.signupLoading') : t('auth.signupBtn')}
           </button>
