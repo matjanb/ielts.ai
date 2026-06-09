@@ -11,6 +11,7 @@ export function FloatingNav() {
   return (
     <header
       style={{
+        position: 'static',
         background: 'var(--bg)',
         borderBottom: '1px solid var(--border)',
       }}
