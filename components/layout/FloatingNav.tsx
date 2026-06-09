@@ -51,12 +51,9 @@ export function FloatingNav() {
       {/* Top-right controls */}
       <header
         style={{
-          position: 'sticky',
-          top: 0,
           zIndex: 40,
-          backdropFilter: 'blur(20px) saturate(1.2)',
-          background: 'color-mix(in srgb, var(--bg) 80%, transparent)',
-          borderBottom: '1px solid color-mix(in srgb, var(--border) 60%, transparent)',
+          background: 'var(--bg)',
+          borderBottom: '1px solid var(--border)',
         }}
       >
         <div className="section-pad" style={{ maxWidth: 1240, margin: '0 auto', padding: '14px 32px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8 }}>
