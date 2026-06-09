@@ -571,7 +571,11 @@
     "skillListening": "Тыңдалым",
     "skillReading": "Оқылым",
     "skillWriting": "Жазылым",
-    "skillSpeaking": "Сөйлеу"
+    "skillSpeaking": "Сөйлеу",
+    "overallBand": "Жалпы балл",
+    "targetReached": "Мақсатқа жеттің",
+    "toTarget": "мақсатқа {{gap}}",
+    "band": "балл"
   },
   "speak": {
     "readyTitle": "Толық сөйлеу тесті",

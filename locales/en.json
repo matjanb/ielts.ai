@@ -577,7 +577,11 @@
     "skillListening": "Listening",
     "skillReading": "Reading",
     "skillWriting": "Writing",
-    "skillSpeaking": "Speaking"
+    "skillSpeaking": "Speaking",
+    "overallBand": "Overall band",
+    "targetReached": "Target reached",
+    "toTarget": "{{gap}} to target",
+    "band": "band"
   },
   "speak": {
     "readyTitle": "Full speaking test",

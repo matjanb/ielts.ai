@@ -9,7 +9,7 @@ export async function getDashboardData(userId: string) {
   const supabase = db()
   const [profile, bandHistory, studySessions, attempts, writingSubmissions, speakingSubmissions] =
     await Promise.all([
-      supabase.from('profiles').select('*').eq('id', userId).single(),
+      supabase.from('profiles').select('*').eq('id', userId).maybeSingle(),
       supabase.from('band_score_history').select('skill,score,recorded_at,source').eq('user_id', userId).order('recorded_at', { ascending: false }).limit(200),
       supabase.from('study_sessions').select('skill,duration_minutes,created_at').eq('user_id', userId).order('created_at', { ascending: false }).limit(500),
       supabase.from('user_attempts').select('band_score,completed_at').eq('user_id', userId).not('completed_at', 'is', null).not('band_score', 'is', null).order('completed_at', { ascending: false }).limit(10),

@@ -58,38 +58,61 @@ function Ring({ value, size = 56, stroke = 5, label }: { value: number; size?: n
 // ── Band predictor arc ─────────────────────────────────────────────────────────
 function BandPredictor({ current = 0, target = 7.5 }: { current: number; target: number }) {
   const { t } = useLanguage()
-  const min = 4, max = 9
-  const pct = current > 0 ? (current - min) / (max - min) : 0
-  const targetPct = (target - min) / (max - min)
+  const MIN = 4, MAX = 9
+  const clamp = (v: number) => Math.max(MIN, Math.min(MAX, v))
+  const frac = (v: number) => (clamp(v) - MIN) / (MAX - MIN) // 0 (left) … 1 (right)
+  const curF = current > 0 ? frac(current) : 0
+  const tgtF = frac(target)
+
+  // Semicircular gauge geometry.
+  const W = 230, R = 96, cx = W / 2, cy = 116, stroke = 13
+  const polar = (f: number) => {
+    const a = Math.PI * (1 - f)
+    return { x: cx + Math.cos(a) * R, y: cy - Math.sin(a) * R }
+  }
+  const arc = (f0: number, f1: number) => {
+    const p0 = polar(f0), p1 = polar(f1)
+    const large = f1 - f0 > 0.5 ? 1 : 0
+    return `M${p0.x.toFixed(1)},${p0.y.toFixed(1)} A${R},${R} 0 ${large} 1 ${p1.x.toFixed(1)},${p1.y.toFixed(1)}`
+  }
+  const tgt = polar(tgtF)
+  const reached = current >= target && current > 0
+  const gap = current > 0 && target > current ? +(target - current).toFixed(1) : 0
+
   return (
     <div className="card" style={{ padding: 28 }}>
-      <div style={{ fontSize: 11, letterSpacing: '0.1em', textTransform: 'uppercase', color: 'var(--text-3)' }}>{t('dash.predictedBand')}</div>
-      <div style={{ display: 'flex', alignItems: 'baseline', gap: 10, marginTop: 8 }}>
-        <span style={{ fontFamily: 'var(--font-display)', fontStyle: 'italic', fontSize: 68, lineHeight: 0.9, color: 'var(--accent)', fontWeight: 500 }}>
-          {current > 0 ? current.toFixed(1) : '—'}
-        </span>
-      </div>
-      <svg viewBox="0 0 200 110" style={{ width: '100%', marginTop: 16 }}>
-        <path d="M10,100 A90,90 0 0 1 190,100" stroke="var(--border)" strokeWidth="6" fill="none" strokeLinecap="round"/>
-        {pct > 0 && (
-          <path d={`M10,100 A90,90 0 0 1 ${10 + 180 * pct},${100 - Math.sin(Math.PI * pct) * 90}`}
-            stroke="var(--accent)" strokeWidth="6" fill="none" strokeLinecap="round"/>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+        <span style={{ fontSize: 11, letterSpacing: '0.1em', textTransform: 'uppercase', color: 'var(--text-3)' }}>{t('dash.overallBand')}</span>
+        {current > 0 && (
+          <span style={{ fontSize: 11, fontWeight: 700, color: reached ? 'var(--accent)' : 'var(--text-3)' }}>
+            {reached ? t('dash.targetReached') : t('dash.toTarget', { gap: gap.toFixed(1) })}
+          </span>
         )}
-        {(() => {
-          const angle = Math.PI * (1 - targetPct)
-          const cx = 100 + Math.cos(angle) * 90
-          const cy = 100 - Math.sin(angle) * 90
-          return (
-            <g>
-              <circle cx={cx} cy={cy} r="4" fill="var(--bg)" stroke="var(--accent)" strokeWidth="2"/>
-              <text x={cx} y={cy - 8} textAnchor="middle" fill="var(--accent)" fontSize="9" fontWeight="700">TARGET</text>
-            </g>
-          )
-        })()}
-      </svg>
-      <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 11, color: 'var(--text-3)', fontFamily: 'var(--font-mono)', marginTop: 4 }}>
-        <span>4.0</span><span>6.5</span><span>9.0</span>
       </div>
+
+      <svg viewBox={`0 0 ${W} 134`} style={{ width: '100%', marginTop: 6 }}>
+        <defs>
+          <linearGradient id="bpg" x1="0" x2="1" y1="0" y2="0">
+            <stop offset="0%" stopColor="var(--warn)"/>
+            <stop offset="55%" stopColor="var(--accent)"/>
+            <stop offset="100%" stopColor="var(--accent)"/>
+          </linearGradient>
+        </defs>
+        <path d={arc(0, 1)} stroke="var(--bg-soft)" strokeWidth={stroke} fill="none" strokeLinecap="round"/>
+        {curF > 0 && <path d={arc(0, curF)} stroke="url(#bpg)" strokeWidth={stroke} fill="none" strokeLinecap="round"/>}
+        {/* target tick */}
+        <line x1={polar(tgtF).x} y1={polar(tgtF).y} x2={cx + Math.cos(Math.PI * (1 - tgtF)) * (R + stroke / 2 + 4)} y2={cy - Math.sin(Math.PI * (1 - tgtF)) * (R + stroke / 2 + 4)} stroke="var(--text)" strokeWidth={2}/>
+        <circle cx={tgt.x} cy={tgt.y} r={4.5} fill="var(--bg-elev)" stroke="var(--text)" strokeWidth={2}/>
+        <text x={tgt.x} y={tgt.y - 14} textAnchor="middle" fontSize="9.5" fontWeight="700" fill="var(--text-2)">{target.toFixed(1)}</text>
+        {/* centre value */}
+        <text x={cx} y={cy - 14} textAnchor="middle" fontStyle="italic" fontFamily="var(--font-display)" fontSize="46" fontWeight="600" fill="var(--accent)">
+          {current > 0 ? current.toFixed(1) : '—'}
+        </text>
+        <text x={cx} y={cy + 4} textAnchor="middle" fontSize="10" letterSpacing="0.06em" fill="var(--text-3)">{t('dash.band').toUpperCase()}</text>
+        {/* scale ends */}
+        <text x={polar(0).x} y={cy + 20} textAnchor="middle" fontSize="9" fill="var(--text-3)" fontFamily="var(--font-mono)">4.0</text>
+        <text x={polar(1).x} y={cy + 20} textAnchor="middle" fontSize="9" fill="var(--text-3)" fontFamily="var(--font-mono)">9.0</text>
+      </svg>
     </div>
   )
 }
@@ -111,9 +134,8 @@ const SKILL_HREFS: Record<string, string> = {
   overall:   '/dashboard/progress',
 }
 
-function SkillTile({ skill, score, delta }: { skill: string; score: number; delta: number }) {
+function SkillTile({ skill, score, delta, spark }: { skill: string; score: number; delta: number; spark: number[] }) {
   const { t } = useLanguage()
-  const sparkData = [score - 1.5, score - 1.2, score - 0.8, score - 0.4, score]
   const isPos = delta >= 0
   const skillLabel = t('dash.skill' + skill.charAt(0).toUpperCase() + skill.slice(1))
   return (
@@ -140,7 +162,7 @@ function SkillTile({ skill, score, delta }: { skill: string; score: number; delt
         <div style={{ fontFamily: 'var(--font-display)', fontStyle: 'italic', fontSize: 40, lineHeight: 1, color: 'var(--text)', fontWeight: 500, marginBottom: 8 }}>
           {score > 0 ? score.toFixed(1) : '—'}
         </div>
-        <Sparkline data={sparkData} height={24} />
+        {spark.length >= 2 ? <Sparkline data={spark} height={24} /> : <div style={{ height: 24 }} />}
       </div>
     </Link>
   )
@@ -343,6 +365,7 @@ export default function DashboardPage() {
   const [profile, setProfile]         = useState<Profile | null>(null)
   const [scores, setScores]           = useState<Record<string, number>>({})
   const [deltas, setDeltas]           = useState<Record<string, number>>({})
+  const [sparklines, setSparklines]   = useState<Record<string, number[]>>({})
   const [heatmap, setHeatmap]         = useState<number[]>([])
   const [recentItems, setRecentItems] = useState<Array<{ label: string; score: number | null; href: string; skill: string }>>([])
   const [dailyTasks, setDailyTasks]   = useState<Session[] | null>(null)
@@ -371,11 +394,15 @@ export default function DashboardPage() {
       }
       setScores(latest)
       const d: Record<string, number> = {}
+      const sparks: Record<string, number[]> = {}
       for (const sk of Object.keys(perSkill)) {
-        const arr = perSkill[sk]
+        const arr = perSkill[sk] // newest → oldest
         d[sk] = arr.length >= 2 ? +(arr[0] - arr[1]).toFixed(1) : 0
+        // Real history, oldest → newest, last 7 points (no fabricated trend).
+        sparks[sk] = [...arr].reverse().slice(-7)
       }
       setDeltas(d)
+      setSparklines(sparks)
 
       // Real 84-day (12-week) activity heatmap from study sessions
       const today = new Date(); today.setHours(0, 0, 0, 0)
@@ -441,9 +468,14 @@ export default function DashboardPage() {
   }
 
   const name = profile?.full_name?.split(' ')[0] ?? t('dash.there')
-  const overall = scores['overall'] ?? 0
   const target = profile?.target_band_score ?? 7.5
   const skills = ['listening', 'reading', 'writing', 'speaking'].filter(s => scores[s] != null)
+  // Overall = recorded 'overall' band (from a mock band-estimate) if present, else
+  // the average of the latest per-skill bands — so it shows even without one.
+  const skillScores = skills.map(s => scores[s])
+  const overall = scores['overall'] ?? (skillScores.length
+    ? Math.round((skillScores.reduce((a, b) => a + b, 0) / skillScores.length) * 2) / 2
+    : 0)
 
   // Today card: a freshly generated daily plan; else recent items; else defaults.
   const fallbackSessions: Session[] = recentItems.length > 0 ? recentItems : [
@@ -490,7 +522,7 @@ export default function DashboardPage() {
       {skills.length > 0 && (
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 150px), 1fr))', gap: 14, marginBottom: 16 }}>
           {skills.map(skill => (
-            <SkillTile key={skill} skill={skill} score={scores[skill]} delta={deltas[skill] ?? 0} />
+            <SkillTile key={skill} skill={skill} score={scores[skill]} delta={deltas[skill] ?? 0} spark={sparklines[skill] ?? []} />
           ))}
         </div>
       )}

@@ -532,7 +532,11 @@
     "skillListening": "Tinglash",
     "skillReading": "O‘qish",
     "skillWriting": "Yozish",
-    "skillSpeaking": "Gapirish"
+    "skillSpeaking": "Gapirish",
+    "overallBand": "Umumiy ball",
+    "targetReached": "Maqsadga yetdingiz",
+    "toTarget": "maqsadgacha {{gap}}",
+    "band": "ball"
   },
   "speak": {
     "readyTitle": "To‘liq gapirish testi",

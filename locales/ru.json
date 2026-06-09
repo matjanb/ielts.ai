@@ -571,7 +571,11 @@
     "skillListening": "Аудирование",
     "skillReading": "Чтение",
     "skillWriting": "Письмо",
-    "skillSpeaking": "Говорение"
+    "skillSpeaking": "Говорение",
+    "overallBand": "Общий балл",
+    "targetReached": "Цель достигнута",
+    "toTarget": "{{gap}} до цели",
+    "band": "балл"
   },
   "speak": {
     "readyTitle": "Полный тест по говорению",
