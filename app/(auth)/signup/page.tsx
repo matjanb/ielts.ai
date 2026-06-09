@@ -273,7 +273,10 @@ export default function SignupPage() {
         {/* Sign in link */}
         <p className="text-center text-sm text-gray-500 dark:text-gray-400 mt-4">
           {t('auth.hasAccount')}{' '}
-          <Link href="/login" className="text-indigo-600 dark:text-indigo-400 font-medium hover:underline">
+          <Link href="/login" style={{ color: 'var(--accent)', fontWeight: 600, textDecoration: 'none', transition: 'opacity .15s' }}
+            onMouseEnter={e => (e.currentTarget.style.opacity = '0.75')}
+            onMouseLeave={e => (e.currentTarget.style.opacity = '1')}
+          >
             {t('auth.signInLink')}
           </Link>
         </p>
