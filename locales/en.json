@@ -584,7 +584,7 @@
     "band": "band",
     "freezesTip": "Streak freezes — auto-used to save a missed day",
     "todayDone": "Done for today",
-    "todayGoal": "Study {{mins}} min today",
+    "todayGoal": "Study {{mins}} min to earn today's streak",
     "bestStreak": "Best",
     "toNextBadge": "{{n}} to next badge"
   },

@@ -539,7 +539,7 @@
     "band": "ball",
     "freezesTip": "Strik muzlatish — o'tkazib yuborilgan kunni saqlaydi",
     "todayDone": "Bugun bajarildi",
-    "todayGoal": "Bugun {{mins}} daqiqa mashq qil",
+    "todayGoal": "Bugun strik olish uchun {{mins}} daqiqa mashq qil",
     "bestStreak": "Rekord",
     "toNextBadge": "belgigacha {{n}}"
   },
