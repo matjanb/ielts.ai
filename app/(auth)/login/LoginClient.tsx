@@ -40,6 +40,8 @@ export default function LoginClient() {
       setLoading(false)
       if (authError.message.toLowerCase().includes('email not confirmed')) {
         setEmailNotConfirmed(true)
+      } else if (authError.message.toLowerCase().includes('invalid login credentials')) {
+        setError('Account not found or incorrect password. Please check your details or sign up.')
       } else {
         setError(authError.message)
       }
