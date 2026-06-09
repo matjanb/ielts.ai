@@ -816,7 +816,9 @@
     "pendingReview": "На проверке",
     "overallMeta": "Общий балл {{band}}",
     "submitted": "Отправлено",
-    "today": "Сегодня"
+    "today": "Сегодня",
+    "skillDetails": "Детали по навыкам",
+    "weakSpots": "Слабые места"
   },
   "plan": {
     "roadmapSub": "План на {{weeks}} нед. до Band {{band}} · {{tasks}} задач",

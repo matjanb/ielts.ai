@@ -777,7 +777,9 @@
     "pendingReview": "Tekshirilmoqda",
     "overallMeta": "Umumiy ball {{band}}",
     "submitted": "Yuborildi",
-    "today": "Bugun"
+    "today": "Bugun",
+    "skillDetails": "Ko'nikmalar tafsiloti",
+    "weakSpots": "Zaif joylar"
   },
   "plan": {
     "roadmapSub": "{{band}} ballga {{weeks}} haftalik reja · {{tasks}} topshiriq",

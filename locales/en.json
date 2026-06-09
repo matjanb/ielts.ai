@@ -822,7 +822,9 @@
     "pendingReview": "Pending review",
     "overallMeta": "Overall {{band}} band",
     "submitted": "Submitted",
-    "today": "Today"
+    "today": "Today",
+    "skillDetails": "Skill details",
+    "weakSpots": "Weak spots"
   },
   "plan": {
     "roadmapSub": "A {{weeks}}-week roadmap to Band {{band}} · {{tasks}} tasks",

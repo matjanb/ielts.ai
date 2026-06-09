@@ -816,7 +816,9 @@
     "pendingReview": "Тексеруде",
     "overallMeta": "Жалпы балл {{band}}",
     "submitted": "Жіберілді",
-    "today": "Бүгін"
+    "today": "Бүгін",
+    "skillDetails": "Дағдылар бойынша",
+    "weakSpots": "Әлсіз тұстар"
   },
   "plan": {
     "roadmapSub": "{{band}} баллға {{weeks}} апталық жоспар · {{tasks}} тапсырма",

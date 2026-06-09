@@ -1,6 +1,7 @@
 'use client'
+/* eslint-disable @typescript-eslint/no-explicit-any */
 
-import { useEffect, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { useLanguage } from '@/lib/i18n/LanguageContext'
 import { getProgressData } from '@/lib/services/progress'
 import { getUser } from '@/lib/services/auth'
@@ -14,13 +15,30 @@ interface WritingSubmission {
   lexical_resource: number | null; grammatical_accuracy: number | null; created_at: string
 }
 interface MockAttempt { id: string; completed_at: string; band_score: number | null; total_score: number | null }
+/** A weak spot within a skill — a question type (accuracy) or a criterion (band). */
+interface Spot { label: string; value: number; kind: 'accuracy' | 'band' }
+/** Per-skill detail: current band, improvement since start, trend, and weak spots. */
+interface SkillDetail {
+  key: string; label: string; band: number; startBand: number; delta: number
+  attempts: number; sparkline: number[]; spots: Spot[]
+}
 interface PageData {
   overallBand: number; targetBand: number; streak: number; hoursThisWeek: string; vsLastPct: number
   skillRows: SkillRow[]
+  trajectory: number[]
+  perSkill: SkillDetail[]
   weeklyBars: { label: string; w: number; s: number; r: number; l: number }[]
   mockLine: { label: string; value: number }[]
   heatmap: number[]
   writingCriteria: WCrit | null; writingHistory: WritingSubmission[]; mockAttempts: MockAttempt[]
+}
+
+/** Raw data + the weak-spot accuracy, computed once; PageData is derived per period. */
+interface RawProgress {
+  bandHistory: any[]; writingSubmissions: any[]; speakingSubmissions: any[]
+  attempts: any[]; studySessions: any[]; profile: any
+  readingAcc: { label: string; accuracy: number; total: number }[]
+  listeningAcc: { label: string; accuracy: number; total: number }[]
 }
 
 const SKILL_META = [
@@ -29,6 +47,145 @@ const SKILL_META = [
 ]
 
 const roundToHalf = (n: number) => Math.round(n * 2) / 2
+
+// week / month / all-time (the period toggle, default = month).
+const PERIOD_DAYS = [7, 30, Infinity]
+const WRITING_CRIT = [
+  { key: 'task_achievement', label: 'Task' }, { key: 'coherence_cohesion', label: 'Coherence' },
+  { key: 'lexical_resource', label: 'Lexical' }, { key: 'grammatical_accuracy', label: 'Grammar' },
+] as const
+const SPEAKING_CRIT = [
+  { key: 'fluency_score', label: 'Fluency' }, { key: 'lexical_score', label: 'Lexical' },
+  { key: 'grammar_score', label: 'Grammar' }, { key: 'pronunciation_score', label: 'Pronunciation' },
+] as const
+
+function avgCrit(rows: any[], key: string): number | null {
+  const v = rows.map(r => r[key]).filter((x: any) => typeof x === 'number') as number[]
+  return v.length ? v.reduce((a, b) => a + b, 0) / v.length : null
+}
+
+/** Derive everything the page renders from the raw data, scoped to the period. */
+function buildPageData(raw: RawProgress, period: number): PageData {
+  const cutoff = Date.now() - (PERIOD_DAYS[period] ?? Infinity) * 86400000
+  const inPeriod = (ts: string) => new Date(ts).getTime() >= cutoff
+
+  const targetBand: number = raw.profile?.target_band_score ?? 7.5
+  // Score-based trends respect the period; the activity heatmap / weekly bars are
+  // their own fixed "recent" views and stay independent.
+  const history = (raw.bandHistory ?? []).filter(r => inPeriod(r.recorded_at))
+  const sessions = (raw.studySessions ?? []) as { skill: string; duration_minutes: number; created_at: string }[]
+  const attempts = (raw.attempts ?? []).filter((a: any) => a.completed_at && inPeriod(a.completed_at))
+
+  // Current band is always the latest known score (never hidden by the period);
+  // the trend (first score, sparkline, improvement) is scoped to the period.
+  const bySkillFull: Record<string, number[]> = {}
+  for (const row of (raw.bandHistory ?? [])) { (bySkillFull[row.skill] ??= []).push(row.score) }
+  const bySkillPeriod: Record<string, number[]> = {}
+  for (const row of history) { (bySkillPeriod[row.skill] ??= []).push(row.score) }
+
+  const latestScore = (sk: string) => bySkillFull[sk]?.at(-1) ?? 0
+  const prevScore   = (sk: string) => bySkillFull[sk]?.at(-2) ?? latestScore(sk)
+  const firstScore  = (sk: string) => bySkillPeriod[sk]?.[0] ?? latestScore(sk)
+  const sparkline   = (sk: string) => {
+    const p = bySkillPeriod[sk] ?? []
+    return (p.length >= 2 ? p : (bySkillFull[sk] ?? [])).slice(-7)
+  }
+
+  const skillRows: SkillRow[] = SKILL_META.map(m => {
+    const latest = latestScore(m.key), prev = prevScore(m.key), first = firstScore(m.key)
+    return {
+      ...m,
+      band: latest > 0 ? roundToHalf(latest) : 0,
+      start: first > 0 ? roundToHalf(first) : 0,
+      target: targetBand,
+      delta: +(roundToHalf(latest) - roundToHalf(prev)).toFixed(1),
+      sparkline: sparkline(m.key).map(v => roundToHalf(v)),
+    }
+  })
+
+  const overallBand = skillRows.some(s => s.band > 0)
+    ? roundToHalf(skillRows.reduce((s, r) => s + r.band, 0) / skillRows.filter(r => r.band > 0).length)
+    : 0
+
+  // Overall mock-band trajectory (all skills) — built from completed attempts, so
+  // it's clean even after individual tests are removed.
+  const mocks = attempts.filter((a: any) => a.band_score != null)
+  const trajectory = mocks.map((a: any) => roundToHalf(a.band_score)).slice(-12)
+  const mockLine = mocks.map((a: any) => ({
+    label: new Date(a.completed_at).toLocaleDateString(undefined, { month: 'short', day: 'numeric' }),
+    value: a.band_score,
+  }))
+
+  // Activity heatmap (12 weeks) + streak — from all sessions.
+  const today = new Date(); today.setHours(0, 0, 0, 0)
+  const heatmap = Array(84).fill(0) as number[]
+  for (const s of sessions) {
+    const d = new Date(s.created_at); d.setHours(0, 0, 0, 0)
+    const diff = Math.round((today.getTime() - d.getTime()) / 86400000)
+    if (diff >= 0 && diff < 84) heatmap[83 - diff] += s.duration_minutes ?? 0
+  }
+  let streak = 0
+  for (let i = 83; i >= 0; i--) { if (heatmap[i] > 0) streak++; else break }
+
+  type SK = 'writing' | 'speaking' | 'reading' | 'listening'
+  const SKS: SK[] = ['writing', 'speaking', 'reading', 'listening']
+  const DAY = ['S', 'M', 'T', 'W', 'T', 'F', 'S']
+  const weeklyBars = Array.from({ length: 7 }, (_, i) => {
+    const d = new Date(today); d.setDate(d.getDate() - 6 + i)
+    const ds = d.toDateString()
+    const ds2 = sessions.filter(s => new Date(s.created_at).toDateString() === ds)
+    const mins: Record<SK, number> = { writing: 0, speaking: 0, reading: 0, listening: 0 }
+    for (const sk of SKS) mins[sk] = ds2.filter(s => s.skill === sk).reduce((sum, s) => sum + (s.duration_minutes ?? 0), 0)
+    return { label: DAY[d.getDay()], w: mins.writing, s: mins.speaking, r: mins.reading, l: mins.listening }
+  })
+
+  const thisWeekMins = weeklyBars.reduce((s, d) => s + d.w + d.s + d.r + d.l, 0)
+  const lastWeekMins = heatmap.slice(83 - 14, 83 - 7).reduce((s, v) => s + v, 0)
+  const vsLastPct = lastWeekMins > 0 ? Math.round(((thisWeekMins - lastWeekMins) / lastWeekMins) * 100) : 0
+  const hrs = Math.floor(thisWeekMins / 60), m2 = thisWeekMins % 60
+  const hoursThisWeek = thisWeekMins > 0 ? (m2 > 0 ? `${hrs}h ${m2}m` : `${hrs}h`) : '0m'
+
+  // Writing criteria — averaged across recent essays (not just the latest).
+  const writingCriteria: WCrit | null = (raw.writingSubmissions ?? []).some((w: any) => w.task_achievement != null) ? {
+    task: avgCrit(raw.writingSubmissions, 'task_achievement') ?? 0,
+    coherence: avgCrit(raw.writingSubmissions, 'coherence_cohesion') ?? 0,
+    lexical: avgCrit(raw.writingSubmissions, 'lexical_resource') ?? 0,
+    grammar: avgCrit(raw.writingSubmissions, 'grammatical_accuracy') ?? 0,
+  } : null
+
+  // Per-skill weak spots: question-type accuracy for reading/listening, criterion
+  // averages for writing/speaking (weakest first).
+  const critSpots = (rows: any[], defs: readonly { key: string; label: string }[]): Spot[] =>
+    defs.map(d => ({ key: d.key, label: d.label, avg: avgCrit(rows, d.key) }))
+      .filter(x => x.avg != null)
+      .sort((a, b) => (a.avg as number) - (b.avg as number))
+      .slice(0, 3)
+      .map(x => ({ label: x.label, value: x.avg as number, kind: 'band' as const }))
+
+  const perSkill: SkillDetail[] = SKILL_META.map(m => {
+    const sk = m.key
+    const band = latestScore(sk) > 0 ? roundToHalf(latestScore(sk)) : 0
+    const startBand = firstScore(sk) > 0 ? roundToHalf(firstScore(sk)) : band
+    let spots: Spot[] = []
+    if (sk === 'reading') spots = raw.readingAcc.slice(0, 3).map(a => ({ label: a.label, value: a.accuracy, kind: 'accuracy' as const }))
+    else if (sk === 'listening') spots = raw.listeningAcc.slice(0, 3).map(a => ({ label: a.label, value: a.accuracy, kind: 'accuracy' as const }))
+    else if (sk === 'writing') spots = critSpots(raw.writingSubmissions, WRITING_CRIT)
+    else if (sk === 'speaking') spots = critSpots(raw.speakingSubmissions, SPEAKING_CRIT)
+    return {
+      key: sk, label: m.label, band, startBand,
+      delta: +(band - startBand).toFixed(1),
+      attempts: bySkillFull[sk]?.length ?? 0,
+      sparkline: sparkline(sk).map(v => roundToHalf(v)),
+      spots,
+    }
+  })
+
+  return {
+    overallBand, targetBand, streak, hoursThisWeek, vsLastPct, skillRows, trajectory, perSkill,
+    weeklyBars, mockLine, heatmap, writingCriteria,
+    writingHistory: raw.writingSubmissions ?? [], mockAttempts: attempts,
+  }
+}
 
 /* ── SVG Icon helper ──────────────────────────────────────────────────────── */
 const ICON_PATHS: Record<string, React.ReactNode> = {
@@ -54,7 +211,8 @@ function Icon({ name, size = 16, color = 'currentColor' }: { name: string; size?
 /* ── BandTrajectory ───────────────────────────────────────────────────────── */
 function BandTrajectory({ data, overallBand, targetBand }: { data: PageData; overallBand: number; targetBand: number }) {
   const { t } = useLanguage()
-  const history = data.skillRows.find(s => s.key === 'listening')?.sparkline ?? []
+  // Overall mock-band trajectory across all skills (not listening-only).
+  const history = data.trajectory
   const hasRealData = history.length >= 2
 
   if (!hasRealData) {
@@ -354,103 +512,114 @@ function ActivityLog({ data }: { data: PageData }) {
   )
 }
 
+/* ── SkillDetails — per-skill improvement + weak spots ────────────────────── */
+function MiniSpark({ values, color }: { values: number[]; color: string }) {
+  if (values.length < 2) return null
+  const W = 88, H = 26, min = 4, max = 9
+  const xs = values.map((_, i) => (i / (values.length - 1)) * W)
+  const ys = values.map(v => H - ((Math.max(min, Math.min(max, v)) - min) / (max - min)) * H)
+  const path = xs.map((x, i) => `${i ? 'L' : 'M'}${x.toFixed(1)},${ys[i].toFixed(1)}`).join(' ')
+  return (
+    <svg viewBox={`0 0 ${W} ${H}`} style={{ width: 88, height: 26 }} preserveAspectRatio="none">
+      <path d={path} fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
+  )
+}
+
+function spotColor(s: Spot): string {
+  const v = s.kind === 'accuracy' ? s.value : s.value / 9
+  if (v < 0.6) return 'var(--danger)'
+  if (v < 0.78) return 'var(--warn)'
+  return 'var(--accent)'
+}
+
+function SkillDetails({ data }: { data: PageData }) {
+  const { t } = useLanguage()
+  const COLORS: Record<string, string> = { listening: 'var(--accent)', reading: 'var(--info)', writing: 'var(--warn)', speaking: 'var(--danger)' }
+  const skills = data.perSkill.filter(s => s.band > 0 || s.spots.length > 0)
+  if (skills.length === 0) return null
+
+  return (
+    <div className="card" style={{ padding: 28 }}>
+      <h3 style={{ margin: '0 0 18px', fontSize: 16, fontWeight: 600, color: 'var(--text)' }}>{t('progress.skillDetails')}</h3>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 260px), 1fr))', gap: 16 }}>
+        {skills.map(s => {
+          const color = COLORS[s.key] ?? 'var(--accent)'
+          return (
+            <div key={s.key} style={{ padding: 18, border: '1px solid var(--border)', borderRadius: 12, background: 'var(--bg-soft)' }}>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10 }}>
+                <span style={{ fontSize: 13.5, fontWeight: 700, color: 'var(--text)' }}>{t('dashboard.' + s.key)}</span>
+                <span style={{ display: 'flex', alignItems: 'baseline', gap: 6 }}>
+                  <strong style={{ fontSize: 18, color, fontVariantNumeric: 'tabular-nums' }}>{s.band > 0 ? s.band.toFixed(1) : '—'}</strong>
+                  {s.delta > 0 && <span style={{ fontSize: 11, fontWeight: 700, color: 'var(--accent)' }}>+{s.delta.toFixed(1)}</span>}
+                  {s.delta < 0 && <span style={{ fontSize: 11, fontWeight: 700, color: 'var(--danger)' }}>{s.delta.toFixed(1)}</span>}
+                </span>
+              </div>
+
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: 8, marginBottom: 2, minHeight: 26 }}>
+                <span style={{ fontSize: 11, color: 'var(--text-3)', fontVariantNumeric: 'tabular-nums' }}>
+                  {s.startBand > 0 && s.sparkline.length >= 2 ? `${s.startBand.toFixed(1)} → ${s.band.toFixed(1)}` : ''}
+                </span>
+                <MiniSpark values={s.sparkline} color={color} />
+              </div>
+
+              {s.spots.length > 0 && (
+                <div style={{ marginTop: 10, borderTop: '1px solid var(--border)', paddingTop: 10 }}>
+                  <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: '0.06em', textTransform: 'uppercase', color: 'var(--text-3)', marginBottom: 8 }}>{t('progress.weakSpots')}</div>
+                  <div style={{ display: 'grid', gap: 7 }}>
+                    {s.spots.map((sp, i) => {
+                      const c = spotColor(sp)
+                      const display = sp.kind === 'accuracy' ? `${Math.round(sp.value * 100)}%` : sp.value.toFixed(1)
+                      const pct = sp.kind === 'accuracy' ? sp.value * 100 : (sp.value / 9) * 100
+                      return (
+                        <div key={i}>
+                          <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 11.5, marginBottom: 3 }}>
+                            <span style={{ color: 'var(--text-2)' }}>{sp.label}</span>
+                            <span style={{ fontWeight: 700, color: c, fontVariantNumeric: 'tabular-nums' }}>{display}</span>
+                          </div>
+                          <div style={{ height: 4, background: 'var(--bg-elev)', borderRadius: 999, overflow: 'hidden' }}>
+                            <div style={{ height: '100%', width: `${pct}%`, background: c, borderRadius: 999 }} />
+                          </div>
+                        </div>
+                      )
+                    })}
+                  </div>
+                </div>
+              )}
+            </div>
+          )
+        })}
+      </div>
+    </div>
+  )
+}
+
 /* ── Main page ────────────────────────────────────────────────────────────── */
 export default function ProgressPage() {
   const { t } = useLanguage()
   const [period, setPeriod] = useState(1)
-  const [data, setData] = useState<PageData | null>(null)
+  const [raw, setRaw] = useState<RawProgress | null>(null)
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
     async function load() {
       const { user } = await getUser()
       if (!user) { setLoading(false); return }
-
-      const raw = await getProgressData(user.id)
-      const bandHistory = raw.bandHistory
-      const writingSubs = raw.writingSubmissions
-      const mockAttempts = raw.attempts
-      const studySessions = raw.studySessions
-      const profile = raw.profile
-
-      const targetBand: number = profile?.target_band_score ?? 7.5
-      const history: { skill: string; score: number; source: string; recorded_at: string }[] = bandHistory ?? []
-      const sessions: { skill: string; duration_minutes: number; created_at: string }[] = studySessions ?? []
-
-      const bySkill: Record<string, number[]> = {}
-      for (const row of history) {
-        if (!bySkill[row.skill]) bySkill[row.skill] = []
-        bySkill[row.skill].push(row.score)
-      }
-      const latestScore = (sk: string) => bySkill[sk]?.at(-1) ?? 0
-      const prevScore   = (sk: string) => bySkill[sk]?.at(-2) ?? latestScore(sk)
-      const firstScore  = (sk: string) => bySkill[sk]?.[0] ?? latestScore(sk)
-      const sparkline   = (sk: string) => (bySkill[sk] ?? []).slice(-7)
-
-      const skillRows: SkillRow[] = SKILL_META.map(m => {
-        const latest = latestScore(m.key)
-        const prev   = prevScore(m.key)
-        const first  = firstScore(m.key)
-        return {
-          ...m,
-          band:  latest > 0 ? roundToHalf(latest) : 0,
-          start: first  > 0 ? roundToHalf(first)  : 0,
-          target: targetBand,
-          delta: +(roundToHalf(latest) - roundToHalf(prev)).toFixed(1),
-          sparkline: sparkline(m.key).map(v => roundToHalf(v)),
-        }
-      })
-
-      const overallBand = skillRows.some(s => s.band > 0)
-        ? roundToHalf(skillRows.reduce((s, r) => s + r.band, 0) / skillRows.filter(r => r.band > 0).length)
-        : 0
-
-      const mockLine = history
-        .filter(r => r.source === 'mock_test' && r.skill === 'listening')
-        .map(r => ({ label: new Date(r.recorded_at).toLocaleDateString(undefined, { month: 'short', day: 'numeric' }), value: r.score }))
-
-      const today = new Date()
-      today.setHours(0, 0, 0, 0)
-      const heatmap = Array(84).fill(0) as number[]
-      for (const s of sessions) {
-        const d = new Date(s.created_at); d.setHours(0, 0, 0, 0)
-        const diff = Math.round((today.getTime() - d.getTime()) / 86400000)
-        if (diff >= 0 && diff < 84) heatmap[83 - diff] += s.duration_minutes ?? 0
-      }
-
-      let streak = 0
-      for (let i = 83; i >= 0; i--) { if (heatmap[i] > 0) streak++; else break }
-
-      type SK = 'writing' | 'speaking' | 'reading' | 'listening'
-      const SKS: SK[] = ['writing', 'speaking', 'reading', 'listening']
-      const DAY = ['S', 'M', 'T', 'W', 'T', 'F', 'S']
-      const weeklyBars = Array.from({ length: 7 }, (_, i) => {
-        const d = new Date(today); d.setDate(d.getDate() - 6 + i)
-        const ds = d.toDateString()
-        const ds2 = sessions.filter(s => new Date(s.created_at).toDateString() === ds)
-        const mins: Record<SK, number> = { writing: 0, speaking: 0, reading: 0, listening: 0 }
-        for (const sk of SKS) mins[sk] = ds2.filter(s => s.skill === sk).reduce((sum, s) => sum + (s.duration_minutes ?? 0), 0)
-        return { label: DAY[d.getDay()], w: mins.writing, s: mins.speaking, r: mins.reading, l: mins.listening }
-      })
-
-      const thisWeekMins = weeklyBars.reduce((s, d) => s + d.w + d.s + d.r + d.l, 0)
-      const lastWeekMins = heatmap.slice(83 - 14, 83 - 7).reduce((s, v) => s + v, 0)
-      const vsLastPct = lastWeekMins > 0 ? Math.round(((thisWeekMins - lastWeekMins) / lastWeekMins) * 100) : 0
-      const hrs = Math.floor(thisWeekMins / 60)
-      const mins2 = thisWeekMins % 60
-      const hoursThisWeek = thisWeekMins > 0 ? (mins2 > 0 ? `${hrs}h ${mins2}m` : `${hrs}h`) : '0m'
-
-      const latestW = (writingSubs ?? []).find((w: WritingSubmission) => w.task_achievement != null)
-      const writingCriteria: WCrit | null = latestW ? {
-        task: latestW.task_achievement ?? 0, coherence: latestW.coherence_cohesion ?? 0,
-        lexical: latestW.lexical_resource ?? 0, grammar: latestW.grammatical_accuracy ?? 0,
-      } : null
-
-      setData({ overallBand, targetBand, streak, hoursThisWeek, vsLastPct, skillRows, weeklyBars, mockLine, heatmap, writingCriteria, writingHistory: writingSubs ?? [], mockAttempts: mockAttempts ?? [] })
+      const { getSubskillAccuracy } = await import('@/lib/services/tests')
+      const [progress, readingAcc, listeningAcc] = await Promise.all([
+        getProgressData(user.id),
+        getSubskillAccuracy(user.id, 'reading').catch(() => []),
+        getSubskillAccuracy(user.id, 'listening').catch(() => []),
+      ])
+      setRaw({ ...progress, readingAcc, listeningAcc })
       setLoading(false)
     }
     load()
   }, [])
+
+  // Derive everything for the selected period — so the week/month/all-time toggle
+  // actually changes the trends (it used to only restyle the buttons).
+  const data = useMemo(() => (raw ? buildPageData(raw, period) : null), [raw, period])
 
   if (loading) {
     return (
@@ -504,7 +673,12 @@ export default function ProgressPage() {
         <StudyTime data={d} />
       </div>
 
-      {/* Row 3: activity log */}
+      {/* Row 3: per-skill detail — improvement + weak spots */}
+      <div style={{ marginTop: 16 }}>
+        <SkillDetails data={d} />
+      </div>
+
+      {/* Row 4: activity log */}
       <div style={{ marginTop: 16 }}>
         <ActivityLog data={d} />
       </div>
