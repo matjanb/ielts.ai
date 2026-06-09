@@ -4,6 +4,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import { useLanguage } from '@/lib/i18n/LanguageContext'
 import { getProgressData } from '@/lib/services/progress'
+import { getStreakInfo } from '@/lib/services/streak'
 import { getUser } from '@/lib/services/auth'
 
 /* ── Types ────────────────────────────────────────────────────────────────── */
@@ -39,6 +40,7 @@ interface RawProgress {
   attempts: any[]; studySessions: any[]; profile: any
   readingAcc: { label: string; accuracy: number; total: number }[]
   listeningAcc: { label: string; accuracy: number; total: number }[]
+  streakCurrent: number
 }
 
 const SKILL_META = [
@@ -124,8 +126,8 @@ function buildPageData(raw: RawProgress, period: number): PageData {
     const diff = Math.round((today.getTime() - d.getTime()) / 86400000)
     if (diff >= 0 && diff < 84) heatmap[83 - diff] += s.duration_minutes ?? 0
   }
-  let streak = 0
-  for (let i = 83; i >= 0; i--) { if (heatmap[i] > 0) streak++; else break }
+  // Same streak as the dashboard (grace day + freezes), from the shared endpoint.
+  const streak = raw.streakCurrent
 
   type SK = 'writing' | 'speaking' | 'reading' | 'listening'
   const SKS: SK[] = ['writing', 'speaking', 'reading', 'listening']
@@ -606,12 +608,13 @@ export default function ProgressPage() {
       const { user } = await getUser()
       if (!user) { setLoading(false); return }
       const { getSubskillAccuracy } = await import('@/lib/services/tests')
-      const [progress, readingAcc, listeningAcc] = await Promise.all([
+      const [progress, readingAcc, listeningAcc, streak] = await Promise.all([
         getProgressData(user.id),
         getSubskillAccuracy(user.id, 'reading').catch(() => []),
         getSubskillAccuracy(user.id, 'listening').catch(() => []),
+        getStreakInfo().catch(() => null),
       ])
-      setRaw({ ...progress, readingAcc, listeningAcc })
+      setRaw({ ...progress, readingAcc, listeningAcc, streakCurrent: streak?.current ?? 0 })
       setLoading(false)
     }
     load()

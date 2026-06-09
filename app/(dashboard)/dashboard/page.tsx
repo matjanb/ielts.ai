@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react'
 import Link from 'next/link'
 import { useLanguage } from '@/lib/i18n/LanguageContext'
-import { getStudyStreak } from '@/lib/services/user'
+import { getStreakInfo, type StreakInfo } from '@/lib/services/streak'
 import { getDashboardData } from '@/lib/services/progress'
 import { getDailyPlan } from '@/lib/services/dailyPlan'
 import type { DailySummary, TaskReason } from '@/lib/dailyPlan'
@@ -171,35 +171,70 @@ function SkillTile({ skill, score, delta, spark }: { skill: string; score: numbe
 }
 
 // ── Streak card ────────────────────────────────────────────────────────────────
-function StreakCard({ streak }: { streak: number }) {
+const STREAK_MILESTONES = [7, 30, 100, 365]
+
+function StreakCard({ info }: { info: StreakInfo | null }) {
   const { t } = useLanguage()
+  const streak = info?.current ?? 0
+  const best = info?.best ?? 0
+  const freezes = info?.freezes ?? 0
+  const todayDone = info?.todayDone ?? false
+  const dailyMinutes = Math.round(info?.dailyMinutes ?? 0)
+  const dailyGoal = info?.dailyGoal ?? 15
+  const goalPct = dailyGoal > 0 ? Math.min(100, (dailyMinutes / dailyGoal) * 100) : 0
+  const badge = [...STREAK_MILESTONES].reverse().find(m => streak >= m)
+  const next = STREAK_MILESTONES.find(m => m > streak)
+
   return (
     <div className="card" style={{ padding: 22 }}>
       <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-        <div style={{ width: 44, height: 44, borderRadius: 12, background: 'color-mix(in srgb, var(--warn) 14%, transparent)', color: 'var(--warn)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-          <svg width={22} height={22} viewBox="0 0 24 24" fill="none" stroke="var(--warn)" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-            <path d="M12 22c4 0 7-3 7-7 0-3-2-5-3-7-1.5 2-3 3-3 5 0-2-1-4-3-6-1 2-5 4-5 9 0 4 3 6 7 6z"/>
-          </svg>
+        <div style={{ width: 44, height: 44, borderRadius: 12, background: 'color-mix(in srgb, var(--warn) 14%, transparent)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 24, lineHeight: 1 }}>
+          🔥
         </div>
-        <div>
+        <div style={{ flex: 1, minWidth: 0 }}>
           <div style={{ fontSize: 11, color: 'var(--text-3)', letterSpacing: '0.08em' }}>{t('dash.currentStreak')}</div>
-          <div style={{ display: 'flex', alignItems: 'baseline', gap: 6, marginTop: 2 }}>
+          <div style={{ display: 'flex', alignItems: 'baseline', gap: 6, marginTop: 2, flexWrap: 'wrap' }}>
             <span style={{ fontSize: 28, fontWeight: 700, fontVariantNumeric: 'tabular-nums', color: 'var(--text)' }}>{streak}</span>
             <span style={{ fontSize: 13, color: 'var(--text-2)' }}>{t('dash.days')}</span>
+            {badge && <span style={{ fontSize: 11, fontWeight: 700, padding: '2px 8px', borderRadius: 999, background: 'var(--accent-soft)', color: 'var(--accent)' }}>🏅 {badge}</span>}
           </div>
         </div>
+        {freezes > 0 && (
+          <div title={t('dash.freezesTip')} style={{ flexShrink: 0, display: 'flex', alignItems: 'center', gap: 3, fontSize: 13, fontWeight: 700, color: 'var(--info)', background: 'color-mix(in srgb, var(--info) 12%, transparent)', padding: '4px 9px', borderRadius: 999 }}>
+            ❄️ {freezes}
+          </div>
+        )}
       </div>
+
       <div style={{ display: 'flex', gap: 3, marginTop: 16 }}>
-        {Array.from({ length: Math.min(streak + 1, 21) }).map((_, i) => (
+        {Array.from({ length: 21 }).map((_, i) => (
           <div key={i} style={{
             flex: 1, height: 20, borderRadius: 3,
-            background: i === Math.min(streak, 20) ? 'var(--warn)' : i < Math.min(streak, 20) ? 'var(--accent)' : 'var(--border)',
+            background: i === Math.min(streak, 20) && streak > 0 ? 'var(--warn)' : i < Math.min(streak, 20) ? 'var(--accent)' : 'var(--border)',
           }}/>
         ))}
-        {Array.from({ length: Math.max(0, 21 - Math.min(streak + 1, 21)) }).map((_, i) => (
-          <div key={`e${i}`} style={{ flex: 1, height: 20, borderRadius: 3, background: 'var(--border)' }}/>
-        ))}
       </div>
+
+      {/* Today's goal */}
+      <div style={{ marginTop: 14 }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 11.5, marginBottom: 5 }}>
+          <span style={{ color: todayDone ? 'var(--accent)' : 'var(--text-2)', fontWeight: 600 }}>
+            {todayDone ? `✓ ${t('dash.todayDone')}` : t('dash.todayGoal', { mins: String(dailyGoal) })}
+          </span>
+          <span style={{ color: 'var(--text-3)', fontVariantNumeric: 'tabular-nums' }}>{dailyMinutes}/{dailyGoal}m</span>
+        </div>
+        <div style={{ height: 5, background: 'var(--bg-soft)', borderRadius: 999, overflow: 'hidden' }}>
+          <div style={{ height: '100%', width: `${goalPct}%`, background: todayDone ? 'var(--accent)' : 'var(--warn)', borderRadius: 999, transition: 'width .4s' }}/>
+        </div>
+      </div>
+
+      {(best > 0 || next) && (
+        <div style={{ fontSize: 11, color: 'var(--text-3)', marginTop: 10 }}>
+          {best > 0 && <>🏆 {t('dash.bestStreak')}: <strong style={{ color: 'var(--text-2)' }}>{best}</strong></>}
+          {best > 0 && next && ' · '}
+          {next && t('dash.toNextBadge', { n: String(next - streak) })}
+        </div>
+      )}
     </div>
   )
 }
@@ -373,7 +408,7 @@ export default function DashboardPage() {
   const [dailyTasks, setDailyTasks]   = useState<Session[] | null>(null)
   const [dailySummary, setDailySummary] = useState<DailySummary | null>(null)
   const [dailyKey, setDailyKey]       = useState<string>('')
-  const [streak, setStreak]           = useState(0)
+  const [streakInfo, setStreakInfo]   = useState<StreakInfo | null>(null)
   const [loading, setLoading]         = useState(true)
 
   const hour = new Date().getHours()
@@ -453,8 +488,7 @@ export default function DashboardPage() {
         })))
       } catch { /* daily plan optional */ }
 
-      const s = await getStudyStreak(user.id)
-      setStreak(s)
+      setStreakInfo(await getStreakInfo())
       setLoading(false)
     }
     load()
@@ -470,6 +504,7 @@ export default function DashboardPage() {
   }
 
   const name = profile?.full_name?.split(' ')[0] ?? t('dash.there')
+  const streak = streakInfo?.current ?? 0
   const target = profile?.target_band_score ?? 7.5
   const skills = ['listening', 'reading', 'writing', 'speaking'].filter(s => scores[s] != null)
   // Overall = recorded 'overall' band (from a mock band-estimate) if present, else
@@ -531,7 +566,7 @@ export default function DashboardPage() {
 
       {/* Bottom grid */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 300px), 1fr))', gap: 16 }}>
-        <StreakCard streak={streak} />
+        <StreakCard info={streakInfo} />
         <CalendarStrip heatmap={heatmap} />
       </div>
     </div>

@@ -272,6 +272,9 @@ export type Database = {
           subscription_plan: string | null
           subscription_source: string | null
           subscription_status: Database["public"]["Enums"]["subscription_status"]
+          streak_freezes: number
+          streak_frozen_days: Json
+          streak_last_award: number
           target_band_score: number | null
           updated_at: string
         }
@@ -293,6 +296,9 @@ export type Database = {
           subscription_plan?: string | null
           subscription_source?: string | null
           subscription_status?: Database["public"]["Enums"]["subscription_status"]
+          streak_freezes?: number
+          streak_frozen_days?: Json
+          streak_last_award?: number
           target_band_score?: number | null
           updated_at?: string
         }
@@ -314,6 +320,9 @@ export type Database = {
           subscription_plan?: string | null
           subscription_source?: string | null
           subscription_status?: Database["public"]["Enums"]["subscription_status"]
+          streak_freezes?: number
+          streak_frozen_days?: Json
+          streak_last_award?: number
           target_band_score?: number | null
           updated_at?: string
         }

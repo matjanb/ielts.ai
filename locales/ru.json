@@ -575,7 +575,12 @@
     "overallBand": "Общий балл",
     "targetReached": "Цель достигнута",
     "toTarget": "{{gap}} до цели",
-    "band": "балл"
+    "band": "балл",
+    "freezesTip": "Заморозки стрика — авто-спасают пропущенный день",
+    "todayDone": "На сегодня сделано",
+    "todayGoal": "Позанимайся {{mins}} мин сегодня",
+    "bestStreak": "Рекорд",
+    "toNextBadge": "{{n}} до бейджа"
   },
   "speak": {
     "readyTitle": "Полный тест по говорению",

@@ -536,7 +536,12 @@
     "overallBand": "Umumiy ball",
     "targetReached": "Maqsadga yetdingiz",
     "toTarget": "maqsadgacha {{gap}}",
-    "band": "ball"
+    "band": "ball",
+    "freezesTip": "Strik muzlatish — o'tkazib yuborilgan kunni saqlaydi",
+    "todayDone": "Bugun bajarildi",
+    "todayGoal": "Bugun {{mins}} daqiqa mashq qil",
+    "bestStreak": "Rekord",
+    "toNextBadge": "belgigacha {{n}}"
   },
   "speak": {
     "readyTitle": "To‘liq gapirish testi",

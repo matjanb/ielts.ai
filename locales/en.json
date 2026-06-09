@@ -581,7 +581,12 @@
     "overallBand": "Overall band",
     "targetReached": "Target reached",
     "toTarget": "{{gap}} to target",
-    "band": "band"
+    "band": "band",
+    "freezesTip": "Streak freezes — auto-used to save a missed day",
+    "todayDone": "Done for today",
+    "todayGoal": "Study {{mins}} min today",
+    "bestStreak": "Best",
+    "toNextBadge": "{{n}} to next badge"
   },
   "speak": {
     "readyTitle": "Full speaking test",

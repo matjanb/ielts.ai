@@ -575,7 +575,12 @@
     "overallBand": "Жалпы балл",
     "targetReached": "Мақсатқа жеттің",
     "toTarget": "мақсатқа {{gap}}",
-    "band": "балл"
+    "band": "балл",
+    "freezesTip": "Стрик мұздатуы — өткізіп алған күнді сақтайды",
+    "todayDone": "Бүгінге дайын",
+    "todayGoal": "Бүгін {{mins}} мин жаттық",
+    "bestStreak": "Рекорд",
+    "toNextBadge": "белгіге {{n}}"
   },
   "speak": {
     "readyTitle": "Толық сөйлеу тесті",
