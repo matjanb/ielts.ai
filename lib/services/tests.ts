@@ -222,11 +222,18 @@ export interface PracticeFilters {
   countByTypeDifficulty: Record<string, Partial<Record<Difficulty, number>>>
 }
 
+// The available question types per skill are static content (independent of the
+// user), so cache them for the session — the weak-spots block hits this on every
+// hub visit, and re-fetching every listening/reading question each time is slow.
+const _filtersCache = new Map<string, PracticeFilters>()
+
 /**
- * Which question types and difficulties actually exist for a skill — so the
- * drill config only ever offers real options (no empty/fabricated filters).
+ * Which question types exist for a skill — so the weak-spots list only ever
+ * offers real options. Cached in memory after the first call.
  */
 export async function getPracticeFilters(skill: 'listening' | 'reading'): Promise<PracticeFilters> {
+  const cached = _filtersCache.get(skill)
+  if (cached) return cached
   const supabase = db()
 
   const { data: tests } = await supabase.from('tests').select('id').eq('type', skill)
@@ -264,7 +271,9 @@ export async function getPracticeFilters(skill: 'listening' | 'reading'): Promis
     .map(([type, count]) => ({ type, label: questionTypeLabel(type), count }))
     .sort((a, b) => b.count - a.count)
 
-  return { types, countByTypeDifficulty: matrix }
+  const result = { types, countByTypeDifficulty: matrix }
+  _filtersCache.set(skill, result)
+  return result
 }
 
 export interface PracticeGroup {

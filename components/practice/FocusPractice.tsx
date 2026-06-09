@@ -35,12 +35,17 @@ export function FocusPractice({ skill }: { skill: 'reading' | 'listening' }) {
   useEffect(() => {
     let alive = true
     async function load() {
-      const f = await getPracticeFilters(skill)
+      const { user } = await getUser()
+      // Run the two heavy chains (type counts + per-type accuracy) in parallel
+      // instead of one after the other — roughly halves the load time.
+      const [f, a] = await Promise.all([
+        getPracticeFilters(skill),
+        user ? getSubskillAccuracy(user.id, skill) : Promise.resolve([] as SubskillStat[]),
+      ])
       if (!alive) return
       setFilters(f)
-      const { user } = await getUser()
-      if (user && alive) setAcc(await getSubskillAccuracy(user.id, skill))
-      if (alive) setLoading(false)
+      setAcc(a)
+      setLoading(false)
     }
     load()
     return () => { alive = false }
