@@ -226,11 +226,8 @@ input, textarea, select { font: inherit; color: inherit; }
 }
 
 /* ── Mobile responsiveness helpers ──────────────────────── */
-/* Guard against horizontal overflow from fixed-width desktop layouts.
-   overflow-x: hidden only on body — putting it on html blocks vertical
-   page scroll in Safari and some Chrome builds. */
-html { max-width: 100%; }
-body { max-width: 100%; overflow-x: hidden; }
+/* Guard against horizontal overflow from fixed-width desktop layouts. */
+html, body { max-width: 100%; overflow-x: hidden; }
 
 /* Hide desktop-only decorative blocks on small screens. */
 @media (max-width: 820px) {
