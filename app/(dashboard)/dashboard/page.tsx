@@ -90,7 +90,7 @@ function BandPredictor({ current = 0, target = 7.5 }: { current: number; target:
         )}
       </div>
 
-      <svg viewBox={`0 0 ${W} 134`} style={{ width: '100%', marginTop: 6 }}>
+      <svg viewBox={`0 0 ${W} 150`} style={{ width: '100%', marginTop: 6 }}>
         <defs>
           <linearGradient id="bpg" x1="0" x2="1" y1="0" y2="0">
             <stop offset="0%" stopColor="var(--warn)"/>
@@ -100,18 +100,20 @@ function BandPredictor({ current = 0, target = 7.5 }: { current: number; target:
         </defs>
         <path d={arc(0, 1)} stroke="var(--bg-soft)" strokeWidth={stroke} fill="none" strokeLinecap="round"/>
         {curF > 0 && <path d={arc(0, curF)} stroke="url(#bpg)" strokeWidth={stroke} fill="none" strokeLinecap="round"/>}
-        {/* target tick */}
-        <line x1={polar(tgtF).x} y1={polar(tgtF).y} x2={cx + Math.cos(Math.PI * (1 - tgtF)) * (R + stroke / 2 + 4)} y2={cy - Math.sin(Math.PI * (1 - tgtF)) * (R + stroke / 2 + 4)} stroke="var(--text)" strokeWidth={2}/>
-        <circle cx={tgt.x} cy={tgt.y} r={4.5} fill="var(--bg-elev)" stroke="var(--text)" strokeWidth={2}/>
-        <text x={tgt.x} y={tgt.y - 14} textAnchor="middle" fontSize="9.5" fontWeight="700" fill="var(--text-2)">{target.toFixed(1)}</text>
+        {/* target marker — a clean dot on the arc; the value sits above it unless
+            it's at the far end (where it would collide with the 9.0 scale label) */}
+        <circle cx={tgt.x} cy={tgt.y} r={5} fill="var(--bg-elev)" stroke="var(--text)" strokeWidth={2.5}/>
+        {tgtF < 0.93 && tgtF > 0.07 && (
+          <text x={tgt.x} y={tgt.y - 13} textAnchor="middle" fontSize="9.5" fontWeight="700" fill="var(--text-2)">{target.toFixed(1)}</text>
+        )}
         {/* centre value */}
-        <text x={cx} y={cy - 14} textAnchor="middle" fontStyle="italic" fontFamily="var(--font-display)" fontSize="46" fontWeight="600" fill="var(--accent)">
+        <text x={cx} y={cy - 16} textAnchor="middle" fontStyle="italic" fontFamily="var(--font-display)" fontSize="46" fontWeight="600" fill="var(--accent)">
           {current > 0 ? current.toFixed(1) : '—'}
         </text>
-        <text x={cx} y={cy + 4} textAnchor="middle" fontSize="10" letterSpacing="0.06em" fill="var(--text-3)">{t('dash.band').toUpperCase()}</text>
+        <text x={cx} y={cy + 2} textAnchor="middle" fontSize="10" letterSpacing="0.06em" fill="var(--text-3)">{t('dash.band').toUpperCase()}</text>
         {/* scale ends */}
-        <text x={polar(0).x} y={cy + 20} textAnchor="middle" fontSize="9" fill="var(--text-3)" fontFamily="var(--font-mono)">4.0</text>
-        <text x={polar(1).x} y={cy + 20} textAnchor="middle" fontSize="9" fill="var(--text-3)" fontFamily="var(--font-mono)">9.0</text>
+        <text x={polar(0).x} y={cy + 26} textAnchor="middle" fontSize="9" fill="var(--text-3)" fontFamily="var(--font-mono)">4.0</text>
+        <text x={polar(1).x} y={cy + 26} textAnchor="middle" fontSize="9" fill="var(--text-3)" fontFamily="var(--font-mono)">9.0</text>
       </svg>
     </div>
   )
