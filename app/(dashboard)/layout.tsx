@@ -413,7 +413,7 @@ function DashboardLayoutInner({ children }: { children: ReactNode }) {
             <span style={{ color: 'var(--text-3)' }}>Dashboard</span>
             {currentNav && currentNav.href !== '/dashboard' && (
               <>
-                <NavIcon name="search" size={12} color="var(--text-3)" />
+                <span style={{ color: 'var(--text-3)', fontSize: 13 }}>›</span>
                 <span style={{ fontWeight: 600, color: 'var(--text)' }}>{t(`dashboard.${currentNav.key}`)}</span>
               </>
             )}
@@ -452,8 +452,8 @@ function DashboardLayoutInner({ children }: { children: ReactNode }) {
                 <NavIcon name="bell" size={16} />
                 {unreadCount > 0 && (
                   unreadCount > 9
-                    ? <span style={{ position: 'absolute', top: 3, right: 0, minWidth: 16, height: 14, padding: '0 4px', borderRadius: 7, background: 'var(--danger)', color: '#fff', fontSize: 9, fontWeight: 700, display: 'flex', alignItems: 'center', justifyContent: 'center', border: '1.5px solid var(--bg)', fontVariantNumeric: 'tabular-nums' }}>9+</span>
-                    : <span style={{ position: 'absolute', top: 4, right: 4, minWidth: 14, height: 14, padding: '0 3px', borderRadius: 7, background: 'var(--danger)', color: '#fff', fontSize: 9, fontWeight: 700, display: 'flex', alignItems: 'center', justifyContent: 'center', border: '1.5px solid var(--bg)', fontVariantNumeric: 'tabular-nums' }}>{unreadCount}</span>
+                    ? <span style={{ position: 'absolute', top: 3, right: 0, minWidth: 16, height: 14, padding: '0 4px', borderRadius: 7, background: '#ef4444', color: '#fff', fontSize: 9, fontWeight: 700, display: 'flex', alignItems: 'center', justifyContent: 'center', border: '1.5px solid var(--bg)', fontVariantNumeric: 'tabular-nums' }}>9+</span>
+                    : <span style={{ position: 'absolute', top: 4, right: 4, minWidth: 14, height: 14, padding: '0 3px', borderRadius: 7, background: '#ef4444', color: '#fff', fontSize: 9, fontWeight: 700, display: 'flex', alignItems: 'center', justifyContent: 'center', border: '1.5px solid var(--bg)', fontVariantNumeric: 'tabular-nums' }}>{unreadCount}</span>
                 )}
               </button>
               <NotificationsPanel
