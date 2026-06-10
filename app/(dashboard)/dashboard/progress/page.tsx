@@ -643,7 +643,7 @@ export default function ProgressPage() {
   const d = data
 
   return (
-    <div style={{ padding: '32px 32px 80px' }}>
+    <div className="hub-page">
       {/* Header row */}
       <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 24, marginBottom: 24 }}>
         <div>

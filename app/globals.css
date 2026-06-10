@@ -244,3 +244,12 @@ html, body { max-width: 100%; overflow-x: hidden; }
   .bento-grid { grid-template-columns: 1fr !important; grid-auto-rows: auto !important; }
   .bento-cell { grid-column: auto !important; }
 }
+
+/* Shared dashboard page/card padding — tighter on phones so content isn't boxed
+   in by thick margins (the skill hubs all use these). */
+.hub-page { padding: 32px 32px 80px; }
+.hub-card { padding: 28px; }
+@media (max-width: 768px) {
+  .hub-page { padding: 20px 16px 72px; }
+  .hub-card { padding: 18px; }
+}

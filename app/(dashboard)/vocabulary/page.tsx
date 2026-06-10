@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback } from 'react'
 import { useLanguage } from '@/lib/i18n/LanguageContext'
+import { useIsMobile } from '@/lib/hooks/useIsMobile'
 import { getUser } from '@/lib/services/auth'
 import {
   getDecksWithStats, getStats, getRecentlyLearned, getStudyQueue, getDueQueue, reviewWord,
@@ -25,6 +26,7 @@ function FlashcardSession({
   onClose: () => void
 }) {
   const { t } = useLanguage()
+  const isMobile = useIsMobile()
   const [started, setStarted] = useState(false)
   const [idx, setIdx] = useState(0)
   const [flipped, setFlipped] = useState(false)
@@ -43,7 +45,7 @@ function FlashcardSession({
   if (!started && !done) {
     return (
       <div style={{ minHeight: '100vh', background: 'var(--bg)', display: 'flex', flexDirection: 'column' }}>
-        <header style={{ padding: '16px 32px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', borderBottom: '1px solid var(--border)' }}>
+        <header style={{ padding: isMobile ? '14px 16px' : '16px 32px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', borderBottom: '1px solid var(--border)' }}>
           <button onClick={onClose} style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 13, fontWeight: 600, color: 'var(--text-2)', background: 'transparent', border: '1px solid var(--border-strong)', borderRadius: 8, padding: '6px 12px', cursor: 'pointer' }}>
             ✕ {t('vocab.exit')}
           </button>
@@ -52,7 +54,7 @@ function FlashcardSession({
         </header>
 
         <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 24 }}>
-          <div className="card animate-fade-up" style={{ padding: 36, maxWidth: 520, width: '100%' }}>
+          <div className="card animate-fade-up" style={{ padding: isMobile ? 22 : 36, maxWidth: 520, width: '100%' }}>
             <h1 style={{ fontSize: 24, fontWeight: 700, color: 'var(--text)', margin: '0 0 6px', letterSpacing: '-0.02em' }}>{t('vocab.rulesTitle')}</h1>
             <p style={{ fontSize: 14.5, lineHeight: 1.55, color: 'var(--text-2)', margin: '0 0 22px' }}>{t('vocab.rulesIntro')}</p>
 
@@ -99,7 +101,7 @@ function FlashcardSession({
   return (
     <div style={{ minHeight: '100vh', background: 'var(--bg)', display: 'flex', flexDirection: 'column' }}>
       {/* Header */}
-      <header style={{ padding: '16px 32px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', borderBottom: '1px solid var(--border)', gap: 16, flexWrap: 'wrap' }}>
+      <header style={{ padding: isMobile ? '14px 16px' : '16px 32px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', borderBottom: '1px solid var(--border)', gap: 16, flexWrap: 'wrap' }}>
         <button onClick={onClose} style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 13, fontWeight: 600, color: 'var(--text-2)', background: 'transparent', border: '1px solid var(--border-strong)', borderRadius: 8, padding: '6px 12px', cursor: 'pointer' }}>
           ✕ {t('vocab.exit')}
         </button>
@@ -116,12 +118,12 @@ function FlashcardSession({
       <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 24 }}>
         <div style={{ width: '100%', maxWidth: 560 }} key={card.id}>
           {!flipped ? (
-            <div className="card" style={{ padding: 64, textAlign: 'center', minHeight: 360, display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
+            <div className="card" style={{ padding: isMobile ? 28 : 64, textAlign: 'center', minHeight: isMobile ? 280 : 360, display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 10, marginBottom: 24 }}>
                 <span className="chip" style={{ fontStyle: 'italic' }}>{card.part_of_speech}</span>
                 <span className="chip chip-accent">{t('vocab.band')} {card.band_level}</span>
               </div>
-              <h1 style={{ fontFamily: 'var(--font-display)', fontStyle: 'italic', fontSize: 56, fontWeight: 500, margin: '0 0 8px', letterSpacing: '-0.02em', color: 'var(--text)' }}>
+              <h1 style={{ fontFamily: 'var(--font-display)', fontStyle: 'italic', fontSize: isMobile ? 40 : 56, fontWeight: 500, margin: '0 0 8px', letterSpacing: '-0.02em', color: 'var(--text)', wordBreak: 'break-word' }}>
                 {card.word}
               </h1>
               {card.ipa && <div style={{ fontSize: 14, color: 'var(--text-3)', fontFamily: 'var(--font-mono)', marginBottom: 20 }}>{card.ipa}</div>}
@@ -133,7 +135,7 @@ function FlashcardSession({
               </button>
             </div>
           ) : (
-            <div className="card animate-fade-in" style={{ padding: 36, minHeight: 360 }}>
+            <div className="card animate-fade-in" style={{ padding: isMobile ? 22 : 36, minHeight: 360 }}>
               <div style={{ display: 'flex', alignItems: 'baseline', gap: 12, marginBottom: 18, flexWrap: 'wrap' }}>
                 <h2 style={{ fontFamily: 'var(--font-display)', fontStyle: 'italic', fontSize: 30, fontWeight: 500, margin: 0, color: 'var(--accent)' }}>{card.word}</h2>
                 <span className="chip" style={{ fontStyle: 'italic' }}>{card.part_of_speech}</span>
@@ -257,7 +259,7 @@ export default function VocabularyPage() {
   ]
 
   return (
-    <div style={{ padding: '32px 32px 80px' }}>
+    <div className="hub-page">
       {/* Header */}
       <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 24, flexWrap: 'wrap' }}>
         <div>
@@ -327,7 +329,7 @@ export default function VocabularyPage() {
 
       {/* Recently learned */}
       {recent.length > 0 && (
-        <div className="card" style={{ padding: 28, marginTop: 16 }}>
+        <div className="card hub-card" style={{ marginTop: 16 }}>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 18 }}>
             <h3 style={{ margin: 0, fontSize: 16, fontWeight: 600, color: 'var(--text)' }}>{t('vocab.recentlyLearned')}</h3>
           </div>

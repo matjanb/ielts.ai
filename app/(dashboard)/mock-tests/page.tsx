@@ -92,9 +92,9 @@ export default function MockTestsPage() {
   const canStart = !!(lid || rid || wid)
 
   return (
-    <div style={{ padding: '32px 32px 80px' }}>
+    <div className="hub-page">
       {/* Hub header */}
-      <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 24 }}>
+      <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'flex-start', justifyContent: 'space-between', gap: 16 }}>
         <div>
           <div style={{ fontSize: 11, letterSpacing: '0.1em', textTransform: 'uppercase', color: 'var(--text-3)', marginBottom: 8 }}>{t('mock.eyebrow')}</div>
           <h1 style={{ fontSize: 34, fontWeight: 700, letterSpacing: '-0.025em', margin: '0 0 6px', color: 'var(--text)' }}>

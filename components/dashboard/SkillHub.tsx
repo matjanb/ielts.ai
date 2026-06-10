@@ -2,6 +2,7 @@
 
 import Link from 'next/link'
 import { useLanguage } from '@/lib/i18n/LanguageContext'
+import { useIsMobile } from '@/lib/hooks/useIsMobile'
 import type { IeltsTest } from '@/lib/types/database'
 
 // ── Icon paths ────────────────────────────────────────────────────────────────
@@ -38,15 +39,16 @@ interface SkillHubHeaderProps {
 
 export function SkillHubHeader({ name, icon, band, delta, hours, nextTest, startHref }: SkillHubHeaderProps) {
   const { t } = useLanguage()
+  const isMobile = useIsMobile()
   return (
-    <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 24 }}>
+    <div style={{ display: 'flex', flexDirection: isMobile ? 'column' : 'row', alignItems: isMobile ? 'stretch' : 'flex-start', justifyContent: 'space-between', gap: isMobile ? 14 : 24 }}>
       <div>
         <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-          <div style={{ width: 44, height: 44, borderRadius: 12, background: 'var(--accent-soft)', color: 'var(--accent)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+          <div style={{ width: 44, height: 44, borderRadius: 12, background: 'var(--accent-soft)', color: 'var(--accent)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
             <NavIcon name={icon} size={22} color="var(--accent)" />
           </div>
           <div>
-            <h1 style={{ fontSize: 30, margin: 0, fontWeight: 700, letterSpacing: '-0.02em', color: 'var(--text)' }}>{name}</h1>
+            <h1 style={{ fontSize: isMobile ? 24 : 30, margin: 0, fontWeight: 700, letterSpacing: '-0.02em', color: 'var(--text)' }}>{name}</h1>
             {(hours != null || band != null) && (
               <div style={{ fontSize: 14, color: 'var(--text-2)', marginTop: 2 }}>
                 {hours != null && <span>{hours}{t('hub.hPracticed')} · </span>}
@@ -62,7 +64,7 @@ export function SkillHubHeader({ name, icon, band, delta, hours, nextTest, start
         </div>
       </div>
       <Link href={startHref} style={{
-        display: 'inline-flex', alignItems: 'center', gap: 8,
+        display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: 8,
         padding: '12px 20px', borderRadius: 'var(--radius-lg)',
         fontWeight: 600, fontSize: 14,
         background: 'var(--accent)', color: 'var(--accent-fg)',

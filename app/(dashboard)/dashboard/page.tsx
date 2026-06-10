@@ -9,6 +9,7 @@ import { getDailyPlan } from '@/lib/services/dailyPlan'
 import type { DailySummary, TaskReason } from '@/lib/dailyPlan'
 import { getUser } from '@/lib/services/auth'
 import type { Profile } from '@/lib/types/database'
+import { useIsMobile } from '@/lib/hooks/useIsMobile'
 
 // ── Sparkline (mini SVG line chart) ───────────────────────────────────────────
 function Sparkline({ data, width = 120, height = 28 }: { data: number[]; width?: number; height?: number }) {
@@ -399,6 +400,7 @@ function TodayCard({ sessions, daily, note, onToggle }: { sessions: Session[]; d
 // ── Main page ─────────────────────────────────────────────────────────────────
 export default function DashboardPage() {
   const { t } = useLanguage()
+  const isMobile = useIsMobile()
   const [profile, setProfile]         = useState<Profile | null>(null)
   const [scores, setScores]           = useState<Record<string, number>>({})
   const [deltas, setDeltas]           = useState<Record<string, number>>({})
@@ -541,10 +543,10 @@ export default function DashboardPage() {
   }
 
   return (
-    <div style={{ padding: '32px 32px 80px' }}>
+    <div style={{ padding: isMobile ? '20px 16px 80px' : '32px 32px 80px' }}>
       {/* Greeting */}
-      <div style={{ marginBottom: 28 }}>
-        <h1 style={{ fontSize: 32, letterSpacing: '-0.025em', margin: 0, fontWeight: 700, color: 'var(--text)' }}>
+      <div style={{ marginBottom: isMobile ? 20 : 28 }}>
+        <h1 style={{ fontSize: isMobile ? 25 : 32, letterSpacing: '-0.025em', margin: 0, fontWeight: 700, color: 'var(--text)' }}>
           {greetingTime},{' '}
           <span style={{ fontFamily: 'var(--font-display)', fontStyle: 'italic', color: 'var(--accent)' }}>{name}.</span>
         </h1>

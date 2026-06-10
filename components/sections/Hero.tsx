@@ -162,7 +162,7 @@ export function Hero() {
         opacity: 0.8,
       }}/>
 
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 340px), 1fr))', gap: 'clamp(28px, 5vw, 60px)', alignItems: 'center', position: 'relative', maxWidth: 1280, margin: '0 auto', padding: '0 32px' }}>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 340px), 1fr))', gap: 'clamp(28px, 5vw, 60px)', alignItems: 'center', position: 'relative', maxWidth: 1280, margin: '0 auto', padding: '0 clamp(18px, 5vw, 32px)' }}>
         {/* Left: text */}
         <div className="animate-fade-up">
           <div style={{
@@ -190,7 +190,7 @@ export function Hero() {
             {t('hero.subtitle')}
           </p>
 
-          <div style={{ display: 'flex', gap: 10, marginTop: 30 }}>
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 10, marginTop: 30 }}>
             <Link href="/diagnostic/start" style={{
               display: 'inline-flex', alignItems: 'center', gap: 8,
               padding: '14px 22px', borderRadius: 'var(--radius-lg)',

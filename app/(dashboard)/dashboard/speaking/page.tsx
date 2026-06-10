@@ -3,6 +3,7 @@
 import { useState, useRef, useEffect, useCallback, useMemo } from 'react'
 import { Loader2 } from 'lucide-react'
 import { useLanguage } from '@/lib/i18n/LanguageContext'
+import { useIsMobile } from '@/lib/hooks/useIsMobile'
 
 /* ── Themed test sets (original IELTS-style wording) ──────────────────────── */
 interface SpeakingSet {
@@ -92,13 +93,14 @@ const words = (s: string) => (s.trim() ? s.trim().split(/\s+/).length : 0)
 /* ── Ready screen ────────────────────────────────────────────────────────── */
 function ReadyScreen({ onStart }: { onStart: () => void }) {
   const { t } = useLanguage()
+  const isMobile = useIsMobile()
   return (
-    <div style={{ flex: 1, background: 'radial-gradient(120% 80% at 50% -10%, var(--accent-soft) 0%, var(--bg) 55%)', color: 'var(--text)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 24 }}>
+    <div style={{ flex: 1, background: 'radial-gradient(120% 80% at 50% -10%, var(--accent-soft) 0%, var(--bg) 55%)', color: 'var(--text)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: isMobile ? 18 : 24 }}>
       <div className="animate-fade-up" style={{ maxWidth: 480, textAlign: 'center' }}>
         <div style={{ display: 'inline-flex', padding: 26, borderRadius: '50%', background: 'var(--accent-soft)', marginBottom: 26, boxShadow: '0 0 0 1px color-mix(in srgb, var(--accent) 25%, transparent), 0 0 60px -10px color-mix(in srgb, var(--accent) 40%, transparent)' }}>
           <MicIcon size={46} color="var(--accent)" />
         </div>
-        <h1 style={{ fontSize: 40, fontWeight: 700, letterSpacing: '-0.03em', margin: '0 0 14px', color: 'var(--text)' }}>{t('speak.readyTitle')}</h1>
+        <h1 style={{ fontSize: isMobile ? 30 : 40, fontWeight: 700, letterSpacing: '-0.03em', margin: '0 0 14px', color: 'var(--text)' }}>{t('speak.readyTitle')}</h1>
         <p style={{ fontSize: 15, color: 'var(--text-2)', lineHeight: 1.6, margin: '0 0 34px' }}>
           {t('speak.readyDesc')}
         </p>
@@ -144,18 +146,19 @@ function BandRing({ band }: { band: number }) {
 }
 function FeedbackScreen({ result, onBack }: { result: FeedbackResult; onBack: () => void }) {
   const { t } = useLanguage()
+  const isMobile = useIsMobile()
   const scoreFor = { fluency: result.fluency_score, lexical: result.lexical_score, grammar: result.grammar_score, pronunciation: result.pronunciation_score }
   const fb = result.feedback
   return (
-    <div style={{ padding: '28px 32px 80px', maxWidth: 860, margin: '0 auto' }} className="animate-fade-up">
+    <div style={{ padding: isMobile ? '20px 16px 72px' : '28px 32px 80px', maxWidth: 860, margin: '0 auto' }} className="animate-fade-up">
       <button onClick={onBack} style={{ display: 'inline-flex', alignItems: 'center', gap: 8, fontSize: 13, fontWeight: 600, color: 'var(--text-2)', background: 'none', border: '1px solid var(--border)', borderRadius: 8, padding: '6px 12px', cursor: 'pointer', marginBottom: 22 }}>
         <svg width={13} height={13} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M19 12H5M11 19l-7-7 7-7"/></svg>
         {t('speak.back')}
       </button>
-      <h1 style={{ fontSize: 32, letterSpacing: '-0.025em', margin: '0 0 4px', fontWeight: 700, color: 'var(--text)' }}>{t('speak.result')}</h1>
+      <h1 style={{ fontSize: isMobile ? 26 : 32, letterSpacing: '-0.025em', margin: '0 0 4px', fontWeight: 700, color: 'var(--text)' }}>{t('speak.result')}</h1>
       <p style={{ color: 'var(--text-2)', margin: '0 0 24px', fontSize: 15 }}>{t('speak.resultSub')}</p>
-      <div className="card" style={{ padding: 28, display: 'grid', gridTemplateColumns: '148px 1fr', gap: 36, alignItems: 'center', marginBottom: 16 }}>
-        <BandRing band={result.band_score} />
+      <div className="card" style={{ padding: isMobile ? 18 : 28, display: isMobile ? 'flex' : 'grid', flexDirection: 'column', gridTemplateColumns: '148px 1fr', gap: isMobile ? 20 : 36, alignItems: isMobile ? 'stretch' : 'center', marginBottom: 16 }}>
+        <div style={{ display: 'flex', justifyContent: 'center' }}><BandRing band={result.band_score} /></div>
         <div style={{ display: 'grid', gap: 16 }}>
           {CRIT_META.map(({ key, label }) => {
             const v = scoreFor[key]
@@ -215,6 +218,7 @@ function LiveExam({ set, loading, error, onComplete, onExit }: {
   onExit: () => void
 }) {
   const { t } = useLanguage()
+  const isMobile = useIsMobile()
   const partLabel = (p: 1 | 2 | 3) => t(p === 1 ? 'speak.partIntro' : p === 2 ? 'speak.partLong' : 'speak.partDisc')
   const turns = useMemo(() => buildTurns(set), [set])
   const [idx, setIdx] = useState(0)
@@ -379,7 +383,7 @@ function LiveExam({ set, loading, error, onComplete, onExit }: {
   return (
     <div style={{ flex: 1, background: 'var(--bg)', color: 'var(--text)', display: 'flex', flexDirection: 'column' }}>
       {/* Header */}
-      <header style={{ padding: '14px 24px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', borderBottom: '1px solid var(--border)', flexShrink: 0 }}>
+      <header style={{ padding: isMobile ? '12px 16px' : '14px 24px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', borderBottom: '1px solid var(--border)', flexShrink: 0 }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 9 }}>
           <span style={{ width: 8, height: 8, borderRadius: '50%', background: 'var(--accent)', boxShadow: '0 0 0 4px color-mix(in srgb, var(--accent) 20%, transparent)' }}/>
           <span style={{ fontSize: 13, fontWeight: 600, color: 'var(--accent)' }}>{t('speak.examiner')}</span>
@@ -392,7 +396,7 @@ function LiveExam({ set, loading, error, onComplete, onExit }: {
       </header>
 
       {/* Progress */}
-      <div style={{ padding: '14px 24px 0', flexShrink: 0 }}>
+      <div style={{ padding: isMobile ? '12px 16px 0' : '14px 24px 0', flexShrink: 0 }}>
         <div style={{ maxWidth: 680, margin: '0 auto' }}>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 }}>
             <span style={{ display: 'inline-flex', alignItems: 'center', gap: 8, fontSize: 12.5, fontWeight: 600, color: 'var(--accent)' }}>
@@ -408,7 +412,7 @@ function LiveExam({ set, loading, error, onComplete, onExit }: {
       </div>
 
       {/* Body */}
-      <div style={{ flex: 1, overflow: 'auto', padding: '22px 24px' }}>
+      <div style={{ flex: 1, overflow: 'auto', padding: isMobile ? '18px 16px' : '22px 24px' }}>
         <div style={{ maxWidth: 680, margin: '0 auto', display: 'flex', flexDirection: 'column', gap: 18 }}>
           {/* Question / cue card */}
           <div style={{ background: 'var(--bg-elev)', border: '1px solid var(--border)', borderRadius: 18, padding: 22 }}>
@@ -459,7 +463,7 @@ function LiveExam({ set, loading, error, onComplete, onExit }: {
       </div>
 
       {/* Dock */}
-      <div style={{ padding: '16px 24px 20px', borderTop: '1px solid var(--border)', background: 'var(--bg-soft)', flexShrink: 0 }}>
+      <div style={{ padding: isMobile ? '14px 16px 20px' : '16px 24px 20px', paddingBottom: isMobile ? 'calc(16px + env(safe-area-inset-bottom))' : 20, borderTop: '1px solid var(--border)', background: 'var(--bg-soft)', flexShrink: 0 }}>
         <div style={{ maxWidth: 680, margin: '0 auto', display: 'flex', alignItems: 'center', gap: 14 }}>
           {/* mic */}
           {recState === 'recording' ? (

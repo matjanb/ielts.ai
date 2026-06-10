@@ -6,6 +6,7 @@ import { Target, ArrowRight, AlertTriangle } from 'lucide-react'
 import { useLanguage } from '@/lib/i18n/LanguageContext'
 import { getPracticeFilters, getSubskillAccuracy, type PracticeFilters, type SubskillStat } from '@/lib/services/tests'
 import { getUser } from '@/lib/services/auth'
+import { useIsMobile } from '@/lib/hooks/useIsMobile'
 
 // A type needs at least this many answered questions before we trust its accuracy
 // enough to rank it (and badge the weakest as "Focus").
@@ -28,6 +29,7 @@ function barColor(acc: number): string {
 
 export function FocusPractice({ skill }: { skill: 'reading' | 'listening' }) {
   const { t } = useLanguage()
+  const isMobile = useIsMobile()
   const [filters, setFilters] = useState<PracticeFilters | null>(null)
   const [acc, setAcc] = useState<SubskillStat[]>([])
   const [loading, setLoading] = useState(true)
@@ -67,7 +69,7 @@ export function FocusPractice({ skill }: { skill: 'reading' | 'listening' }) {
   const focusType = measured[0]?.type
 
   return (
-    <div className="card" style={{ marginTop: 16, padding: 24 }}>
+    <div className="card" style={{ marginTop: 16, padding: isMobile ? 16 : 24 }}>
       {/* Header */}
       <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 4 }}>
         <div style={{ width: 34, height: 34, borderRadius: 9, flexShrink: 0, background: 'var(--accent-soft)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>

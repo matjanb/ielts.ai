@@ -293,9 +293,9 @@ export default function StudyPlanPage() {
   }
 
   return (
-    <div style={{ padding: '32px 32px 80px' }}>
+    <div className="hub-page">
       {/* Header */}
-      <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 24, marginBottom: 24 }}>
+      <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'flex-start', justifyContent: 'space-between', gap: 16, marginBottom: 24 }}>
         <div>
           <h1 style={{ fontSize: 32, fontWeight: 700, letterSpacing: '-0.025em', margin: 0, color: 'var(--text)' }}>
             {t('dashboard.studyPlan')}

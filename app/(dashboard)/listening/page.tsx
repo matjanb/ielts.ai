@@ -24,7 +24,7 @@ export default function ListeningIndexPage() {
   const startHref = firstTest ? `/listening/${firstTest.id}` : '#'
 
   return (
-    <div style={{ padding: '32px 32px 80px' }}>
+    <div className="hub-page">
       <SkillHubHeader
         name={t('dashboard.listening')}
         icon="headphones"
@@ -36,7 +36,7 @@ export default function ListeningIndexPage() {
       <FocusPractice skill="listening" />
 
       {/* Full tests */}
-      <div className="card" style={{ padding: 28, marginTop: 16 }}>
+      <div className="card hub-card" style={{ marginTop: 16 }}>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 18 }}>
           <h3 style={{ margin: 0, fontSize: 18, fontWeight: 600, color: 'var(--text)' }}>{t('listeningHub.library')}</h3>
           <div style={{ display: 'flex', gap: 4 }}>

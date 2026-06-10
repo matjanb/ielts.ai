@@ -25,7 +25,7 @@ export default function WritingIndexPage() {
   const startHref = firstTest ? `/writing/${firstTest.id}` : '#'
 
   return (
-    <div style={{ padding: '32px 32px 80px' }}>
+    <div className="hub-page">
       <SkillHubHeader
         name={t('dashboard.writing')}
         icon="pencil"
@@ -43,7 +43,7 @@ export default function WritingIndexPage() {
       <WritingHistory />
 
       {/* Tests */}
-      <div className="card" style={{ padding: 28, marginTop: 16 }}>
+      <div className="card hub-card" style={{ marginTop: 16 }}>
         <div style={{ marginBottom: 18 }}>
           <h3 style={{ margin: 0, fontSize: 18, fontWeight: 600, color: 'var(--text)' }}>{t('writingHub.listTitle')}</h3>
         </div>

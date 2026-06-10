@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react'
 import { Loader2, Save, CreditCard, ExternalLink, Lock, Trash2 } from 'lucide-react'
 import Link from 'next/link'
 import { useLanguage } from '@/lib/i18n/LanguageContext'
+import { useIsMobile } from '@/lib/hooks/useIsMobile'
 import { ThemeToggle } from '@/components/ui/ThemeToggle'
 import { LanguageSwitcher } from '@/components/ui/LanguageSwitcher'
 import { getProfile, updateProfile } from '@/lib/services/user'
@@ -31,6 +32,7 @@ function SectionHeader({ title, desc }: { title: string; desc?: string }) {
 
 export default function SettingsPage() {
   const { t } = useLanguage()
+  const isMobile = useIsMobile()
 
   // Profile
   const [fullName, setFullName]     = useState('')
@@ -134,7 +136,7 @@ export default function SettingsPage() {
   }
 
   return (
-    <div style={{ padding: '32px 24px 80px' }}>
+    <div style={{ padding: isMobile ? '20px 16px 72px' : '32px 24px 80px' }}>
       <div style={{ maxWidth: 720, margin: '0 auto' }} className="space-y-5">
 
         {/* Page header */}
