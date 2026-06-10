@@ -81,7 +81,7 @@ function BandPredictor({ current = 0, target = 7.5 }: { current: number; target:
   const gap = current > 0 && target > current ? +(target - current).toFixed(1) : 0
 
   return (
-    <div className="card" style={{ padding: 28 }}>
+    <div className="card hub-card">
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
         <span style={{ fontSize: 11, letterSpacing: '0.1em', textTransform: 'uppercase', color: 'var(--text-3)' }}>{t('dash.overallBand')}</span>
         {current > 0 && (
@@ -313,7 +313,7 @@ function TodayCard({ sessions, daily, note, onToggle }: { sessions: Session[]; d
   const firstOpen = sessions.findIndex(x => !x.done)
 
   return (
-    <div className="card" style={{ padding: 28 }}>
+    <div className="card hub-card">
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: note ? 12 : 20 }}>
         <div>
           <div style={{ fontSize: 11, letterSpacing: '0.1em', textTransform: 'uppercase', color: 'var(--text-3)' }}>{t('dash.todayPlan')}</div>

@@ -86,10 +86,11 @@ export function FloatingNav() {
               {t('nav.login')}
             </Link>
             <Link href="/diagnostic/start" style={{
-              display: 'inline-flex', alignItems: 'center', gap: 6,
+              display: 'inline-flex', alignItems: 'center',
               padding: '7px 14px', borderRadius: 'var(--radius)',
               fontSize: 13, fontWeight: 600,
               background: 'var(--accent)', color: 'var(--accent-fg)',
+              border: '1px solid transparent',
               transition: 'background 0.15s, transform 0.15s',
             }}
             onMouseEnter={e => { e.currentTarget.style.background = 'var(--accent-hover)'; e.currentTarget.style.transform = 'translateY(-1px)'; }}
