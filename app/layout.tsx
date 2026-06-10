@@ -1,4 +1,4 @@
-import type { Metadata } from 'next'
+import type { Metadata, Viewport } from 'next'
 import { Manrope, Newsreader, JetBrains_Mono } from 'next/font/google'
 import './globals.css'
 import { ThemeProvider } from '@/components/providers/ThemeProvider'
@@ -22,6 +22,14 @@ const jetbrainsMono = JetBrains_Mono({
   subsets: ['latin'],
   weight: ['400', '500'],
 })
+
+// Tints the mobile status bar. iOS Safari reads theme-color once at first paint
+// and ignores later JS edits, so the value must be in the initial HTML. The app
+// defaults to dark (theme is class-toggled, not OS-driven), so we ship the dark
+// bg here; ThemeProvider updates it live when the user toggles to light.
+export const viewport: Viewport = {
+  themeColor: '#0e0f10',
+}
 
 export const metadata: Metadata = {
   title: 'ielts.camp',
