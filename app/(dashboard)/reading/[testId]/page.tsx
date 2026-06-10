@@ -451,7 +451,7 @@ export default function ReadingTestPage() {
             </div>
             <h2 style={{ fontSize: 15, fontWeight: 700, margin: 0, color: 'var(--text)' }}>{currentPassage?.title}</h2>
           </div>
-          <div style={{ flex: 1, overflowY: 'auto', padding: isMobile ? '14px 16px' : '16px 24px' }}>
+          <div style={{ flex: 1, overflowY: 'auto', padding: isMobile ? '14px 16px 80px' : '16px 24px' }}>
             <PassageText text={passageText} />
           </div>
         </div>
@@ -469,7 +469,7 @@ export default function ReadingTestPage() {
           display: isMobile && mobileTab !== 'questions' ? 'none' : 'flex',
           flexDirection: 'column', minWidth: 0, background: 'var(--bg-elev)',
         }}>
-          <div style={{ flex: 1, overflowY: 'auto', padding: isMobile ? '16px' : '20px 24px', display: 'flex', flexDirection: 'column', gap: 24 }}>
+          <div style={{ flex: 1, overflowY: 'auto', padding: isMobile ? '16px 16px 80px' : '20px 24px', display: 'flex', flexDirection: 'column', gap: 24 }}>
             {questionGroups.map((group, gi) => (
               <div key={gi}>
                 <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: '0.08em', textTransform: 'uppercase', color: 'var(--accent)', marginBottom: 10, paddingBottom: 8, borderBottom: '1px solid var(--border)' }}>
@@ -518,8 +518,15 @@ export default function ReadingTestPage() {
         </div>
       </div>
 
-      {/* Passage navigation bottom bar */}
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: isMobile ? '8px 10px' : '10px 16px', gap: 8, borderTop: '1px solid var(--border)', background: 'var(--bg-elev)', flexShrink: 0, paddingBottom: isMobile ? 'calc(8px + env(safe-area-inset-bottom))' : '10px' }}>
+      {/* Passage navigation bottom bar — pinned to the viewport bottom on mobile
+          (in the flex flow it floated to mid-screen when a pane was short). */}
+      <div style={{
+        display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+        padding: isMobile ? '8px 10px' : '10px 16px', gap: 8,
+        borderTop: '1px solid var(--border)', background: 'var(--bg-elev)', flexShrink: 0,
+        paddingBottom: isMobile ? 'calc(8px + env(safe-area-inset-bottom))' : '10px',
+        ...(isMobile ? { position: 'fixed', left: 0, right: 0, bottom: 0, zIndex: 40 } : null),
+      }}>
         <button onClick={() => setActivePassage(p => Math.max(1, p - 1))} disabled={activePassage === 1}
           style={{ display: 'flex', alignItems: 'center', gap: 6, padding: isMobile ? '8px 10px' : '7px 14px', borderRadius: 8, fontSize: 13, fontWeight: 500, color: 'var(--text-2)', background: 'none', border: '1px solid var(--border)', cursor: 'pointer', opacity: activePassage === 1 ? 0.3 : 1, flexShrink: 0 }}>
           <ChevronLeft size={14} strokeWidth={2} /> {!isMobile && t('reading.previous')}
