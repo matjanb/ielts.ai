@@ -351,13 +351,25 @@ export interface SubskillStat { type: string; label: string; correct: number; to
  * Real per-question-type accuracy for a skill, computed from the user's
  * completed attempts → answers → question types. Returns [] if no data yet.
  */
+// Short-lived cache: this 4-query chain is called on the dashboard, the progress
+// page and the daily plan — often several times per navigation. 60s keeps it
+// fresh enough (it only changes when a test is completed) while making repeats
+// near-instant.
+const _subskillCache = new Map<string, { at: number; data: SubskillStat[] }>()
+const SUBSKILL_TTL = 60_000
+
 export async function getSubskillAccuracy(userId: string, skill: 'listening' | 'reading'): Promise<SubskillStat[]> {
+  const cacheKey = `${userId}:${skill}`
+  const cached = _subskillCache.get(cacheKey)
+  if (cached && Date.now() - cached.at < SUBSKILL_TTL) return cached.data
+
   const supabase = db()
+  const cache = (r: SubskillStat[]) => { _subskillCache.set(cacheKey, { at: Date.now(), data: r }); return r }
 
   // 1. Tests of this skill
   const { data: tests } = await supabase.from('tests').select('id').eq('type', skill)
   const testIds = (tests ?? []).map((t: any) => t.id)
-  if (testIds.length === 0) return []
+  if (testIds.length === 0) return cache([])
 
   // 2. This user's completed attempts on those tests
   const { data: attempts } = await supabase
@@ -367,14 +379,14 @@ export async function getSubskillAccuracy(userId: string, skill: 'listening' | '
     .in('test_id', testIds)
     .not('completed_at', 'is', null)
   const attemptIds = (attempts ?? []).map((a: any) => a.id)
-  if (attemptIds.length === 0) return []
+  if (attemptIds.length === 0) return cache([])
 
   // 3. Answers for those attempts
   const { data: answers } = await supabase
     .from('user_answers')
     .select('question_id, is_correct')
     .in('attempt_id', attemptIds)
-  if (!answers || answers.length === 0) return []
+  if (!answers || answers.length === 0) return cache([])
 
   // 4. Question types for those questions
   const questionIds = [...new Set((answers as any[]).map(a => a.question_id))]
@@ -395,7 +407,7 @@ export async function getSubskillAccuracy(userId: string, skill: 'listening' | '
     if (a.is_correct) buckets[qtype].correct++
   }
 
-  return Object.entries(buckets)
+  const result = Object.entries(buckets)
     .map(([type, b]) => ({
       type,
       label: QTYPE_LABELS[type] ?? type,
@@ -404,4 +416,5 @@ export async function getSubskillAccuracy(userId: string, skill: 'listening' | '
       accuracy: b.total > 0 ? b.correct / b.total : 0,
     }))
     .sort((a, b) => a.accuracy - b.accuracy) // weakest first
+  return cache(result)
 }

@@ -419,7 +419,13 @@ export default function DashboardPage() {
       const { user } = await getUser()
       if (!user) return
 
-      const dashData = await getDashboardData(user.id)
+      // The dashboard data, today's plan and the streak are independent — run them
+      // in parallel instead of one after another (this was the main slowdown).
+      const [dashData, daily, streak] = await Promise.all([
+        getDashboardData(user.id),
+        getDailyPlan(user.id).catch(() => null),
+        getStreakInfo().catch(() => null),
+      ])
       setProfile(dashData.profile)
 
       // Build latest score + real delta per skill (bandHistory is recorded_at DESC)
@@ -470,8 +476,8 @@ export default function DashboardPage() {
 
       // Today's plan — the single adaptive engine shared with the Study Plan page:
       // weakest skills + weak question types + days-to-exam pressure.
-      try {
-        const { tasks, summary, doneKey } = await getDailyPlan(user.id)
+      if (daily) {
+        const { tasks, summary, doneKey } = daily
         setDailyKey(doneKey)
         setDailySummary(summary)
         let done: boolean[] = []
@@ -486,9 +492,9 @@ export default function DashboardPage() {
           reason: reasonText(t, tk.reason),
           done: !!done[i],
         })))
-      } catch { /* daily plan optional */ }
+      }
 
-      setStreakInfo(await getStreakInfo())
+      setStreakInfo(streak)
       setLoading(false)
     }
     load()

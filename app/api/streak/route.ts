@@ -70,12 +70,22 @@ export async function POST() {
   while (current >= lastAward + AWARD_EVERY && freezes < FREEZE_CAP) { lastAward += AWARD_EVERY; freezes++ }
   if (current === 0) lastAward = 0
 
-  await admin.from('profiles').update({
-    streak_freezes: freezes,
-    streak_frozen_days: [...frozen].sort((a, b) => a - b).map(toISO),
-    streak_last_award: lastAward,
-    updated_at: new Date().toISOString(),
-  }).eq('id', user.id)
+  // Only write when the freeze state actually changed — avoids a profile write on
+  // every page load (this endpoint is hit on the dashboard and progress page).
+  const newFrozen = [...frozen].sort((a, b) => a - b).map(toISO)
+  const oldFrozen = Array.isArray(profile?.streak_frozen_days) ? profile!.streak_frozen_days : []
+  const changed =
+    freezes !== (profile?.streak_freezes ?? 0) ||
+    lastAward !== (profile?.streak_last_award ?? 0) ||
+    JSON.stringify(newFrozen) !== JSON.stringify(oldFrozen)
+  if (changed) {
+    await admin.from('profiles').update({
+      streak_freezes: freezes,
+      streak_frozen_days: newFrozen,
+      streak_last_award: lastAward,
+      updated_at: new Date().toISOString(),
+    }).eq('id', user.id)
+  }
 
   return NextResponse.json({ current, best, todayDone, freezes, dailyMinutes, dailyGoal: DAILY_GOAL })
 }
