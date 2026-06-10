@@ -31,6 +31,16 @@ const NAV_ITEMS = [
   { href: '/dashboard/settings',   icon: 'settings',  key: 'settings'   },
 ]
 
+// The 5 primary destinations for the mobile bottom tab bar (home + the four
+// skills). Everything else stays reachable via the top-left menu drawer.
+const TAB_ITEMS = [
+  { href: '/dashboard',          icon: 'home',       key: 'overview'  },
+  { href: '/listening',          icon: 'headphones', key: 'listening' },
+  { href: '/reading',            icon: 'book',       key: 'reading'   },
+  { href: '/dashboard/writing',  icon: 'pencil',     key: 'writing'   },
+  { href: '/dashboard/speaking', icon: 'mic',        key: 'speaking'  },
+]
+
 const ICON_PATHS: Record<string, React.ReactNode> = {
   home:       <path d="M3 11l9-7 9 7v9a2 2 0 0 1-2 2h-4v-7h-6v7H5a2 2 0 0 1-2-2z"/>,
   headphones: <><path d="M3 18v-6a9 9 0 0 1 18 0v6"/><path d="M21 19a2 2 0 0 1-2 2h-1v-6h3z"/><path d="M3 19a2 2 0 0 0 2 2h1v-6H3z"/></>,
@@ -481,9 +491,33 @@ function DashboardLayoutInner({ children }: { children: ReactNode }) {
         </header>
 
         {/* Page content — scrolls for normal pages; exam pages use flex:1 to fill */}
-        <div style={{ flex: 1, display: 'flex', flexDirection: 'column', minHeight: 0, overflowY: 'auto' }}>
+        <div style={{ flex: 1, display: 'flex', flexDirection: 'column', minHeight: 0, overflowY: 'auto', paddingBottom: isMobile ? 'calc(58px + env(safe-area-inset-bottom))' : 0 }}>
           {children}
         </div>
+
+        {/* Mobile bottom tab bar — primary destinations one thumb-tap away. */}
+        {isMobile && (
+          <nav style={{
+            position: 'fixed', left: 0, right: 0, bottom: 0, zIndex: 45,
+            display: 'flex', background: 'var(--bg)', borderTop: '1px solid var(--border)',
+            paddingBottom: 'env(safe-area-inset-bottom)',
+            boxShadow: '0 -1px 12px color-mix(in srgb, var(--text) 6%, transparent)',
+          }}>
+            {TAB_ITEMS.map(({ href, icon, key }) => {
+              const active = href === '/dashboard' ? pathname === '/dashboard' : pathname.startsWith(href)
+              return (
+                <Link key={href} href={href} style={{
+                  flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
+                  gap: 3, padding: '8px 0 9px', textDecoration: 'none',
+                  color: active ? 'var(--accent)' : 'var(--text-3)',
+                }}>
+                  <NavIcon name={icon} size={21} color={active ? 'var(--accent)' : 'var(--text-3)'} strokeWidth={active ? 2.2 : 1.8} />
+                  <span style={{ fontSize: 10, fontWeight: active ? 700 : 500, letterSpacing: '0.01em' }}>{t(`dashboard.${key}`)}</span>
+                </Link>
+              )
+            })}
+          </nav>
+        )}
       </main>
 
       {/* Global overlays */}
