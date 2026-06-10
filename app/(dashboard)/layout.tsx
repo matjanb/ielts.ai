@@ -78,6 +78,10 @@ function DashboardLayoutInner({ children }: { children: ReactNode }) {
   const pathname = usePathname()
   const router = useRouter()
 
+  // Inside a full timed test (/reading/<id>, /listening/<id>, …) the page draws its
+  // own bottom bar — hide the global mobile tab bar so they don't stack/overlap.
+  const isExam = /^\/(reading|listening|writing|speaking)\/[^/]+/.test(pathname)
+
   // Sidebar hover state
   const [hover, setHover] = useState(false)
   const [pinned, setPinned] = useState(() => {
@@ -491,12 +495,12 @@ function DashboardLayoutInner({ children }: { children: ReactNode }) {
         </header>
 
         {/* Page content — scrolls for normal pages; exam pages use flex:1 to fill */}
-        <div style={{ flex: 1, display: 'flex', flexDirection: 'column', minHeight: 0, overflowY: 'auto', paddingBottom: isMobile ? 'calc(58px + env(safe-area-inset-bottom))' : 0 }}>
+        <div style={{ flex: 1, display: 'flex', flexDirection: 'column', minHeight: 0, overflowY: 'auto', paddingBottom: isMobile && !isExam ? 'calc(58px + env(safe-area-inset-bottom))' : 0 }}>
           {children}
         </div>
 
         {/* Mobile bottom tab bar — primary destinations one thumb-tap away. */}
-        {isMobile && (
+        {isMobile && !isExam && (
           <nav style={{
             position: 'fixed', left: 0, right: 0, bottom: 0, zIndex: 45,
             display: 'flex', background: 'var(--bg)', borderTop: '1px solid var(--border)',

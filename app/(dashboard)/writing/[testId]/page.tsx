@@ -7,6 +7,7 @@ import { getTestById, getWritingPromptsForTest, type WritingPrompt } from '@/lib
 import type { IeltsTest } from '@/lib/types/database'
 import { useLanguage } from '@/lib/i18n/LanguageContext'
 import { WritingFeedback, type FeedbackResult } from '@/components/writing/WritingFeedback'
+import { useIsMobile } from '@/lib/hooks/useIsMobile'
 
 export default function WritingTestPage() {
   const { t } = useLanguage()
@@ -39,6 +40,11 @@ export default function WritingTestPage() {
 
   const [allPrompts, setAllPrompts]       = useState<WritingPrompt[]>([])
   const [promptsLoading, setPromptsLoading] = useState(true)
+
+  const isMobile = useIsMobile()
+  // On phones the prompt can't sit beside the editor — it collapses to a tappable
+  // bar so the essay area gets the full screen.
+  const [promptOpen, setPromptOpen] = useState(true)
 
   useEffect(() => {
     async function load() {
@@ -130,14 +136,14 @@ export default function WritingTestPage() {
 
       {/* IELTS dark header */}
       <div style={{ background: '#2b2b2b', color: '#fff', padding: '8px 16px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexShrink: 0 }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 16, fontWeight: 700, fontSize: 14 }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: isMobile ? 8 : 16, fontWeight: 700, fontSize: 14, minWidth: 0 }}>
           <button onClick={() => router.push('/dashboard/writing')} style={{
             background: 'none', border: 'none', color: 'rgba(255,255,255,0.5)', cursor: 'pointer',
-            fontSize: 18, lineHeight: 1, padding: '0 4px', display: 'flex', alignItems: 'center',
+            fontSize: 18, lineHeight: 1, padding: '0 4px', display: 'flex', alignItems: 'center', flexShrink: 0,
           }}>←</button>
-          <span style={{ background: '#ffcb05', color: '#000', padding: '3px 8px', borderRadius: 2, fontSize: 11 }}>IELTS</span>
-          <span style={{ opacity: 0.7, fontWeight: 400, fontSize: 12 }}>{test?.title ?? t('dashboard.writing')}</span>
-          <div style={{ display: 'flex', gap: 4, marginLeft: 8 }}>
+          <span style={{ background: '#ffcb05', color: '#000', padding: '3px 8px', borderRadius: 2, fontSize: 11, flexShrink: 0 }}>IELTS</span>
+          {!isMobile && <span style={{ opacity: 0.7, fontWeight: 400, fontSize: 12 }}>{test?.title ?? t('dashboard.writing')}</span>}
+          <div style={{ display: 'flex', gap: 4, marginLeft: isMobile ? 0 : 8, flexShrink: 0 }}>
             {(['1', '2'] as const).map(n => (
               <button key={n} onClick={() => handleTaskTypeChange(n)} style={{
                 padding: '4px 12px', fontSize: 12, fontWeight: 700,
@@ -155,9 +161,9 @@ export default function WritingTestPage() {
             </button>
           ) : (
             <>
-              <span style={{ fontVariantNumeric: 'tabular-nums', color: wordCount >= minWords ? '#3aa278' : 'rgba(255,255,255,0.7)' }}>
+              {!isMobile && <span style={{ fontVariantNumeric: 'tabular-nums', color: wordCount >= minWords ? '#3aa278' : 'rgba(255,255,255,0.7)' }}>
                 {wordCount} / {minWords} {t('wtest.words')}
-              </span>
+              </span>}
               {result && alreadyGraded && (
                 <button onClick={() => { setShowResult(true); window.scrollTo({ top: 0 }) }} style={{ padding: '5px 14px', background: '#2f6b4f', color: '#fff', fontSize: 12, fontWeight: 700, borderRadius: 2, border: 'none', cursor: 'pointer' }}>
                   {t('wtest.viewResult')}
@@ -186,13 +192,32 @@ export default function WritingTestPage() {
         </div>
       ) : (
       /* Two-pane body: prompt + editor */
-      <div style={{ display: 'flex', flex: 1, minHeight: 0 }}>
+      <div style={{ display: 'flex', flexDirection: isMobile ? 'column' : 'row', flex: 1, minHeight: 0 }}>
 
-        {/* Pane 1: Prompt */}
-        <div style={{ width: '42%', borderRight: '2px solid var(--border)', background: 'var(--bg-elev)', overflow: 'auto', padding: '20px 24px' }}>
-          <div style={{ fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.06em', color: 'var(--text-3)', marginBottom: 4 }}>
+        {/* Pane 1: Prompt — collapses to a tappable bar on mobile */}
+        <div style={{
+          width: isMobile ? '100%' : '42%',
+          borderRight: isMobile ? 'none' : '2px solid var(--border)',
+          borderBottom: isMobile ? '1px solid var(--border)' : undefined,
+          background: 'var(--bg-elev)', overflow: 'auto', flexShrink: 0,
+          padding: isMobile ? '0 16px' : '20px 24px',
+          maxHeight: isMobile && promptOpen ? '40vh' : undefined,
+        }}>
+          {isMobile && (
+            <button onClick={() => setPromptOpen(o => !o)} style={{
+              position: 'sticky', top: 0, zIndex: 1, width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+              padding: '12px 0', background: 'var(--bg-elev)', border: 'none', cursor: 'pointer', color: 'var(--text)',
+            }}>
+              <span style={{ fontSize: 12, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.06em', color: 'var(--text-2)' }}>
+                Writing Task {taskType}
+              </span>
+              <span style={{ fontSize: 13, color: 'var(--text-3)' }}>{promptOpen ? '▲' : '▼'}</span>
+            </button>
+          )}
+          {(!isMobile || promptOpen) && (<>
+          {!isMobile && <div style={{ fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.06em', color: 'var(--text-3)', marginBottom: 4 }}>
             Writing Task {taskType}
-          </div>
+          </div>}
           <p style={{ fontSize: 12, color: 'var(--text-3)', marginBottom: 14 }}>
             {t('wtest.spend', { min: String(minutes) })}
           </p>
@@ -229,6 +254,7 @@ export default function WritingTestPage() {
               )}
             </>
           )}
+          </>)}
         </div>
 
         {/* Pane 2: Writing area */}
@@ -238,10 +264,12 @@ export default function WritingTestPage() {
               <button onClick={() => applyFormat('bold')}      style={{ padding: '3px 9px', fontSize: 12, fontWeight: 700, background: 'var(--bg-elev)', border: '1px solid var(--border)', borderRadius: 4, cursor: 'pointer', color: 'var(--text)' }}>B</button>
               <button onClick={() => applyFormat('italic')}    style={{ padding: '3px 9px', fontSize: 12, fontStyle: 'italic', background: 'var(--bg-elev)', border: '1px solid var(--border)', borderRadius: 4, cursor: 'pointer', color: 'var(--text)' }}>I</button>
               <button onClick={() => applyFormat('underline')} style={{ padding: '3px 9px', fontSize: 12, textDecoration: 'underline', background: 'var(--bg-elev)', border: '1px solid var(--border)', borderRadius: 4, cursor: 'pointer', color: 'var(--text)' }}>U</button>
-              <div style={{ width: 1, background: 'var(--border)', margin: '0 4px' }}/>
-              <button onClick={handleCut}   style={{ padding: '3px 9px', fontSize: 11, background: 'var(--bg-elev)', border: '1px solid var(--border)', borderRadius: 4, cursor: 'pointer', color: 'var(--text)' }}>{t('wtest.cut')}</button>
-              <button onClick={handleCopy}  style={{ padding: '3px 9px', fontSize: 11, background: 'var(--bg-elev)', border: '1px solid var(--border)', borderRadius: 4, cursor: 'pointer', color: 'var(--text)' }}>{t('wtest.copy')}</button>
-              <button onClick={handlePaste} style={{ padding: '3px 9px', fontSize: 11, background: 'var(--bg-elev)', border: '1px solid var(--border)', borderRadius: 4, cursor: 'pointer', color: 'var(--text)' }}>{t('wtest.paste')}</button>
+              {!isMobile && <>
+                <div style={{ width: 1, background: 'var(--border)', margin: '0 4px' }}/>
+                <button onClick={handleCut}   style={{ padding: '3px 9px', fontSize: 11, background: 'var(--bg-elev)', border: '1px solid var(--border)', borderRadius: 4, cursor: 'pointer', color: 'var(--text)' }}>{t('wtest.cut')}</button>
+                <button onClick={handleCopy}  style={{ padding: '3px 9px', fontSize: 11, background: 'var(--bg-elev)', border: '1px solid var(--border)', borderRadius: 4, cursor: 'pointer', color: 'var(--text)' }}>{t('wtest.copy')}</button>
+                <button onClick={handlePaste} style={{ padding: '3px 9px', fontSize: 11, background: 'var(--bg-elev)', border: '1px solid var(--border)', borderRadius: 4, cursor: 'pointer', color: 'var(--text)' }}>{t('wtest.paste')}</button>
+              </>}
             </div>
             <div style={{ fontSize: 12, color: wordCount >= minWords ? 'var(--accent)' : 'var(--text-3)' }}>
               <strong style={{ color: wordCount >= minWords ? 'var(--accent)' : 'var(--danger)' }}>{wordCount}</strong>
@@ -257,7 +285,7 @@ export default function WritingTestPage() {
             onInput={handleEditorInput}
             data-placeholder={t('wtest.placeholder')}
             style={{
-              flex: 1, padding: '20px 24px', outline: 'none', overflow: 'auto',
+              flex: 1, padding: isMobile ? '16px' : '20px 24px', outline: 'none', overflow: 'auto',
               fontFamily: 'var(--font-sans)', fontSize: 15, lineHeight: 1.7,
               background: 'var(--bg-elev)', color: 'var(--text)',
               whiteSpace: 'pre-wrap', wordBreak: 'break-word',

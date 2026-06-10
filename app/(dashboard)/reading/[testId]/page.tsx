@@ -10,6 +10,7 @@ import { createAttempt, saveAnswer as saveAnswerService } from '@/lib/services/a
 import { getUser } from '@/lib/services/auth'
 import { groupQuestions as groupMultiSelect } from '@/lib/utils/multiSelect'
 import { MultiSelectQuestion } from '@/components/practice/MultiSelectQuestion'
+import { useIsMobile } from '@/lib/hooks/useIsMobile'
 
 type QuestionWithSection = Question & { sectionNumber: number; sectionTitle: string; passageText: string }
 
@@ -234,6 +235,9 @@ export default function ReadingTestPage() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [activePassage, setActivePassage] = useState(1)
+  const isMobile = useIsMobile()
+  // On phones the text/questions can't sit side-by-side — show one at a time via a toggle.
+  const [mobileTab, setMobileTab] = useState<'passage' | 'questions'>('passage')
   const [activeQuestion, setActiveQuestion] = useState<string | null>(null)
 
   const containerRef = useRef<HTMLDivElement>(null)
@@ -399,13 +403,13 @@ export default function ReadingTestPage() {
 
       {/* IELTS dark header */}
       <div style={{ background: '#2b2b2b', color: '#fff', padding: '8px 16px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexShrink: 0 }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 12, fontSize: 13, fontWeight: 700 }}>
-          <span style={{ background: '#ffcb05', color: '#000', padding: '3px 8px', borderRadius: 2, fontSize: 11 }}>IELTS</span>
-          ielts.camp · {t('reading.practiceTag')}
-          <span style={{ fontSize: 11, opacity: 0.7, fontWeight: 400 }}>{test?.title ?? ''}</span>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 12, fontSize: 13, fontWeight: 700, minWidth: 0 }}>
+          <span style={{ background: '#ffcb05', color: '#000', padding: '3px 8px', borderRadius: 2, fontSize: 11, flexShrink: 0 }}>IELTS</span>
+          {!isMobile && <>ielts.camp · {t('reading.practiceTag')}
+          <span style={{ fontSize: 11, opacity: 0.7, fontWeight: 400, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{test?.title ?? ''}</span></>}
         </div>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
-          <span style={{ fontSize: 11, opacity: 0.7 }}>{answeredCount}/{totalQuestions} {t('reading.answered')}</span>
+        <div style={{ display: 'flex', alignItems: 'center', gap: isMobile ? 10 : 14, flexShrink: 0 }}>
+          {!isMobile && <span style={{ fontSize: 11, opacity: 0.7 }}>{answeredCount}/{totalQuestions} {t('reading.answered')}</span>}
           <Timer totalSeconds={3600} onExpire={handleTimeExpire} />
           <button onClick={handleSubmit} disabled={submitting}
             style={{ padding: '5px 14px', background: '#0066b3', color: '#fff', fontSize: 12, fontWeight: 700, borderRadius: 2, border: 'none', cursor: 'pointer', opacity: submitting ? 0.6 : 1 }}>
@@ -414,29 +418,58 @@ export default function ReadingTestPage() {
         </div>
       </div>
 
+      {/* Mobile: toggle between text and questions (no room for a split pane) */}
+      {isMobile && (
+        <div style={{ display: 'flex', flexShrink: 0, padding: '8px 12px', gap: 6, background: 'var(--bg-elev)', borderBottom: '1px solid var(--border)' }}>
+          {([['passage', t('reading.readingPassage')], ['questions', t('reading.answered')]] as const).map(([key, label]) => {
+            const on = mobileTab === key
+            return (
+              <button key={key} onClick={() => setMobileTab(key)} style={{
+                flex: 1, padding: '9px 0', fontSize: 13, fontWeight: 700, borderRadius: 8, cursor: 'pointer',
+                border: 'none', background: on ? 'var(--accent)' : 'var(--bg)',
+                color: on ? '#fff' : 'var(--text-2)',
+              }}>
+                {key === 'questions' ? `${label} (${answeredCount}/${totalQuestions})` : label}
+              </button>
+            )
+          })}
+        </div>
+      )}
+
       {/* Split pane */}
-      <div style={{ display: 'flex', flex: 1, minHeight: 0 }} ref={containerRef}>
+      <div style={{ display: 'flex', flexDirection: isMobile ? 'column' : 'row', flex: 1, minHeight: 0 }} ref={containerRef}>
         {/* Passage (left) */}
-        <div style={{ width: `${leftWidth}%`, display: 'flex', flexDirection: 'column', minWidth: 0, background: 'var(--bg-elev)', borderRight: '2px solid var(--border)' }}>
-          <div style={{ padding: '16px 24px', borderBottom: '1px solid var(--border)', flexShrink: 0 }}>
+        <div style={{
+          width: isMobile ? '100%' : `${leftWidth}%`,
+          display: isMobile && mobileTab !== 'passage' ? 'none' : 'flex',
+          flexDirection: 'column', minWidth: 0, background: 'var(--bg-elev)',
+          borderRight: isMobile ? 'none' : '2px solid var(--border)',
+        }}>
+          <div style={{ padding: isMobile ? '12px 16px' : '16px 24px', borderBottom: '1px solid var(--border)', flexShrink: 0 }}>
             <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: '0.08em', textTransform: 'uppercase', color: 'var(--accent)', marginBottom: 4 }}>
               {t('reading.readingPassage')} {activePassage}
             </div>
             <h2 style={{ fontSize: 15, fontWeight: 700, margin: 0, color: 'var(--text)' }}>{currentPassage?.title}</h2>
           </div>
-          <div style={{ flex: 1, overflowY: 'auto', padding: '16px 24px' }}>
+          <div style={{ flex: 1, overflowY: 'auto', padding: isMobile ? '14px 16px' : '16px 24px' }}>
             <PassageText text={passageText} />
           </div>
         </div>
 
-        {/* Drag divider */}
-        <div onMouseDown={startResize} style={{ width: 6, background: 'var(--border)', cursor: 'col-resize', flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-          <div style={{ width: 3, height: 40, borderRadius: 999, background: 'var(--border-strong)' }}/>
-        </div>
+        {/* Drag divider — desktop only */}
+        {!isMobile && (
+          <div onMouseDown={startResize} style={{ width: 6, background: 'var(--border)', cursor: 'col-resize', flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+            <div style={{ width: 3, height: 40, borderRadius: 999, background: 'var(--border-strong)' }}/>
+          </div>
+        )}
 
         {/* Questions (right) */}
-        <div style={{ width: `${100 - leftWidth}%`, display: 'flex', flexDirection: 'column', minWidth: 0, background: 'var(--bg-elev)' }}>
-          <div style={{ flex: 1, overflowY: 'auto', padding: '20px 24px', display: 'flex', flexDirection: 'column', gap: 24 }}>
+        <div style={{
+          width: isMobile ? '100%' : `${100 - leftWidth}%`,
+          display: isMobile && mobileTab !== 'questions' ? 'none' : 'flex',
+          flexDirection: 'column', minWidth: 0, background: 'var(--bg-elev)',
+        }}>
+          <div style={{ flex: 1, overflowY: 'auto', padding: isMobile ? '16px' : '20px 24px', display: 'flex', flexDirection: 'column', gap: 24 }}>
             {questionGroups.map((group, gi) => (
               <div key={gi}>
                 <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: '0.08em', textTransform: 'uppercase', color: 'var(--accent)', marginBottom: 10, paddingBottom: 8, borderBottom: '1px solid var(--border)' }}>
@@ -486,13 +519,13 @@ export default function ReadingTestPage() {
       </div>
 
       {/* Passage navigation bottom bar */}
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '10px 16px', borderTop: '1px solid var(--border)', background: 'var(--bg-elev)', flexShrink: 0 }}>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: isMobile ? '8px 10px' : '10px 16px', gap: 8, borderTop: '1px solid var(--border)', background: 'var(--bg-elev)', flexShrink: 0, paddingBottom: isMobile ? 'calc(8px + env(safe-area-inset-bottom))' : '10px' }}>
         <button onClick={() => setActivePassage(p => Math.max(1, p - 1))} disabled={activePassage === 1}
-          style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '7px 14px', borderRadius: 8, fontSize: 13, fontWeight: 500, color: 'var(--text-2)', background: 'none', border: '1px solid var(--border)', cursor: 'pointer', opacity: activePassage === 1 ? 0.3 : 1 }}>
-          <ChevronLeft size={14} strokeWidth={2} /> {t('reading.previous')}
+          style={{ display: 'flex', alignItems: 'center', gap: 6, padding: isMobile ? '8px 10px' : '7px 14px', borderRadius: 8, fontSize: 13, fontWeight: 500, color: 'var(--text-2)', background: 'none', border: '1px solid var(--border)', cursor: 'pointer', opacity: activePassage === 1 ? 0.3 : 1, flexShrink: 0 }}>
+          <ChevronLeft size={14} strokeWidth={2} /> {!isMobile && t('reading.previous')}
         </button>
 
-        <div style={{ display: 'flex', gap: 8 }}>
+        <div style={{ display: 'flex', gap: isMobile ? 6 : 8 }}>
           {sections.map(sec => {
             const secQs = questions.filter(q => q.sectionNumber === sec.section_number)
             const answered = secQs.filter(q => answers[q.id]).length
@@ -500,12 +533,12 @@ export default function ReadingTestPage() {
             return (
               <button key={sec.id} onClick={() => setActivePassage(sec.section_number)} style={{
                 display: 'flex', flexDirection: 'column', alignItems: 'center',
-                padding: '7px 20px', borderRadius: 8, fontSize: 13, fontWeight: 600,
+                padding: isMobile ? '6px 12px' : '7px 20px', borderRadius: 8, fontSize: 13, fontWeight: 600,
                 background: active ? 'var(--accent)' : 'var(--bg-soft)',
                 color: active ? 'var(--accent-fg)' : 'var(--text-2)',
                 border: 'none', cursor: 'pointer', transition: 'all .15s',
               }}>
-                <span>{t('reading.passage')} {sec.section_number}</span>
+                <span>{isMobile ? sec.section_number : `${t('reading.passage')} ${sec.section_number}`}</span>
                 <span style={{ fontSize: 10, opacity: 0.7 }}>{answered}/{secQs.length}</span>
               </button>
             )
@@ -513,8 +546,8 @@ export default function ReadingTestPage() {
         </div>
 
         <button onClick={() => setActivePassage(p => Math.min(sections.length, p + 1))} disabled={activePassage === sections.length}
-          style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '7px 14px', borderRadius: 8, fontSize: 13, fontWeight: 500, color: 'var(--text-2)', background: 'none', border: '1px solid var(--border)', cursor: 'pointer', opacity: activePassage === sections.length ? 0.3 : 1 }}>
-          {t('reading.next')} <ChevronRight size={14} strokeWidth={2} />
+          style={{ display: 'flex', alignItems: 'center', gap: 6, padding: isMobile ? '8px 10px' : '7px 14px', borderRadius: 8, fontSize: 13, fontWeight: 500, color: 'var(--text-2)', background: 'none', border: '1px solid var(--border)', cursor: 'pointer', opacity: activePassage === sections.length ? 0.3 : 1, flexShrink: 0 }}>
+          {!isMobile && t('reading.next')} <ChevronRight size={14} strokeWidth={2} />
         </button>
       </div>
     </div>

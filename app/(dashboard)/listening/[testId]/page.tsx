@@ -10,6 +10,7 @@ import type { IeltsTest, TestSection, Question } from '@/lib/types/database'
 import { getTestById, getSectionsByTestId, getTestQuestions } from '@/lib/services/tests'
 import { createAttempt, saveAnswer as saveAnswerService } from '@/lib/services/attempts'
 import { getUser } from '@/lib/services/auth'
+import { useIsMobile } from '@/lib/hooks/useIsMobile'
 
 type QuestionWithSection = Question & { sectionNumber: number; sectionTitle: string }
 
@@ -27,6 +28,7 @@ function AudioPlayer({
   sectionLabel?: string
 }) {
   const audioRef = useRef<HTMLAudioElement | null>(null)
+  const isMobile = useIsMobile()
   const [playing, setPlaying] = useState(false)
   const [progress, setProgress] = useState(0)
   const [duration, setDuration] = useState(0)
@@ -112,7 +114,7 @@ function AudioPlayer({
 
   // Official IELTS-style gray audio strip (full width, below the dark header)
   return (
-    <div style={{ background: '#dcdcdc', borderBottom: '1px solid #aaa', padding: '10px 16px', display: 'flex', alignItems: 'center', gap: 14, flexShrink: 0 }}>
+    <div style={{ background: '#dcdcdc', borderBottom: '1px solid #aaa', padding: isMobile ? '8px 12px' : '10px 16px', display: 'flex', alignItems: 'center', gap: isMobile ? 10 : 14, flexShrink: 0 }}>
       {/* eslint-disable-next-line jsx-a11y/media-has-caption */}
       {audioUrl && <audio ref={audioRef} src={audioUrl} preload="auto" />}
 
@@ -138,7 +140,7 @@ function AudioPlayer({
             aria-label="Audio progress"
           />
           <span style={{ fontFamily: 'var(--font-mono)', fontSize: 12, color: '#333', flexShrink: 0 }}>
-            {fmt(progress)} / {fmt(duration)}
+            {isMobile ? fmt(progress) : `${fmt(progress)} / ${fmt(duration)}`}
           </span>
           <button onClick={cycleSpeed} style={{
             fontSize: 12, fontWeight: 700, color: '#0066b3', background: '#fff', border: '1px solid #888',
@@ -146,7 +148,7 @@ function AudioPlayer({
           }}>
             {speed}x
           </button>
-          {sectionLabel && (
+          {sectionLabel && !isMobile && (
             <span style={{ fontSize: 12, color: '#333', padding: '2px 8px', background: '#fff2a8', borderRadius: 2, fontWeight: 600, flexShrink: 0 }}>
               {sectionLabel}
             </span>
@@ -1970,6 +1972,7 @@ export default function ListeningTestPage() {
   const router = useRouter()
   const params = useParams<{ testId: string }>()
   const testId = params?.testId ?? ''
+  const isMobile = useIsMobile()
 
   const [test, setTest] = useState<IeltsTest | null>(null)
   const [sections, setSections] = useState<TestSection[]>([])
@@ -2214,15 +2217,15 @@ export default function ListeningTestPage() {
 
       {/* ── IELTS dark exam header ── */}
       <div style={{ position: 'sticky', top: 0, zIndex: 40, background: '#2b2b2b', color: '#fff', padding: '8px 16px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 16, minWidth: 0 }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 10, fontWeight: 700, fontSize: 14 }}>
-            <span style={{ background: '#ffcb05', color: '#000', padding: '3px 8px', borderRadius: 2, fontSize: 11 }}>IELTS</span>
-            ielts.camp · {t('listening.practiceTag')}
+            <span style={{ background: '#ffcb05', color: '#000', padding: '3px 8px', borderRadius: 2, fontSize: 11, flexShrink: 0 }}>IELTS</span>
+            {!isMobile && <>ielts.camp · {t('listening.practiceTag')}</>}
           </div>
-          <span style={{ fontSize: 11, opacity: 0.6 }}>{test?.title ?? ''}</span>
+          {!isMobile && <span style={{ fontSize: 11, opacity: 0.6 }}>{test?.title ?? ''}</span>}
         </div>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-          <span style={{ fontSize: 11, opacity: 0.7 }}>{answeredCount}/{questions.length} {t('listening.answered')}</span>
+        <div style={{ display: 'flex', alignItems: 'center', gap: isMobile ? 10 : 12, flexShrink: 0 }}>
+          {!isMobile && <span style={{ fontSize: 11, opacity: 0.7 }}>{answeredCount}/{questions.length} {t('listening.answered')}</span>}
           <TestTimer totalSeconds={1800} onExpire={handleTimeExpire} />
           <button onClick={handleSubmit} disabled={submitting}
             style={{ padding: '5px 14px', background: '#0066b3', color: '#fff', fontSize: 12, fontWeight: 700, borderRadius: 2, border: 'none', cursor: 'pointer', opacity: submitting ? 0.6 : 1 }}>
@@ -2239,7 +2242,7 @@ export default function ListeningTestPage() {
       />
 
       {/* ── Main scrollable content ── */}
-      <div style={{ flex: 1, overflowY: 'auto', padding: '32px 48px 120px' }}>
+      <div style={{ flex: 1, overflowY: 'auto', padding: isMobile ? '20px 16px 120px' : '32px 48px 120px' }}>
         <div style={{ maxWidth: 800, margin: '0 auto' }}>
 
         {/* Section header */}
@@ -2318,6 +2321,7 @@ export default function ListeningTestPage() {
         background: 'color-mix(in srgb, var(--bg-elev) 92%, transparent)',
         backdropFilter: 'blur(20px)',
         borderTop: '1px solid var(--border)',
+        paddingBottom: 'env(safe-area-inset-bottom)',
       }}>
         <div style={{ display: 'flex' }}>
           {sections.map((s, i) => {
