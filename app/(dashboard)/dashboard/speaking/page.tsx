@@ -211,7 +211,6 @@ function LiveExam({ sessionId, grading, error, onComplete, onExit }: {
   const [runPhase, setRunPhase] = useState<RunPhase>('loading')
   const [answer, setAnswer] = useState('')
   const [answerMeta, setAnswerMeta] = useState<TurnMetrics | null>(null)
-  const [typed, setTyped] = useState(false)
   const [elapsed, setElapsed] = useState(0)
   const [micError, setMicError] = useState('')
   const [speaking, setSpeaking] = useState(false)
@@ -270,7 +269,7 @@ function LiveExam({ sessionId, grading, error, onComplete, onExit }: {
       const data = await res.json()
       if (!res.ok) { setMicError(data.error ?? t('speak.errService')); setRunPhase('idle'); return }
       const m = data as ExaminerMove
-      setAnswer(''); setAnswerMeta(null); setTyped(false); lastBlobRef.current = null
+      setAnswer(''); setAnswerMeta(null); lastBlobRef.current = null
       if (m.endOfTest) {
         onComplete(gradeTurnsRef.current, sessionId, Math.max(1, Math.round(elapsed / 60)))
         return
@@ -352,7 +351,7 @@ function LiveExam({ sessionId, grading, error, onComplete, onExit }: {
 
   const startRecording = useCallback(async () => {
     setMicError(''); stopVoice()
-    if (typeof navigator === 'undefined' || !navigator.mediaDevices?.getUserMedia) { setMicError(t('speak.errUnsupported')); setTyped(true); return }
+    if (typeof navigator === 'undefined' || !navigator.mediaDevices?.getUserMedia) { setMicError(t('speak.errUnsupported')); return }
     try {
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true })
       try {
@@ -391,7 +390,7 @@ function LiveExam({ sessionId, grading, error, onComplete, onExit }: {
         finally { setRunPhase('idle') }
       }
       mr.start(); mediaRef.current = mr; setRunPhase('recording')
-    } catch { setMicError(t('speak.errDenied')); setTyped(true) }
+    } catch { setMicError(t('speak.errDenied')) }
   }, [stopVoice, t])
   const stopRecording = useCallback(() => { mediaRef.current?.stop() }, [])
 
@@ -423,7 +422,7 @@ function LiveExam({ sessionId, grading, error, onComplete, onExit }: {
     const turnIndex = gradeTurnsRef.current.length
     let audioPath: string | undefined
     // Only the Part 2 long turn is uploaded for acoustic pronunciation grading.
-    if (move.isCueCard && lastBlobRef.current && !typed) {
+    if (move.isCueCard && lastBlobRef.current) {
       setRunPhase('saving')
       audioPath = await uploadWav(lastBlobRef.current, turnIndex)
     }
@@ -446,7 +445,7 @@ function LiveExam({ sessionId, grading, error, onComplete, onExit }: {
   const orbMode: 'think' | 'rec' | 'speak' | 'idle' =
     busy ? 'think' : runPhase === 'recording' ? 'rec' : speaking ? 'speak' : 'idle'
   const orbAnim = orbMode === 'speak' ? 'orb-speak' : orbMode === 'rec' ? '' : 'orb-breathe'
-  const orbInteractive = !(busy || runPhase === 'prep' || typed)
+  const orbInteractive = !(busy || runPhase === 'prep')
 
   const caption =
     grading ? t('speak.scoring')
@@ -582,21 +581,14 @@ function LiveExam({ sessionId, grading, error, onComplete, onExit }: {
             </div>
           )}
 
-          {/* Answer: transcript preview (read-only) or typed fallback */}
-          {move && runPhase !== 'prep' && (typed || answer.trim()) && (
+          {/* Answer: read-only transcript preview of what you said */}
+          {move && runPhase !== 'prep' && answer.trim() && (
             <div style={{ width: '100%' }}>
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 }}>
                 <span style={{ fontSize: 10.5, color: 'var(--text-3)', letterSpacing: '0.08em', fontWeight: 600 }}>{t('speak.yourAnswer')}</span>
                 <span style={{ fontSize: 11, color: 'var(--text-3)', fontFamily: 'var(--font-mono)' }}>{words(answer)} {t('speak.words')}</span>
               </div>
-              {typed ? (
-                <textarea value={answer} onChange={e => setAnswer(e.target.value)} autoFocus
-                  placeholder={move.isCueCard ? t('speak.ansLong') : t('speak.ansShort')}
-                  style={{ width: '100%', minHeight: move.isCueCard ? 130 : 96, padding: '14px 16px', background: 'var(--bg-elev)', border: '1px solid var(--border)', borderRadius: 16, color: 'var(--text)', fontSize: 14.5, lineHeight: 1.65, resize: 'vertical', outline: 'none', fontFamily: 'var(--font-sans)' }}
-                  onFocus={e => (e.currentTarget.style.borderColor = 'var(--accent)')} onBlur={e => (e.currentTarget.style.borderColor = 'var(--border)')}/>
-              ) : (
-                <p style={{ margin: 0, padding: '14px 16px', background: 'var(--bg-elev)', border: '1px solid var(--border)', borderRadius: 16, color: 'var(--text-2)', fontSize: 14, lineHeight: 1.6 }}>{answer}</p>
-              )}
+              <p style={{ margin: 0, padding: '14px 16px', background: 'var(--bg-elev)', border: '1px solid var(--border)', borderRadius: 16, color: 'var(--text-2)', fontSize: 14, lineHeight: 1.6 }}>{answer}</p>
             </div>
           )}
 
@@ -607,11 +599,6 @@ function LiveExam({ sessionId, grading, error, onComplete, onExit }: {
       {/* Dock */}
       <div style={{ padding: isMobile ? '12px 16px 18px' : '14px 24px 18px', paddingBottom: isMobile ? 'calc(14px + env(safe-area-inset-bottom))' : 18, borderTop: '1px solid var(--border)', background: 'color-mix(in srgb, var(--bg-soft) 70%, transparent)', backdropFilter: 'blur(8px)', flexShrink: 0 }}>
         <div style={{ maxWidth: 560, margin: '0 auto', display: 'flex', alignItems: 'center', gap: 12 }}>
-          {runPhase !== 'prep' && (
-            <button onClick={() => { if (typed) setTyped(false); else { stopVoice(); setTyped(true) } }} disabled={busy || runPhase === 'recording'} style={{ padding: '13px 14px', borderRadius: 12, fontSize: 12.5, fontWeight: 600, background: 'transparent', color: 'var(--text-2)', border: '1px solid var(--border)', cursor: busy || runPhase === 'recording' ? 'default' : 'pointer', whiteSpace: 'nowrap' }}>
-              {typed ? t('speak.recordInstead') : t('speak.typeInstead')}
-            </button>
-          )}
           {runPhase === 'prep' ? (
             <button onClick={() => setRunPhase('idle')} style={{ flex: 1, padding: '14px', borderRadius: 12, fontSize: 14.5, fontWeight: 700, background: 'var(--accent)', color: 'var(--accent-fg)', border: 'none', cursor: 'pointer' }}>{t('speak.ready2')} →</button>
           ) : (
