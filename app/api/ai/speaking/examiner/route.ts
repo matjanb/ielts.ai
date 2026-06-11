@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import openai from '@/lib/openai/client'
-import { getApiUser, hasActiveSubscription, enforceAiLimits, recordUsage, err } from '@/lib/api/helpers'
+import { gateAiRequest, recordUsage, err } from '@/lib/api/helpers'
 
 // The dynamic AI examiner. Given the conversation so far, it produces the NEXT
 // examiner move — reacting to what the candidate just said rather than reading
@@ -80,14 +80,8 @@ function instructionFor(stage: Stage): string {
 }
 
 export async function POST(request: NextRequest) {
-  const user = await getApiUser()
-  if (!user) return err('Unauthorized', 401)
-
-  const allowed = await hasActiveSubscription(user.id)
-  if (!allowed) return err('Subscription required.', 403)
-
-  const limited = await enforceAiLimits(user.id, 'speaking_examiner')
-  if (limited) return limited
+  const { user, error: gate } = await gateAiRequest('speaking_examiner')
+  if (gate) return gate
 
   let body: { turns?: DialogueTurn[] }
   try {
@@ -117,7 +111,9 @@ export async function POST(request: NextRequest) {
 
   try {
     const completion = await openai.chat.completions.create({
-      model: 'gpt-4o',
+      // mini is plenty for generating one structured question and keeps the
+      // between-turns wait short; the server already enforces test structure.
+      model: 'gpt-4o-mini',
       temperature: 0.7,
       max_tokens: 350,
       response_format: { type: 'json_object' },

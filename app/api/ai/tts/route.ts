@@ -1,22 +1,18 @@
 import { NextRequest, NextResponse } from 'next/server'
 import openai from '@/lib/openai/client'
-import { getApiUser, hasActiveSubscription, enforceAiLimits, recordUsage, err } from '@/lib/api/helpers'
+import { gateAiRequest, recordUsage, err } from '@/lib/api/helpers'
 
 // Voices the examiner's questions so the test is taken by ear, like the real
-// exam. Returns raw MP3 bytes the client plays back. Kept tiny and stateless —
-// the examiner text comes from /api/ai/speaking/examiner.
+// exam. Streams raw MP3 bytes straight through from OpenAI (no server-side
+// buffering) so playback can start as soon as possible. Uses tts-1, the
+// low-latency TTS model — the between-question wait matters more here than
+// studio-grade voice quality.
 
 const MAX_CHARS = 600 // an examiner question is short; cap to bound TTS cost
 
 export async function POST(request: NextRequest) {
-  const user = await getApiUser()
-  if (!user) return err('Unauthorized', 401)
-
-  const allowed = await hasActiveSubscription(user.id)
-  if (!allowed) return err('Subscription required.', 403)
-
-  const limited = await enforceAiLimits(user.id, 'tts')
-  if (limited) return limited
+  const { user, error: gate } = await gateAiRequest('tts')
+  if (gate) return gate
 
   let body: { text?: string }
   try {
@@ -31,17 +27,16 @@ export async function POST(request: NextRequest) {
 
   try {
     const speech = await openai.audio.speech.create({
-      model: 'gpt-4o-mini-tts',
-      voice: 'sage', // warm, measured female voice for "Sarah"
+      model: 'tts-1',
+      voice: 'nova', // warm, clear female voice for "Sarah"
       input: text,
-      instructions: 'Speak as a calm, professional British IELTS examiner: clear, neutral, unhurried.',
       response_format: 'mp3',
     })
 
-    const buffer = Buffer.from(await speech.arrayBuffer())
     await recordUsage(user.id, 'tts')
 
-    return new NextResponse(buffer, {
+    // speech.body is a ReadableStream — forward it directly to the client.
+    return new NextResponse(speech.body, {
       status: 200,
       headers: {
         'Content-Type': 'audio/mpeg',

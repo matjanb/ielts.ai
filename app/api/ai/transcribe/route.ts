@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import openai from '@/lib/openai/client'
-import { getApiUser, hasActiveSubscription, recordUsage, enforceAiLimits, err } from '@/lib/api/helpers'
+import { gateAiRequest, recordUsage, err } from '@/lib/api/helpers'
 import { computeFluencyMetrics, type WhisperWord } from '@/lib/ielts/fluency'
 
 // Transcribes one recorded answer with Whisper and derives objective fluency
@@ -13,14 +13,8 @@ import { computeFluencyMetrics, type WhisperWord } from '@/lib/ielts/fluency'
 // detect the language and report it, so the grader can refuse to score
 // non-English answers (real IELTS Speaking is English-only).
 export async function POST(request: NextRequest) {
-  const user = await getApiUser()
-  if (!user) return err('Unauthorized', 401)
-
-  const allowed = await hasActiveSubscription(user.id)
-  if (!allowed) return err('Subscription required.', 403)
-
-  const limited = await enforceAiLimits(user.id, 'transcribe')
-  if (limited) return limited
+  const { user, error: gate } = await gateAiRequest('transcribe')
+  if (gate) return gate
 
   let form: FormData
   try {

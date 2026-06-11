@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import openai from '@/lib/openai/client'
 import { createAdminClient } from '@/lib/supabase/admin'
-import { getApiUser, hasActiveSubscription, recordUsage, enforceAiLimits, err } from '@/lib/api/helpers'
+import { gateAiRequest, recordUsage, err } from '@/lib/api/helpers'
 import { downloadSpeakingAudioBase64 } from '@/lib/services/speakingAudio.server'
 import { SPEAKING_RUBRIC, EXAMINER_PERSONA } from '@/lib/ielts/rubrics'
 import { clampBand, overallBand } from '@/lib/ielts/band'
@@ -108,14 +108,8 @@ function parseAssessment(raw: string): SpeakingResult {
 }
 
 export async function POST(request: NextRequest) {
-  const user = await getApiUser()
-  if (!user) return err('Unauthorized', 401)
-
-  const allowed = await hasActiveSubscription(user.id)
-  if (!allowed) return err('Subscription required.', 403)
-
-  const limited = await enforceAiLimits(user.id, 'speaking')
-  if (limited) return limited
+  const { user, error: gate } = await gateAiRequest('speaking')
+  if (gate) return gate
 
   let body: { topic?: string; sessionId?: string; durationMinutes?: number; turns?: IncomingTurn[] }
   try {

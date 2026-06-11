@@ -101,3 +101,24 @@ export async function enforceAiLimits(userId: string, feature: string): Promise<
 export function err(message: string, status: number) {
   return NextResponse.json({ error: message }, { status })
 }
+
+/**
+ * One gate for the AI endpoints: authenticate, then check subscription and the
+ * rate limit IN PARALLEL (they each hit the DB, so running them concurrently
+ * saves a round trip on the per-turn hot path — examiner/tts/transcribe). On
+ * success returns the user; otherwise returns the response to send back.
+ */
+export async function gateAiRequest(feature: string): Promise<
+  | { user: NonNullable<Awaited<ReturnType<typeof getApiUser>>>; error: null }
+  | { user: null; error: NextResponse }
+> {
+  const user = await getApiUser()
+  if (!user) return { user: null, error: err('Unauthorized', 401) }
+  const [allowed, limited] = await Promise.all([
+    hasActiveSubscription(user.id),
+    enforceAiLimits(user.id, feature),
+  ])
+  if (!allowed) return { user: null, error: err('Subscription required.', 403) }
+  if (limited) return { user: null, error: limited }
+  return { user, error: null }
+}
