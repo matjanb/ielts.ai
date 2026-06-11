@@ -7,11 +7,11 @@ import { computeFluencyMetrics, type WhisperWord } from '@/lib/ielts/fluency'
 // signals (pauses, speech rate) from the word timestamps. The page accumulates
 // these per turn; /api/ai/speaking grades the whole session at the end.
 //
-// We deliberately do NOT force `language: 'en'`. Forcing English made Whisper
-// hallucinate plausible English for non-English speech, so a candidate who
-// answered in another language still got a normal band. Instead we let Whisper
-// detect the language and report it, so the grader can refuse to score
-// non-English answers (real IELTS Speaking is English-only).
+// We pin `language: 'en'`: IELTS Speaking is taken in English, and without the
+// hint Whisper mis-detects the language on short answers (a one-word reply came
+// back transcribed in Cyrillic). The anti-cheat for someone genuinely speaking
+// another language is handled at grading time, where the Part 2 audio goes to
+// an audio model that hears the actual speech.
 export async function POST(request: NextRequest) {
   const { user, error: gate } = await gateAiRequest('transcribe')
   if (gate) return gate
@@ -35,15 +35,12 @@ export async function POST(request: NextRequest) {
     const transcription = await openai.audio.transcriptions.create({
       file: audio,
       model: 'whisper-1',
+      language: 'en',
       response_format: 'verbose_json',
       timestamp_granularities: ['word'],
     })
 
     const transcript = transcription.text?.trim() ?? ''
-    const language = transcription.language ?? 'unknown'
-    // Whisper reports the language name ("english") or an ISO code depending on
-    // the input — accept either form.
-    const isEnglish = /^(en|english)$/i.test(language)
     const metrics = computeFluencyMetrics(
       transcription.words as WhisperWord[] | undefined,
       transcription.duration,
@@ -51,7 +48,7 @@ export async function POST(request: NextRequest) {
     )
 
     await recordUsage(user.id, 'transcribe')
-    return NextResponse.json({ transcript, language, isEnglish, ...metrics })
+    return NextResponse.json({ transcript, ...metrics })
   } catch (e) {
     console.error('[AI transcribe]', e)
     return err('Transcription failed. Please try again.', 500)

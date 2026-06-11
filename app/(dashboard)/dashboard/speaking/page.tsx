@@ -1,7 +1,6 @@
 'use client'
 
 import { useState, useRef, useEffect, useCallback } from 'react'
-import { Loader2 } from 'lucide-react'
 import { useLanguage } from '@/lib/i18n/LanguageContext'
 import { useIsMobile } from '@/lib/hooks/useIsMobile'
 import { createClient } from '@/lib/supabase/client'
@@ -210,7 +209,6 @@ function LiveExam({ sessionId, grading, error, onComplete, onExit }: {
   const [move, setMove] = useState<ExaminerMove | null>(null)
   const [runPhase, setRunPhase] = useState<RunPhase>('loading')
   const [answer, setAnswer] = useState('')
-  const [answerMeta, setAnswerMeta] = useState<TurnMetrics | null>(null)
   const [elapsed, setElapsed] = useState(0)
   const [micError, setMicError] = useState('')
   const [speaking, setSpeaking] = useState(false)
@@ -239,6 +237,12 @@ function LiveExam({ sessionId, grading, error, onComplete, onExit }: {
   const userIdRef = useRef<string | null>(null)
   const mutedRef = useRef(false)
   useEffect(() => { mutedRef.current = muted }, [muted])
+  // Latest-value refs so the recorder's onstop / VAD callbacks (created once when
+  // recording starts) always commit against the current question and advancer.
+  const moveRef = useRef<ExaminerMove | null>(null)
+  useEffect(() => { moveRef.current = move }, [move])
+  const advanceRef = useRef<(d: DialogueTurn[]) => void>(() => {})
+  const committingRef = useRef(false)
 
   const stopVoice = useCallback(() => {
     if (ttsRef.current) { ttsRef.current.pause(); ttsRef.current = null }
@@ -269,7 +273,7 @@ function LiveExam({ sessionId, grading, error, onComplete, onExit }: {
       const data = await res.json()
       if (!res.ok) { setMicError(data.error ?? t('speak.errService')); setRunPhase('idle'); return }
       const m = data as ExaminerMove
-      setAnswer(''); setAnswerMeta(null); lastBlobRef.current = null
+      setAnswer(''); lastBlobRef.current = null; committingRef.current = false
       if (m.endOfTest) {
         onComplete(gradeTurnsRef.current, sessionId, Math.max(1, Math.round(elapsed / 60)))
         return
@@ -278,8 +282,46 @@ function LiveExam({ sessionId, grading, error, onComplete, onExit }: {
       if (m.isCueCard) { setPrepLeft(60); setPrepNotes(''); setRunPhase('prep') }
       else setRunPhase('idle')
       speak(examinerSpokenText(m))
-    } catch { setMicError(t('speak.errService')); setRunPhase('idle') }
+    } catch { setMicError(t('speak.errService')); setRunPhase('idle'); committingRef.current = false }
   }, [sessionId, elapsed, onComplete, speak, stopVoice, t])
+  useEffect(() => { advanceRef.current = advance }, [advance])
+
+  const uploadWav = useCallback(async (blob: Blob, turnIndex: number): Promise<string | undefined> => {
+    const uid = userIdRef.current
+    if (!uid) return undefined
+    try {
+      const wav = await blobToWav(blob)
+      const path = `${uid}/${sessionId}/${turnIndex}.wav`
+      const { error: upErr } = await createClient().storage.from('speaking-audio').upload(path, wav, { contentType: 'audio/wav', upsert: true })
+      return upErr ? undefined : path
+    } catch { return undefined }
+  }, [sessionId])
+
+  // Record one answer and move straight on (hands-free): no "Continue" tap.
+  const commitTurn = useCallback(async (text: string, meta: TurnMetrics | null, blob: Blob | null) => {
+    const m = moveRef.current
+    if (!m || committingRef.current || !text.trim()) return
+    committingRef.current = true
+    stopVoice()
+    const qText = examinerQuestionText(m)
+    dialogueRef.current = [
+      ...dialogueRef.current,
+      { role: 'examiner', part: m.part, text: qText },
+      { role: 'candidate', part: m.part, text: text.trim() },
+    ]
+    const turnIndex = gradeTurnsRef.current.length
+    let audioPath: string | undefined
+    // Only the Part 2 long turn is uploaded for acoustic pronunciation grading.
+    if (m.isCueCard && blob) {
+      setRunPhase('saving')
+      audioPath = await uploadWav(blob, turnIndex)
+    }
+    gradeTurnsRef.current = [
+      ...gradeTurnsRef.current,
+      { part: m.part, question: qText, answer: text.trim(), audioPath, ...(meta ?? {}) },
+    ]
+    advanceRef.current(dialogueRef.current)
+  }, [stopVoice, uploadWav])
 
   // Kick off the test: resolve the user id (for the audio storage path) and ask
   // the first question.
@@ -318,9 +360,12 @@ function LiveExam({ sessionId, grading, error, onComplete, onExit }: {
     if (ttsRef.current) ttsRef.current.pause()
   }, [])
 
-  // Drive the orb from live mic levels while recording: it swells and brightens
-  // with the candidate's voice. Written straight to the DOM each frame (no React
-  // re-render), and smoothed so the motion is organic rather than jittery.
+  const stopRecording = useCallback(() => { mediaRef.current?.stop() }, [])
+
+  // While recording: drive the orb from live mic levels (it swells/brightens
+  // with the voice) AND run voice-activity detection so the turn ends on its own
+  // when the candidate stops talking — no button press. Written straight to the
+  // DOM each frame (no React re-render) and smoothed so motion is organic.
   useEffect(() => {
     if (runPhase !== 'recording') return
     const analyser = analyserRef.current
@@ -328,6 +373,12 @@ function LiveExam({ sessionId, grading, error, onComplete, onExit }: {
     if (!analyser || !orb) return
     const time = new Uint8Array(analyser.fftSize)
     let smooth = 0
+    let hasSpoken = false
+    const start = performance.now()
+    let lastVoice = start
+    const VOICE_ON = 0.045     // smoothed level that counts as speaking
+    const SILENCE_MS = 1800    // trailing silence that ends the turn
+    const MAX_MS = 120_000     // hard cap on a single answer
     const draw = () => {
       analyser.getByteTimeDomainData(time)
       let sum = 0
@@ -336,6 +387,12 @@ function LiveExam({ sessionId, grading, error, onComplete, onExit }: {
       smooth += (level - smooth) * 0.25
       orb.style.transform = `scale(${(1 + smooth * 0.42).toFixed(3)})`
       orb.style.filter = `brightness(${(1 + smooth * 0.5).toFixed(2)})`
+      const now = performance.now()
+      if (smooth > VOICE_ON) { hasSpoken = true; lastVoice = now }
+      if ((hasSpoken && now - lastVoice > SILENCE_MS) || now - start > MAX_MS) {
+        stopRecording() // onstop transcribes and auto-advances
+        return
+      }
       rafRef.current = requestAnimationFrame(draw)
     }
     rafRef.current = requestAnimationFrame(draw)
@@ -347,6 +404,7 @@ function LiveExam({ sessionId, grading, error, onComplete, onExit }: {
       audioCtxRef.current = null
       if (orb) { orb.style.transform = ''; orb.style.filter = '' }
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [runPhase])
 
   const startRecording = useCallback(async () => {
@@ -381,64 +439,22 @@ function LiveExam({ sessionId, grading, error, onComplete, onExit }: {
           const fd = new FormData(); fd.append('audio', blob, audioFileName(mime))
           const res = await fetch('/api/ai/transcribe', { method: 'POST', body: fd })
           const data = await res.json()
-          if (res.ok && typeof data.transcript === 'string') {
-            setAnswer(prev => (prev.trim() ? prev.trim() + ' ' : '') + data.transcript)
-            setAnswerMeta({ duration_ms: data.duration_ms ?? 0, words: data.words ?? 0, pause_count: data.pause_count ?? 0, pause_total_ms: data.pause_total_ms ?? 0, speech_rate_wpm: data.speech_rate_wpm ?? null })
-            if (data.isEnglish === false) setMicError(t('speak.notEnglish'))
-          } else setMicError(data.error ?? t('speak.errTranscribe'))
-        } catch { setMicError(t('speak.errService')) }
-        finally { setRunPhase('idle') }
+          if (res.ok && typeof data.transcript === 'string' && data.transcript.trim()) {
+            const meta: TurnMetrics = { duration_ms: data.duration_ms ?? 0, words: data.words ?? 0, pause_count: data.pause_count ?? 0, pause_total_ms: data.pause_total_ms ?? 0, speech_rate_wpm: data.speech_rate_wpm ?? null }
+            setAnswer(data.transcript.trim())
+            commitTurn(data.transcript, meta, blob) // hands-free: move straight on
+          } else { setMicError(t('speak.errTranscribe')); setRunPhase('idle') }
+        } catch { setMicError(t('speak.errService')); setRunPhase('idle') }
       }
       mr.start(); mediaRef.current = mr; setRunPhase('recording')
     } catch { setMicError(t('speak.errDenied')) }
-  }, [stopVoice, t])
-  const stopRecording = useCallback(() => { mediaRef.current?.stop() }, [])
-
-  async function uploadWav(blob: Blob, turnIndex: number): Promise<string | undefined> {
-    const uid = userIdRef.current
-    if (!uid) return undefined
-    try {
-      const wav = await blobToWav(blob)
-      const path = `${uid}/${sessionId}/${turnIndex}.wav`
-      const { error: upErr } = await createClient().storage.from('speaking-audio').upload(path, wav, { contentType: 'audio/wav', upsert: true })
-      return upErr ? undefined : path
-    } catch { return undefined }
-  }
-
-  async function submitTurn() {
-    if (!move) return
-    if (runPhase === 'recording') { stopRecording(); return }
-    const text = answer.trim()
-    if (!text) { setMicError(t('speak.needAnswer')); return }
-    stopVoice()
-
-    const qText = examinerQuestionText(move)
-    dialogueRef.current = [
-      ...dialogueRef.current,
-      { role: 'examiner', part: move.part, text: qText },
-      { role: 'candidate', part: move.part, text },
-    ]
-
-    const turnIndex = gradeTurnsRef.current.length
-    let audioPath: string | undefined
-    // Only the Part 2 long turn is uploaded for acoustic pronunciation grading.
-    if (move.isCueCard && lastBlobRef.current) {
-      setRunPhase('saving')
-      audioPath = await uploadWav(lastBlobRef.current, turnIndex)
-    }
-    gradeTurnsRef.current = [
-      ...gradeTurnsRef.current,
-      { part: move.part, question: qText, answer: text, audioPath, ...(answerMeta ?? {}) },
-    ]
-    advance(dialogueRef.current)
-  }
+  }, [stopVoice, commitTurn, t])
 
   const mm = String(Math.floor(elapsed / 60)).padStart(2, '0')
   const ss = String(elapsed % 60).padStart(2, '0')
   const rmm = String(Math.floor(recSeconds / 60)).padStart(2, '0')
   const rss = String(recSeconds % 60).padStart(2, '0')
   const progressPct = move ? (move.part === 1 ? 33 : move.part === 2 ? 66 : 100) : 5
-  const canSubmit = words(answer) >= 3
   const busy = grading || runPhase === 'transcribing' || runPhase === 'saving' || runPhase === 'loading'
   const orbSize = isMobile ? 156 : 196
 
@@ -596,27 +612,14 @@ function LiveExam({ sessionId, grading, error, onComplete, onExit }: {
         </div>
       </div>
 
-      {/* Dock */}
-      <div style={{ padding: isMobile ? '12px 16px 18px' : '14px 24px 18px', paddingBottom: isMobile ? 'calc(14px + env(safe-area-inset-bottom))' : 18, borderTop: '1px solid var(--border)', background: 'color-mix(in srgb, var(--bg-soft) 70%, transparent)', backdropFilter: 'blur(8px)', flexShrink: 0 }}>
-        <div style={{ maxWidth: 560, margin: '0 auto', display: 'flex', alignItems: 'center', gap: 12 }}>
-          {runPhase === 'prep' ? (
-            <button onClick={() => setRunPhase('idle')} style={{ flex: 1, padding: '14px', borderRadius: 12, fontSize: 14.5, fontWeight: 700, background: 'var(--accent)', color: 'var(--accent-fg)', border: 'none', cursor: 'pointer' }}>{t('speak.ready2')} →</button>
-          ) : (
-            <button
-              onClick={submitTurn}
-              disabled={busy || !canSubmit}
-              style={{ flex: 1, padding: '14px', borderRadius: 12, fontSize: 14.5, fontWeight: 700, background: busy || !canSubmit ? 'var(--bg-soft)' : 'var(--accent)', color: busy || !canSubmit ? 'var(--text-3)' : 'var(--accent-fg)', border: busy || !canSubmit ? '1px solid var(--border)' : 'none', cursor: busy || !canSubmit ? 'not-allowed' : 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8 }}>
-              {grading ? <><Loader2 size={15} className="animate-spin"/> {t('speak.scoring')}</>
-                : runPhase === 'transcribing' ? <><Loader2 size={15} className="animate-spin"/> {t('speak.transcribing')}</>
-                : runPhase === 'saving' ? <><Loader2 size={15} className="animate-spin"/> {t('speak.saving')}</>
-                : runPhase === 'loading' ? <><Loader2 size={15} className="animate-spin"/> {t('speak.loadingQ')}</>
-                : canSubmit ? `${t('speak.nextQ')} →`
-                : runPhase === 'recording' ? t('speak.orbListening')
-                : t('speak.needAnswer')}
-            </button>
-          )}
+      {/* Dock — only the Part 2 "I'm ready" control; answering itself is hands-free */}
+      {runPhase === 'prep' && (
+        <div style={{ padding: isMobile ? '12px 16px 18px' : '14px 24px 18px', paddingBottom: isMobile ? 'calc(14px + env(safe-area-inset-bottom))' : 18, borderTop: '1px solid var(--border)', background: 'color-mix(in srgb, var(--bg-soft) 70%, transparent)', backdropFilter: 'blur(8px)', flexShrink: 0 }}>
+          <div style={{ maxWidth: 560, margin: '0 auto' }}>
+            <button onClick={() => setRunPhase('idle')} style={{ width: '100%', padding: '14px', borderRadius: 12, fontSize: 14.5, fontWeight: 700, background: 'var(--accent)', color: 'var(--accent-fg)', border: 'none', cursor: 'pointer' }}>{t('speak.ready2')} →</button>
+          </div>
         </div>
-      </div>
+      )}
     </div>
   )
 }

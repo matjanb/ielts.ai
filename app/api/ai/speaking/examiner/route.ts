@@ -51,7 +51,9 @@ Test structure:
 - Part 2: a cue card — give a topic with 3–4 bullet points to cover; the candidate gets 1 minute to prepare and speaks for 1–2 minutes; then ask 1–2 short rounding-off questions.
 - Part 3: a two-way discussion of more abstract questions thematically linked to the Part 2 topic.
 
-React to the candidate's previous answers: occasionally pick up a detail they mentioned for a natural follow-up. Do not repeat questions already asked.`
+React to the candidate's previous answers: occasionally pick up a detail they mentioned for a natural follow-up. Do not repeat questions already asked.
+
+CONVERSATIONAL ACKNOWLEDGEMENT: Except for the very first question, begin the "lead" field with a brief, natural acknowledgement of what the candidate just said — one short phrase such as "Cool.", "Nice.", "That makes sense.", "Interesting." — then any topic transition. Keep it to a few words and never evaluate or correct their English.`
 
 interface ExaminerMove {
   question: string
@@ -67,7 +69,7 @@ function instructionFor(stage: Stage): string {
     case stage.kind === 'end':
       return 'The test is complete. Thank the candidate briefly and close the test. Set "endOfTest": true and "part": 3.'
     case 'part' in stage && stage.part === 1 && stage.kind === 'question':
-      return 'Ask the next Part 1 question. Set "part": 1. If you are starting a new topic, put a short transition in "lead" (e.g. "Now let\'s talk about..."). Otherwise omit "lead".'
+      return 'Ask the next Part 1 question. Set "part": 1. Put a brief acknowledgement of the previous answer in "lead" (plus a short topic transition if you are starting a new topic). Omit "lead" only for the very first question.'
     case 'part' in stage && stage.part === 2 && stage.kind === 'cue':
       return 'Introduce the Part 2 long turn. Set "part": 2, "isCueCard": true, and provide "cueCard" with a "topic" (a "Describe ..." prompt) and 3–4 "bullets". Put the spoken instruction in "question".'
     case 'part' in stage && stage.part === 2 && stage.kind === 'followup':
