@@ -1,9 +1,17 @@
 import { NextRequest, NextResponse } from 'next/server'
 import openai from '@/lib/openai/client'
 import { getApiUser, hasActiveSubscription, recordUsage, enforceAiLimits, err } from '@/lib/api/helpers'
+import { computeFluencyMetrics, type WhisperWord } from '@/lib/ielts/fluency'
 
-// Transcribes a short recorded answer with Whisper. The speaking page sends
-// the captured audio here, then the returned text is graded by /api/ai/speaking.
+// Transcribes one recorded answer with Whisper and derives objective fluency
+// signals (pauses, speech rate) from the word timestamps. The page accumulates
+// these per turn; /api/ai/speaking grades the whole session at the end.
+//
+// We deliberately do NOT force `language: 'en'`. Forcing English made Whisper
+// hallucinate plausible English for non-English speech, so a candidate who
+// answered in another language still got a normal band. Instead we let Whisper
+// detect the language and report it, so the grader can refuse to score
+// non-English answers (real IELTS Speaking is English-only).
 export async function POST(request: NextRequest) {
   const user = await getApiUser()
   if (!user) return err('Unauthorized', 401)
@@ -33,10 +41,23 @@ export async function POST(request: NextRequest) {
     const transcription = await openai.audio.transcriptions.create({
       file: audio,
       model: 'whisper-1',
-      language: 'en',
+      response_format: 'verbose_json',
+      timestamp_granularities: ['word'],
     })
+
+    const transcript = transcription.text?.trim() ?? ''
+    const language = transcription.language ?? 'unknown'
+    // Whisper reports the language name ("english") or an ISO code depending on
+    // the input — accept either form.
+    const isEnglish = /^(en|english)$/i.test(language)
+    const metrics = computeFluencyMetrics(
+      transcription.words as WhisperWord[] | undefined,
+      transcription.duration,
+      transcript,
+    )
+
     await recordUsage(user.id, 'transcribe')
-    return NextResponse.json({ transcript: transcription.text?.trim() ?? '' })
+    return NextResponse.json({ transcript, language, isEnglish, ...metrics })
   } catch (e) {
     console.error('[AI transcribe]', e)
     return err('Transcription failed. Please try again.', 500)

@@ -16,21 +16,6 @@ export interface WritingFeedback {
   }
 }
 
-export interface SpeakingFeedback {
-  submission_id: string
-  band_score: number
-  fluency_score: number
-  lexical_score: number
-  grammar_score: number
-  pronunciation_score: number
-  pronunciation_notes: string
-  feedback: {
-    overview: string
-    strengths: string[]
-    improvements: string[]
-  }
-}
-
 export interface StudyPlanData {
   plan: {
     overview: string
@@ -85,14 +70,6 @@ export async function getWritingFeedback(params: {
   prompt: string
 }): Promise<WritingFeedback> {
   return post('/api/ai/writing', params)
-}
-
-export async function getSpeakingFeedback(params: {
-  transcript: string
-  part: 1 | 2 | 3
-  topic: string
-}): Promise<SpeakingFeedback> {
-  return post('/api/ai/speaking', params)
 }
 
 export async function generateStudyPlan(): Promise<StudyPlanData> {

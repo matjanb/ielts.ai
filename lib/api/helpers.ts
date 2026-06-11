@@ -38,10 +38,15 @@ export const AI_DAILY_LIMITS: Record<string, number> = {
   writing:          40,
   writing_coach:    20,
   speaking:         40,
+  // A full speaking test fires many small examiner/TTS/transcribe calls (one per
+  // turn, ~15 turns), so these per-turn features need much higher daily caps
+  // than the once-per-test grade. ~20 full tests/day is plenty for real study.
+  speaking_examiner: 400,
+  tts:              400,
+  transcribe:       400,
   study_plan:       15,
   band_estimate:    80,
   test_explanation: 150,
-  transcribe:       80,
 }
 
 /**
