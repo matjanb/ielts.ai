@@ -574,7 +574,10 @@
     "loadingQ": "Keyingi savol tayyorlanmoqda…",
     "notEnglish": "Bu ingliz tiliga o‘xshamadi — IELTS Speaking ingliz tilida baholanadi.",
     "pronFromAudio": "Yozuvingiz bo‘yicha baholandi",
-    "pronFromText": "Faqat matn bo‘yicha baholandi"
+    "pronFromText": "Faqat matn bo‘yicha baholandi",
+    "orbSpeaking": "Sarah gapiryapti…",
+    "orbListening": "Tinglayapman — tugatish uchun bosing",
+    "orbTap": "Javob berish uchun bosing"
   },
   "hub": {
     "currentBand": "joriy ball",
