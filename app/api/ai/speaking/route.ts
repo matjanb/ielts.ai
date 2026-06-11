@@ -12,8 +12,8 @@ import { describeFluency, type FluencyMetrics } from '@/lib/ielts/fluency'
 //   • Fluency      — from objective pause/speech-rate metrics derived from the
 //                    recording (see lib/ielts/fluency.ts), not guessed from text.
 //   • Lexical/Grammar — from the full transcript across all parts.
-//   • Pronunciation — from the actual AUDIO of the Part 2 long turn, sent to an
-//                    audio-capable model. Sending only the ~2-minute Part 2 clip
+//   • Pronunciation — from the actual AUDIO of the Part 2 long turn, sent to the
+//                    audio-capable gpt-audio model. Sending only the ~2-min clip
 //                    (a representative sample) keeps audio token cost bounded
 //                    while still grounding pronunciation in real sound.
 // When no Part 2 audio is available it degrades gracefully to a text-only grade
@@ -192,7 +192,7 @@ export async function POST(request: NextRequest) {
     const completion = await openai.chat.completions.create({
       // Audio-capable model when we have a recording to judge pronunciation
       // from; the standard model otherwise (no point paying for audio I/O).
-      model: hasAudio ? 'gpt-4o-audio-preview' : 'gpt-4o',
+      model: hasAudio ? 'gpt-audio' : 'gpt-4o',
       temperature: 0.2,
       max_tokens: 1300,
       response_format: { type: 'json_object' },
