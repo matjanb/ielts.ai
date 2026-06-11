@@ -3,7 +3,7 @@
 // audio model that only accepts wav/mp3, so we transcode in the browser via the
 // Web Audio API (decodeAudioData handles every format the browser can record).
 
-export async function blobToWav(blob: Blob): Promise<Blob> {
+export async function blobToWav(blob: Blob, targetSampleRate?: number): Promise<Blob> {
   const arrayBuffer = await blob.arrayBuffer()
   const Ctx = window.AudioContext
     || (window as Window & { webkitAudioContext?: typeof AudioContext }).webkitAudioContext
@@ -12,24 +12,36 @@ export async function blobToWav(blob: Blob): Promise<Blob> {
   const audioCtx = new Ctx()
   try {
     const audioBuffer = await audioCtx.decodeAudioData(arrayBuffer)
-    return encodeWav(audioBuffer)
+    return encodeWav(audioBuffer, targetSampleRate)
   } finally {
     audioCtx.close().catch(() => {})
   }
 }
 
-// Downmix to mono 16-bit PCM. Mono is plenty for speech assessment and roughly
-// halves the upload/token size versus stereo.
-function encodeWav(buffer: AudioBuffer): Blob {
-  const sampleRate = buffer.sampleRate
-  const length = buffer.length
+// Downmix to mono 16-bit PCM, optionally decimating to `targetSampleRate` (e.g.
+// 16 kHz for a long whole-session recording, which keeps the upload small). Mono
+// is plenty for speech assessment and roughly halves size versus stereo.
+function encodeWav(buffer: AudioBuffer, targetSampleRate?: number): Blob {
+  const srcRate = buffer.sampleRate
+  const srcLength = buffer.length
   const channels = buffer.numberOfChannels
 
-  // Average all channels into one.
-  const mono = new Float32Array(length)
+  // Average all channels into one at the source rate.
+  const srcMono = new Float32Array(srcLength)
   for (let ch = 0; ch < channels; ch++) {
     const data = buffer.getChannelData(ch)
-    for (let i = 0; i < length; i++) mono[i] += data[i] / channels
+    for (let i = 0; i < srcLength; i++) srcMono[i] += data[i] / channels
+  }
+
+  // Optional nearest-sample decimation to a lower rate.
+  const sampleRate = targetSampleRate && targetSampleRate < srcRate ? targetSampleRate : srcRate
+  let mono = srcMono
+  let length = srcLength
+  if (sampleRate !== srcRate) {
+    const ratio = srcRate / sampleRate
+    length = Math.floor(srcLength / ratio)
+    mono = new Float32Array(length)
+    for (let i = 0; i < length; i++) mono[i] = srcMono[Math.floor(i * ratio)]
   }
 
   const bytesPerSample = 2

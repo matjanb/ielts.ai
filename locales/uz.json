@@ -577,7 +577,13 @@
     "pronFromText": "Faqat matn bo‘yicha baholandi",
     "orbSpeaking": "Sarah gapiryapti…",
     "orbListening": "Tinglayapman — tugatish uchun bosing",
-    "orbTap": "Javob berish uchun bosing"
+    "orbTap": "Javob berish uchun bosing",
+    "connecting": "Imtihon oluvchiga ulanmoqda…",
+    "finishing": "Test yakunlanmoqda…",
+    "youSpeak": "Tinglayapman…",
+    "goAhead": "Gapiravering — shunchaki javob bering",
+    "endScore": "Tugatib, ballni olish",
+    "realtimeError": "Imtihon oluvchiga ulana olmadim. Qayta urinib ko‘ring."
   },
   "hub": {
     "currentBand": "joriy ball",

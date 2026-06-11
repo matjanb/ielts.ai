@@ -6,67 +6,25 @@ import { useIsMobile } from '@/lib/hooks/useIsMobile'
 import { createClient } from '@/lib/supabase/client'
 import { blobToWav } from '@/lib/utils/wavEncode'
 
-/* ── Examiner / dialogue model ─────────────────────────────────────────────── */
+/* ── Types ─────────────────────────────────────────────────────────────────── */
 type Part = 1 | 2 | 3
-interface ExaminerMove {
-  question: string
-  part: Part
-  lead?: string
-  isCueCard?: boolean
-  cueCard?: { topic: string; bullets: string[] }
-  endOfTest?: boolean
-}
-interface DialogueTurn { role: 'examiner' | 'candidate'; part: Part; text: string }
 interface GradeTurn {
   part: Part
   question: string
   answer: string
-  audioPath?: string
-  duration_ms?: number
-  words?: number
-  pause_count?: number
-  pause_total_ms?: number
-  speech_rate_wpm?: number | null
 }
-interface TurnMetrics {
-  duration_ms: number
-  words: number
-  pause_count: number
-  pause_total_ms: number
-  speech_rate_wpm: number | null
-}
-
-/** The text stored as the examiner's question for grading. */
-function examinerQuestionText(m: ExaminerMove): string {
-  return m.isCueCard && m.cueCard
-    ? `Describe ${m.cueCard.topic}. You should say: ${m.cueCard.bullets.join('; ')}.`
-    : m.question
-}
-/** What the examiner voice should read aloud. */
-function examinerSpokenText(m: ExaminerMove): string {
-  return (m.lead ? `${m.lead} ` : '') + m.question
-}
-
 interface CriterionResult { band: number; evidence: string }
 interface FeedbackResult {
   band_score: number; fluency_score: number; lexical_score: number; grammar_score: number; pronunciation_score: number
   pronunciation_notes: string; pronunciation_from_audio?: boolean
   feedback: { overview: string; strengths: string[]; improvements: string[]; next_band_tip?: string; criteria?: { fluency: CriterionResult; lexical: CriterionResult; grammar: CriterionResult; pronunciation: CriterionResult } }
 }
+interface CompletePayload { turns: GradeTurn[]; sessionId: string; durationMinutes: number; audioPath?: string }
 type Phase = 'ready' | 'live' | 'feedback'
 
 const MicIcon = ({ size = 20, color = 'currentColor' }: { size?: number; color?: string }) => (
   <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><rect x="9" y="3" width="6" height="12" rx="3"/><path d="M5 11a7 7 0 0 0 14 0"/><path d="M12 18v3"/></svg>
 )
-const words = (s: string) => (s.trim() ? s.trim().split(/\s+/).length : 0)
-
-/** A filename whose extension matches the recorder's MIME so Whisper detects the format. */
-function audioFileName(mime: string): string {
-  if (mime.includes('mp4') || mime.includes('m4a') || mime.includes('aac')) return 'speech.mp4'
-  if (mime.includes('ogg')) return 'speech.ogg'
-  if (mime.includes('wav')) return 'speech.wav'
-  return 'speech.webm'
-}
 
 /* ── Ready screen ────────────────────────────────────────────────────────── */
 function ReadyScreen({ onStart }: { onStart: () => void }) {
@@ -194,290 +152,252 @@ function FeedbackScreen({ result, onBack }: { result: FeedbackResult; onBack: ()
   )
 }
 
-/* ── Live exam (dynamic examiner) ──────────────────────────────────────────── */
-type RunPhase = 'loading' | 'prep' | 'idle' | 'recording' | 'transcribing' | 'saving'
+/* ── Build grade turns from the running realtime transcript ─────────────────── */
+interface TranscriptItem { role: 'examiner' | 'candidate'; text: string }
+function buildTurns(items: TranscriptItem[]): GradeTurn[] {
+  const out: GradeTurn[] = []
+  let pendingQ = ''
+  for (const it of items) {
+    if (it.role === 'examiner') pendingQ = it.text
+    else if (it.text.trim()) { out.push({ part: 1, question: pendingQ, answer: it.text.trim() }); pendingQ = '' }
+  }
+  // Spread parts across the conversation so stored turns aren't all "Part 1".
+  const n = out.length
+  out.forEach((tn, i) => { tn.part = i < n * 0.45 ? 1 : i < n * 0.65 ? 2 : 3 })
+  return out
+}
 
-function LiveExam({ sessionId, grading, error, onComplete, onExit }: {
+/* ── Live realtime exam (speech-to-speech, fully hands-free) ─────────────────── */
+type Status = 'connecting' | 'live' | 'ending'
+
+function RealtimeExam({ sessionId, grading, error, onComplete, onExit }: {
   sessionId: string; grading: boolean; error: string
-  onComplete: (turns: GradeTurn[], sessionId: string, durationMinutes: number) => void
+  onComplete: (p: CompletePayload) => void
   onExit: () => void
 }) {
   const { t } = useLanguage()
   const isMobile = useIsMobile()
-  const partLabel = (p: Part) => t(p === 1 ? 'speak.partIntro' : p === 2 ? 'speak.partLong' : 'speak.partDisc')
 
-  const [move, setMove] = useState<ExaminerMove | null>(null)
-  const [runPhase, setRunPhase] = useState<RunPhase>('loading')
-  const [answer, setAnswer] = useState('')
+  const [status, setStatus] = useState<Status>('connecting')
+  const [assistantSpeaking, setAssistantSpeaking] = useState(false)
+  const [userSpeaking, setUserSpeaking] = useState(false)
+  const [lastExaminer, setLastExaminer] = useState('')
+  const [lastUser, setLastUser] = useState('')
+  const [answered, setAnswered] = useState(0)
   const [elapsed, setElapsed] = useState(0)
-  const [micError, setMicError] = useState('')
-  const [speaking, setSpeaking] = useState(false)
-  const [muted, setMuted] = useState(false)
+  const [connError, setConnError] = useState('')
 
-  // Part 2 preparation
-  const [prepLeft, setPrepLeft] = useState(60)
-  const [prepNotes, setPrepNotes] = useState('')
-
-  // recording
-  const [recSeconds, setRecSeconds] = useState(0)
-  const mediaRef = useRef<MediaRecorder | null>(null)
-  const chunksRef = useRef<Blob[]>([])
-  const lastBlobRef = useRef<Blob | null>(null)
-  const orbReactiveRef = useRef<HTMLDivElement>(null)
-  const audioCtxRef = useRef<AudioContext | null>(null)
-  const analyserRef = useRef<AnalyserNode | null>(null)
-  const rafRef = useRef<number | null>(null)
-
-  // examiner voice
-  const ttsRef = useRef<HTMLAudioElement | null>(null)
-
-  // accumulated session state (refs so async callbacks read the latest)
-  const dialogueRef = useRef<DialogueTurn[]>([])
-  const gradeTurnsRef = useRef<GradeTurn[]>([])
+  const pcRef = useRef<RTCPeerConnection | null>(null)
+  const dcRef = useRef<RTCDataChannel | null>(null)
+  const micStreamRef = useRef<MediaStream | null>(null)
+  const remoteAudioRef = useRef<HTMLAudioElement | null>(null)
+  const recorderRef = useRef<MediaRecorder | null>(null)
+  const userChunksRef = useRef<Blob[]>([])
+  const transcriptRef = useRef<TranscriptItem[]>([])
   const userIdRef = useRef<string | null>(null)
-  const mutedRef = useRef(false)
-  useEffect(() => { mutedRef.current = muted }, [muted])
-  // Latest-value refs so the recorder's onstop / VAD callbacks (created once when
-  // recording starts) always commit against the current question and advancer.
-  const moveRef = useRef<ExaminerMove | null>(null)
-  useEffect(() => { moveRef.current = move }, [move])
-  const advanceRef = useRef<(d: DialogueTurn[]) => void>(() => {})
-  const committingRef = useRef(false)
 
-  const stopVoice = useCallback(() => {
-    if (ttsRef.current) { ttsRef.current.pause(); ttsRef.current = null }
-    setSpeaking(false)
+  const audioCtxRef = useRef<AudioContext | null>(null)
+  const localAnalyserRef = useRef<AnalyserNode | null>(null)
+  const remoteAnalyserRef = useRef<AnalyserNode | null>(null)
+  const orbReactiveRef = useRef<HTMLDivElement>(null)
+  const rafRef = useRef<number | null>(null)
+  const startedRef = useRef(false)
+
+  const cleanup = useCallback(() => {
+    if (rafRef.current) { cancelAnimationFrame(rafRef.current); rafRef.current = null }
+    try { dcRef.current?.close() } catch {}
+    try { pcRef.current?.getSenders().forEach(s => s.track?.stop()) } catch {}
+    try { pcRef.current?.close() } catch {}
+    micStreamRef.current?.getTracks().forEach(tr => tr.stop())
+    audioCtxRef.current?.close().catch(() => {})
+    if (remoteAudioRef.current) remoteAudioRef.current.srcObject = null
+    pcRef.current = null; dcRef.current = null; micStreamRef.current = null
+    localAnalyserRef.current = null; remoteAnalyserRef.current = null; audioCtxRef.current = null
   }, [])
 
-  const speak = useCallback(async (text: string) => {
-    if (mutedRef.current || !text.trim()) return
-    stopVoice()
-    setSpeaking(true)
-    try {
-      const res = await fetch('/api/ai/tts', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ text }) })
-      if (!res.ok) { setSpeaking(false); return }
-      const url = URL.createObjectURL(await res.blob())
-      const el = new Audio(url)
-      ttsRef.current = el
-      el.onended = () => { setSpeaking(false); URL.revokeObjectURL(url) }
-      el.onerror = () => { setSpeaking(false); URL.revokeObjectURL(url) }
-      await el.play().catch(() => setSpeaking(false))
-    } catch { setSpeaking(false) }
-  }, [stopVoice])
-
-  // Ask the examiner for the next move given the dialogue so far.
-  const advance = useCallback(async (dialogue: DialogueTurn[]) => {
-    setRunPhase('loading'); setMicError(''); stopVoice()
-    try {
-      const res = await fetch('/api/ai/speaking/examiner', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ turns: dialogue }) })
-      const data = await res.json()
-      if (!res.ok) { setMicError(data.error ?? t('speak.errService')); setRunPhase('idle'); return }
-      const m = data as ExaminerMove
-      setAnswer(''); lastBlobRef.current = null; committingRef.current = false
-      if (m.endOfTest) {
-        onComplete(gradeTurnsRef.current, sessionId, Math.max(1, Math.round(elapsed / 60)))
-        return
-      }
-      setMove(m)
-      if (m.isCueCard) { setPrepLeft(60); setPrepNotes(''); setRunPhase('prep') }
-      else setRunPhase('idle')
-      speak(examinerSpokenText(m))
-    } catch { setMicError(t('speak.errService')); setRunPhase('idle'); committingRef.current = false }
-  }, [sessionId, elapsed, onComplete, speak, stopVoice, t])
-  useEffect(() => { advanceRef.current = advance }, [advance])
-
-  const uploadWav = useCallback(async (blob: Blob, turnIndex: number): Promise<string | undefined> => {
-    const uid = userIdRef.current
-    if (!uid) return undefined
-    try {
-      const wav = await blobToWav(blob)
-      const path = `${uid}/${sessionId}/${turnIndex}.wav`
-      const { error: upErr } = await createClient().storage.from('speaking-audio').upload(path, wav, { contentType: 'audio/wav', upsert: true })
-      return upErr ? undefined : path
-    } catch { return undefined }
-  }, [sessionId])
-
-  // Record one answer and move straight on (hands-free): no "Continue" tap.
-  const commitTurn = useCallback(async (text: string, meta: TurnMetrics | null, blob: Blob | null) => {
-    const m = moveRef.current
-    if (!m || committingRef.current || !text.trim()) return
-    committingRef.current = true
-    stopVoice()
-    const qText = examinerQuestionText(m)
-    dialogueRef.current = [
-      ...dialogueRef.current,
-      { role: 'examiner', part: m.part, text: qText },
-      { role: 'candidate', part: m.part, text: text.trim() },
-    ]
-    const turnIndex = gradeTurnsRef.current.length
-    let audioPath: string | undefined
-    // Only the Part 2 long turn is uploaded for acoustic pronunciation grading.
-    if (m.isCueCard && blob) {
-      setRunPhase('saving')
-      audioPath = await uploadWav(blob, turnIndex)
+  const ensureCtx = useCallback(() => {
+    if (!audioCtxRef.current) {
+      const C = window.AudioContext || (window as Window & { webkitAudioContext?: typeof AudioContext }).webkitAudioContext
+      if (C) audioCtxRef.current = new C()
     }
-    gradeTurnsRef.current = [
-      ...gradeTurnsRef.current,
-      { part: m.part, question: qText, answer: text.trim(), audioPath, ...(meta ?? {}) },
-    ]
-    advanceRef.current(dialogueRef.current)
-  }, [stopVoice, uploadWav])
+    return audioCtxRef.current
+  }, [])
 
-  // Kick off the test: resolve the user id (for the audio storage path) and ask
-  // the first question.
+  const handleEvent = useCallback((raw: string) => {
+    let msg: { type?: string; transcript?: string; delta?: string }
+    try { msg = JSON.parse(raw) } catch { return }
+    switch (msg.type) {
+      case 'input_audio_buffer.speech_started':
+        setUserSpeaking(true); break
+      case 'input_audio_buffer.speech_stopped':
+        setUserSpeaking(false); break
+      case 'response.created':
+      case 'response.output_audio.delta':
+      case 'response.audio.delta':
+        setAssistantSpeaking(true); break
+      case 'response.output_audio.done':
+      case 'response.audio.done':
+      case 'response.done':
+        setAssistantSpeaking(false); break
+      case 'conversation.item.input_audio_transcription.completed':
+        if (msg.transcript?.trim()) { transcriptRef.current.push({ role: 'candidate', text: msg.transcript.trim() }); setLastUser(msg.transcript.trim()); setAnswered(c => c + 1) }
+        break
+      case 'response.output_audio_transcript.done':
+      case 'response.audio_transcript.done':
+        if (msg.transcript?.trim()) { transcriptRef.current.push({ role: 'examiner', text: msg.transcript.trim() }); setLastExaminer(msg.transcript.trim()) }
+        break
+    }
+  }, [])
+
+  // Connect once on mount.
   useEffect(() => {
+    if (startedRef.current) return
+    startedRef.current = true
     let cancelled = false
+
     ;(async () => {
       try {
         const { data } = await createClient().auth.getUser()
-        if (!cancelled) userIdRef.current = data.user?.id ?? null
-      } catch { /* upload simply degrades to text-only grading */ }
-      if (!cancelled) advance([])
+        userIdRef.current = data.user?.id ?? null
+      } catch { /* audio upload will simply be skipped */ }
+
+      try {
+        const sres = await fetch('/api/ai/realtime/session', { method: 'POST' })
+        const sdata = await sres.json()
+        if (!sres.ok || !sdata.value) { if (!cancelled) setConnError(sdata.error ?? t('speak.realtimeError')); return }
+        if (cancelled) return
+
+        const mic = await navigator.mediaDevices.getUserMedia({ audio: true })
+        micStreamRef.current = mic
+
+        // Record the candidate's mic for the final acoustic grade.
+        try {
+          const rec = new MediaRecorder(mic)
+          userChunksRef.current = []
+          rec.ondataavailable = e => { if (e.data.size > 0) userChunksRef.current.push(e.data) }
+          rec.start()
+          recorderRef.current = rec
+        } catch { /* grade falls back to transcript-only */ }
+
+        const ctx = ensureCtx()
+        if (ctx) {
+          if (ctx.state === 'suspended') await ctx.resume().catch(() => {})
+          const ls = ctx.createMediaStreamSource(mic)
+          const la = ctx.createAnalyser(); la.fftSize = 256; la.smoothingTimeConstant = 0.6
+          ls.connect(la); localAnalyserRef.current = la
+        }
+
+        const pc = new RTCPeerConnection()
+        pcRef.current = pc
+        pc.ontrack = e => {
+          if (remoteAudioRef.current) remoteAudioRef.current.srcObject = e.streams[0]
+          const c = ensureCtx()
+          if (c) {
+            try {
+              const rs = c.createMediaStreamSource(e.streams[0])
+              const ra = c.createAnalyser(); ra.fftSize = 256; ra.smoothingTimeConstant = 0.6
+              rs.connect(ra); remoteAnalyserRef.current = ra
+            } catch { /* analyser optional */ }
+          }
+        }
+        pc.addTrack(mic.getTracks()[0], mic)
+
+        const dc = pc.createDataChannel('oai-events')
+        dcRef.current = dc
+        dc.onmessage = ev => handleEvent(ev.data)
+        dc.onopen = () => { try { dc.send(JSON.stringify({ type: 'response.create' })) } catch {} } // examiner greets first
+
+        const offer = await pc.createOffer()
+        await pc.setLocalDescription(offer)
+
+        const resp = await fetch(`https://api.openai.com/v1/realtime/calls?model=${encodeURIComponent(sdata.model)}`, {
+          method: 'POST',
+          body: offer.sdp,
+          headers: { Authorization: `Bearer ${sdata.value}`, 'Content-Type': 'application/sdp' },
+        })
+        if (!resp.ok) { if (!cancelled) setConnError(t('speak.realtimeError')); cleanup(); return }
+        const answer = await resp.text()
+        await pc.setRemoteDescription({ type: 'answer', sdp: answer })
+        if (!cancelled) setStatus('live')
+      } catch { if (!cancelled) setConnError(t('speak.realtimeError')) }
     })()
-    return () => { cancelled = true }
-    // advance is stable enough for a one-shot mount; intentionally run once.
+
+    return () => { cancelled = true; cleanup() }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
-  // timers
+  // session timer
   useEffect(() => { const id = setInterval(() => setElapsed(s => s + 1), 1000); return () => clearInterval(id) }, [])
-  useEffect(() => { if (runPhase !== 'recording') return; const id = setInterval(() => setRecSeconds(s => s + 1), 1000); return () => clearInterval(id) }, [runPhase])
+
+  // Orb reactivity: scale/brighten from whoever is talking (mic or examiner).
   useEffect(() => {
-    if (runPhase !== 'prep') return
-    const id = setInterval(() => setPrepLeft(s => {
-      const nx = Math.max(0, s - 1)
-      if (nx === 0) setRunPhase('idle') // prep time is up — move to the long turn
-      return nx
-    }), 1000)
-    return () => clearInterval(id)
-  }, [runPhase])
-
-  // cleanup on unmount
-  useEffect(() => () => {
-    mediaRef.current?.stream?.getTracks().forEach(tr => tr.stop())
-    if (rafRef.current) cancelAnimationFrame(rafRef.current)
-    audioCtxRef.current?.close().catch(() => {})
-    if (ttsRef.current) ttsRef.current.pause()
-  }, [])
-
-  const stopRecording = useCallback(() => { mediaRef.current?.stop() }, [])
-
-  // While recording: drive the orb from live mic levels (it swells/brightens
-  // with the voice) AND run voice-activity detection so the turn ends on its own
-  // when the candidate stops talking — no button press. Written straight to the
-  // DOM each frame (no React re-render) and smoothed so motion is organic.
-  useEffect(() => {
-    if (runPhase !== 'recording') return
-    const analyser = analyserRef.current
+    if (status !== 'live') return
     const orb = orbReactiveRef.current
-    if (!analyser || !orb) return
-    const time = new Uint8Array(analyser.fftSize)
+    if (!orb) return
     let smooth = 0
-    let hasSpoken = false
-    const start = performance.now()
-    let lastVoice = start
-    const VOICE_ON = 0.045     // smoothed level that counts as speaking
-    const SILENCE_MS = 1800    // trailing silence that ends the turn
-    const MAX_MS = 120_000     // hard cap on a single answer
-    const draw = () => {
-      analyser.getByteTimeDomainData(time)
+    const lbuf = new Uint8Array(256)
+    const rbuf = new Uint8Array(256)
+    const rms = (an: AnalyserNode | null, buf: Uint8Array<ArrayBuffer>) => {
+      if (!an) return 0
+      an.getByteTimeDomainData(buf)
       let sum = 0
-      for (let i = 0; i < time.length; i++) { const x = (time[i] - 128) / 128; sum += x * x }
-      const level = Math.min(1, Math.sqrt(sum / time.length) * 3.4)
+      for (let i = 0; i < buf.length; i++) { const x = (buf[i] - 128) / 128; sum += x * x }
+      return Math.sqrt(sum / buf.length) * 3.4
+    }
+    const draw = () => {
+      const level = Math.min(1, Math.max(rms(localAnalyserRef.current, lbuf), rms(remoteAnalyserRef.current, rbuf)))
       smooth += (level - smooth) * 0.25
-      orb.style.transform = `scale(${(1 + smooth * 0.42).toFixed(3)})`
+      orb.style.transform = `scale(${(1 + smooth * 0.4).toFixed(3)})`
       orb.style.filter = `brightness(${(1 + smooth * 0.5).toFixed(2)})`
-      const now = performance.now()
-      if (smooth > VOICE_ON) { hasSpoken = true; lastVoice = now }
-      if ((hasSpoken && now - lastVoice > SILENCE_MS) || now - start > MAX_MS) {
-        stopRecording() // onstop transcribes and auto-advances
-        return
-      }
       rafRef.current = requestAnimationFrame(draw)
     }
     rafRef.current = requestAnimationFrame(draw)
-    return () => {
-      if (rafRef.current) cancelAnimationFrame(rafRef.current)
-      rafRef.current = null
-      analyserRef.current = null
-      audioCtxRef.current?.close().catch(() => {})
-      audioCtxRef.current = null
-      if (orb) { orb.style.transform = ''; orb.style.filter = '' }
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [runPhase])
+    return () => { if (rafRef.current) { cancelAnimationFrame(rafRef.current); rafRef.current = null }; if (orb) { orb.style.transform = ''; orb.style.filter = '' } }
+  }, [status])
 
-  const startRecording = useCallback(async () => {
-    setMicError(''); stopVoice()
-    if (typeof navigator === 'undefined' || !navigator.mediaDevices?.getUserMedia) { setMicError(t('speak.errUnsupported')); return }
-    try {
-      const stream = await navigator.mediaDevices.getUserMedia({ audio: true })
+  async function endTest() {
+    if (status === 'ending') return
+    setStatus('ending')
+
+    const rec = recorderRef.current
+    const blob: Blob | null = await new Promise(resolve => {
+      if (!rec || rec.state === 'inactive') return resolve(null)
+      rec.onstop = () => resolve(new Blob(userChunksRef.current, { type: rec.mimeType || 'audio/webm' }))
+      try { rec.stop() } catch { resolve(null) }
+    })
+    cleanup()
+
+    let audioPath: string | undefined
+    const uid = userIdRef.current
+    if (blob && blob.size > 0 && uid) {
       try {
-        const Ctx = window.AudioContext || (window as Window & { webkitAudioContext?: typeof AudioContext }).webkitAudioContext
-        if (Ctx) {
-          const ctx = new Ctx()
-          if (ctx.state === 'suspended') await ctx.resume().catch(() => {})
-          const source = ctx.createMediaStreamSource(stream)
-          const analyser = ctx.createAnalyser()
-          analyser.fftSize = 256; analyser.smoothingTimeConstant = 0.6
-          source.connect(analyser)
-          audioCtxRef.current = ctx; analyserRef.current = analyser
-        }
-      } catch { /* visualiser optional */ }
+        const wav = await blobToWav(blob, 16000) // downsample — keeps a multi-minute upload small
+        const path = `${uid}/${sessionId}/full.wav`
+        const { error: upErr } = await createClient().storage.from('speaking-audio').upload(path, wav, { contentType: 'audio/wav', upsert: true })
+        if (!upErr) audioPath = path
+      } catch { /* grade falls back to transcript-only */ }
+    }
 
-      const mr = new MediaRecorder(stream)
-      chunksRef.current = []; setRecSeconds(0)
-      mr.ondataavailable = e => { if (e.data.size > 0) chunksRef.current.push(e.data) }
-      mr.onstop = async () => {
-        stream.getTracks().forEach(tr => tr.stop())
-        const mime = mr.mimeType || 'audio/webm'
-        const blob = new Blob(chunksRef.current, { type: mime })
-        lastBlobRef.current = blob
-        if (blob.size === 0) { setRunPhase('idle'); return }
-        setRunPhase('transcribing')
-        try {
-          const fd = new FormData(); fd.append('audio', blob, audioFileName(mime))
-          const res = await fetch('/api/ai/transcribe', { method: 'POST', body: fd })
-          const data = await res.json()
-          if (res.ok && typeof data.transcript === 'string' && data.transcript.trim()) {
-            const meta: TurnMetrics = { duration_ms: data.duration_ms ?? 0, words: data.words ?? 0, pause_count: data.pause_count ?? 0, pause_total_ms: data.pause_total_ms ?? 0, speech_rate_wpm: data.speech_rate_wpm ?? null }
-            setAnswer(data.transcript.trim())
-            commitTurn(data.transcript, meta, blob) // hands-free: move straight on
-          } else { setMicError(t('speak.errTranscribe')); setRunPhase('idle') }
-        } catch { setMicError(t('speak.errService')); setRunPhase('idle') }
-      }
-      mr.start(); mediaRef.current = mr; setRunPhase('recording')
-    } catch { setMicError(t('speak.errDenied')) }
-  }, [stopVoice, commitTurn, t])
+    onComplete({ turns: buildTurns(transcriptRef.current), sessionId, durationMinutes: Math.max(1, Math.round(elapsed / 60)), audioPath })
+  }
 
   const mm = String(Math.floor(elapsed / 60)).padStart(2, '0')
   const ss = String(elapsed % 60).padStart(2, '0')
-  const rmm = String(Math.floor(recSeconds / 60)).padStart(2, '0')
-  const rss = String(recSeconds % 60).padStart(2, '0')
-  const progressPct = move ? (move.part === 1 ? 33 : move.part === 2 ? 66 : 100) : 5
-  const busy = grading || runPhase === 'transcribing' || runPhase === 'saving' || runPhase === 'loading'
-  const orbSize = isMobile ? 156 : 196
+  const orbSize = isMobile ? 168 : 212
 
-  const orbMode: 'think' | 'rec' | 'speak' | 'idle' =
-    busy ? 'think' : runPhase === 'recording' ? 'rec' : speaking ? 'speak' : 'idle'
-  const orbAnim = orbMode === 'speak' ? 'orb-speak' : orbMode === 'rec' ? '' : 'orb-breathe'
-  const orbInteractive = !(busy || runPhase === 'prep')
+  const orbMode: 'think' | 'speak' | 'rec' | 'idle' =
+    grading || status === 'connecting' || status === 'ending' ? 'think'
+    : assistantSpeaking ? 'speak'
+    : userSpeaking ? 'rec'
+    : 'idle'
 
   const caption =
     grading ? t('speak.scoring')
-    : runPhase === 'loading' ? t('speak.loadingQ')
-    : runPhase === 'transcribing' ? t('speak.transcribing')
-    : runPhase === 'saving' ? t('speak.saving')
-    : runPhase === 'prep' ? t('speak.hintPrep')
-    : speaking ? t('speak.orbSpeaking')
-    : runPhase === 'recording' ? t('speak.orbListening')
-    : t('speak.orbTap')
-
-  const onOrbTap = () => {
-    if (!orbInteractive) return
-    if (runPhase === 'recording') stopRecording()
-    else { stopVoice(); startRecording() }
-  }
+    : status === 'connecting' ? t('speak.connecting')
+    : status === 'ending' ? t('speak.finishing')
+    : assistantSpeaking ? t('speak.orbSpeaking')
+    : userSpeaking ? t('speak.youSpeak')
+    : t('speak.goAhead')
 
   const ring = (delay: string) => (
     <span style={{ position: 'absolute', inset: 0, borderRadius: '50%', background: 'color-mix(in srgb, var(--accent) 30%, transparent)', animation: 'pulse-ring 2.2s ease-out infinite', animationDelay: delay, pointerEvents: 'none' }}/>
@@ -485,141 +405,84 @@ function LiveExam({ sessionId, grading, error, onComplete, onExit }: {
 
   return (
     <div style={{ flex: 1, background: 'radial-gradient(120% 70% at 50% -5%, var(--accent-soft) 0%, var(--bg) 55%)', color: 'var(--text)', display: 'flex', flexDirection: 'column' }}>
+      <audio ref={remoteAudioRef} autoPlay hidden />
+
       {/* Header */}
       <header style={{ padding: isMobile ? '12px 16px' : '14px 24px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', borderBottom: '1px solid var(--border)', flexShrink: 0 }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 9 }}>
-          <span style={{ width: 8, height: 8, borderRadius: '50%', background: 'var(--accent)', boxShadow: '0 0 0 4px color-mix(in srgb, var(--accent) 20%, transparent)' }}/>
+          <span style={{ width: 8, height: 8, borderRadius: '50%', background: status === 'live' ? 'var(--accent)' : 'var(--text-3)', boxShadow: status === 'live' ? '0 0 0 4px color-mix(in srgb, var(--accent) 20%, transparent)' : 'none' }}/>
           <span style={{ fontSize: 13, fontWeight: 600, color: 'var(--accent)' }}>{t('speak.examiner')}</span>
           <span style={{ fontSize: 13, color: 'var(--text-3)' }}>· Sarah</span>
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-          <button onClick={() => { setMuted(m => { const nx = !m; if (nx) stopVoice(); return nx }) }} aria-label={muted ? t('speak.unmute') : t('speak.mute')} title={muted ? t('speak.unmute') : t('speak.mute')} style={{ display: 'inline-flex', padding: 6, background: 'transparent', border: '1px solid var(--border)', borderRadius: 8, color: 'var(--text-2)', cursor: 'pointer' }}>
-            {muted
-              ? <svg width={15} height={15} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M11 5L6 9H2v6h4l5 4V5z"/><path d="M23 9l-6 6M17 9l6 6"/></svg>
-              : <svg width={15} height={15} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M11 5L6 9H2v6h4l5 4V5z"/><path d="M15.5 8.5a5 5 0 0 1 0 7M19 5a9 9 0 0 1 0 14"/></svg>}
-          </button>
           <span style={{ fontSize: 13.5, color: 'var(--text-2)', fontFamily: 'var(--font-mono)' }}>{mm}:{ss}</span>
-          <button onClick={() => { stopVoice(); onExit() }} style={{ padding: '6px 14px', background: 'transparent', border: '1px solid var(--border-strong)', borderRadius: 8, fontSize: 12, color: 'var(--text-2)', cursor: 'pointer' }}>{t('speak.endTest')}</button>
+          <button onClick={onExit} style={{ padding: '6px 14px', background: 'transparent', border: '1px solid var(--border-strong)', borderRadius: 8, fontSize: 12, color: 'var(--text-2)', cursor: 'pointer' }}>{t('speak.endTest')}</button>
         </div>
       </header>
 
-      {/* Progress */}
-      <div style={{ padding: isMobile ? '12px 16px 0' : '14px 24px 0', flexShrink: 0 }}>
-        <div style={{ maxWidth: 560, margin: '0 auto' }}>
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 }}>
-            <span style={{ display: 'inline-flex', alignItems: 'center', gap: 8, fontSize: 12.5, fontWeight: 600, color: 'var(--accent)' }}>
-              <span style={{ padding: '2px 9px', borderRadius: 999, background: 'var(--accent-soft)', border: '1px solid color-mix(in srgb, var(--accent) 35%, transparent)' }}>{t('speak.part')} {move?.part ?? 1}</span>
-              {partLabel(move?.part ?? 1)}
-            </span>
-          </div>
-          <div style={{ height: 3, background: 'var(--bg-soft)', borderRadius: 999, overflow: 'hidden' }}>
-            <div style={{ width: `${progressPct}%`, height: '100%', background: 'var(--accent)', borderRadius: 999, transition: 'width .35s ease' }}/>
-          </div>
-        </div>
-      </div>
-
-      {/* Body — the orb + question */}
-      <div style={{ flex: 1, overflow: 'auto', padding: isMobile ? '14px 16px 20px' : '20px 24px 28px' }}>
-        <div style={{ maxWidth: 560, margin: '0 auto', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 16 }}>
-          {/* Orb */}
-          <div style={{ position: 'relative', width: orbSize, height: orbSize, marginTop: isMobile ? 8 : 18, flexShrink: 0 }}>
+      {/* Body — the orb */}
+      <div style={{ flex: 1, overflow: 'auto', padding: isMobile ? '20px 16px 24px' : '28px 24px 32px', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
+        <div style={{ maxWidth: 560, margin: '0 auto', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 18 }}>
+          <div style={{ position: 'relative', width: orbSize, height: orbSize, flexShrink: 0 }}>
             {(orbMode === 'speak' || orbMode === 'rec') && <>{ring('0s')}{ring('1.1s')}</>}
-            <button
-              onClick={onOrbTap}
-              disabled={!orbInteractive}
-              aria-label={caption}
-              style={{ position: 'absolute', inset: 0, padding: 0, border: 'none', background: 'transparent', cursor: orbInteractive ? 'pointer' : 'default', WebkitTapHighlightColor: 'transparent' }}
+            <div
+              ref={orbReactiveRef}
+              className={orbMode === 'idle' ? 'orb-breathe' : ''}
+              style={{
+                position: 'absolute', inset: 0, borderRadius: '50%', overflow: 'hidden',
+                background: 'radial-gradient(circle at 32% 26%, color-mix(in srgb, var(--accent) 80%, white) 0%, var(--accent) 46%, color-mix(in srgb, var(--accent) 55%, black) 100%)',
+                boxShadow: '0 24px 70px -14px color-mix(in srgb, var(--accent) 60%, transparent), inset 0 0 50px -10px color-mix(in srgb, white 45%, transparent)',
+                transition: 'filter .18s ease',
+              }}
             >
-              <div
-                ref={orbReactiveRef}
-                className={orbAnim}
-                style={{
-                  position: 'absolute', inset: 0, borderRadius: '50%', overflow: 'hidden',
-                  background: 'radial-gradient(circle at 32% 26%, color-mix(in srgb, var(--accent) 80%, white) 0%, var(--accent) 46%, color-mix(in srgb, var(--accent) 55%, black) 100%)',
-                  boxShadow: '0 24px 70px -14px color-mix(in srgb, var(--accent) 60%, transparent), inset 0 0 50px -10px color-mix(in srgb, white 45%, transparent)',
-                  transition: 'filter .18s ease',
-                }}
-              >
-                <div className="orb-blob" style={{ position: 'absolute', width: '72%', height: '72%', top: '6%', left: '10%', borderRadius: '50%', background: 'radial-gradient(circle, color-mix(in srgb, white 55%, transparent), transparent 70%)', filter: 'blur(7px)' }}/>
-                <div className="orb-blob" style={{ position: 'absolute', width: '56%', height: '56%', bottom: '5%', right: '7%', borderRadius: '50%', background: 'radial-gradient(circle, color-mix(in srgb, var(--accent) 70%, black), transparent 70%)', filter: 'blur(9px)', animationDelay: '2.3s' }}/>
-                {orbMode === 'think' && (
-                  <div className="orb-spin" style={{ position: 'absolute', inset: -1, borderRadius: '50%', background: 'conic-gradient(from 0deg, transparent 0deg, color-mix(in srgb, white 75%, transparent) 55deg, transparent 120deg)', WebkitMaskImage: 'radial-gradient(transparent 63%, black 65%)', maskImage: 'radial-gradient(transparent 63%, black 65%)' }}/>
-                )}
-                <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                  {orbMode === 'rec'
-                    ? <svg width={26} height={26} viewBox="0 0 24 24" fill="color-mix(in srgb, white 90%, transparent)"><rect x="6" y="6" width="12" height="12" rx="3"/></svg>
-                    : <MicIcon size={isMobile ? 30 : 36} color="color-mix(in srgb, white 92%, transparent)" />}
-                </div>
+              <div className="orb-blob" style={{ position: 'absolute', width: '72%', height: '72%', top: '6%', left: '10%', borderRadius: '50%', background: 'radial-gradient(circle, color-mix(in srgb, white 55%, transparent), transparent 70%)', filter: 'blur(7px)' }}/>
+              <div className="orb-blob" style={{ position: 'absolute', width: '56%', height: '56%', bottom: '5%', right: '7%', borderRadius: '50%', background: 'radial-gradient(circle, color-mix(in srgb, var(--accent) 70%, black), transparent 70%)', filter: 'blur(9px)', animationDelay: '2.3s' }}/>
+              {orbMode === 'think' && (
+                <div className="orb-spin" style={{ position: 'absolute', inset: -1, borderRadius: '50%', background: 'conic-gradient(from 0deg, transparent 0deg, color-mix(in srgb, white 75%, transparent) 55deg, transparent 120deg)', WebkitMaskImage: 'radial-gradient(transparent 63%, black 65%)', maskImage: 'radial-gradient(transparent 63%, black 65%)' }}/>
+              )}
+              <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                <MicIcon size={isMobile ? 34 : 40} color="color-mix(in srgb, white 92%, transparent)" />
               </div>
-            </button>
+            </div>
           </div>
 
-          {/* Caption + recording timer */}
           <div style={{ textAlign: 'center', minHeight: 22 }}>
-            <span style={{ fontSize: 14.5, fontWeight: 500, color: orbMode === 'rec' ? 'var(--accent)' : 'var(--text-2)' }}>{caption}</span>
-            {runPhase === 'recording' && <span style={{ fontSize: 13, color: 'var(--text-3)', fontFamily: 'var(--font-mono)', marginLeft: 8 }}>{rmm}:{rss}</span>}
+            <span style={{ fontSize: 15, fontWeight: 500, color: orbMode === 'speak' ? 'var(--accent)' : 'var(--text-2)' }}>{caption}</span>
           </div>
 
-          {/* Question / cue card */}
-          {move && (
-            <div style={{ width: '100%', background: 'var(--bg-elev)', border: '1px solid var(--border)', borderRadius: 18, padding: isMobile ? 18 : 22 }}>
-              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
-                <span style={{ fontSize: 11, letterSpacing: '0.08em', color: 'var(--text-3)', fontWeight: 600 }}>{t('speak.examinerLabel')}</span>
-                <button onClick={() => speak(examinerSpokenText(move))} disabled={speaking || muted} aria-label={t('speak.replay')} title={t('speak.replay')} style={{ display: 'inline-flex', alignItems: 'center', gap: 6, padding: '5px 10px', fontSize: 12, fontWeight: 600, background: 'transparent', border: '1px solid var(--border)', borderRadius: 8, color: speaking || muted ? 'var(--text-3)' : 'var(--text-2)', cursor: speaking || muted ? 'default' : 'pointer' }}>
-                  <svg width={13} height={13} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M3 12a9 9 0 1 0 9-9 9 9 0 0 0-6.4 2.6L3 8"/><path d="M3 3v5h5"/></svg>
-                  {t('speak.replay')}
-                </button>
-              </div>
-              {move.lead && <p style={{ fontSize: 13.5, color: 'var(--text-3)', margin: '0 0 8px', fontStyle: 'italic' }}>{move.lead}</p>}
-              {move.isCueCard && move.cueCard ? (
-                <>
-                  <p style={{ fontSize: 17, lineHeight: 1.5, color: 'var(--text)', margin: '0 0 12px', fontWeight: 500 }}>Describe {move.cueCard.topic}.</p>
-                  <div style={{ fontSize: 12.5, color: 'var(--text-3)', marginBottom: 6 }}>You should say:</div>
-                  <ul style={{ margin: 0, paddingLeft: 18, color: 'var(--text-2)', fontSize: 14.5, lineHeight: 1.7 }}>
-                    {move.cueCard.bullets.map((b, i) => <li key={i}>{b}</li>)}
-                  </ul>
-                </>
-              ) : (
-                <p style={{ fontSize: 17, lineHeight: 1.5, color: 'var(--text)', margin: 0, fontWeight: 500 }}>{move.question}</p>
+          {/* Live transcript peek */}
+          {(lastExaminer || lastUser) && status === 'live' && (
+            <div style={{ width: '100%', maxWidth: 520, display: 'grid', gap: 10, marginTop: 4 }}>
+              {lastExaminer && (
+                <div style={{ background: 'var(--bg-elev)', border: '1px solid var(--border)', borderRadius: 14, padding: '12px 16px' }}>
+                  <div style={{ fontSize: 10, letterSpacing: '0.08em', color: 'var(--text-3)', fontWeight: 600, marginBottom: 4 }}>{t('speak.examinerLabel')}</div>
+                  <p style={{ margin: 0, fontSize: 14.5, lineHeight: 1.5, color: 'var(--text)' }}>{lastExaminer}</p>
+                </div>
+              )}
+              {lastUser && (
+                <div style={{ background: 'transparent', border: '1px solid var(--border)', borderRadius: 14, padding: '12px 16px' }}>
+                  <div style={{ fontSize: 10, letterSpacing: '0.08em', color: 'var(--text-3)', fontWeight: 600, marginBottom: 4 }}>{t('speak.yourAnswer')}</div>
+                  <p style={{ margin: 0, fontSize: 14, lineHeight: 1.5, color: 'var(--text-2)' }}>{lastUser}</p>
+                </div>
               )}
             </div>
           )}
 
-          {/* Part 2 preparation */}
-          {move?.isCueCard && runPhase === 'prep' && (
-            <div style={{ width: '100%', background: 'var(--bg-soft)', border: '1px solid var(--border)', borderRadius: 16, padding: 18 }}>
-              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
-                <span style={{ fontSize: 12, fontWeight: 700, letterSpacing: '0.06em', color: 'var(--accent)' }}>{t('speak.prep')} · {String(Math.floor(prepLeft / 60)).padStart(2, '0')}:{String(prepLeft % 60).padStart(2, '0')}</span>
-                <button onClick={() => setRunPhase('idle')} style={{ fontSize: 12, fontWeight: 600, color: 'var(--text-2)', background: 'transparent', border: '1px solid var(--border)', borderRadius: 8, padding: '5px 12px', cursor: 'pointer' }}>{t('speak.ready2')} →</button>
-              </div>
-              <textarea value={prepNotes} onChange={e => setPrepNotes(e.target.value)} placeholder={t('speak.prepPlaceholder')}
-                style={{ width: '100%', minHeight: 90, padding: '12px 14px', background: 'var(--bg)', border: '1px solid var(--border)', borderRadius: 12, color: 'var(--text-2)', fontSize: 13.5, lineHeight: 1.6, resize: 'vertical', outline: 'none', fontFamily: 'var(--font-sans)' }}/>
-            </div>
-          )}
-
-          {/* Answer: read-only transcript preview of what you said */}
-          {move && runPhase !== 'prep' && answer.trim() && (
-            <div style={{ width: '100%' }}>
-              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 }}>
-                <span style={{ fontSize: 10.5, color: 'var(--text-3)', letterSpacing: '0.08em', fontWeight: 600 }}>{t('speak.yourAnswer')}</span>
-                <span style={{ fontSize: 11, color: 'var(--text-3)', fontFamily: 'var(--font-mono)' }}>{words(answer)} {t('speak.words')}</span>
-              </div>
-              <p style={{ margin: 0, padding: '14px 16px', background: 'var(--bg-elev)', border: '1px solid var(--border)', borderRadius: 16, color: 'var(--text-2)', fontSize: 14, lineHeight: 1.6 }}>{answer}</p>
-            </div>
-          )}
-
-          {(error || micError) && <div style={{ fontSize: 13, color: 'var(--danger)', textAlign: 'center' }}>{error || micError}</div>}
+          {(connError || error) && <div style={{ fontSize: 13, color: 'var(--danger)', textAlign: 'center' }}>{connError || error}</div>}
         </div>
       </div>
 
-      {/* Dock — only the Part 2 "I'm ready" control; answering itself is hands-free */}
-      {runPhase === 'prep' && (
-        <div style={{ padding: isMobile ? '12px 16px 18px' : '14px 24px 18px', paddingBottom: isMobile ? 'calc(14px + env(safe-area-inset-bottom))' : 18, borderTop: '1px solid var(--border)', background: 'color-mix(in srgb, var(--bg-soft) 70%, transparent)', backdropFilter: 'blur(8px)', flexShrink: 0 }}>
-          <div style={{ maxWidth: 560, margin: '0 auto' }}>
-            <button onClick={() => setRunPhase('idle')} style={{ width: '100%', padding: '14px', borderRadius: 12, fontSize: 14.5, fontWeight: 700, background: 'var(--accent)', color: 'var(--accent-fg)', border: 'none', cursor: 'pointer' }}>{t('speak.ready2')} →</button>
-          </div>
+      {/* Dock — finish & score */}
+      <div style={{ padding: isMobile ? '12px 16px 18px' : '14px 24px 18px', paddingBottom: isMobile ? 'calc(14px + env(safe-area-inset-bottom))' : 18, borderTop: '1px solid var(--border)', background: 'color-mix(in srgb, var(--bg-soft) 70%, transparent)', backdropFilter: 'blur(8px)', flexShrink: 0 }}>
+        <div style={{ maxWidth: 560, margin: '0 auto' }}>
+          <button
+            onClick={endTest}
+            disabled={status !== 'live' || grading || answered === 0}
+            style={{ width: '100%', padding: '14px', borderRadius: 12, fontSize: 14.5, fontWeight: 700, background: status !== 'live' || grading || answered === 0 ? 'var(--bg-soft)' : 'var(--accent)', color: status !== 'live' || grading || answered === 0 ? 'var(--text-3)' : 'var(--accent-fg)', border: status !== 'live' || grading || answered === 0 ? '1px solid var(--border)' : 'none', cursor: status !== 'live' || grading || answered === 0 ? 'not-allowed' : 'pointer' }}>
+            {grading ? t('speak.scoring') : status === 'ending' ? t('speak.finishing') : t('speak.endScore')}
+          </button>
         </div>
-      )}
+      </div>
     </div>
   )
 }
@@ -636,14 +499,14 @@ export default function SpeakingPage() {
   const [result, setResult] = useState<FeedbackResult | null>(null)
   const [error, setError] = useState('')
 
-  async function handleComplete(turns: GradeTurn[], sid: string, durationMinutes: number) {
+  async function handleComplete({ turns, sessionId: sid, durationMinutes, audioPath }: CompletePayload) {
     if (turns.length === 0) { setError(''); setPhase('ready'); return }
     setError(''); setResult(null); setGrading(true)
     try {
       const res = await fetch('/api/ai/speaking', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ turns, sessionId: sid, durationMinutes, topic: 'Full speaking test' }),
+        body: JSON.stringify({ turns, sessionId: sid, durationMinutes, audioPath, topic: 'Live speaking test' }),
       })
       const data = await res.json()
       if (!res.ok) setError(data.error ?? 'Failed to score the test.')
@@ -659,7 +522,7 @@ export default function SpeakingPage() {
     return <FeedbackScreen result={result} onBack={() => { setResult(null); setPhase('ready') }} />
   }
   return (
-    <LiveExam
+    <RealtimeExam
       key={sessionId}
       sessionId={sessionId}
       grading={grading}

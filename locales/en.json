@@ -622,7 +622,13 @@
     "pronFromText": "Estimated from text only",
     "orbSpeaking": "Sarah is speaking…",
     "orbListening": "Listening — tap to finish",
-    "orbTap": "Tap to answer"
+    "orbTap": "Tap to answer",
+    "connecting": "Connecting to your examiner…",
+    "finishing": "Finishing the test…",
+    "youSpeak": "Listening…",
+    "goAhead": "Go ahead — just speak",
+    "endScore": "End test & get my band",
+    "realtimeError": "Could not reach the examiner. Please try again."
   },
   "hub": {
     "currentBand": "current band",

@@ -42,6 +42,7 @@ export const AI_DAILY_LIMITS: Record<string, number> = {
   // turn, ~15 turns), so these per-turn features need much higher daily caps
   // than the once-per-test grade. ~20 full tests/day is plenty for real study.
   speaking_examiner: 400,
+  speaking_realtime: 40, // one realtime session (one whole test) per token
   tts:              400,
   transcribe:       400,
   study_plan:       15,

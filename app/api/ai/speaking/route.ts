@@ -59,7 +59,7 @@ const JSON_SHAPE = `Return ONLY a JSON object with exactly this shape:
 
 function buildSystemPrompt(hasAudio: boolean, fluencySummary: string): string {
   const pronInstruction = hasAudio
-    ? `You have been given the ACTUAL AUDIO of the candidate's Part 2 long turn. Judge Pronunciation from that audio (individual sounds, word/sentence stress, intonation, rhythm, intelligibility, effect of L1 accent) against the descriptor. Use the audio for pronunciation only; judge the other criteria from the full transcript.`
+    ? `You have been given the ACTUAL AUDIO of the candidate speaking. Judge Pronunciation directly from it (individual sounds, word/sentence stress, intonation, rhythm, intelligibility, effect of L1 accent) and also let the audio inform Fluency & Coherence (hesitation, pace, smoothness). Judge Lexical Resource and Grammar from the transcript.`
     : `No audio is available, so judge Pronunciation conservatively from fluency/coherence signals and clearly flag in pronunciation_notes that it is estimated from text only. Never invent a confident pronunciation band.`
 
   return `${EXAMINER_PERSONA}
@@ -111,7 +111,7 @@ export async function POST(request: NextRequest) {
   const { user, error: gate } = await gateAiRequest('speaking')
   if (gate) return gate
 
-  let body: { topic?: string; sessionId?: string; durationMinutes?: number; turns?: IncomingTurn[] }
+  let body: { topic?: string; sessionId?: string; durationMinutes?: number; turns?: IncomingTurn[]; audioPath?: string }
   try {
     body = await request.json()
   } catch {
@@ -161,13 +161,15 @@ export async function POST(request: NextRequest) {
     ? describeFluency(aggMetrics)
     : 'no timing metrics available (judge fluency from wording only)'
 
-  // Pronunciation source: the Part 2 long-turn recording, if it was stored.
+  // Audio source for acoustic grading: the whole-session recording from a live
+  // realtime test (top-level audioPath), or else the Part 2 long-turn clip.
   const part2 = turns.find(tn => tn.part === 2 && tn.audioPath)
+  const acousticPath = body.audioPath?.trim() || part2?.audioPath
   let audioBase64: string | null = null
   let audioFormat: 'wav' | 'mp3' = 'wav'
-  if (part2?.audioPath) {
-    audioBase64 = await downloadSpeakingAudioBase64(part2.audioPath)
-    audioFormat = part2.audioPath.endsWith('.mp3') ? 'mp3' : 'wav'
+  if (acousticPath) {
+    audioBase64 = await downloadSpeakingAudioBase64(acousticPath)
+    audioFormat = acousticPath.endsWith('.mp3') ? 'mp3' : 'wav'
   }
   const hasAudio = audioBase64 !== null
 
@@ -229,7 +231,7 @@ export async function POST(request: NextRequest) {
         part:                null,
         topic,
         transcript,
-        audio_url:           part2?.audioPath ?? null,
+        audio_url:           acousticPath ?? null,
         band_score:          scored.band_score,
         fluency_score:       scored.fluency_score,
         pronunciation_score: scored.pronunciation_score,
