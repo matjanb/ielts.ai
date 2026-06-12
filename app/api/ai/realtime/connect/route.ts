@@ -44,9 +44,18 @@ export async function POST(request: NextRequest) {
         audio: {
           input: {
             transcription: { model: 'whisper-1', language: 'en' },
-            // Semantic VAD ends the candidate's turn when they've actually
-            // finished a thought (not just paused) — natural, hands-free.
-            turn_detection: { type: 'semantic_vad' },
+            // Filter background/transient noise before it reaches the VAD, so a
+            // rustle or a bump doesn't register as the candidate speaking.
+            noise_reduction: { type: 'near_field' },
+            turn_detection: {
+              type: 'server_vad',
+              threshold: 0.7,            // need clearer/louder speech to trigger (default 0.5)
+              prefix_padding_ms: 300,
+              silence_duration_ms: 700,  // wait a touch longer before ending the turn
+              // Don't let a stray noise cut Sarah off mid-question; she finishes
+              // speaking, then the candidate's turn is captured.
+              interrupt_response: false,
+            },
           },
           output: { voice: 'sage' },
         },
