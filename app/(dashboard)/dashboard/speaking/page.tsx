@@ -262,12 +262,9 @@ function RealtimeExam({ sessionId, grading, error, onComplete, onExit }: {
       } catch { /* audio upload will simply be skipped */ }
 
       try {
-        const sres = await fetch('/api/ai/realtime/session', { method: 'POST' })
-        const sdata = await sres.json()
-        if (!sres.ok || !sdata.value) { if (!cancelled) setConnError(sdata.error ?? t('speak.realtimeError')); return }
-        if (cancelled) return
-
-        const mic = await navigator.mediaDevices.getUserMedia({ audio: true })
+        const mic = await navigator.mediaDevices.getUserMedia({ audio: true }).catch(() => null)
+        if (!mic) { if (!cancelled) setConnError(t('speak.errDenied')); return }
+        if (cancelled) { mic.getTracks().forEach(tr => tr.stop()); return }
         micStreamRef.current = mic
 
         // Record the candidate's mic for the final acoustic grade.
@@ -310,12 +307,19 @@ function RealtimeExam({ sessionId, grading, error, onComplete, onExit }: {
         const offer = await pc.createOffer()
         await pc.setLocalDescription(offer)
 
-        const resp = await fetch(`https://api.openai.com/v1/realtime/calls?model=${encodeURIComponent(sdata.model)}`, {
+        // Our server completes the SDP handshake with OpenAI (keeps the key off
+        // the client and avoids any browser cross-origin call to OpenAI).
+        const resp = await fetch('/api/ai/realtime/connect', {
           method: 'POST',
-          body: offer.sdp,
-          headers: { Authorization: `Bearer ${sdata.value}`, 'Content-Type': 'application/sdp' },
+          headers: { 'Content-Type': 'application/sdp' },
+          body: offer.sdp ?? '',
         })
-        if (!resp.ok) { if (!cancelled) setConnError(t('speak.realtimeError')); cleanup(); return }
+        if (!resp.ok) {
+          let m = t('speak.realtimeError')
+          try { const j = await resp.clone().json(); if (j?.error) m = j.error } catch {}
+          if (!cancelled) setConnError(m)
+          cleanup(); return
+        }
         const answer = await resp.text()
         await pc.setRemoteDescription({ type: 'answer', sdp: answer })
         if (!cancelled) setStatus('live')
