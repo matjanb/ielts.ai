@@ -375,7 +375,7 @@ function RealtimeExam({ sessionId, grading, error, onComplete, onExit }: {
     const uid = userIdRef.current
     if (blob && blob.size > 0 && uid) {
       try {
-        const wav = await blobToWav(blob, 16000) // downsample — keeps a multi-minute upload small
+        const wav = await blobToWav(blob, 16000, 180) // 16 kHz, last ~3 min — bounds the acoustic-grade upload
         const path = `${uid}/${sessionId}/full.wav`
         const { error: upErr } = await createClient().storage.from('speaking-audio').upload(path, wav, { contentType: 'audio/wav', upsert: true })
         if (!upErr) audioPath = path

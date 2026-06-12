@@ -3,7 +3,7 @@
 // audio model that only accepts wav/mp3, so we transcode in the browser via the
 // Web Audio API (decodeAudioData handles every format the browser can record).
 
-export async function blobToWav(blob: Blob, targetSampleRate?: number): Promise<Blob> {
+export async function blobToWav(blob: Blob, targetSampleRate?: number, maxSeconds?: number): Promise<Blob> {
   const arrayBuffer = await blob.arrayBuffer()
   const Ctx = window.AudioContext
     || (window as Window & { webkitAudioContext?: typeof AudioContext }).webkitAudioContext
@@ -12,7 +12,7 @@ export async function blobToWav(blob: Blob, targetSampleRate?: number): Promise<
   const audioCtx = new Ctx()
   try {
     const audioBuffer = await audioCtx.decodeAudioData(arrayBuffer)
-    return encodeWav(audioBuffer, targetSampleRate)
+    return encodeWav(audioBuffer, targetSampleRate, maxSeconds)
   } finally {
     audioCtx.close().catch(() => {})
   }
@@ -21,7 +21,7 @@ export async function blobToWav(blob: Blob, targetSampleRate?: number): Promise<
 // Downmix to mono 16-bit PCM, optionally decimating to `targetSampleRate` (e.g.
 // 16 kHz for a long whole-session recording, which keeps the upload small). Mono
 // is plenty for speech assessment and roughly halves size versus stereo.
-function encodeWav(buffer: AudioBuffer, targetSampleRate?: number): Blob {
+function encodeWav(buffer: AudioBuffer, targetSampleRate?: number, maxSeconds?: number): Blob {
   const srcRate = buffer.sampleRate
   const srcLength = buffer.length
   const channels = buffer.numberOfChannels
@@ -42,6 +42,14 @@ function encodeWav(buffer: AudioBuffer, targetSampleRate?: number): Blob {
     length = Math.floor(srcLength / ratio)
     mono = new Float32Array(length)
     for (let i = 0; i < length; i++) mono[i] = srcMono[Math.floor(i * ratio)]
+  }
+
+  // Keep only the last `maxSeconds` (most recent, warmed-up speech) to bound the
+  // upload/token size of a long conversation.
+  if (maxSeconds && length > maxSeconds * sampleRate) {
+    const keep = Math.floor(maxSeconds * sampleRate)
+    mono = mono.slice(length - keep)
+    length = keep
   }
 
   const bytesPerSample = 2

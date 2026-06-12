@@ -83,11 +83,23 @@ ${pronInstruction}
 
 ENGLISH ONLY: IELTS Speaking is assessed in English. If the answers are wholly or mostly not in English, they cannot be assessed — award band 1–2 on every criterion and state this. NEVER translate non-English answers in order to score them.
 
-${JSON_SHAPE}`
+${JSON_SHAPE}
+
+Output the JSON object ONLY — no preamble, no commentary, no code fences.`
+}
+
+// gpt-audio doesn't support response_format:json_object and may wrap its JSON in
+// prose or a ```json fence, so pull out the first {...} block before parsing.
+function extractJson(raw: string): string {
+  const fenced = raw.match(/```(?:json)?\s*([\s\S]*?)```/i)
+  const body = fenced ? fenced[1] : raw
+  const start = body.indexOf('{')
+  const end = body.lastIndexOf('}')
+  return start !== -1 && end > start ? body.slice(start, end + 1) : body
 }
 
 function parseAssessment(raw: string): SpeakingResult {
-  const j = JSON.parse(raw) as Partial<SpeakingResult>
+  const j = JSON.parse(extractJson(raw)) as Partial<SpeakingResult>
   const crit = (c?: Partial<CriterionResult>): CriterionResult => ({
     band: clampBand(typeof c?.band === 'number' ? c.band : NaN),
     evidence: typeof c?.evidence === 'string' ? c.evidence : '',
@@ -174,32 +186,47 @@ export async function POST(request: NextRequest) {
   const hasAudio = audioBase64 !== null
 
   try {
-    const userContent: Array<
-      | { type: 'text'; text: string }
-      | { type: 'input_audio'; input_audio: { data: string; format: 'wav' | 'mp3' } }
-    > = [
-      { type: 'text', text: `FULL IELTS SPEAKING TEST (Parts 1–3):\n${transcript}` },
-    ]
-    if (hasAudio && audioBase64) {
-      userContent.push({ type: 'text', text: 'Audio of the candidate\'s Part 2 long turn follows — use it to judge Pronunciation:' })
-      userContent.push({ type: 'input_audio', input_audio: { data: audioBase64, format: audioFormat } })
+    // Run the assessment. With audio we use the audio-capable model and judge
+    // pronunciation from the real sound; if that call fails for any reason
+    // (audio too long, model hiccup), fall back to a text-only grade so the
+    // candidate always gets a band.
+    const runGrade = async (useAudio: boolean): Promise<SpeakingResult> => {
+      const content: Array<
+        | { type: 'text'; text: string }
+        | { type: 'input_audio'; input_audio: { data: string; format: 'wav' | 'mp3' } }
+      > = [
+        { type: 'text', text: `FULL IELTS SPEAKING TEST (Parts 1–3):\n${transcript}` },
+      ]
+      if (useAudio && audioBase64) {
+        content.push({ type: 'text', text: 'A recording of the candidate speaking follows — use it to judge Pronunciation and Fluency:' })
+        content.push({ type: 'input_audio', input_audio: { data: audioBase64, format: audioFormat } })
+      }
+      const completion = await openai.chat.completions.create({
+        model: useAudio ? 'gpt-audio' : 'gpt-4o',
+        modalities: ['text'], // text output only (the audio model can speak; we don't want that)
+        temperature: 0.2,
+        max_tokens: 1300,
+        // gpt-audio rejects response_format:json_object, so only the text model
+        // gets the strict JSON mode; the audio model is parsed leniently.
+        ...(useAudio ? {} : { response_format: { type: 'json_object' as const } }),
+        messages: [
+          { role: 'system', content: buildSystemPrompt(useAudio, fluencySummary) },
+          { role: 'user', content },
+        ],
+      })
+      return parseAssessment(completion.choices[0]?.message?.content ?? '{}')
     }
 
-    const completion = await openai.chat.completions.create({
-      // Audio-capable model when we have a recording to judge pronunciation
-      // from; the standard model otherwise (no point paying for audio I/O).
-      model: hasAudio ? 'gpt-audio' : 'gpt-4o',
-      temperature: 0.2,
-      max_tokens: 1300,
-      response_format: { type: 'json_object' },
-      messages: [
-        { role: 'system', content: buildSystemPrompt(hasAudio, fluencySummary) },
-        { role: 'user', content: userContent },
-      ],
-    })
-
-    const raw = completion.choices[0]?.message?.content ?? '{}'
-    const result = parseAssessment(raw)
+    let usedAudio = hasAudio
+    let result: SpeakingResult
+    try {
+      result = await runGrade(hasAudio)
+    } catch (audioErr) {
+      if (!hasAudio) throw audioErr
+      console.error('[AI speaking] audio grade failed, falling back to text-only', audioErr)
+      usedAudio = false
+      result = await runGrade(false)
+    }
 
     const fluency = result.criteria.fluency.band
     const lexical = result.criteria.lexical.band
@@ -288,7 +315,7 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({
       submission_id:       submission?.id,
       pronunciation_notes: result.pronunciation_notes,
-      pronunciation_from_audio: hasAudio,
+      pronunciation_from_audio: usedAudio,
       feedback,
       ...scored,
     })
