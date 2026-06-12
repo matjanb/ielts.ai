@@ -4,7 +4,7 @@ import { useState, useRef, useEffect, useCallback } from 'react'
 import { useLanguage } from '@/lib/i18n/LanguageContext'
 import { useIsMobile } from '@/lib/hooks/useIsMobile'
 import { createClient } from '@/lib/supabase/client'
-import { blobToWav } from '@/lib/utils/wavEncode'
+import { blobToWavSegments, type SpeechSegment } from '@/lib/utils/wavEncode'
 
 /* ── Types ─────────────────────────────────────────────────────────────────── */
 type Part = 1 | 2 | 3
@@ -186,6 +186,8 @@ function RealtimeExam({ sessionId, grading, error, onComplete, onExit }: {
   const [answered, setAnswered] = useState(0)
   const [elapsed, setElapsed] = useState(0)
   const [connError, setConnError] = useState('')
+  const [part, setPart] = useState<Part>(1)
+  const [partBanner, setPartBanner] = useState<Part | null>(null)
 
   const pcRef = useRef<RTCPeerConnection | null>(null)
   const dcRef = useRef<RTCDataChannel | null>(null)
@@ -202,6 +204,14 @@ function RealtimeExam({ sessionId, grading, error, onComplete, onExit }: {
   const orbReactiveRef = useRef<HTMLDivElement>(null)
   const rafRef = useRef<number | null>(null)
   const startedRef = useRef(false)
+  // Speech-segment capture: record only the candidate's speech so the acoustic
+  // grade isn't padded with silence from the examiner's turns.
+  const recStartRef = useRef(0)
+  const segmentsRef = useRef<SpeechSegment[]>([])
+  // Heuristic part tracking (the realtime model isn't asked to announce parts).
+  const partRef = useRef<Part>(1)
+  const answeredRef = useRef(0)
+  const p2AnswersRef = useRef(0)
 
   const cleanup = useCallback(() => {
     if (rafRef.current) { cancelAnimationFrame(rafRef.current); rafRef.current = null }
@@ -226,11 +236,18 @@ function RealtimeExam({ sessionId, grading, error, onComplete, onExit }: {
   const handleEvent = useCallback((raw: string) => {
     let msg: { type?: string; transcript?: string; delta?: string }
     try { msg = JSON.parse(raw) } catch { return }
+    const now = () => (recStartRef.current ? performance.now() - recStartRef.current : 0)
     switch (msg.type) {
       case 'input_audio_buffer.speech_started':
-        setUserSpeaking(true); break
-      case 'input_audio_buffer.speech_stopped':
-        setUserSpeaking(false); break
+        setUserSpeaking(true)
+        segmentsRef.current.push({ start: now(), end: -1 }) // open a speech segment
+        break
+      case 'input_audio_buffer.speech_stopped': {
+        setUserSpeaking(false)
+        const seg = segmentsRef.current[segmentsRef.current.length - 1]
+        if (seg && seg.end === -1) seg.end = now() // close it
+        break
+      }
       case 'response.created':
       case 'response.output_audio.delta':
       case 'response.audio.delta':
@@ -240,11 +257,30 @@ function RealtimeExam({ sessionId, grading, error, onComplete, onExit }: {
       case 'response.done':
         setAssistantSpeaking(false); break
       case 'conversation.item.input_audio_transcription.completed':
-        if (msg.transcript?.trim()) { transcriptRef.current.push({ role: 'candidate', text: msg.transcript.trim() }); setLastUser(msg.transcript.trim()); setAnswered(c => c + 1) }
+        if (msg.transcript?.trim()) {
+          transcriptRef.current.push({ role: 'candidate', text: msg.transcript.trim() })
+          setLastUser(msg.transcript.trim())
+          answeredRef.current += 1
+          setAnswered(answeredRef.current)
+          // Part progression: long turn done -> discussion; safety bump if the
+          // Part 2 cue was never detected.
+          let np = partRef.current
+          if (np === 2) { p2AnswersRef.current += 1; if (p2AnswersRef.current >= 2) np = 3 }
+          if (np === 1 && answeredRef.current >= 6) np = 2
+          if (np !== partRef.current) { partRef.current = np; setPart(np) }
+        }
         break
       case 'response.output_audio_transcript.done':
       case 'response.audio_transcript.done':
-        if (msg.transcript?.trim()) { transcriptRef.current.push({ role: 'examiner', text: msg.transcript.trim() }); setLastExaminer(msg.transcript.trim()) }
+        if (msg.transcript?.trim()) {
+          const text = msg.transcript.trim()
+          transcriptRef.current.push({ role: 'examiner', text })
+          setLastExaminer(text)
+          // The long-turn cue marks the start of Part 2.
+          if (partRef.current === 1 && /i'?d like you to (talk|speak) about|talk about .{0,40}\bfor (a|one|two|1|2)\b|for (one|two|1|2)\s*(to\s*(one|two|1|2)\s*)?minutes?|a minute or two/i.test(text)) {
+            partRef.current = 2; p2AnswersRef.current = 0; setPart(2)
+          }
+        }
         break
     }
   }, [])
@@ -271,7 +307,9 @@ function RealtimeExam({ sessionId, grading, error, onComplete, onExit }: {
         try {
           const rec = new MediaRecorder(mic)
           userChunksRef.current = []
+          segmentsRef.current = []
           rec.ondataavailable = e => { if (e.data.size > 0) userChunksRef.current.push(e.data) }
+          recStartRef.current = performance.now()
           rec.start()
           recorderRef.current = rec
         } catch { /* grade falls back to transcript-only */ }
@@ -333,6 +371,15 @@ function RealtimeExam({ sessionId, grading, error, onComplete, onExit }: {
   // session timer
   useEffect(() => { const id = setInterval(() => setElapsed(s => s + 1), 1000); return () => clearInterval(id) }, [])
 
+  // Flash a transition banner when we move into Part 2 / Part 3.
+  useEffect(() => {
+    if (part === 1) return
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    setPartBanner(part)
+    const id = setTimeout(() => setPartBanner(null), 2600)
+    return () => clearTimeout(id)
+  }, [part])
+
   // Orb reactivity: scale/brighten from whoever is talking (mic or examiner).
   useEffect(() => {
     if (status !== 'live') return
@@ -363,19 +410,26 @@ function RealtimeExam({ sessionId, grading, error, onComplete, onExit }: {
     if (status === 'ending') return
     setStatus('ending')
 
+    // Close any speech segment still open at the moment we end.
+    const open = segmentsRef.current[segmentsRef.current.length - 1]
+    if (open && open.end === -1) open.end = recStartRef.current ? performance.now() - recStartRef.current : 0
+
     const rec = recorderRef.current
     const blob: Blob | null = await new Promise(resolve => {
       if (!rec || rec.state === 'inactive') return resolve(null)
       rec.onstop = () => resolve(new Blob(userChunksRef.current, { type: rec.mimeType || 'audio/webm' }))
       try { rec.stop() } catch { resolve(null) }
     })
+    const segments = segmentsRef.current.filter(s => s.end > s.start)
     cleanup()
 
     let audioPath: string | undefined
     const uid = userIdRef.current
     if (blob && blob.size > 0 && uid) {
       try {
-        const wav = await blobToWav(blob, 16000, 180) // 16 kHz, last ~3 min — bounds the acoustic-grade upload
+        // Only the candidate's speech segments (16 kHz, last ~3 min) — dense
+        // speech for the acoustic grade instead of conversation silence.
+        const wav = await blobToWavSegments(blob, segments, { targetSampleRate: 16000, padMs: 350, maxSeconds: 180 })
         const path = `${uid}/${sessionId}/full.wav`
         const { error: upErr } = await createClient().storage.from('speaking-audio').upload(path, wav, { contentType: 'audio/wav', upsert: true })
         if (!upErr) audioPath = path
@@ -407,8 +461,20 @@ function RealtimeExam({ sessionId, grading, error, onComplete, onExit }: {
     <span style={{ position: 'absolute', inset: 0, borderRadius: '50%', background: 'color-mix(in srgb, var(--accent) 30%, transparent)', animation: 'pulse-ring 2.2s ease-out infinite', animationDelay: delay, pointerEvents: 'none' }}/>
   )
 
+  const partLabel = (p: Part) => t(p === 1 ? 'speak.partIntro' : p === 2 ? 'speak.partLong' : 'speak.partDisc')
+  const partPct = part === 1 ? 33 : part === 2 ? 66 : 100
+
   return (
-    <div style={{ flex: 1, background: 'radial-gradient(120% 70% at 50% -5%, var(--accent-soft) 0%, var(--bg) 55%)', color: 'var(--text)', display: 'flex', flexDirection: 'column' }}>
+    <div style={{ position: 'relative', flex: 1, background: 'radial-gradient(120% 70% at 50% -5%, var(--accent-soft) 0%, var(--bg) 55%)', color: 'var(--text)', display: 'flex', flexDirection: 'column' }}>
+      {/* Part transition banner */}
+      {partBanner && (
+        <div key={partBanner} className="animate-fade-up" style={{ position: 'absolute', top: isMobile ? 60 : 70, left: '50%', transform: 'translateX(-50%)', zIndex: 10, display: 'inline-flex', alignItems: 'center', gap: 10, padding: '10px 18px', borderRadius: 999, background: 'var(--accent)', color: 'var(--accent-fg)', boxShadow: '0 14px 40px -10px color-mix(in srgb, var(--accent) 60%, transparent)', whiteSpace: 'nowrap' }}>
+          <span style={{ fontSize: 13, fontWeight: 800, letterSpacing: '0.02em' }}>{t('speak.part')} {partBanner}</span>
+          <span style={{ width: 4, height: 4, borderRadius: '50%', background: 'currentColor', opacity: 0.6 }}/>
+          <span style={{ fontSize: 13, fontWeight: 600 }}>{partLabel(partBanner)}</span>
+        </div>
+      )}
+
       <audio ref={remoteAudioRef} autoPlay hidden />
 
       {/* Header */}
@@ -423,6 +489,19 @@ function RealtimeExam({ sessionId, grading, error, onComplete, onExit }: {
           <button onClick={onExit} style={{ padding: '6px 14px', background: 'transparent', border: '1px solid var(--border-strong)', borderRadius: 8, fontSize: 12, color: 'var(--text-2)', cursor: 'pointer' }}>{t('speak.endTest')}</button>
         </div>
       </header>
+
+      {/* Part indicator */}
+      <div style={{ padding: isMobile ? '12px 16px 0' : '14px 24px 0', flexShrink: 0 }}>
+        <div style={{ maxWidth: 560, margin: '0 auto' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8, fontSize: 12.5, fontWeight: 600, color: 'var(--accent)' }}>
+            <span style={{ padding: '2px 9px', borderRadius: 999, background: 'var(--accent-soft)', border: '1px solid color-mix(in srgb, var(--accent) 35%, transparent)' }}>{t('speak.part')} {part}</span>
+            <span style={{ transition: 'opacity .3s' }}>{partLabel(part)}</span>
+          </div>
+          <div style={{ height: 3, background: 'var(--bg-soft)', borderRadius: 999, overflow: 'hidden' }}>
+            <div style={{ width: `${partPct}%`, height: '100%', background: 'var(--accent)', borderRadius: 999, transition: 'width .6s cubic-bezier(.2,.7,.2,1)' }}/>
+          </div>
+        </div>
+      </div>
 
       {/* Body — the orb */}
       <div style={{ flex: 1, overflow: 'auto', padding: isMobile ? '20px 16px 24px' : '28px 24px 32px', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
