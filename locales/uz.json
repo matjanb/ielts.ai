@@ -575,6 +575,7 @@
     "notEnglish": "Bu ingliz tiliga o‘xshamadi — IELTS Speaking ingliz tilida baholanadi.",
     "pronFromAudio": "Yozuvingiz bo‘yicha baholandi",
     "pronFromText": "Faqat matn bo‘yicha baholandi",
+    "fcMetrics": "O‘lchandi: {{wpm}} so‘z/min · pauza: {{pauses}} ({{secs}}s)",
     "orbSpeaking": "Sarah gapiryapti…",
     "orbListening": "Tinglayapman — tugatish uchun bosing",
     "orbTap": "Javob berish uchun bosing",

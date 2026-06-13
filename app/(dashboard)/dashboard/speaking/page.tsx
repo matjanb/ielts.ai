@@ -5,6 +5,7 @@ import { useLanguage } from '@/lib/i18n/LanguageContext'
 import { useIsMobile } from '@/lib/hooks/useIsMobile'
 import { createClient } from '@/lib/supabase/client'
 import { blobToWavSegments, type SpeechSegment } from '@/lib/utils/wavEncode'
+import { metricsFromSegments, type FluencyMetrics } from '@/lib/ielts/fluency'
 
 /* ── Types ─────────────────────────────────────────────────────────────────── */
 type Part = 1 | 2 | 3
@@ -12,14 +13,20 @@ interface GradeTurn {
   part: Part
   question: string
   answer: string
+  duration_ms?: number
+  words?: number
+  pause_count?: number
+  pause_total_ms?: number
+  speech_rate_wpm?: number | null
 }
 interface CriterionResult { band: number; evidence: string }
 interface FeedbackResult {
   band_score: number; fluency_score: number; lexical_score: number; grammar_score: number; pronunciation_score: number
   pronunciation_notes: string; pronunciation_from_audio?: boolean
+  fluency_metrics?: FluencyMetrics | null
   feedback: { overview: string; strengths: string[]; improvements: string[]; next_band_tip?: string; criteria?: { fluency: CriterionResult; lexical: CriterionResult; grammar: CriterionResult; pronunciation: CriterionResult } }
 }
-interface CompletePayload { turns: GradeTurn[]; sessionId: string; durationMinutes: number; audioPath?: string }
+interface CompletePayload { turns: GradeTurn[]; sessionId: string; durationMinutes: number; audioPath?: string; fluencyMetrics?: FluencyMetrics | null }
 type Phase = 'ready' | 'live' | 'feedback'
 
 const MicIcon = ({ size = 20, color = 'currentColor' }: { size?: number; color?: string }) => (
@@ -109,6 +116,15 @@ function FeedbackScreen({ result, onBack }: { result: FeedbackResult; onBack: ()
                   <div style={{ width: `${(v / 9) * 100}%`, height: '100%', background: 'var(--accent)', borderRadius: 999, transition: 'width .8s cubic-bezier(.2,.7,.2,1)' }}/>
                 </div>
                 {evidence && <p style={{ fontSize: 12, color: 'var(--text-3)', margin: '6px 0 0', lineHeight: 1.5 }}>{evidence}</p>}
+                {key === 'fluency' && result.fluency_metrics && (result.fluency_metrics.speech_rate_wpm != null || result.fluency_metrics.words > 0) && (
+                  <p style={{ fontSize: 11, color: 'var(--accent)', margin: '5px 0 0', fontWeight: 600, fontVariantNumeric: 'tabular-nums' }}>
+                    {t('speak.fcMetrics', {
+                      wpm: result.fluency_metrics.speech_rate_wpm != null ? String(Math.round(result.fluency_metrics.speech_rate_wpm)) : '—',
+                      pauses: String(result.fluency_metrics.pause_count),
+                      secs: (result.fluency_metrics.pause_total_ms / 1000).toFixed(0),
+                    })}
+                  </p>
+                )}
                 {key === 'pronunciation' && (
                   <>
                     <p style={{ fontSize: 11, color: result.pronunciation_from_audio ? 'var(--accent)' : 'var(--text-3)', margin: '5px 0 0', fontWeight: 600 }}>
@@ -154,12 +170,30 @@ function FeedbackScreen({ result, onBack }: { result: FeedbackResult; onBack: ()
 
 /* ── Build grade turns from the running realtime transcript ─────────────────── */
 interface TranscriptItem { role: 'examiner' | 'candidate'; text: string }
-function buildTurns(items: TranscriptItem[]): GradeTurn[] {
+function buildTurns(items: TranscriptItem[], turnSegments: SpeechSegment[][] = []): GradeTurn[] {
   const out: GradeTurn[] = []
   let pendingQ = ''
+  let answerIdx = 0
   for (const it of items) {
     if (it.role === 'examiner') pendingQ = it.text
-    else if (it.text.trim()) { out.push({ part: 1, question: pendingQ, answer: it.text.trim() }); pendingQ = '' }
+    else if (it.text.trim()) {
+      const answer = it.text.trim()
+      // Per-turn fluency from this answer's VAD speech segments (client half of
+      // the hybrid). `metricsFromSegments` returns word-count-only metrics when
+      // no segments were captured for the turn.
+      const words = answer.split(/\s+/).filter(Boolean).length
+      const m = metricsFromSegments(turnSegments[answerIdx] ?? [], words)
+      out.push({
+        part: 1, question: pendingQ, answer,
+        duration_ms: m.duration_ms || undefined,
+        words: m.words || undefined,
+        pause_count: m.pause_count,
+        pause_total_ms: m.pause_total_ms,
+        speech_rate_wpm: m.speech_rate_wpm,
+      })
+      pendingQ = ''
+      answerIdx++
+    }
   }
   // Spread parts across the conversation so stored turns aren't all "Part 1".
   const n = out.length
@@ -208,6 +242,11 @@ function RealtimeExam({ sessionId, grading, error, onComplete, onExit }: {
   // grade isn't padded with silence from the examiner's turns.
   const recStartRef = useRef(0)
   const segmentsRef = useRef<SpeechSegment[]>([])
+  // Per-turn slices of segmentsRef: when an answer's transcript lands, the
+  // segments captured since the previous answer belong to it. Index aligns with
+  // the candidate answers buildTurns produces, so per-turn fluency lines up.
+  const turnSegmentsRef = useRef<SpeechSegment[][]>([])
+  const assignedSegRef = useRef(0)
   // Heuristic part tracking (the realtime model isn't asked to announce parts).
   const partRef = useRef<Part>(1)
   const answeredRef = useRef(0)
@@ -260,6 +299,11 @@ function RealtimeExam({ sessionId, grading, error, onComplete, onExit }: {
         if (msg.transcript?.trim()) {
           transcriptRef.current.push({ role: 'candidate', text: msg.transcript.trim() })
           setLastUser(msg.transcript.trim())
+          // Claim the closed speech segments captured since the last answer for
+          // this turn, so per-turn fluency is computed from the right speech.
+          const closed = segmentsRef.current.slice(assignedSegRef.current).filter(s => s.end > s.start)
+          turnSegmentsRef.current.push(closed)
+          assignedSegRef.current = segmentsRef.current.length
           answeredRef.current += 1
           setAnswered(answeredRef.current)
           // Part progression: long turn done -> discussion; safety bump if the
@@ -308,6 +352,8 @@ function RealtimeExam({ sessionId, grading, error, onComplete, onExit }: {
           const rec = new MediaRecorder(mic)
           userChunksRef.current = []
           segmentsRef.current = []
+          turnSegmentsRef.current = []
+          assignedSegRef.current = 0
           rec.ondataavailable = e => { if (e.data.size > 0) userChunksRef.current.push(e.data) }
           recStartRef.current = performance.now()
           rec.start()
@@ -421,22 +467,51 @@ function RealtimeExam({ sessionId, grading, error, onComplete, onExit }: {
       try { rec.stop() } catch { resolve(null) }
     })
     const segments = segmentsRef.current.filter(s => s.end > s.start)
+    const turnSegments = turnSegmentsRef.current
     cleanup()
 
     let audioPath: string | undefined
+    let fluencyMetrics: FluencyMetrics | null = null
     const uid = userIdRef.current
-    if (blob && blob.size > 0 && uid) {
-      try {
-        // Only the candidate's speech segments (16 kHz, last ~3 min) — dense
-        // speech for the acoustic grade instead of conversation silence.
-        const wav = await blobToWavSegments(blob, segments, { targetSampleRate: 16000, padMs: 350, maxSeconds: 180 })
-        const path = `${uid}/${sessionId}/full.wav`
-        const { error: upErr } = await createClient().storage.from('speaking-audio').upload(path, wav, { contentType: 'audio/wav', upsert: true })
-        if (!upErr) audioPath = path
-      } catch { /* grade falls back to transcript-only */ }
+    if (blob && blob.size > 0) {
+      // Two derivations from the same recording, in parallel — both use only the
+      // candidate's speech segments (16 kHz, last ~3 min), not the silence while
+      // the examiner talks:
+      //  • a padded clip uploaded for the audio model's pronunciation grade.
+      //  • a tightly-trimmed clip sent to Whisper for word-level fluency metrics.
+      //    The small padding keeps segment joins under the pause threshold so
+      //    they aren't miscounted as hesitations.
+      const [storeRes, metricsRes] = await Promise.allSettled([
+        uid
+          ? (async () => {
+              const wav = await blobToWavSegments(blob, segments, { targetSampleRate: 16000, padMs: 350, maxSeconds: 180 })
+              const path = `${uid}/${sessionId}/full.wav`
+              const { error: upErr } = await createClient().storage.from('speaking-audio').upload(path, wav, { contentType: 'audio/wav', upsert: true })
+              if (upErr) throw upErr
+              return path
+            })()
+          : Promise.resolve<string | undefined>(undefined),
+        (async () => {
+          const wav = await blobToWavSegments(blob, segments, { targetSampleRate: 16000, padMs: 150, maxSeconds: 180 })
+          const fd = new FormData()
+          fd.append('audio', new File([wav], 'speech.wav', { type: 'audio/wav' }))
+          const res = await fetch('/api/ai/transcribe', { method: 'POST', body: fd })
+          if (!res.ok) throw new Error('transcribe failed')
+          const d = await res.json()
+          return {
+            duration_ms: d.duration_ms ?? 0,
+            words: d.words ?? 0,
+            pause_count: d.pause_count ?? 0,
+            pause_total_ms: d.pause_total_ms ?? 0,
+            speech_rate_wpm: d.speech_rate_wpm ?? null,
+          } as FluencyMetrics
+        })(),
+      ])
+      if (storeRes.status === 'fulfilled' && storeRes.value) audioPath = storeRes.value
+      if (metricsRes.status === 'fulfilled') fluencyMetrics = metricsRes.value
     }
 
-    onComplete({ turns: buildTurns(transcriptRef.current), sessionId, durationMinutes: Math.max(1, Math.round(elapsed / 60)), audioPath })
+    onComplete({ turns: buildTurns(transcriptRef.current, turnSegments), sessionId, durationMinutes: Math.max(1, Math.round(elapsed / 60)), audioPath, fluencyMetrics })
   }
 
   const mm = String(Math.floor(elapsed / 60)).padStart(2, '0')
@@ -582,14 +657,14 @@ export default function SpeakingPage() {
   const [result, setResult] = useState<FeedbackResult | null>(null)
   const [error, setError] = useState('')
 
-  async function handleComplete({ turns, sessionId: sid, durationMinutes, audioPath }: CompletePayload) {
+  async function handleComplete({ turns, sessionId: sid, durationMinutes, audioPath, fluencyMetrics }: CompletePayload) {
     if (turns.length === 0) { setError(''); setPhase('ready'); return }
     setError(''); setResult(null); setGrading(true)
     try {
       const res = await fetch('/api/ai/speaking', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ turns, sessionId: sid, durationMinutes, audioPath, topic: 'Live speaking test' }),
+        body: JSON.stringify({ turns, sessionId: sid, durationMinutes, audioPath, fluencyMetrics, topic: 'Live speaking test' }),
       })
       const data = await res.json()
       if (!res.ok) setError(data.error ?? 'Failed to score the test.')

@@ -614,6 +614,7 @@
     "notEnglish": "Это не похоже на английский — IELTS Speaking оценивается на английском.",
     "pronFromAudio": "Оценено по твоей записи",
     "pronFromText": "Оценено только по тексту",
+    "fcMetrics": "Замерено: {{wpm}} сл/мин · паузы: {{pauses}} ({{secs}}с)",
     "orbSpeaking": "Sarah говорит…",
     "orbListening": "Слушаю — нажми, чтобы закончить",
     "orbTap": "Нажми, чтобы ответить",

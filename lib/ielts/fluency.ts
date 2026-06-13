@@ -78,3 +78,55 @@ export function describeFluency(m: FluencyMetrics): string {
   const pauseSecs = (m.pause_total_ms / 1000).toFixed(1)
   return `spoke ~${secs}s, ${m.words} words, speech rate ${rate}, ${m.pause_count} long pauses totalling ${pauseSecs}s`
 }
+
+interface MsSegment { start: number; end: number } // milliseconds
+
+/**
+ * Per-turn fluency from the live VAD speech segments captured during a realtime
+ * exam. The realtime API gives us when the candidate started/stopped speaking
+ * but no word timestamps, so this is the client-side half of the hybrid: it
+ * yields speaking time (the gaps where the examiner talked are excluded by
+ * construction) and the word count, which together ground per-turn speech rate.
+ * `words` comes from the turn's transcript. Whisper supplies the finer
+ * word-level pause detection for the session aggregate (see the transcribe API).
+ */
+export function metricsFromSegments(segments: MsSegment[], words: number): FluencyMetrics {
+  const segs = segments.filter(s => Number.isFinite(s.start) && Number.isFinite(s.end) && s.end > s.start)
+  if (segs.length === 0) {
+    return { duration_ms: 0, words, pause_count: 0, pause_total_ms: 0, speech_rate_wpm: null }
+  }
+  const span = segs[segs.length - 1].end - segs[0].start
+  let pauseCount = 0
+  let pauseMs = 0
+  for (let i = 1; i < segs.length; i++) {
+    const gap = segs[i].start - segs[i - 1].end
+    if (gap > PAUSE_THRESHOLD_S * 1000) { pauseCount++; pauseMs += gap }
+  }
+  const speakingMs = Math.max(0, span - pauseMs)
+  const wpm = speakingMs > 0 ? Math.round((words / speakingMs) * 60_000 * 10) / 10 : null
+  return {
+    duration_ms: Math.round(span),
+    words,
+    pause_count: pauseCount,
+    pause_total_ms: Math.round(pauseMs),
+    speech_rate_wpm: wpm,
+  }
+}
+
+/** Coerce an untrusted metrics object (e.g. from a request body) into clean numbers, or null. */
+export function sanitizeFluencyMetrics(m: unknown): FluencyMetrics | null {
+  if (!m || typeof m !== 'object') return null
+  const o = m as Record<string, unknown>
+  const num = (v: unknown): number => (typeof v === 'number' && Number.isFinite(v) && v >= 0 ? v : 0)
+  const duration = num(o.duration_ms)
+  const words = Math.round(num(o.words))
+  if (duration === 0 && words === 0) return null
+  const rate = o.speech_rate_wpm
+  return {
+    duration_ms: Math.round(duration),
+    words,
+    pause_count: Math.round(num(o.pause_count)),
+    pause_total_ms: Math.round(num(o.pause_total_ms)),
+    speech_rate_wpm: typeof rate === 'number' && Number.isFinite(rate) && rate >= 0 ? Math.round(rate * 10) / 10 : null,
+  }
+}

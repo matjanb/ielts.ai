@@ -38,13 +38,11 @@ export const AI_DAILY_LIMITS: Record<string, number> = {
   writing:          40,
   writing_coach:    20,
   speaking:         40,
-  // A full speaking test fires many small examiner/TTS/transcribe calls (one per
-  // turn, ~15 turns), so these per-turn features need much higher daily caps
-  // than the once-per-test grade. ~20 full tests/day is plenty for real study.
-  speaking_examiner: 400,
+  // A realtime test ends with one Whisper pass over the recording to derive the
+  // session's fluency metrics, so transcribe needs a higher cap than the
+  // once-per-test grade — but still one call per test, not per turn.
   speaking_realtime: 40, // one realtime session (one whole test) per token
-  tts:              400,
-  transcribe:       400,
+  transcribe:       80,
   study_plan:       15,
   band_estimate:    80,
   test_explanation: 150,

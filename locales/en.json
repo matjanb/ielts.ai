@@ -620,6 +620,7 @@
     "notEnglish": "That didn't sound like English — IELTS Speaking is assessed in English.",
     "pronFromAudio": "Assessed from your recording",
     "pronFromText": "Estimated from text only",
+    "fcMetrics": "Measured: {{wpm}} wpm · {{pauses}} pauses ({{secs}}s)",
     "orbSpeaking": "Sarah is speaking…",
     "orbListening": "Listening — tap to finish",
     "orbTap": "Tap to answer",

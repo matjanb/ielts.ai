@@ -5,7 +5,7 @@ import { gateAiRequest, recordUsage, err } from '@/lib/api/helpers'
 import { downloadSpeakingAudioBase64 } from '@/lib/services/speakingAudio.server'
 import { SPEAKING_RUBRIC, EXAMINER_PERSONA } from '@/lib/ielts/rubrics'
 import { clampBand, overallBand } from '@/lib/ielts/band'
-import { describeFluency, type FluencyMetrics } from '@/lib/ielts/fluency'
+import { describeFluency, sanitizeFluencyMetrics, type FluencyMetrics } from '@/lib/ielts/fluency'
 
 // Grades a full IELTS Speaking session. Unlike the old text-only grader, this
 // judges the four criteria honestly:
@@ -123,7 +123,7 @@ export async function POST(request: NextRequest) {
   const { user, error: gate } = await gateAiRequest('speaking')
   if (gate) return gate
 
-  let body: { topic?: string; sessionId?: string; durationMinutes?: number; turns?: IncomingTurn[]; audioPath?: string }
+  let body: { topic?: string; sessionId?: string; durationMinutes?: number; turns?: IncomingTurn[]; audioPath?: string; fluencyMetrics?: unknown }
   try {
     body = await request.json()
   } catch {
@@ -169,8 +169,13 @@ export async function POST(request: NextRequest) {
     pause_total_ms: agg.pause_total_ms,
     speech_rate_wpm: speakingMs > 0 ? Math.round((agg.words / speakingMs) * 60_000 * 10) / 10 : null,
   }
-  const fluencySummary = agg.duration_ms > 0
-    ? describeFluency(aggMetrics)
+  // The session aggregate prefers the Whisper word-level metrics the client
+  // derived from the whole recording (accurate pauses + speech rate); the summed
+  // per-turn VAD metrics are the fallback when that Whisper pass was unavailable.
+  const whisperMetrics = sanitizeFluencyMetrics(body.fluencyMetrics)
+  const fluencyMetrics: FluencyMetrics | null = whisperMetrics ?? (agg.duration_ms > 0 ? aggMetrics : null)
+  const fluencySummary = fluencyMetrics
+    ? describeFluency(fluencyMetrics)
     : 'no timing metrics available (judge fluency from wording only)'
 
   // Audio source for acoustic grading: the whole-session recording from a live
@@ -316,6 +321,7 @@ export async function POST(request: NextRequest) {
       submission_id:       submission?.id,
       pronunciation_notes: result.pronunciation_notes,
       pronunciation_from_audio: usedAudio,
+      fluency_metrics:     fluencyMetrics,
       feedback,
       ...scored,
     })
