@@ -7,10 +7,10 @@ import { LanguageSwitcher } from '@/components/ui/LanguageSwitcher'
 import { ThemeToggle } from '@/components/ui/ThemeToggle'
 
 const NAV_ITEMS = [
-  { id: 'features', label: 'Skills' },
-  { id: 'how',      label: 'How it works' },
-  { id: 'pricing',  label: 'Pricing' },
-  { id: 'schools',  label: 'For schools' },
+  { id: 'features', labelKey: 'nav.skills' },
+  { id: 'how',      labelKey: 'nav.howItWorks' },
+  { id: 'pricing',  labelKey: 'nav.pricing' },
+  { id: 'schools',  labelKey: 'footer.navSchools' },
 ]
 
 export function FloatingNav() {
@@ -137,7 +137,7 @@ export function FloatingNav() {
                   whiteSpace: 'nowrap',
                 }}
               >
-                {item.label}
+                {t(item.labelKey)}
               </button>
             )
           })}

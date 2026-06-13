@@ -63,8 +63,8 @@ export function Features() {
   return (
     <section id="features" className="section-pad" style={{ maxWidth: 1080, margin: '0 auto', padding: 'clamp(48px, 8vw, 60px) 32px' }}>
       <h2 style={{ fontSize: 'clamp(28px, 5vw, 38px)', letterSpacing: '-0.025em', margin: '0 0 40px', fontWeight: 700, textAlign: 'center' }}>
-        Everything the test throws at you.{' '}
-        <span className="font-serif" style={{ color: 'var(--text-2)' }}>In one place.</span>
+        {t('features.bentoTitle')}{' '}
+        <span className="font-serif" style={{ color: 'var(--text-2)' }}>{t('features.bentoTitleAccent')}</span>
       </h2>
 
       <div className="bento-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(6, 1fr)', gridAutoRows: 'minmax(180px, auto)', gap: 12 }}>
@@ -80,9 +80,9 @@ export function Features() {
                 </svg>
                 <span style={{ fontSize: 11, fontWeight: 700, letterSpacing: '0.08em', color: 'var(--accent)' }}>AI EXAMINER</span>
               </div>
-              <h3 style={{ fontSize: 26, fontWeight: 700, letterSpacing: '-0.02em', margin: '0 0 8px' }}>Live AI graders for Writing &amp; Speaking</h3>
+              <h3 style={{ fontSize: 26, fontWeight: 700, letterSpacing: '-0.02em', margin: '0 0 8px' }}>{t('features.aiGradersTitle')}</h3>
               <p style={{ margin: 0, fontSize: 14, lineHeight: 1.55, color: 'var(--text-2)', maxWidth: 380 }}>
-                Band scores on all four official descriptors, with line-by-line feedback. Instantly.
+                {t('features.aiGradersDesc')}
               </p>
             </div>
             <MiniChatBubble />
@@ -98,7 +98,7 @@ export function Features() {
           <p style={{ fontSize: 13, margin: 0, lineHeight: 1.5, color: 'var(--text-2)' }}>{t('features.mockTestsDesc')}</p>
           <div style={{ marginTop: 'auto', display: 'flex', alignItems: 'baseline', gap: 6 }}>
             <span style={{ fontSize: 32, fontWeight: 700, color: 'var(--accent)', fontVariantNumeric: 'tabular-nums' }}>2:45</span>
-            <span style={{ fontSize: 11, color: 'var(--text-3)' }}>full mock</span>
+            <span style={{ fontSize: 11, color: 'var(--text-3)' }}>{t('features.fullMock')}</span>
           </div>
         </BentoCell>
 
@@ -114,8 +114,8 @@ export function Features() {
               ))}
             </div>
             <div>
-              <h3 style={{ fontSize: 17, margin: '0 0 4px', fontWeight: 600 }}>All four skills</h3>
-              <p style={{ fontSize: 13, margin: 0, lineHeight: 1.5, color: 'var(--text-2)' }}>One platform. One plan. Tuned to your weakest.</p>
+              <h3 style={{ fontSize: 17, margin: '0 0 4px', fontWeight: 600 }}>{t('features.allSkillsTitle')}</h3>
+              <p style={{ fontSize: 13, margin: 0, lineHeight: 1.5, color: 'var(--text-2)' }}>{t('features.allSkillsDesc')}</p>
             </div>
           </div>
         </BentoCell>
@@ -126,7 +126,7 @@ export function Features() {
             <path d="M12 3l9 5-9 5-9-5z"/><path d="M3 13l9 5 9-5"/><path d="M3 18l9 5 9-5"/>
           </svg>
           <h3 style={{ fontSize: 17, margin: '16px 0 4px', fontWeight: 600 }}>{t('features.recommendationsTitle')}</h3>
-          <p style={{ fontSize: 13, margin: 0, lineHeight: 1.5, color: 'var(--text-2)', marginBottom: 12 }}>Spaced-repetition decks tuned to your weakest topics.</p>
+          <p style={{ fontSize: 13, margin: 0, lineHeight: 1.5, color: 'var(--text-2)', marginBottom: 12 }}>{t('features.vocabDesc')}</p>
           <div style={{ display: 'flex', gap: 4, marginTop: 'auto' }}>
             {Array.from({ length: 18 }).map((_, i) => (
               <div key={i} style={{ flex: 1, height: 8 + (i % 4) * 4, background: i < 14 ? 'var(--accent)' : 'var(--border)', borderRadius: 2, opacity: i < 14 ? 0.4 + (i / 30) : 1 }}/>
@@ -147,7 +147,7 @@ export function Features() {
           </div>
           <div style={{ display: 'flex', alignItems: 'baseline', gap: 6, marginTop: 16 }}>
             <span style={{ fontSize: 40, fontWeight: 700, letterSpacing: '-0.02em', fontVariantNumeric: 'tabular-nums' }}>23</span>
-            <span style={{ fontSize: 13, color: 'var(--text-2)' }}>day streak</span>
+            <span style={{ fontSize: 13, color: 'var(--text-2)' }}>{t('dash.dayStreak')}</span>
           </div>
           <div style={{ display: 'flex', gap: 3, marginTop: 14 }}>
             {Array.from({ length: 14 }).map((_, i) => (
@@ -164,8 +164,8 @@ export function Features() {
             </svg>
             <span style={{ fontSize: 11, fontWeight: 700, letterSpacing: '0.08em' }}>EXAM MODE</span>
           </div>
-          <h3 style={{ fontSize: 16, margin: '12px 0 4px', fontWeight: 600 }}>Pixel-perfect simulator</h3>
-          <p style={{ fontSize: 12.5, margin: 0, lineHeight: 1.45, color: 'var(--text-2)' }}>The exact computer-based UI you'll see on test day.</p>
+          <h3 style={{ fontSize: 16, margin: '12px 0 4px', fontWeight: 600 }}>{t('features.examModeTitle')}</h3>
+          <p style={{ fontSize: 12.5, margin: 0, lineHeight: 1.45, color: 'var(--text-2)' }}>{t('features.examModeDesc')}</p>
           <div style={{ marginTop: 'auto', padding: '8px 10px', background: '#000', color: '#ffcb05', borderRadius: 4, fontSize: 11, fontWeight: 700, letterSpacing: '0.04em', textAlign: 'center', fontFamily: 'var(--font-mono)' }}>
             IELTS · 29:42 remaining
           </div>
@@ -176,10 +176,10 @@ export function Features() {
           <svg width={20} height={20} viewBox="0 0 24 24" fill="none" stroke="var(--accent)" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
             <circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3a14 14 0 0 1 0 18M12 3a14 14 0 0 0 0 18"/>
           </svg>
-          <h3 style={{ fontSize: 17, margin: '16px 0 4px', fontWeight: 600 }}>Speaks your language</h3>
-          <p style={{ fontSize: 13, margin: 0, lineHeight: 1.5, color: 'var(--text-2)', marginBottom: 14 }}>Instructions in 4 languages.</p>
+          <h3 style={{ fontSize: 17, margin: '16px 0 4px', fontWeight: 600 }}>{t('features.langTitle')}</h3>
+          <p style={{ fontSize: 13, margin: 0, lineHeight: 1.5, color: 'var(--text-2)', marginBottom: 14 }}>{t('features.langDesc')}</p>
           <div style={{ marginTop: 'auto', display: 'flex', gap: 6, flexWrap: 'wrap' }}>
-            {['EN', 'RU', 'KZ', 'UZ'].map(l => (
+            {['EN', 'RU', 'KZ', 'UZ', 'KG'].map(l => (
               <span key={l} className="chip" style={{ fontSize: 11, fontWeight: 600 }}>{l}</span>
             ))}
           </div>

@@ -15,7 +15,8 @@
     "login": "Sign In",
     "dashboard": "Dashboard",
     "subscription": "Subscription",
-    "logout": "Sign Out"
+    "logout": "Sign Out",
+    "skills": "Skills"
   },
   "stat": {
     "students": "active learners",
@@ -51,7 +52,19 @@
     "trackingTitle": "Band Score Tracking",
     "trackingDesc": "Visualise your progress over time with detailed analytics across all four IELTS skills.",
     "recommendationsTitle": "AI Recommendations",
-    "recommendationsDesc": "Daily practice suggestions that target your weakest areas and accelerate improvement."
+    "recommendationsDesc": "Daily practice suggestions that target your weakest areas and accelerate improvement.",
+    "bentoTitle": "Everything the test throws at you.",
+    "bentoTitleAccent": "In one place.",
+    "aiGradersTitle": "Live AI graders for Writing & Speaking",
+    "aiGradersDesc": "Band scores on all four official descriptors, with line-by-line feedback. Instantly.",
+    "fullMock": "full mock",
+    "allSkillsTitle": "All four skills",
+    "allSkillsDesc": "One platform. One plan. Tuned to your weakest.",
+    "vocabDesc": "Spaced-repetition decks tuned to your weakest topics.",
+    "examModeTitle": "Pixel-perfect simulator",
+    "examModeDesc": "The exact computer-based UI you'll see on test day.",
+    "langTitle": "Speaks your language",
+    "langDesc": "Instructions in 5 languages."
   },
   "howItWorks": {
     "sectionBadge": "Simple Process",
@@ -65,7 +78,8 @@
     "step2Desc": "Based on your results and target band, our AI creates a personalised week-by-week plan tailored to your schedule.",
     "step3Number": "03",
     "step3Title": "Practice and Progress",
-    "step3Desc": "Complete daily tasks, take full mock tests, get AI feedback, and watch your band score rise each week."
+    "step3Desc": "Complete daily tasks, take full mock tests, get AI feedback, and watch your band score rise each week.",
+    "bentoTitle": "From day one to exam day, mapped."
   },
   "dashboardPreview": {
     "sectionBadge": "Your Dashboard",
@@ -887,7 +901,25 @@
     "theme": "Theme",
     "themeDesc": "Light or dark mode",
     "language": "Language",
-    "languageDesc": "Interface language"
+    "languageDesc": "Interface language",
+    "profileDesc": "Your name and target score.",
+    "emailLocked": "Email can't be changed.",
+    "security": "Security",
+    "securityDesc": "Change your password.",
+    "newPassword": "New password",
+    "minChars": "Min. 8 characters",
+    "confirmPassword": "Confirm new password",
+    "repeatPassword": "Repeat password",
+    "updating": "Updating…",
+    "passwordUpdated": "Password updated",
+    "updatePassword": "Update password",
+    "dangerZone": "Danger zone",
+    "dangerDesc": "Permanently delete your account and all your data. This can't be undone.",
+    "deleteAccount": "Delete account",
+    "deleteConfirm": "Are you sure? This is permanent.",
+    "deleting": "Deleting…",
+    "deleteForever": "Yes, delete forever",
+    "deleteFailed": "Failed to delete account."
   },
   "wtest": {
     "words": "words",
@@ -1108,5 +1140,9 @@
     "phase3Desc": "Strategy, weak-area drills and a final readiness check before test day.",
     "ctaCreate": "Create my free account to save this plan",
     "subNote": "Full AI feedback, mock tests and progress tracking unlock with a subscription."
+  },
+  "finalCta": {
+    "title": "Ready when you are.",
+    "sub": "Free diagnostic. No card required."
   }
 }

@@ -203,12 +203,12 @@ export default function ReadingResultsPage() {
                   </p>
                   <div style={{ fontSize: 12, display: 'flex', flexWrap: 'wrap', gap: 16 }}>
                     <span>
-                      <span style={{ color: accentColor, fontWeight: 600 }}>Your answer:</span>
+                      <span style={{ color: accentColor, fontWeight: 600 }}>{t('reading.yourAnswer2')}:</span>
                       <span style={{ color: accentColor, marginLeft: 6 }}>{userAns}</span>
                     </span>
                     {!isCorrect && (
                       <span>
-                        <span style={{ color: 'var(--accent)', fontWeight: 600 }}>Correct:</span>
+                        <span style={{ color: 'var(--accent)', fontWeight: 600 }}>{t('reading.correctAnswer')}:</span>
                         <span style={{ color: 'var(--accent)', marginLeft: 6 }}>{correctAnswers[q.id]}</span>
                       </span>
                     )}

@@ -19,7 +19,7 @@ export function HowItWorks() {
             {t('howItWorks.sectionBadge')}
           </div>
           <h2 style={{ fontSize: 'clamp(28px, 5vw, 40px)', letterSpacing: '-0.025em', margin: '12px 0 0', fontWeight: 700 }}>
-            From day one to <span className="font-serif" style={{ color: 'var(--accent)' }}>exam day</span>, mapped.
+            {t('howItWorks.bentoTitle')}
           </h2>
         </div>
 
