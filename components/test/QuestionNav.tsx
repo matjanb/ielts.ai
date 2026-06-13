@@ -1,5 +1,7 @@
 'use client'
 
+import { useLanguage } from '@/lib/i18n/LanguageContext'
+
 interface QuestionNavProps {
   total: number
   current: number
@@ -8,10 +10,11 @@ interface QuestionNavProps {
 }
 
 export function QuestionNav({ total, current, answers, onSelect }: QuestionNavProps) {
+  const { t } = useLanguage()
   return (
     <div className="card p-4">
       <p className="text-[10px] font-bold uppercase tracking-widest text-[var(--text-3)] mb-3 px-1">
-        Questions
+        {t('qnav.questions')}
       </p>
       <div className="flex flex-wrap gap-1.5">
         {Array.from({ length: total }, (_, i) => {
@@ -42,9 +45,9 @@ export function QuestionNav({ total, current, answers, onSelect }: QuestionNavPr
       {/* Legend */}
       <div className="mt-4 pt-3 border-t border-[var(--border)] space-y-1.5">
         {[
-          { color: 'bg-indigo-600',                                             label: 'Current' },
-          { color: 'bg-emerald-100 dark:bg-emerald-500/15',                     label: 'Answered' },
-          { color: 'bg-[var(--bg-soft)]',                              label: 'Not answered' },
+          { color: 'bg-indigo-600',                                             label: t('qnav.current') },
+          { color: 'bg-emerald-100 dark:bg-emerald-500/15',                     label: t('qnav.answered') },
+          { color: 'bg-[var(--bg-soft)]',                              label: t('qnav.notAnswered') },
         ].map(({ color, label }) => (
           <div key={label} className="flex items-center gap-2">
             <div className={`w-3 h-3 rounded-sm ${color}`} />

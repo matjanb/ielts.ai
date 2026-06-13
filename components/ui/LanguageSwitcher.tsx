@@ -8,6 +8,7 @@ const LANGS: { code: Language; label: string; short: string }[] = [
   { code: 'ru', label: 'Русский',  short: 'RU' },
   { code: 'kz', label: 'Қазақша', short: 'KZ' },
   { code: 'uz', label: "O'zbek",  short: 'UZ' },
+  { code: 'kg', label: 'Кыргызча', short: 'KG' },
 ]
 
 export function LanguageSwitcher() {

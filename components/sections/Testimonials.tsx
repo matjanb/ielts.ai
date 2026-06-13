@@ -31,6 +31,8 @@ function StarIcon() {
   )
 }
 
+import { useLanguage } from '@/lib/i18n/LanguageContext'
+
 function BandBadge({ value }: { value: string }) {
   return (
     <div style={{
@@ -49,10 +51,11 @@ function BandBadge({ value }: { value: string }) {
 }
 
 export function Testimonials() {
+  const { t } = useLanguage()
   return (
     <section className="section-pad" style={{ maxWidth: 1080, margin: '0 auto', padding: 'clamp(56px, 9vw, 80px) 32px', textAlign: 'center' }}>
       <div style={{ fontSize: 12, letterSpacing: '0.1em', textTransform: 'uppercase', color: 'var(--text-3)' }}>
-        Used by candidates in 92 countries
+        {t('testimonials.eyebrow')}
       </div>
 
       {/* Flags */}
@@ -61,7 +64,7 @@ export function Testimonials() {
       </div>
 
       <h2 style={{ fontSize: 'clamp(26px, 5vw, 36px)', letterSpacing: '-0.025em', margin: '56px 0 36px', fontWeight: 700 }}>
-        Real <span className="font-serif" style={{ color: 'var(--accent)' }}>results</span>, real students.
+        {t('testimonials.title')}
       </h2>
 
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 280px), 1fr))', gap: 12 }}>

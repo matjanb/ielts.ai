@@ -2,6 +2,7 @@
 
 import { useMemo, useState } from 'react'
 import { useRouter } from 'next/navigation'
+import { useLanguage } from '@/lib/i18n/LanguageContext'
 
 /* ── Icons (Feather-style, matching the design) ───────────────────────────── */
 type IconProps = { size?: number; stroke?: string; strokeWidth?: number }
@@ -52,71 +53,72 @@ interface Step {
   showIf?: (a: Answers) => boolean
 }
 
+// title/sub and option label/desc hold i18n KEYS, resolved through t() at render.
 const DIAG_STEPS: Step[] = [
   {
     id: 'previous', type: 'radio',
-    title: 'Have you taken IELTS before?',
-    sub: 'Just so we know your starting point.',
+    title: 'diag.prevTitle',
+    sub: 'diag.prevSub',
     options: [
-      { value: 'never', label: 'Never, this is my first time', icon: 'sparkle' },
-      { value: 'once', label: 'Yes, once', icon: 'book' },
-      { value: 'many', label: 'Yes, multiple times', icon: 'layers' },
+      { value: 'never', label: 'diag.prevNever', icon: 'sparkle' },
+      { value: 'once', label: 'diag.prevOnce', icon: 'book' },
+      { value: 'many', label: 'diag.prevMany', icon: 'layers' },
     ],
   },
   {
     id: 'current', type: 'bandPicker',
-    title: "What's your current level?",
-    sub: "Best estimate. We'll verify with a 4-minute placement test.",
+    title: 'diag.curTitle',
+    sub: 'diag.curSub',
     showIf: (a) => a.previous !== 'never',
   },
   {
     id: 'currentNew', type: 'selfRate',
-    title: 'Roughly, how would you rate your English?',
-    sub: "We'll fine-tune with the placement test.",
+    title: 'diag.curNewTitle',
+    sub: 'diag.curNewSub',
     options: [
-      { value: 'begin', label: 'Beginner', desc: 'I can read simple texts, struggle with conversation' },
-      { value: 'inter', label: 'Intermediate', desc: 'I can hold a conversation, mistakes are common' },
-      { value: 'upper', label: 'Upper-intermediate', desc: 'Comfortable in most situations, vocabulary gaps' },
-      { value: 'adv', label: 'Advanced', desc: 'Fluent, just need to learn the IELTS format' },
+      { value: 'begin', label: 'diag.rateBeginL', desc: 'diag.rateBeginD' },
+      { value: 'inter', label: 'diag.rateInterL', desc: 'diag.rateInterD' },
+      { value: 'upper', label: 'diag.rateUpperL', desc: 'diag.rateUpperD' },
+      { value: 'adv', label: 'diag.rateAdvL', desc: 'diag.rateAdvD' },
     ],
     showIf: (a) => a.previous === 'never',
   },
   {
     id: 'target', type: 'bandPicker', target: true,
-    title: 'What band do you want?',
-    sub: 'Most universities ask for 6.5 — 7.5. Be ambitious.',
+    title: 'diag.targetTitle',
+    sub: 'diag.targetSub',
   },
   {
     id: 'deadline', type: 'deadline',
-    title: "When's your exam?",
-    sub: "We'll pace your plan to land you ready, not burnt out.",
+    title: 'diag.deadlineTitle',
+    sub: 'diag.deadlineSub',
   },
   {
     id: 'weak', type: 'multi',
-    title: 'Which skills feel weakest?',
-    sub: "Pick any. We'll bias your plan there.",
+    title: 'diag.weakTitle',
+    sub: 'diag.weakSub',
     options: [
-      { value: 'listen', label: 'Listening', icon: 'headphones' },
-      { value: 'read', label: 'Reading', icon: 'book' },
-      { value: 'write', label: 'Writing', icon: 'pencil' },
-      { value: 'speak', label: 'Speaking', icon: 'mic' },
+      { value: 'listen', label: 'dashboard.listening', icon: 'headphones' },
+      { value: 'read', label: 'dashboard.reading', icon: 'book' },
+      { value: 'write', label: 'dashboard.writing', icon: 'pencil' },
+      { value: 'speak', label: 'dashboard.speaking', icon: 'mic' },
     ],
   },
   {
     id: 'goal', type: 'radio',
-    title: 'Why are you taking IELTS?',
-    sub: 'Lets us tailor vocabulary and writing topics.',
+    title: 'diag.goalTitle',
+    sub: 'diag.goalSub',
     options: [
-      { value: 'uni', label: 'University admissions', icon: 'book' },
-      { value: 'visa', label: 'Immigration / visa', icon: 'globe' },
-      { value: 'work', label: 'Job requirement', icon: 'user' },
-      { value: 'self', label: 'Self-improvement', icon: 'sparkle' },
+      { value: 'uni', label: 'diag.goalUni', icon: 'book' },
+      { value: 'visa', label: 'diag.goalVisa', icon: 'globe' },
+      { value: 'work', label: 'diag.goalWork', icon: 'user' },
+      { value: 'self', label: 'diag.goalSelf', icon: 'sparkle' },
     ],
   },
   {
     id: 'time', type: 'slider',
-    title: 'How many minutes per day can you commit?',
-    sub: "Honest answer. We'd rather give you 25 great minutes than 90 you skip.",
+    title: 'diag.timeTitle',
+    sub: 'diag.timeSub',
     min: 15, max: 120, step: 5, defaultValue: 45,
   },
 ]
@@ -149,6 +151,7 @@ function persist(a: Answers) {
 /* ── Page ─────────────────────────────────────────────────────────────────── */
 export default function DiagnosticPage() {
   const router = useRouter()
+  const { t } = useLanguage()
   const [diagAnswers, setDiagAnswers] = useState<Answers>({})
   const [stepIdx, setStepIdx] = useState(0)
 
@@ -181,8 +184,8 @@ export default function DiagnosticPage() {
         <button onClick={() => router.push('/')} style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
           <Logo/>
         </button>
-        <div className="dim" style={{ fontSize: 13 }}>Let&apos;s tune your plan</div>
-        <button className="btn btn-sm btn-ghost" onClick={() => router.push('/')}>Skip<Icon name="x" size={13}/></button>
+        <div className="dim" style={{ fontSize: 13 }}>{t('diag.tune')}</div>
+        <button className="btn btn-sm btn-ghost" onClick={() => router.push('/')}>{t('diag.skip')}<Icon name="x" size={13}/></button>
       </header>
 
       {/* progress bar */}
@@ -193,9 +196,9 @@ export default function DiagnosticPage() {
       <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '40px 24px' }}>
         <div style={{ width: '100%', maxWidth: 640 }} key={step.id}>
           <div className="fade-up">
-            <div className="dim mono" style={{ fontSize: 12, letterSpacing: '0.08em' }}>QUESTION {String(safeIdx + 1).padStart(2, '0')} / {String(total).padStart(2, '0')}</div>
-            <h1 style={{ fontSize: 'clamp(26px, 6vw, 36px)', letterSpacing: '-0.025em', margin: '16px 0 10px', fontWeight: 700, lineHeight: 1.1 }}>{step.title}</h1>
-            <p className="muted" style={{ fontSize: 16, margin: '0 0 32px' }}>{step.sub}</p>
+            <div className="dim mono" style={{ fontSize: 12, letterSpacing: '0.08em' }}>{t('diag.question')} {String(safeIdx + 1).padStart(2, '0')} / {String(total).padStart(2, '0')}</div>
+            <h1 style={{ fontSize: 'clamp(26px, 6vw, 36px)', letterSpacing: '-0.025em', margin: '16px 0 10px', fontWeight: 700, lineHeight: 1.1 }}>{t(step.title)}</h1>
+            <p className="muted" style={{ fontSize: 16, margin: '0 0 32px' }}>{t(step.sub)}</p>
 
             <StepBody step={step} value={answer} onChange={setAnswer} onAdvance={next}/>
           </div>
@@ -204,7 +207,7 @@ export default function DiagnosticPage() {
 
       <footer style={{ padding: '20px 32px', borderTop: '1px solid var(--border)', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
         <button className="btn btn-ghost" onClick={back}>
-          <Icon name="arrowLeft" size={14}/>Back
+          <Icon name="arrowLeft" size={14}/>{t('diag.back')}
         </button>
         <div style={{ display: 'flex', gap: 4 }}>
           {visibleSteps.map((_, i) => (
@@ -212,7 +215,7 @@ export default function DiagnosticPage() {
           ))}
         </div>
         <button className="btn btn-primary" onClick={next} disabled={!hasAnswer} style={{ opacity: hasAnswer ? 1 : 0.4, pointerEvents: hasAnswer ? 'auto' : 'none' }}>
-          {safeIdx === total - 1 ? 'Build my plan' : 'Continue'}<Icon name="arrowRight" size={14}/>
+          {safeIdx === total - 1 ? t('diag.buildPlan') : t('diag.continue')}<Icon name="arrowRight" size={14}/>
         </button>
       </footer>
     </div>
@@ -221,6 +224,7 @@ export default function DiagnosticPage() {
 
 /* ── Step bodies ──────────────────────────────────────────────────────────── */
 function StepBody({ step, value, onChange, onAdvance }: { step: Step; value: unknown; onChange: (v: unknown) => void; onAdvance: () => void }) {
+  const { t } = useLanguage()
   if (step.type === 'radio') {
     return (
       <div style={{ display: 'grid', gap: 10 }}>
@@ -230,7 +234,7 @@ function StepBody({ step, value, onChange, onAdvance }: { step: Step; value: unk
             <button key={o.value} onClick={() => { onChange(o.value); setTimeout(onAdvance, 220) }} className="card"
               style={{ padding: '18px 20px', display: 'flex', alignItems: 'center', gap: 14, textAlign: 'left', width: '100%', borderColor: selected ? 'var(--accent)' : 'var(--border)', background: selected ? 'var(--accent-soft)' : 'var(--bg-elev)', transition: 'all .15s' }}>
               {o.icon && <div style={{ width: 36, height: 36, borderRadius: 10, background: selected ? 'var(--accent)' : 'var(--bg-soft)', color: selected ? 'var(--accent-fg)' : 'var(--text-2)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><Icon name={o.icon} size={16} stroke="currentColor"/></div>}
-              <span style={{ fontSize: 16, fontWeight: 500, flex: 1 }}>{o.label}</span>
+              <span style={{ fontSize: 16, fontWeight: 500, flex: 1 }}>{t(o.label)}</span>
               {selected && <Icon name="check" size={16} stroke="var(--accent)"/>}
             </button>
           )
@@ -248,10 +252,10 @@ function StepBody({ step, value, onChange, onAdvance }: { step: Step; value: unk
             <button key={o.value} onClick={() => { onChange(o.value); setTimeout(onAdvance, 220) }} className="card"
               style={{ padding: '18px 20px', textAlign: 'left', width: '100%', borderColor: selected ? 'var(--accent)' : 'var(--border)', background: selected ? 'var(--accent-soft)' : 'var(--bg-elev)' }}>
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                <div style={{ fontSize: 16, fontWeight: 600 }}>{o.label}</div>
+                <div style={{ fontSize: 16, fontWeight: 600 }}>{t(o.label)}</div>
                 {selected && <Icon name="check" size={16} stroke="var(--accent)"/>}
               </div>
-              <div className="muted" style={{ fontSize: 13, marginTop: 4 }}>{o.desc}</div>
+              <div className="muted" style={{ fontSize: 13, marginTop: 4 }}>{o.desc ? t(o.desc) : ''}</div>
             </button>
           )
         })}
@@ -276,7 +280,7 @@ function StepBody({ step, value, onChange, onAdvance }: { step: Step; value: unk
                 <Icon name={o.icon!} size={20} stroke={selected ? 'var(--accent)' : 'var(--text-2)'}/>
                 {selected && <Icon name="check" size={14} stroke="var(--accent)"/>}
               </div>
-              <div style={{ fontSize: 16, fontWeight: 600, marginTop: 14 }}>{o.label}</div>
+              <div style={{ fontSize: 16, fontWeight: 600, marginTop: 14 }}>{t(o.label)}</div>
             </button>
           )
         })}
@@ -293,7 +297,7 @@ function StepBody({ step, value, onChange, onAdvance }: { step: Step; value: unk
           <div style={{ fontSize: 88, lineHeight: 1, fontWeight: 700, color: 'var(--accent)', fontFamily: 'var(--font-display)', fontStyle: 'italic' }}>
             {v ? v.toFixed(1) : '—'}
           </div>
-          <div className="muted" style={{ fontSize: 13, marginTop: 4 }}>{step.target ? 'Target band' : 'Current band'}</div>
+          <div className="muted" style={{ fontSize: 13, marginTop: 4 }}>{step.target ? t('diag.bandTarget') : t('diag.bandCurrent')}</div>
         </div>
         <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, justifyContent: 'center' }}>
           {bands.map(b => (
@@ -309,11 +313,11 @@ function StepBody({ step, value, onChange, onAdvance }: { step: Step; value: unk
 
   if (step.type === 'deadline') {
     const weeks = [
-      { v: 4, label: 'Under 1 month', desc: 'Intensive sprint' },
-      { v: 8, label: '1 — 2 months', desc: 'Focused track' },
-      { v: 12, label: '2 — 3 months', desc: 'Recommended' },
-      { v: 24, label: '3 — 6 months', desc: 'Steady build' },
-      { v: 99, label: 'Not scheduled yet', desc: 'Flexible plan' },
+      { v: 4, label: 'diag.dlUnderL', desc: 'diag.dlUnderD' },
+      { v: 8, label: 'diag.dl12L', desc: 'diag.dl12D' },
+      { v: 12, label: 'diag.dl23L', desc: 'diag.dl23D' },
+      { v: 24, label: 'diag.dl36L', desc: 'diag.dl36D' },
+      { v: 99, label: 'diag.dlNoneL', desc: 'diag.dlNoneD' },
     ]
     return (
       <div style={{ display: 'grid', gap: 10 }}>
@@ -323,8 +327,8 @@ function StepBody({ step, value, onChange, onAdvance }: { step: Step; value: unk
             <button key={w.v} onClick={() => { onChange(w.v); setTimeout(onAdvance, 220) }} className="card"
               style={{ padding: '16px 20px', textAlign: 'left', width: '100%', borderColor: selected ? 'var(--accent)' : 'var(--border)', background: selected ? 'var(--accent-soft)' : 'var(--bg-elev)', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
               <div>
-                <div style={{ fontWeight: 600, fontSize: 16 }}>{w.label}</div>
-                <div className="muted" style={{ fontSize: 13, marginTop: 2 }}>{w.desc}</div>
+                <div style={{ fontWeight: 600, fontSize: 16 }}>{t(w.label)}</div>
+                <div className="muted" style={{ fontSize: 13, marginTop: 2 }}>{t(w.desc)}</div>
               </div>
               <div className="num dim mono" style={{ fontSize: 13 }}>{w.v < 99 ? `${w.v}w` : '∞'}</div>
             </button>
@@ -341,20 +345,20 @@ function StepBody({ step, value, onChange, onAdvance }: { step: Step; value: unk
       <div>
         <div style={{ textAlign: 'center', padding: '20px 0 24px' }}>
           <span className="num" style={{ fontSize: 96, fontWeight: 700, lineHeight: 1, letterSpacing: '-0.04em' }}>{v}</span>
-          <span className="muted" style={{ fontSize: 18, marginLeft: 8 }}>min / day</span>
+          <span className="muted" style={{ fontSize: 18, marginLeft: 8 }}>{t('diag.minPerDay')}</span>
         </div>
         <input type="range" min={step.min} max={step.max} step={step.step} value={v}
           onChange={e => onChange(parseInt(e.target.value, 10))}
           style={{ width: '100%', height: 6, appearance: 'none', WebkitAppearance: 'none', background: `linear-gradient(to right, var(--accent) 0 ${pct}%, var(--border) ${pct}% 100%)`, borderRadius: 999, outline: 'none', cursor: 'pointer' }}/>
         <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 10 }} className="dim mono">
-          <span>{step.min} min</span>
-          <span>{step.max} min</span>
+          <span>{step.min} {t('diag.min')}</span>
+          <span>{step.max} {t('diag.min')}</span>
         </div>
         <div className="card" style={{ marginTop: 28, padding: 16, display: 'flex', gap: 12, alignItems: 'center' }}>
           <Icon name="sparkle" size={18} stroke="var(--accent)"/>
           <div style={{ fontSize: 13 }}>
-            <span style={{ fontWeight: 600 }}>{v} min × 6 days/week = {Math.round(v * 6 * 12 / 60)} hours over 12 weeks.</span>
-            <span className="muted"> Median student at this pace gains +1.5 band.</span>
+            <span style={{ fontWeight: 600 }}>{t('diag.sliderSummary', { v: String(v), hours: String(Math.round(v * 6 * 12 / 60)) })}</span>
+            <span className="muted"> {t('diag.sliderMedian')}</span>
           </div>
         </div>
       </div>

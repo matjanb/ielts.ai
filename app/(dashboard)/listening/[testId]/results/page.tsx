@@ -75,7 +75,7 @@ export default function ListeningResultsPage() {
       {/* Header */}
       <div style={{ textAlign: 'center', marginBottom: 32 }}>
         <span style={{ fontSize: 10, fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase', color: 'var(--accent)', background: 'var(--accent-soft)', padding: '3px 12px', borderRadius: 999, display: 'inline-block', marginBottom: 14 }}>
-          Listening
+          {t('dashboard.listening')}
         </span>
         <h1 style={{ fontSize: 32, fontWeight: 700, letterSpacing: '-0.025em', margin: 0, color: 'var(--text)' }}>
           {t('listening.resultsTitle')}
@@ -94,7 +94,7 @@ export default function ListeningResultsPage() {
           <span style={{ fontFamily: 'var(--font-display)', fontStyle: 'italic', fontSize: 56, lineHeight: 1, fontWeight: 500, color: bandColor }}>
             {band.toFixed(1)}
           </span>
-          <span style={{ fontSize: 11, fontWeight: 600, color: bandColor, opacity: 0.7, letterSpacing: '0.06em' }}>BAND</span>
+          <span style={{ fontSize: 11, fontWeight: 600, color: bandColor, opacity: 0.7, letterSpacing: '0.06em' }}>{t('speak.band')}</span>
         </div>
 
         {/* Raw score */}

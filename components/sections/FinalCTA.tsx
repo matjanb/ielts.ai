@@ -14,10 +14,10 @@ export function FinalCTA() {
         borderRadius: 24, textAlign: 'center',
       }}>
         <h2 style={{ fontSize: 'clamp(28px, 5.5vw, 40px)', letterSpacing: '-0.03em', margin: 0, fontWeight: 700, lineHeight: 1.05 }}>
-          Ready when you are.
+          {t('finalCta.title')}
         </h2>
         <p style={{ fontSize: 16, opacity: 0.85, margin: '12px 0 28px' }}>
-          Free diagnostic. No card required.
+          {t('finalCta.sub')}
         </p>
         <Link href="/diagnostic/start" style={{
           display: 'inline-flex', alignItems: 'center', gap: 8,

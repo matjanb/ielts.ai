@@ -2,19 +2,22 @@
 
 import { useState, useEffect, useRef } from 'react'
 import { useRouter } from 'next/navigation'
+import { useLanguage } from '@/lib/i18n/LanguageContext'
 
+// `labelKey` is resolved through t() inside the component (reusing the existing
+// dashboard.* labels where they already exist) so the palette translates.
 const PAGES = [
-  { label: 'Dashboard · Overview', icon: 'home', href: '/dashboard' },
-  { label: 'Listening', icon: 'headphones', href: '/listening' },
-  { label: 'Reading', icon: 'book', href: '/reading' },
-  { label: 'Writing', icon: 'pencil', href: '/dashboard/writing' },
-  { label: 'Speaking', icon: 'mic', href: '/dashboard/speaking' },
-  { label: 'Mock Tests', icon: 'clipboard', href: '/mock-tests' },
-  { label: 'Vocabulary', icon: 'layers', href: '/vocabulary' },
-  { label: 'Progress', icon: 'activity', href: '/dashboard/progress' },
-  { label: 'Study Plan', icon: 'calendar', href: '/dashboard/study-plan' },
-  { label: 'Settings', icon: 'settings', href: '/dashboard/settings' },
-  { label: 'Subscription', icon: 'lock', href: '/subscription' },
+  { labelKey: 'cmd.dashboard', icon: 'home', href: '/dashboard' },
+  { labelKey: 'dashboard.listening', icon: 'headphones', href: '/listening' },
+  { labelKey: 'dashboard.reading', icon: 'book', href: '/reading' },
+  { labelKey: 'dashboard.writing', icon: 'pencil', href: '/dashboard/writing' },
+  { labelKey: 'dashboard.speaking', icon: 'mic', href: '/dashboard/speaking' },
+  { labelKey: 'dashboard.mockTests', icon: 'clipboard', href: '/mock-tests' },
+  { labelKey: 'dashboard.vocabulary', icon: 'layers', href: '/vocabulary' },
+  { labelKey: 'dashboard.progress', icon: 'activity', href: '/dashboard/progress' },
+  { labelKey: 'dashboard.studyPlan', icon: 'calendar', href: '/dashboard/study-plan' },
+  { labelKey: 'dashboard.settings', icon: 'settings', href: '/dashboard/settings' },
+  { labelKey: 'dashboard.subscription', icon: 'lock', href: '/subscription' },
 ]
 
 const ICONS: Record<string, React.ReactNode> = {
@@ -47,6 +50,7 @@ interface CommandPaletteProps {
 }
 
 export function CommandPalette({ open, onClose }: CommandPaletteProps) {
+  const { t } = useLanguage()
   const [q, setQ] = useState('')
   const [highlighted, setHighlighted] = useState(0)
   const router = useRouter()
@@ -57,9 +61,10 @@ export function CommandPalette({ open, onClose }: CommandPaletteProps) {
     else setTimeout(() => inputRef.current?.focus(), 50)
   }, [open])
 
+  const pages = PAGES.map(p => ({ ...p, label: t(p.labelKey) }))
   const filtered = q
-    ? PAGES.filter(p => p.label.toLowerCase().includes(q.toLowerCase()))
-    : PAGES
+    ? pages.filter(p => p.label.toLowerCase().includes(q.toLowerCase()))
+    : pages
 
   useEffect(() => { setHighlighted(0) }, [q])
 
@@ -101,7 +106,7 @@ export function CommandPalette({ open, onClose }: CommandPaletteProps) {
             value={q}
             onChange={e => setQ(e.target.value)}
             onKeyDown={onKey}
-            placeholder="Search pages, actions…"
+            placeholder={t('cmd.searchPlaceholder')}
             style={{
               flex: 1, border: 'none', outline: 'none',
               background: 'transparent', fontSize: 15, color: 'var(--text)',
@@ -115,11 +120,11 @@ export function CommandPalette({ open, onClose }: CommandPaletteProps) {
         {/* Results */}
         <div style={{ maxHeight: 360, overflow: 'auto', padding: 8 }}>
           {filtered.length === 0 && (
-            <div style={{ padding: 20, textAlign: 'center', fontSize: 13, color: 'var(--text-3)' }}>No matches.</div>
+            <div style={{ padding: 20, textAlign: 'center', fontSize: 13, color: 'var(--text-3)' }}>{t('cmd.noMatches')}</div>
           )}
           {filtered.length > 0 && (
             <div>
-              <div style={{ padding: '8px 10px 4px', fontSize: 10, color: 'var(--text-3)', letterSpacing: '0.08em' }}>PAGES</div>
+              <div style={{ padding: '8px 10px 4px', fontSize: 10, color: 'var(--text-3)', letterSpacing: '0.08em' }}>{t('cmd.pages')}</div>
               {filtered.map((page, i) => (
                 <button
                   key={page.href}
@@ -144,7 +149,7 @@ export function CommandPalette({ open, onClose }: CommandPaletteProps) {
 
         {/* Footer */}
         <div style={{ padding: '8px 14px', borderTop: '1px solid var(--border)', display: 'flex', gap: 14, fontSize: 11, color: 'var(--text-3)' }}>
-          {[['↑↓', 'navigate'], ['↵', 'open'], ['ESC', 'close']].map(([k, l]) => (
+          {[['↑↓', t('cmd.navigate')], ['↵', t('cmd.open')], ['ESC', t('cmd.close')]].map(([k, l]) => (
             <span key={k}>
               <kbd style={{ fontFamily: 'var(--font-mono)', padding: '1px 5px', borderRadius: 4, background: 'var(--bg-soft)', border: '1px solid var(--border)' }}>{k}</kbd>
               {' '}{l}

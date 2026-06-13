@@ -15,7 +15,8 @@
     "login": "Sign In",
     "dashboard": "Dashboard",
     "subscription": "Subscription",
-    "logout": "Sign Out"
+    "logout": "Sign Out",
+    "skills": "Skills"
   },
   "stat": {
     "students": "active learners",
@@ -51,7 +52,19 @@
     "trackingTitle": "Band Score Tracking",
     "trackingDesc": "Visualise your progress over time with detailed analytics across all four IELTS skills.",
     "recommendationsTitle": "AI Recommendations",
-    "recommendationsDesc": "Daily practice suggestions that target your weakest areas and accelerate improvement."
+    "recommendationsDesc": "Daily practice suggestions that target your weakest areas and accelerate improvement.",
+    "bentoTitle": "Everything the test throws at you.",
+    "bentoTitleAccent": "In one place.",
+    "aiGradersTitle": "Live AI graders for Writing & Speaking",
+    "aiGradersDesc": "Band scores on all four official descriptors, with line-by-line feedback. Instantly.",
+    "fullMock": "full mock",
+    "allSkillsTitle": "All four skills",
+    "allSkillsDesc": "One platform. One plan. Tuned to your weakest.",
+    "vocabDesc": "Spaced-repetition decks tuned to your weakest topics.",
+    "examModeTitle": "Pixel-perfect simulator",
+    "examModeDesc": "The exact computer-based UI you'll see on test day.",
+    "langTitle": "Speaks your language",
+    "langDesc": "Instructions in 5 languages."
   },
   "howItWorks": {
     "sectionBadge": "Simple Process",
@@ -65,7 +78,8 @@
     "step2Desc": "Based on your results and target band, our AI creates a personalised week-by-week plan tailored to your schedule.",
     "step3Number": "03",
     "step3Title": "Practice and Progress",
-    "step3Desc": "Complete daily tasks, take full mock tests, get AI feedback, and watch your band score rise each week."
+    "step3Desc": "Complete daily tasks, take full mock tests, get AI feedback, and watch your band score rise each week.",
+    "bentoTitle": "From day one to exam day, mapped."
   },
   "dashboardPreview": {
     "sectionBadge": "Your Dashboard",
@@ -167,7 +181,11 @@
     "contact": "Contact",
     "privacy": "Privacy Policy",
     "terms": "Terms of Service",
-    "copyright": "© 2025 IELTS Camp. All rights reserved."
+    "copyright": "© 2025 IELTS Camp. All rights reserved.",
+    "navSchools": "For schools",
+    "navPrivacy": "Privacy",
+    "navTerms": "Terms",
+    "navRefund": "Refund"
   },
   "auth": {
     "loginTitle": "Welcome back",
@@ -348,7 +366,8 @@
     "cancel": "Cancel",
     "close": "Close",
     "learnMore": "Learn more",
-    "days": "days"
+    "days": "days",
+    "toggleTheme": "Toggle theme"
   },
   "listening": {
     "title": "Listening Tests",
@@ -882,7 +901,25 @@
     "theme": "Theme",
     "themeDesc": "Light or dark mode",
     "language": "Language",
-    "languageDesc": "Interface language"
+    "languageDesc": "Interface language",
+    "profileDesc": "Your name and target score.",
+    "emailLocked": "Email can't be changed.",
+    "security": "Security",
+    "securityDesc": "Change your password.",
+    "newPassword": "New password",
+    "minChars": "Min. 8 characters",
+    "confirmPassword": "Confirm new password",
+    "repeatPassword": "Repeat password",
+    "updating": "Updating…",
+    "passwordUpdated": "Password updated",
+    "updatePassword": "Update password",
+    "dangerZone": "Danger zone",
+    "dangerDesc": "Permanently delete your account and all your data. This can't be undone.",
+    "deleteAccount": "Delete account",
+    "deleteConfirm": "Are you sure? This is permanent.",
+    "deleting": "Deleting…",
+    "deleteForever": "Yes, delete forever",
+    "deleteFailed": "Failed to delete account."
   },
   "wtest": {
     "words": "words",
@@ -976,5 +1013,136 @@
     "title": "Your essays",
     "sub": "Past submissions — open any to see the full breakdown",
     "empty": "Your graded essays will appear here."
+  },
+  "cmd": {
+    "dashboard": "Dashboard · Overview",
+    "searchPlaceholder": "Search pages, actions…",
+    "noMatches": "No matches.",
+    "pages": "PAGES",
+    "navigate": "navigate",
+    "open": "open",
+    "close": "close"
+  },
+  "notif": {
+    "title": "Notifications",
+    "markAllRead": "Mark all read",
+    "markedToast": "All notifications marked as read",
+    "allCaughtUp": "You're all caught up.",
+    "emptyHint": "Complete a practice test or submission to see updates here."
+  },
+  "qnav": {
+    "questions": "Questions",
+    "current": "Current",
+    "answered": "Answered",
+    "notAnswered": "Not answered"
+  },
+  "testimonials": {
+    "eyebrow": "Used by candidates in 92 countries",
+    "title": "Real results, real students."
+  },
+  "marquee": {
+    "eyebrow": "Accepted at 11,000+ institutions"
+  },
+  "forSchools": {
+    "badge": "For schools & teachers",
+    "title": "Bring {{brand}} to your classroom.",
+    "pitch": "Schools, language centres and tutors use ielts.camp to run diagnostic tests, assign practice, and watch every student's band climb — all from one teacher dashboard.",
+    "contactCta": "Talk to our team",
+    "tryCta": "Try it yourself",
+    "b1Title": "Unlimited student seats",
+    "b1Desc": "Onboard whole cohorts with one dashboard — no per-seat surprises.",
+    "b2Title": "Class analytics",
+    "b2Desc": "Track band trajectories, weak skills and study time across every student.",
+    "b3Title": "Teacher tools",
+    "b3Desc": "Assign mock tests, review AI feedback, and export results to CSV.",
+    "statSchools": "schools",
+    "statStudents": "students",
+    "statBandGain": "avg band gain"
+  },
+  "showcase": {
+    "eyebrow": "Inside the app",
+    "title": "Built for the way you actually study."
+  },
+  "diag": {
+    "tune": "Let's tune your plan",
+    "skip": "Skip",
+    "question": "QUESTION",
+    "back": "Back",
+    "buildPlan": "Build my plan",
+    "continue": "Continue",
+    "bandTarget": "Target band",
+    "bandCurrent": "Current band",
+    "minPerDay": "min / day",
+    "min": "min",
+    "sliderSummary": "{{v}} min × 6 days/week = {{hours}} hours over 12 weeks.",
+    "sliderMedian": "Median student at this pace gains +1.5 band.",
+    "prevTitle": "Have you taken IELTS before?",
+    "prevSub": "Just so we know your starting point.",
+    "prevNever": "Never, this is my first time",
+    "prevOnce": "Yes, once",
+    "prevMany": "Yes, multiple times",
+    "curTitle": "What's your current level?",
+    "curSub": "Best estimate. We'll verify with a 4-minute placement test.",
+    "curNewTitle": "Roughly, how would you rate your English?",
+    "curNewSub": "We'll fine-tune with the placement test.",
+    "rateBeginL": "Beginner",
+    "rateBeginD": "I can read simple texts, struggle with conversation",
+    "rateInterL": "Intermediate",
+    "rateInterD": "I can hold a conversation, mistakes are common",
+    "rateUpperL": "Upper-intermediate",
+    "rateUpperD": "Comfortable in most situations, vocabulary gaps",
+    "rateAdvL": "Advanced",
+    "rateAdvD": "Fluent, just need to learn the IELTS format",
+    "targetTitle": "What band do you want?",
+    "targetSub": "Most universities ask for 6.5 — 7.5. Be ambitious.",
+    "deadlineTitle": "When's your exam?",
+    "deadlineSub": "We'll pace your plan to land you ready, not burnt out.",
+    "weakTitle": "Which skills feel weakest?",
+    "weakSub": "Pick any. We'll bias your plan there.",
+    "goalTitle": "Why are you taking IELTS?",
+    "goalSub": "Lets us tailor vocabulary and writing topics.",
+    "goalUni": "University admissions",
+    "goalVisa": "Immigration / visa",
+    "goalWork": "Job requirement",
+    "goalSelf": "Self-improvement",
+    "timeTitle": "How many minutes per day can you commit?",
+    "timeSub": "Honest answer. We'd rather give you 25 great minutes than 90 you skip.",
+    "dlUnderL": "Under 1 month",
+    "dlUnderD": "Intensive sprint",
+    "dl12L": "1 — 2 months",
+    "dl12D": "Focused track",
+    "dl23L": "2 — 3 months",
+    "dl23D": "Recommended",
+    "dl36L": "3 — 6 months",
+    "dl36D": "Steady build",
+    "dlNoneL": "Not scheduled yet",
+    "dlNoneD": "Flexible plan",
+    "loading": "Loading your results…",
+    "placement": "Your placement result",
+    "estBand": "YOUR ESTIMATED BAND",
+    "targetWord": "target",
+    "gapAway": "You're {{gap}} away from your target band. Here's the plan to close the gap.",
+    "onTrack": "You're on track for your target. Here's how to lock it in.",
+    "factTimeToExam": "Time to exam",
+    "factDailyStudy": "Daily study",
+    "factFocus": "Focus skills",
+    "weeksValue": "{{n}} weeks",
+    "flexible": "Flexible",
+    "yourPace": "Your pace",
+    "balanced": "Balanced",
+    "studyPlan": "YOUR STUDY PLAN",
+    "phase1Title": "Phase 1 — Foundations",
+    "phase1Focus": "Target your weak spots: {{skills}}.",
+    "phase1Default": "Build core grammar, vocabulary and exam familiarity.",
+    "phase2Title": "Phase 2 — Practice & mocks",
+    "phase2Desc": "Timed mock tests with AI Writing & Speaking feedback to lift your band.",
+    "phase3Title": "Phase 3 — Exam polish",
+    "phase3Desc": "Strategy, weak-area drills and a final readiness check before test day.",
+    "ctaCreate": "Create my free account to save this plan",
+    "subNote": "Full AI feedback, mock tests and progress tracking unlock with a subscription."
+  },
+  "finalCta": {
+    "title": "Ready when you are.",
+    "sub": "Free diagnostic. No card required."
   }
 }

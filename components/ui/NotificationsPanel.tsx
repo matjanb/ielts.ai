@@ -3,6 +3,7 @@
 import { useEffect, useRef } from 'react'
 import Link from 'next/link'
 import { useToast } from '@/lib/toast'
+import { useLanguage } from '@/lib/i18n/LanguageContext'
 import type { NotifItem } from '@/lib/services/notifications'
 import { relativeTime } from '@/lib/services/notifications'
 
@@ -32,6 +33,7 @@ interface NotificationsPanelProps {
 
 export function NotificationsPanel({ open, onClose, items, lastSeen, onMarkAllRead }: NotificationsPanelProps) {
   const { toast } = useToast()
+  const { t } = useLanguage()
   const ref = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
@@ -61,7 +63,7 @@ export function NotificationsPanel({ open, onClose, items, lastSeen, onMarkAllRe
     }}>
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '14px 16px', borderBottom: '1px solid var(--border)' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-          <span style={{ fontSize: 14, fontWeight: 600, color: 'var(--text)' }}>Notifications</span>
+          <span style={{ fontSize: 14, fontWeight: 600, color: 'var(--text)' }}>{t('notif.title')}</span>
           {unreadCount > 0 && (
             <span style={{ fontSize: 10, fontWeight: 700, padding: '2px 7px', borderRadius: 999, background: 'var(--accent)', color: 'var(--accent-fg)', fontVariantNumeric: 'tabular-nums' }}>
               {unreadCount}
@@ -71,16 +73,16 @@ export function NotificationsPanel({ open, onClose, items, lastSeen, onMarkAllRe
         <button
           disabled={unreadCount === 0}
           style={{ fontSize: 12, color: unreadCount === 0 ? 'var(--text-3)' : 'var(--accent)', background: 'none', border: 'none', cursor: unreadCount === 0 ? 'default' : 'pointer', opacity: unreadCount === 0 ? 0.5 : 1, transition: 'color .15s' }}
-          onClick={() => { onMarkAllRead(); toast('All notifications marked as read', 'success') }}
+          onClick={() => { onMarkAllRead(); toast(t('notif.markedToast'), 'success') }}
         >
-          Mark all read
+          {t('notif.markAllRead')}
         </button>
       </div>
 
       {items.length === 0 ? (
         <div style={{ padding: '36px 24px', textAlign: 'center', color: 'var(--text-3)', fontSize: 13, lineHeight: 1.55 }}>
-          You&apos;re all caught up.<br/>
-          <span style={{ fontSize: 12, color: 'var(--text-3)' }}>Complete a practice test or submission to see updates here.</span>
+          {t('notif.allCaughtUp')}<br/>
+          <span style={{ fontSize: 12, color: 'var(--text-3)' }}>{t('notif.emptyHint')}</span>
         </div>
       ) : (
         <div style={{ maxHeight: 420, overflow: 'auto' }}>

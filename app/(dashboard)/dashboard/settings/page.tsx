@@ -95,8 +95,8 @@ export default function SettingsPage() {
     e.preventDefault()
     setPwError('')
     setPwSaved(false)
-    if (newPassword.length < 8) { setPwError('Password must be at least 8 characters.'); return }
-    if (newPassword !== confirmPassword) { setPwError('Passwords do not match.'); return }
+    if (newPassword.length < 8) { setPwError(t('auth.errorWeakPassword')); return }
+    if (newPassword !== confirmPassword) { setPwError(t('auth.errorPasswordMismatch')); return }
     setPwSaving(true)
     const { error: pwErr } = await updatePassword(newPassword)
     setPwSaving(false)
@@ -114,14 +114,14 @@ export default function SettingsPage() {
       const res = await fetch('/api/account/delete', { method: 'POST' })
       if (!res.ok) {
         const d = await res.json().catch(() => ({}))
-        setDeleteError(d.error ?? 'Failed to delete account.')
+        setDeleteError(d.error ?? t('settings.deleteFailed'))
         setDeleting(false)
         return
       }
       await signOut()
       window.location.href = '/'
     } catch {
-      setDeleteError('Network error. Please try again.')
+      setDeleteError(t('wtest.networkError'))
       setDeleting(false)
     }
   }
@@ -149,7 +149,7 @@ export default function SettingsPage() {
 
         {/* Profile */}
         <section className="card" style={{ padding: 24 }}>
-          <SectionHeader title={t('settings.profile')} desc="Your name and target score." />
+          <SectionHeader title={t('settings.profile')} desc={t('settings.profileDesc')} />
           <form onSubmit={handleSave} className="space-y-4">
             <div>
               <label className={labelCls}>{t('settings.fullName')}</label>
@@ -157,7 +157,7 @@ export default function SettingsPage() {
             </div>
 
             <div style={{ maxWidth: 220 }}>
-              <label className={labelCls}>Target band</label>
+              <label className={labelCls}>{t('plan.targetBand')}</label>
               <select value={targetBand} onChange={e => setTargetBand(parseFloat(e.target.value))} className={inputCls} style={{ cursor: 'pointer' }}>
                 {BANDS.map(b => <option key={b} value={b}>{b.toFixed(1)}</option>)}
               </select>
@@ -166,7 +166,7 @@ export default function SettingsPage() {
             <div>
               <label className={labelCls}>{t('settings.email')}</label>
               <input type="email" value={email} disabled className="w-full px-3.5 py-2.5 rounded-lg text-sm border border-[var(--border)] bg-[var(--bg-soft)] text-[var(--text-3)] cursor-not-allowed" />
-              <p style={{ fontSize: 12, color: 'var(--text-3)', margin: '6px 0 0' }}>Email can&apos;t be changed.</p>
+              <p style={{ fontSize: 12, color: 'var(--text-3)', margin: '6px 0 0' }}>{t('settings.emailLocked')}</p>
             </div>
 
             {error && <p style={{ fontSize: 13, color: 'var(--danger)' }}>{error}</p>}
@@ -183,24 +183,24 @@ export default function SettingsPage() {
 
         {/* Security */}
         <section className="card" style={{ padding: 24 }}>
-          <SectionHeader title="Security" desc="Change your password." />
+          <SectionHeader title={t('settings.security')} desc={t('settings.securityDesc')} />
           <form onSubmit={handlePassword} className="space-y-4">
             <div>
-              <label className={labelCls}>New password</label>
-              <input type="password" value={newPassword} onChange={e => setNewPassword(e.target.value)} className={inputCls} placeholder="Min. 8 characters" autoComplete="new-password" />
+              <label className={labelCls}>{t('settings.newPassword')}</label>
+              <input type="password" value={newPassword} onChange={e => setNewPassword(e.target.value)} className={inputCls} placeholder={t('settings.minChars')} autoComplete="new-password" />
             </div>
             <div>
-              <label className={labelCls}>Confirm new password</label>
-              <input type="password" value={confirmPassword} onChange={e => setConfirmPassword(e.target.value)} className={inputCls} placeholder="Repeat password" autoComplete="new-password" />
+              <label className={labelCls}>{t('settings.confirmPassword')}</label>
+              <input type="password" value={confirmPassword} onChange={e => setConfirmPassword(e.target.value)} className={inputCls} placeholder={t('settings.repeatPassword')} autoComplete="new-password" />
             </div>
 
             {pwError && <p style={{ fontSize: 13, color: 'var(--danger)' }}>{pwError}</p>}
 
             <div style={{ paddingTop: 4 }}>
               <button type="submit" disabled={pwSaving || !newPassword} className="btn-primary text-white disabled:opacity-60" style={primaryBtn}>
-                {pwSaving ? <><Loader2 size={14} className="animate-spin" /> Updating…</>
-                  : pwSaved ? 'Password updated'
-                  : <><Lock size={14} /> Update password</>}
+                {pwSaving ? <><Loader2 size={14} className="animate-spin" /> {t('settings.updating')}</>
+                  : pwSaved ? t('settings.passwordUpdated')
+                  : <><Lock size={14} /> {t('settings.updatePassword')}</>}
               </button>
             </div>
           </form>
@@ -258,7 +258,7 @@ export default function SettingsPage() {
 
         {/* Danger zone */}
         <section className="card" style={{ padding: 24 }}>
-          <SectionHeader title="Danger zone" desc="Permanently delete your account and all your data. This can't be undone." />
+          <SectionHeader title={t('settings.dangerZone')} desc={t('settings.dangerDesc')} />
 
           {deleteError && <p style={{ fontSize: 13, color: 'var(--danger)', marginBottom: 12 }}>{deleteError}</p>}
 
@@ -267,16 +267,16 @@ export default function SettingsPage() {
               onClick={() => setConfirmingDelete(true)}
               style={{ ...primaryBtn, background: 'transparent', color: 'var(--danger)', border: '1px solid var(--danger)' }}
             >
-              <Trash2 size={14} /> Delete account
+              <Trash2 size={14} /> {t('settings.deleteAccount')}
             </button>
           ) : (
             <div style={{ display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap' }}>
-              <span style={{ fontSize: 14, color: 'var(--text)' }}>Are you sure? This is permanent.</span>
+              <span style={{ fontSize: 14, color: 'var(--text)' }}>{t('settings.deleteConfirm')}</span>
               <button onClick={handleDelete} disabled={deleting} style={{ ...primaryBtn, background: 'var(--danger)', color: 'white', opacity: deleting ? 0.6 : 1 }}>
-                {deleting ? <><Loader2 size={14} className="animate-spin" /> Deleting…</> : 'Yes, delete forever'}
+                {deleting ? <><Loader2 size={14} className="animate-spin" /> {t('settings.deleting')}</> : t('settings.deleteForever')}
               </button>
               <button onClick={() => setConfirmingDelete(false)} disabled={deleting} style={{ ...primaryBtn, background: 'var(--bg-soft)', color: 'var(--text)', border: '1px solid var(--border-strong)' }}>
-                Cancel
+                {t('common.cancel')}
               </button>
             </div>
           )}
