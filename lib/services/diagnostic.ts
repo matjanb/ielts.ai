@@ -86,9 +86,18 @@ export async function saveDiagnosticData(userId: string): Promise<void> {
     speaking_band_estimate: speaking?.band ?? test?.speakingBand ?? null,
   }
 
-  await supabase
+  const { error: upsertError } = await supabase
     .from('diagnostic_data')
     .upsert(diagnosticRow, { onConflict: 'user_id' })
+
+  // Bail out loudly on failure: the steps below mark onboarding complete and
+  // wipe localStorage, so swallowing this error would lose the diagnostic data
+  // for good and hide the breakage. Throwing keeps localStorage intact so the
+  // next mount can retry; callers treat saveDiagnosticData as best-effort.
+  if (upsertError) {
+    console.error('[diagnostic] failed to save diagnostic_data:', upsertError, { diagnosticRow })
+    throw upsertError
+  }
 
   // Mark onboarding as completed on the profile so login redirect works
   await supabase
