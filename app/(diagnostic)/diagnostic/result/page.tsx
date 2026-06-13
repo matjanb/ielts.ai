@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
+import { useLanguage } from '@/lib/i18n/LanguageContext'
 
 /* ── Minimal icons / logo (kept local to this funnel page) ─────────────────── */
 const ICONS: Record<string, React.ReactNode> = {
@@ -56,6 +57,7 @@ type Derived = {
 
 export default function DiagnosticResultPage() {
   const router = useRouter()
+  const { t } = useLanguage()
   // Diagnostic answers live in localStorage (client-only), so we read and derive
   // everything in an effect after mount; render stays pure.
   const [view, setView] = useState<Derived | null>(null)
@@ -92,7 +94,7 @@ export default function DiagnosticResultPage() {
   if (!view) {
     return (
       <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'var(--bg)' }}>
-        <div className="dim">Loading your results…</div>
+        <div className="dim">{t('diag.loading')}</div>
       </div>
     )
   }
@@ -101,22 +103,16 @@ export default function DiagnosticResultPage() {
 
   // Lightweight 3-phase roadmap preview (client-side teaser — the real AI plan
   // is generated inside the dashboard after subscribing).
-  const focusLabels = focus.map(s => SKILL_LABEL[s] ?? s)
+  const focusLabels = focus.map(s => (SKILL_LABEL[s] ? t(`dashboard.${s}`) : s))
   const phases = [
     {
-      title: 'Phase 1 — Foundations',
+      title: t('diag.phase1Title'),
       desc: focusLabels.length
-        ? `Target your weak spots: ${focusLabels.join(' & ')}.`
-        : 'Build core grammar, vocabulary and exam familiarity.',
+        ? t('diag.phase1Focus', { skills: focusLabels.join(' & ') })
+        : t('diag.phase1Default'),
     },
-    {
-      title: 'Phase 2 — Practice & mocks',
-      desc: 'Timed mock tests with AI Writing & Speaking feedback to lift your band.',
-    },
-    {
-      title: 'Phase 3 — Exam polish',
-      desc: 'Strategy, weak-area drills and a final readiness check before test day.',
-    },
+    { title: t('diag.phase2Title'), desc: t('diag.phase2Desc') },
+    { title: t('diag.phase3Title'), desc: t('diag.phase3Desc') },
   ]
 
   return (
@@ -125,37 +121,37 @@ export default function DiagnosticResultPage() {
         <button onClick={() => router.push('/')} style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
           <Logo/>
         </button>
-        <div className="dim" style={{ fontSize: 13 }}>Your placement result</div>
+        <div className="dim" style={{ fontSize: 13 }}>{t('diag.placement')}</div>
       </header>
 
       <div style={{ flex: 1, display: 'flex', justifyContent: 'center', padding: '40px 24px' }}>
         <div style={{ width: '100%', maxWidth: 640 }} className="fade-up">
 
           {/* Band summary */}
-          <div className="dim mono" style={{ fontSize: 12, letterSpacing: '0.08em' }}>YOUR ESTIMATED BAND</div>
+          <div className="dim mono" style={{ fontSize: 12, letterSpacing: '0.08em' }}>{t('diag.estBand')}</div>
           <div style={{ display: 'flex', alignItems: 'baseline', gap: 16, margin: '12px 0 6px' }}>
             <span style={{ fontSize: 64, fontWeight: 700, letterSpacing: '-0.03em', lineHeight: 1 }}>
               {current != null ? current.toFixed(1) : '—'}
             </span>
             <span className="muted" style={{ fontSize: 18 }}>
-              → target <strong style={{ color: 'var(--text)' }}>{target.toFixed(1)}</strong>
+              → {t('diag.targetWord')} <strong style={{ color: 'var(--text)' }}>{target.toFixed(1)}</strong>
             </span>
           </div>
           <p className="muted" style={{ fontSize: 16, margin: '0 0 28px' }}>
             {gap != null && gap > 0
-              ? `You're about ${gap.toFixed(1)} band${gap === 1 ? '' : 's'} away. Here's the plan to close the gap.`
-              : `You're on track for your target. Here's how to lock it in.`}
+              ? t('diag.gapAway', { gap: gap.toFixed(1) })
+              : t('diag.onTrack')}
           </p>
 
           {/* Quick facts */}
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))', gap: 12, marginBottom: 28 }}>
-            <Fact icon="calendar" label="Time to exam" value={weeks != null ? `${weeks} week${weeks === 1 ? '' : 's'}` : 'Flexible'} />
-            <Fact icon="clock" label="Daily study" value={minutes != null ? `${minutes} min` : 'Your pace'} />
-            <Fact icon="target" label="Focus skills" value={focusLabels.length ? focusLabels.join(', ') : 'Balanced'} />
+            <Fact icon="calendar" label={t('diag.factTimeToExam')} value={weeks != null ? t('diag.weeksValue', { n: String(weeks) }) : t('diag.flexible')} />
+            <Fact icon="clock" label={t('diag.factDailyStudy')} value={minutes != null ? `${minutes} ${t('diag.min')}` : t('diag.yourPace')} />
+            <Fact icon="target" label={t('diag.factFocus')} value={focusLabels.length ? focusLabels.join(', ') : t('diag.balanced')} />
           </div>
 
           {/* Roadmap preview */}
-          <div className="dim mono" style={{ fontSize: 12, letterSpacing: '0.08em', marginBottom: 12 }}>YOUR STUDY PLAN</div>
+          <div className="dim mono" style={{ fontSize: 12, letterSpacing: '0.08em', marginBottom: 12 }}>{t('diag.studyPlan')}</div>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 10, marginBottom: 32 }}>
             {phases.map((p, i) => (
               <div key={i} style={{ display: 'flex', gap: 14, padding: '16px 18px', borderRadius: 14, border: '1px solid var(--border)', background: 'var(--bg-soft)' }}>
@@ -176,11 +172,11 @@ export default function DiagnosticResultPage() {
             onClick={() => router.push(loggedIn ? '/dashboard' : '/signup')}
             style={{ width: '100%', justifyContent: 'center', fontSize: 16, padding: '14px 20px' }}
           >
-            {loggedIn ? 'Continue' : 'Create my free account to save this plan'}<Icon name="arrowRight" size={16}/>
+            {loggedIn ? t('diag.continue') : t('diag.ctaCreate')}<Icon name="arrowRight" size={16}/>
           </button>
           <p className="dim" style={{ fontSize: 13, textAlign: 'center', margin: '14px 0 0', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6 }}>
             <Icon name="lock" size={13}/>
-            Full AI feedback, mock tests and progress tracking unlock with a subscription.
+            {t('diag.subNote')}
           </p>
         </div>
       </div>
