@@ -167,7 +167,11 @@
     "contact": "Contact",
     "privacy": "Privacy Policy",
     "terms": "Terms of Service",
-    "copyright": "© 2025 IELTS Camp. All rights reserved."
+    "copyright": "© 2025 IELTS Camp. All rights reserved.",
+    "navSchools": "For schools",
+    "navPrivacy": "Privacy",
+    "navTerms": "Terms",
+    "navRefund": "Refund"
   },
   "auth": {
     "loginTitle": "Welcome back",
@@ -999,5 +1003,32 @@
     "current": "Current",
     "answered": "Answered",
     "notAnswered": "Not answered"
+  },
+  "testimonials": {
+    "eyebrow": "Used by candidates in 92 countries",
+    "title": "Real results, real students."
+  },
+  "marquee": {
+    "eyebrow": "Accepted at 11,000+ institutions"
+  },
+  "forSchools": {
+    "badge": "For schools & teachers",
+    "title": "Bring {{brand}} to your classroom.",
+    "pitch": "Schools, language centres and tutors use ielts.camp to run diagnostic tests, assign practice, and watch every student's band climb — all from one teacher dashboard.",
+    "contactCta": "Talk to our team",
+    "tryCta": "Try it yourself",
+    "b1Title": "Unlimited student seats",
+    "b1Desc": "Onboard whole cohorts with one dashboard — no per-seat surprises.",
+    "b2Title": "Class analytics",
+    "b2Desc": "Track band trajectories, weak skills and study time across every student.",
+    "b3Title": "Teacher tools",
+    "b3Desc": "Assign mock tests, review AI feedback, and export results to CSV.",
+    "statSchools": "schools",
+    "statStudents": "students",
+    "statBandGain": "avg band gain"
+  },
+  "showcase": {
+    "eyebrow": "Inside the app",
+    "title": "Built for the way you actually study."
   }
 }

@@ -1,8 +1,10 @@
 'use client'
 
 import Link from 'next/link'
+import { useLanguage } from '@/lib/i18n/LanguageContext'
 
 export function Footer() {
+  const { t } = useLanguage()
   return (
     <footer style={{ borderTop: '1px solid var(--border)', padding: '32px' }}>
       <div style={{ maxWidth: 1080, margin: '0 auto', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
@@ -19,22 +21,22 @@ export function Footer() {
           <Link href="#schools" style={{ transition: 'color 0.15s' }}
             onMouseEnter={e => (e.currentTarget.style.color = 'var(--text)')}
             onMouseLeave={e => (e.currentTarget.style.color = 'var(--text-3)')}>
-            For schools
+            {t('footer.navSchools')}
           </Link>
           <Link href="/privacy" style={{ transition: 'color 0.15s' }}
             onMouseEnter={e => (e.currentTarget.style.color = 'var(--text)')}
             onMouseLeave={e => (e.currentTarget.style.color = 'var(--text-3)')}>
-            Privacy
+            {t('footer.navPrivacy')}
           </Link>
           <Link href="/terms" style={{ transition: 'color 0.15s' }}
             onMouseEnter={e => (e.currentTarget.style.color = 'var(--text)')}
             onMouseLeave={e => (e.currentTarget.style.color = 'var(--text-3)')}>
-            Terms
+            {t('footer.navTerms')}
           </Link>
           <Link href="/refund" style={{ transition: 'color 0.15s' }}
             onMouseEnter={e => (e.currentTarget.style.color = 'var(--text)')}
             onMouseLeave={e => (e.currentTarget.style.color = 'var(--text-3)')}>
-            Refund
+            {t('footer.navRefund')}
           </Link>
           <span>© 2026</span>
         </div>

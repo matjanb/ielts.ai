@@ -1,5 +1,7 @@
 'use client'
 
+import { useLanguage } from '@/lib/i18n/LanguageContext'
+
 const UNIS = [
   'Cambridge', 'Oxford', 'MIT', 'Stanford', 'ETH Zürich', 'NYU', 'UCL',
   'Imperial College', 'Toronto', 'TUM', 'Edinburgh', 'ANU', 'Melbourne',
@@ -7,6 +9,7 @@ const UNIS = [
 ]
 
 export function UniversitiesMarquee() {
+  const { t } = useLanguage()
   const row = [...UNIS, ...UNIS]
 
   return (
@@ -19,7 +22,7 @@ export function UniversitiesMarquee() {
       <div style={{ padding: '28px 0', position: 'relative' }}>
         <div style={{ textAlign: 'center', marginBottom: 24, padding: '0 24px' }}>
           <span style={{ fontSize: 12, letterSpacing: '0.1em', textTransform: 'uppercase', color: 'var(--text-3)' }}>
-            Accepted at 11,000+ institutions
+            {t('marquee.eyebrow')}
           </span>
         </div>
 

@@ -1,14 +1,15 @@
 'use client'
 
 import { useState } from 'react'
+import { useLanguage } from '@/lib/i18n/LanguageContext'
 
 const TABS = [
-  { id: 'overview',  label: 'Overview',  icon: 'home' },
-  { id: 'listening', label: 'Listening', icon: 'headphones' },
-  { id: 'reading',   label: 'Reading',   icon: 'book' },
-  { id: 'writing',   label: 'Writing',   icon: 'pencil' },
-  { id: 'speaking',  label: 'Speaking',  icon: 'mic' },
-  { id: 'vocab',     label: 'Vocab',     icon: 'layers' },
+  { id: 'overview',  labelKey: 'dashboard.overview',   icon: 'home' },
+  { id: 'listening', labelKey: 'dashboard.listening',  icon: 'headphones' },
+  { id: 'reading',   labelKey: 'dashboard.reading',    icon: 'book' },
+  { id: 'writing',   labelKey: 'dashboard.writing',    icon: 'pencil' },
+  { id: 'speaking',  labelKey: 'dashboard.speaking',   icon: 'mic' },
+  { id: 'vocab',     labelKey: 'dashboard.vocabulary', icon: 'layers' },
 ]
 
 const TabIcon = ({ name }: { name: string }) => {
@@ -277,23 +278,24 @@ function PreviewVocab() {
 }
 
 export function DashboardShowcase() {
+  const { t } = useLanguage()
   const [tab, setTab] = useState('overview')
 
   return (
     <section className="mobile-hidden" style={{ maxWidth: 1180, margin: '0 auto', padding: '80px 32px' }}>
       <div style={{ textAlign: 'center', marginBottom: 36 }}>
-        <div style={{ fontSize: 12, letterSpacing: '0.1em', textTransform: 'uppercase', color: 'var(--text-3)' }}>Inside the app</div>
+        <div style={{ fontSize: 12, letterSpacing: '0.1em', textTransform: 'uppercase', color: 'var(--text-3)' }}>{t('showcase.eyebrow')}</div>
         <h2 style={{ fontSize: 38, letterSpacing: '-0.025em', margin: '12px 0 0', fontWeight: 700 }}>
-          Built for the way you <span className="font-serif" style={{ color: 'var(--accent)' }}>actually</span> study.
+          {t('showcase.title')}
         </h2>
       </div>
 
       {/* Pill tabs */}
       <div style={{ display: 'flex', justifyContent: 'center', gap: 4, marginBottom: 24, flexWrap: 'wrap' }}>
-        {TABS.map(t => {
-          const active = tab === t.id
+        {TABS.map(tb => {
+          const active = tab === tb.id
           return (
-            <button key={t.id} onClick={() => setTab(t.id)} style={{
+            <button key={tb.id} onClick={() => setTab(tb.id)} style={{
               display: 'flex', alignItems: 'center', gap: 7,
               padding: '8px 15px', borderRadius: 999,
               background: active ? 'var(--accent)' : 'var(--bg-soft)',
@@ -302,7 +304,7 @@ export function DashboardShowcase() {
               border: `1px solid ${active ? 'var(--accent)' : 'var(--border)'}`,
               transition: 'all 0.2s',
             }}>
-              <TabIcon name={t.icon} />{t.label}
+              <TabIcon name={tb.icon} />{t(tb.labelKey)}
             </button>
           )
         })}

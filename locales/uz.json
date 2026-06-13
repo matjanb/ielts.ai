@@ -167,7 +167,11 @@
     "contact": "Aloqa",
     "privacy": "Maxfiylik siyosati",
     "terms": "Foydalanish shartlari",
-    "copyright": "© 2025 IELTS Camp. Barcha huquqlar himoyalangan."
+    "copyright": "© 2025 IELTS Camp. Barcha huquqlar himoyalangan.",
+    "navSchools": "Maktablar uchun",
+    "navPrivacy": "Maxfiylik",
+    "navTerms": "Shartlar",
+    "navRefund": "Qaytarish"
   },
   "auth": {
     "loginTitle": "Xush kelibsiz",
@@ -999,5 +1003,32 @@
     "current": "Joriy",
     "answered": "Javob berilgan",
     "notAnswered": "Javob berilmagan"
+  },
+  "testimonials": {
+    "eyebrow": "92 davlat nomzodlari foydalanadi",
+    "title": "Haqiqiy natijalar, haqiqiy o'quvchilar."
+  },
+  "marquee": {
+    "eyebrow": "11 000+ muassasada qabul qilinadi"
+  },
+  "forSchools": {
+    "badge": "Maktablar va o'qituvchilar uchun",
+    "title": "{{brand}} ni sinfingizga olib keling.",
+    "pitch": "Maktablar, til markazlari va repetitorlar ielts.camp orqali diagnostika testlarini o'tkazadi, mashqlar tayinlaydi va har bir o'quvchining bali o'sishini bitta o'qituvchi panelidan kuzatadi.",
+    "contactCta": "Jamoamiz bilan bog'laning",
+    "tryCta": "O'zingiz sinab ko'ring",
+    "b1Title": "Cheksiz o'quvchi o'rinlari",
+    "b1Desc": "Butun guruhlarni bitta panel bilan ulang — har bir o'rin uchun qo'shimcha to'lovsiz.",
+    "b2Title": "Sinf tahlili",
+    "b2Desc": "Har bir o'quvchining ball dinamikasi, zaif ko'nikmalari va o'qish vaqtini kuzating.",
+    "b3Title": "O'qituvchi vositalari",
+    "b3Desc": "Sinov testlarini tayinlang, AI fikr-mulohazasini ko'ring va natijalarni CSV ga eksport qiling.",
+    "statSchools": "maktab",
+    "statStudents": "o'quvchi",
+    "statBandGain": "o'rtacha ball o'sishi"
+  },
+  "showcase": {
+    "eyebrow": "Ilova ichida",
+    "title": "Siz haqiqatan o'qiydigan tarzda yaratilgan."
   }
 }
