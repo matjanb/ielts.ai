@@ -2,9 +2,11 @@
 
 import { useTheme } from 'next-themes'
 import { useEffect, useState } from 'react'
+import { useLanguage } from '@/lib/i18n/LanguageContext'
 
 export function ThemeToggle() {
   const { theme, setTheme } = useTheme()
+  const { t } = useLanguage()
   const [mounted, setMounted] = useState(false)
 
   useEffect(() => { setMounted(true) }, [])
@@ -16,7 +18,7 @@ export function ThemeToggle() {
   return (
     <button
       onClick={() => setTheme(isDark ? 'light' : 'dark')}
-      aria-label="Toggle theme"
+      aria-label={t('common.toggleTheme')}
       style={{
         width: 32, height: 32, borderRadius: 8,
         display: 'flex', alignItems: 'center', justifyContent: 'center',

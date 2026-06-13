@@ -348,7 +348,8 @@
     "cancel": "Cancel",
     "close": "Close",
     "learnMore": "Learn more",
-    "days": "days"
+    "days": "days",
+    "toggleTheme": "Toggle theme"
   },
   "listening": {
     "title": "Listening Tests",
@@ -976,5 +977,27 @@
     "title": "Your essays",
     "sub": "Past submissions — open any to see the full breakdown",
     "empty": "Your graded essays will appear here."
+  },
+  "cmd": {
+    "dashboard": "Dashboard · Overview",
+    "searchPlaceholder": "Search pages, actions…",
+    "noMatches": "No matches.",
+    "pages": "PAGES",
+    "navigate": "navigate",
+    "open": "open",
+    "close": "close"
+  },
+  "notif": {
+    "title": "Notifications",
+    "markAllRead": "Mark all read",
+    "markedToast": "All notifications marked as read",
+    "allCaughtUp": "You're all caught up.",
+    "emptyHint": "Complete a practice test or submission to see updates here."
+  },
+  "qnav": {
+    "questions": "Questions",
+    "current": "Current",
+    "answered": "Answered",
+    "notAnswered": "Not answered"
   }
 }

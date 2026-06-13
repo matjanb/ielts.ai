@@ -309,7 +309,8 @@
     "cancel": "Bekor qilish",
     "close": "Yopish",
     "learnMore": "Ko'proq bilish",
-    "days": "kun"
+    "days": "kun",
+    "toggleTheme": "Mavzuni almashtirish"
   },
   "listening": {
     "title": "Tinglash Testlari",
@@ -976,5 +977,27 @@
     "matchingHeading": "Sarlavhalarni moslashtiring",
     "fillBlankHeading": "Gaplarni to'ldiring",
     "mcHeading": "To'g'ri javobni tanlang"
+  },
+  "cmd": {
+    "dashboard": "Kabinet · Umumiy",
+    "searchPlaceholder": "Sahifalar, amallarni qidirish…",
+    "noMatches": "Hech narsa topilmadi.",
+    "pages": "SAHIFALAR",
+    "navigate": "harakat",
+    "open": "ochish",
+    "close": "yopish"
+  },
+  "notif": {
+    "title": "Bildirishnomalar",
+    "markAllRead": "Hammasini o'qilgan deb belgilash",
+    "markedToast": "Barcha bildirishnomalar o'qilgan deb belgilandi",
+    "allCaughtUp": "Hammasini ko'rib bo'ldingiz.",
+    "emptyHint": "Bu yerda yangiliklarni ko'rish uchun test topshiring yoki ish yuboring."
+  },
+  "qnav": {
+    "questions": "Savollar",
+    "current": "Joriy",
+    "answered": "Javob berilgan",
+    "notAnswered": "Javob berilmagan"
   }
 }
