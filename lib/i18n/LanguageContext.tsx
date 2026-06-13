@@ -3,7 +3,7 @@
 import { createContext, useContext, useEffect, useState, type ReactNode } from 'react'
 import enBase from '../../locales/en.json'
 
-export type Language = 'en' | 'ru' | 'kz' | 'uz'
+export type Language = 'en' | 'ru' | 'kz' | 'uz' | 'kg'
 
 type Translations = Record<string, unknown>
 
@@ -49,7 +49,7 @@ export function LanguageProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     const saved = localStorage.getItem(STORAGE_KEY) as Language | null
-    const initial = saved && ['en', 'ru', 'kz', 'uz'].includes(saved) ? saved : DEFAULT_LANG
+    const initial = saved && ['en', 'ru', 'kz', 'uz', 'kg'].includes(saved) ? saved : DEFAULT_LANG
     // syncing the persisted language choice on mount (localStorage is client-only)
     // eslint-disable-next-line react-hooks/set-state-in-effect
     setLanguageState(initial)
