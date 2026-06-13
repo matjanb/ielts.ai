@@ -14,7 +14,13 @@
     "getStarted": "Boshlash",
     "login": "Kirish",
     "dashboard": "Kabinet",
+    "subscription": "Obuna",
     "logout": "Chiqish"
+  },
+  "stat": {
+    "students": "faol o'quvchi",
+    "band": "o'rtacha ball o'sishi",
+    "rate": "maqsadli ballga erishadi"
   },
   "hero": {
     "badge": "Sun'iy intellekt asosida IELTS tayyorgarligi",
@@ -931,5 +937,44 @@
     "title": "Esselaring",
     "sub": "O'tgan ishlar — to'liq tahlilni ko'rish uchun istalganini och",
     "empty": "Bu yerda tekshirilgan esselar paydo bo'ladi."
+  },
+  "mockTest": {
+    "startTest": "Testni boshlash",
+    "continueTest": "Davom etish",
+    "submitTest": "Testni topshirish",
+    "nextQuestion": "Keyingi",
+    "prevQuestion": "Oldingi",
+    "timeRemaining": "Qolgan vaqt",
+    "question": "Savol",
+    "of": "/",
+    "reading": "O'qish",
+    "listening": "Tinglash",
+    "writing": "Yozish",
+    "speaking": "Gapirish",
+    "instructions": "Ko'rsatmalar",
+    "yourAnswer": "Sizning javobingiz",
+    "wordCount": "So'zlar soni",
+    "minWords": "Kamida {{min}} so'z",
+    "trueFalseNg": "True / False / Not Given",
+    "trueLabel": "True",
+    "falseLabel": "False",
+    "notGivenLabel": "Not Given",
+    "reviewAnswers": "Javoblarni ko'rib chiqish",
+    "results": "Test natijalari",
+    "overallScore": "Umumiy ball",
+    "sectionScores": "Bo'lim ballari",
+    "correctAnswers": "To'g'ri javoblar",
+    "yourBand": "Sizning balingiz",
+    "viewFeedback": "Fikr-mulohazani ko'rish",
+    "retakeTest": "Testni qayta topshirish",
+    "backToTests": "Testlarga qaytish",
+    "testComplete": "Test tugadi",
+    "submitting": "Topshirilmoqda…",
+    "saveProgress": "Jarayonni saqlash",
+    "passage": "Matn",
+    "questions": "Savollar",
+    "matchingHeading": "Sarlavhalarni moslashtiring",
+    "fillBlankHeading": "Gaplarni to'ldiring",
+    "mcHeading": "To'g'ri javobni tanlang"
   }
 }
