@@ -136,7 +136,8 @@ create table if not exists writing_submissions (
 create table if not exists speaking_submissions (
   id                   uuid primary key default uuid_generate_v4(),
   user_id              uuid not null references profiles(id) on delete cascade,
-  part                 smallint not null check (part in (1, 2, 3)),
+  mode                 text not null default 'part_practice' check (mode in ('full_test', 'part_practice')),
+  part                 smallint check (part is null or part in (1, 2, 3)),  -- NULL for a full Part 1–3 session
   topic                text not null,
   transcript           text,
   audio_url            text,
@@ -147,6 +148,26 @@ create table if not exists speaking_submissions (
   grammar_score        numeric(2,1),
   ai_feedback          text,
   created_at           timestamptz not null default now()
+);
+
+-- Per-exchange detail for a speaking session: each examiner question and the
+-- candidate's transcribed answer, with stored audio and derived fluency metrics.
+create table if not exists speaking_turns (
+  id                uuid primary key default uuid_generate_v4(),
+  submission_id     uuid not null references speaking_submissions(id) on delete cascade,
+  user_id           uuid not null references profiles(id) on delete cascade,
+  turn_index        smallint not null,
+  part              smallint not null check (part in (1, 2, 3)),
+  role              text not null check (role in ('examiner', 'candidate')),
+  question_text     text,
+  transcript        text,
+  audio_url         text,
+  duration_ms       integer check (duration_ms is null or duration_ms >= 0),
+  words             integer check (words is null or words >= 0),
+  pause_count       integer check (pause_count is null or pause_count >= 0),
+  pause_total_ms    integer check (pause_total_ms is null or pause_total_ms >= 0),
+  speech_rate_wpm   numeric(6,1),
+  created_at        timestamptz not null default now()
 );
 
 -- ── BAND SCORE HISTORY ────────────────────────────────────────────────────────
@@ -189,6 +210,7 @@ alter table onboarding_data       enable row level security;
 alter table study_plans           enable row level security;
 alter table writing_submissions   enable row level security;
 alter table speaking_submissions  enable row level security;
+alter table speaking_turns        enable row level security;
 alter table band_score_history    enable row level security;
 alter table study_sessions        enable row level security;
 alter table ai_usage              enable row level security;
@@ -237,6 +259,14 @@ create policy "Users can insert own speaking"
 create policy "Users can update own speaking"
   on speaking_submissions for update using (auth.uid() = user_id);
 
+-- speaking_turns
+drop policy if exists "Users view own speaking turns"  on speaking_turns;
+drop policy if exists "Users insert own speaking turns" on speaking_turns;
+create policy "Users view own speaking turns"
+  on speaking_turns for select using (auth.uid() = user_id);
+create policy "Users insert own speaking turns"
+  on speaking_turns for insert with check (auth.uid() = user_id);
+
 -- band_score_history
 drop policy if exists "Users view own scores"           on band_score_history;
 drop policy if exists "Users can insert own band scores" on band_score_history;
@@ -262,6 +292,7 @@ create policy "Users can view own AI usage"
 
 create index if not exists idx_writing_user                on writing_submissions(user_id);
 create index if not exists idx_speaking_user               on speaking_submissions(user_id);
+create index if not exists idx_speaking_turns_submission    on speaking_turns(submission_id, turn_index);
 create index if not exists idx_band_score_user             on band_score_history(user_id, recorded_at desc);
 create index if not exists idx_study_sessions_user         on study_sessions(user_id, created_at desc);
 create index if not exists idx_ai_usage_user_feature_month on ai_usage(user_id, feature, created_at desc);

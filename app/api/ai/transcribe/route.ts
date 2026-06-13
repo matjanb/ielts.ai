@@ -1,18 +1,20 @@
 import { NextRequest, NextResponse } from 'next/server'
 import openai from '@/lib/openai/client'
-import { getApiUser, hasActiveSubscription, recordUsage, enforceAiLimits, err } from '@/lib/api/helpers'
+import { gateAiRequest, recordUsage, err } from '@/lib/api/helpers'
+import { computeFluencyMetrics, type WhisperWord } from '@/lib/ielts/fluency'
 
-// Transcribes a short recorded answer with Whisper. The speaking page sends
-// the captured audio here, then the returned text is graded by /api/ai/speaking.
+// Transcribes one recorded answer with Whisper and derives objective fluency
+// signals (pauses, speech rate) from the word timestamps. The page accumulates
+// these per turn; /api/ai/speaking grades the whole session at the end.
+//
+// We pin `language: 'en'`: IELTS Speaking is taken in English, and without the
+// hint Whisper mis-detects the language on short answers (a one-word reply came
+// back transcribed in Cyrillic). The anti-cheat for someone genuinely speaking
+// another language is handled at grading time, where the Part 2 audio goes to
+// an audio model that hears the actual speech.
 export async function POST(request: NextRequest) {
-  const user = await getApiUser()
-  if (!user) return err('Unauthorized', 401)
-
-  const allowed = await hasActiveSubscription(user.id)
-  if (!allowed) return err('Subscription required.', 403)
-
-  const limited = await enforceAiLimits(user.id, 'transcribe')
-  if (limited) return limited
+  const { user, error: gate } = await gateAiRequest('transcribe')
+  if (gate) return gate
 
   let form: FormData
   try {
@@ -34,9 +36,19 @@ export async function POST(request: NextRequest) {
       file: audio,
       model: 'whisper-1',
       language: 'en',
+      response_format: 'verbose_json',
+      timestamp_granularities: ['word'],
     })
+
+    const transcript = transcription.text?.trim() ?? ''
+    const metrics = computeFluencyMetrics(
+      transcription.words as WhisperWord[] | undefined,
+      transcription.duration,
+      transcript,
+    )
+
     await recordUsage(user.id, 'transcribe')
-    return NextResponse.json({ transcript: transcription.text?.trim() ?? '' })
+    return NextResponse.json({ transcript, ...metrics })
   } catch (e) {
     console.error('[AI transcribe]', e)
     return err('Transcription failed. Please try again.', 500)

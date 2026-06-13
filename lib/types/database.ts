@@ -415,7 +415,8 @@ export type Database = {
           grammar_score: number | null
           id: string
           lexical_score: number | null
-          part: number
+          mode: string
+          part: number | null
           pronunciation_score: number | null
           topic: string
           transcript: string | null
@@ -430,7 +431,8 @@ export type Database = {
           grammar_score?: number | null
           id?: string
           lexical_score?: number | null
-          part: number
+          mode?: string
+          part?: number | null
           pronunciation_score?: number | null
           topic: string
           transcript?: string | null
@@ -445,7 +447,8 @@ export type Database = {
           grammar_score?: number | null
           id?: string
           lexical_score?: number | null
-          part?: number
+          mode?: string
+          part?: number | null
           pronunciation_score?: number | null
           topic?: string
           transcript?: string | null
@@ -454,6 +457,75 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "speaking_submissions_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      speaking_turns: {
+        Row: {
+          audio_url: string | null
+          created_at: string
+          duration_ms: number | null
+          id: string
+          part: number
+          pause_count: number | null
+          pause_total_ms: number | null
+          question_text: string | null
+          role: string
+          speech_rate_wpm: number | null
+          submission_id: string
+          transcript: string | null
+          turn_index: number
+          user_id: string
+          words: number | null
+        }
+        Insert: {
+          audio_url?: string | null
+          created_at?: string
+          duration_ms?: number | null
+          id?: string
+          part: number
+          pause_count?: number | null
+          pause_total_ms?: number | null
+          question_text?: string | null
+          role: string
+          speech_rate_wpm?: number | null
+          submission_id: string
+          transcript?: string | null
+          turn_index: number
+          user_id: string
+          words?: number | null
+        }
+        Update: {
+          audio_url?: string | null
+          created_at?: string
+          duration_ms?: number | null
+          id?: string
+          part?: number
+          pause_count?: number | null
+          pause_total_ms?: number | null
+          question_text?: string | null
+          role?: string
+          speech_rate_wpm?: number | null
+          submission_id?: string
+          transcript?: string | null
+          turn_index?: number
+          user_id?: string
+          words?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "speaking_turns_submission_id_fkey"
+            columns: ["submission_id"]
+            isOneToOne: false
+            referencedRelation: "speaking_submissions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "speaking_turns_user_id_fkey"
             columns: ["user_id"]
             isOneToOne: false
             referencedRelation: "profiles"
@@ -1361,6 +1433,7 @@ export type OnboardingData = Database['public']['Tables']['onboarding_data']['Ro
 export type StudyPlan = Database['public']['Tables']['study_plans']['Row']
 export type WritingSubmission = Database['public']['Tables']['writing_submissions']['Row']
 export type SpeakingSubmission = Database['public']['Tables']['speaking_submissions']['Row']
+export type SpeakingTurn = Database['public']['Tables']['speaking_turns']['Row']
 export type BandScoreHistory = Database['public']['Tables']['band_score_history']['Row']
 export type StudySession = Database['public']['Tables']['study_sessions']['Row']
 export type AiUsage = Database['public']['Tables']['ai_usage']['Row']
