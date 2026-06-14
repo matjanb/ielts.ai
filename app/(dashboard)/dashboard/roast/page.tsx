@@ -6,44 +6,20 @@ import { useIsMobile } from '@/lib/hooks/useIsMobile'
 import type { RoastMode } from '@/app/api/ai/roast/route'
 
 type Lang = 'en' | 'ru' | 'kz' | 'ky' | 'uz'
-type Phase = 'idle' | 'listening' | 'thinking' | 'speaking'
+type Phase = 'idle' | 'recording' | 'thinking' | 'speaking'
 interface Message { role: 'user' | 'assistant'; content: string }
 
-// SpeechRecognition types
-interface ISpeechRecognitionEvent extends Event {
-  resultIndex: number
-  results: { length: number; [i: number]: { isFinal: boolean; [j: number]: { transcript: string } } }
-}
-interface ISpeechRecognition extends EventTarget {
-  lang: string; continuous: boolean; interimResults: boolean; maxAlternatives: number
-  start(): void; stop(): void; abort(): void
-  onstart: ((e: Event) => void) | null
-  onend: ((e: Event) => void) | null
-  onerror: ((e: Event) => void) | null
-  onresult: ((e: ISpeechRecognitionEvent) => void) | null
-}
-declare global {
-  interface Window {
-    SpeechRecognition: new () => ISpeechRecognition
-    webkitSpeechRecognition: new () => ISpeechRecognition
-  }
-}
-
-const LANG_CODE: Record<Lang, string> = {
-  en: 'en-US', ru: 'ru-RU', kz: 'kk-KZ', ky: 'ky-KG', uz: 'uz-UZ',
-}
-
 const MODES: { id: RoastMode; emoji: string; label: Record<Lang, string> }[] = [
-  { id: 'polite', emoji: '🎩', label: { en: 'Polite', ru: 'Вежливый', kz: 'Сыпайы', ky: 'Сылык', uz: 'Muloyim' } },
-  { id: 'roast',  emoji: '🔥', label: { en: 'Roast',  ru: 'Роаст',    kz: 'Роаст',  ky: 'Роаст',  uz: 'Roast'   } },
-  { id: 'savage', emoji: '💀', label: { en: 'No filter', ru: 'Без цензуры', kz: 'Цензурасыз', ky: 'Цензурасыз', uz: 'Sensorsiz' } },
+  { id: 'polite', emoji: '🎩', label: { en: 'Polite',     ru: 'Вежливый',     kz: 'Сыпайы',     ky: 'Сылык',     uz: 'Muloyim'   } },
+  { id: 'roast',  emoji: '🔥', label: { en: 'Roast',      ru: 'Роаст',        kz: 'Роаст',      ky: 'Роаст',     uz: 'Roast'     } },
+  { id: 'savage', emoji: '💀', label: { en: 'No filter',  ru: 'Без цензуры',  kz: 'Цензурасыз', ky: 'Цензурасыз',uz: 'Sensorsiz' } },
 ]
 
-const PHASE_LABEL: Record<Phase, Record<Lang, string>> = {
-  idle:      { en: 'Tap to speak', ru: 'Нажмите чтобы говорить', kz: 'Сөйлеу үшін басыңыз', ky: 'Сүйлөө үчүн басыңыз', uz: 'Gapirish uchun bosing' },
-  listening: { en: 'Listening…',   ru: 'Слушаю…',               kz: 'Тыңдап жатырмын…',    ky: 'Угуп жатам…',         uz: 'Eshitmoqdaman…' },
-  thinking:  { en: 'Thinking…',    ru: 'Думаю…',                kz: 'Ойлап жатырмын…',     ky: 'Ойлонуп жатам…',      uz: 'O\'ylayapman…' },
-  speaking:  { en: 'Speaking…',    ru: 'Говорю…',               kz: 'Сөйлеп жатырмын…',   ky: 'Сүйлөп жатам…',       uz: 'Gapirmoqdaman…' },
+const PHASE_HINT: Record<Phase, Record<Lang, string>> = {
+  idle:      { en: 'Hold to speak',   ru: 'Держите чтобы говорить', kz: 'Ұстап сөйлеңіз',      ky: 'Кармап сүйлөңүз',      uz: 'Ushlab gapiring'       },
+  recording: { en: 'Recording…',      ru: 'Запись…',                kz: 'Жазылуда…',            ky: 'Жазылууда…',           uz: 'Yozilmoqda…'           },
+  thinking:  { en: 'Thinking…',       ru: 'Думаю…',                 kz: 'Ойлап жатырмын…',     ky: 'Ойлонуп жатам…',       uz: 'O\'ylayapman…'          },
+  speaking:  { en: 'Speaking…',       ru: 'Говорю…',                kz: 'Сөйлеп жатырмын…',    ky: 'Сүйлөп жатам…',        uz: 'Gapirmoqdaman…'        },
 }
 
 export default function RoastPage() {
@@ -54,33 +30,30 @@ export default function RoastPage() {
   const [mode, setMode] = useState<RoastMode>('roast')
   const [phase, setPhase] = useState<Phase>('idle')
   const [messages, setMessages] = useState<Message[]>([])
-  const [interim, setInterim] = useState('')
-  const [supported, setSupported] = useState(true)
+  const [error, setError] = useState('')
 
-  const recogRef = useRef<ISpeechRecognition | null>(null)
+  const mediaRecorderRef = useRef<MediaRecorder | null>(null)
+  const chunksRef = useRef<Blob[]>([])
+  const streamRef = useRef<MediaStream | null>(null)
   const audioRef = useRef<HTMLAudioElement | null>(null)
   const messagesRef = useRef<Message[]>([])
   const bottomRef = useRef<HTMLDivElement>(null)
+  const holdTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
   messagesRef.current = messages
 
   useEffect(() => {
-    if (typeof window !== 'undefined') {
-      const SR = window.SpeechRecognition ?? window.webkitSpeechRecognition
-      if (!SR) setSupported(false)
-    }
+    bottomRef.current?.scrollIntoView({ behavior: 'smooth' })
+  }, [messages])
+
+  // Cleanup on unmount
+  useEffect(() => () => {
+    streamRef.current?.getTracks().forEach(t => t.stop())
+    audioRef.current?.pause()
   }, [])
 
-  useEffect(() => {
-    bottomRef.current?.scrollIntoView({ behavior: 'smooth' })
-  }, [messages, interim])
-
   const stopAudio = () => {
-    if (audioRef.current) {
-      audioRef.current.pause()
-      audioRef.current.src = ''
-      audioRef.current = null
-    }
+    if (audioRef.current) { audioRef.current.pause(); audioRef.current.src = ''; audioRef.current = null }
   }
 
   const speak = useCallback(async (text: string) => {
@@ -97,22 +70,17 @@ export default function RoastPage() {
       const url = URL.createObjectURL(blob)
       const audio = new Audio(url)
       audioRef.current = audio
-      audio.onended = () => {
-        URL.revokeObjectURL(url)
-        audioRef.current = null
-        setPhase('idle')
-      }
+      audio.onended = () => { URL.revokeObjectURL(url); audioRef.current = null; setPhase('idle') }
       audio.onerror = () => setPhase('idle')
       await audio.play()
-    } catch {
-      setPhase('idle')
-    }
+    } catch { setPhase('idle') }
   }, [mode])
 
   const sendToAI = useCallback(async (userText: string) => {
     const newMessages: Message[] = [...messagesRef.current, { role: 'user', content: userText }]
     setMessages(newMessages)
     setPhase('thinking')
+    setError('')
 
     try {
       const res = await fetch('/api/ai/roast', {
@@ -122,92 +90,110 @@ export default function RoastPage() {
       })
       const data = await res.json()
       if (!res.ok) throw new Error(data.error ?? 'Error')
-      const reply = data.reply as string
+      const reply: string = data.reply
       setMessages(prev => [...prev, { role: 'assistant', content: reply }])
       await speak(reply)
     } catch (e: unknown) {
-      const msg = e instanceof Error ? e.message : 'Error'
-      setMessages(prev => [...prev, { role: 'assistant', content: msg }])
+      setError(e instanceof Error ? e.message : 'Error')
       setPhase('idle')
     }
   }, [mode, lang, speak])
 
-  const startListening = useCallback(() => {
-    if (phase !== 'idle') {
-      stopAudio()
-      recogRef.current?.abort()
-      recogRef.current = null
+  const startRecording = useCallback(async () => {
+    if (phase !== 'idle') return
+    setError('')
+
+    // Stop AI audio if talking
+    stopAudio()
+
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true })
+      streamRef.current = stream
+
+      const mimeType = MediaRecorder.isTypeSupported('audio/webm;codecs=opus')
+        ? 'audio/webm;codecs=opus'
+        : MediaRecorder.isTypeSupported('audio/webm')
+        ? 'audio/webm'
+        : 'audio/mp4'
+
+      const recorder = new MediaRecorder(stream, { mimeType })
+      chunksRef.current = []
+      recorder.ondataavailable = e => { if (e.data.size > 0) chunksRef.current.push(e.data) }
+      recorder.start(100)
+      mediaRecorderRef.current = recorder
+      setPhase('recording')
+    } catch {
+      setError(lang === 'ru' ? 'Нет доступа к микрофону. Разрешите доступ в браузере.'
+        : lang === 'kz' ? 'Микрофонға қол жеткізу жоқ. Браузерде рұқсат беріңіз.'
+        : lang === 'ky' ? 'Микрофонго жетүү жок. Браузерде уруксат бериңиз.'
+        : lang === 'uz' ? 'Mikrofonnga ruxsat yo\'q. Brauzerda ruxsat bering.'
+        : 'Microphone access denied. Please allow it in your browser.')
+    }
+  }, [phase, lang])
+
+  const stopRecording = useCallback(async () => {
+    if (phase !== 'recording') return
+    setPhase('thinking')
+
+    const recorder = mediaRecorderRef.current
+    streamRef.current?.getTracks().forEach(t => t.stop())
+    streamRef.current = null
+
+    if (!recorder) return
+
+    const blob: Blob = await new Promise(resolve => {
+      recorder.onstop = () => resolve(new Blob(chunksRef.current, { type: recorder.mimeType || 'audio/webm' }))
+      try { recorder.stop() } catch { resolve(new Blob(chunksRef.current)) }
+    })
+
+    if (blob.size < 1000) {
+      // Too short — nothing was recorded
       setPhase('idle')
-      setInterim('')
       return
     }
 
-    const SR = window.SpeechRecognition ?? window.webkitSpeechRecognition
-    if (!SR) return
-
-    // kk-KZ and ky-KG are rarely supported — fall back to ru-RU
-    const langCode = (lang === 'kz' || lang === 'ky') ? 'ru-RU' : (LANG_CODE[lang] ?? 'en-US')
-
-    const recog = new SR()
-    recog.lang = langCode
-    recog.continuous = true   // keep listening until we get a final result
-    recog.interimResults = true
-    recog.maxAlternatives = 1
-
-    let gotFinal = false
-
-    recog.onstart = () => setPhase('listening')
-
-    recog.onresult = (e: ISpeechRecognitionEvent) => {
-      let final = ''
-      let inter = ''
-      for (let i = e.resultIndex; i < e.results.length; i++) {
-        const t = e.results[i][0].transcript
-        if (e.results[i].isFinal) final += t
-        else inter += t
-      }
-      setInterim(inter || final)
-      if (final.trim() && !gotFinal) {
-        gotFinal = true
-        setInterim('')
-        recog.stop()
-        sendToAI(final.trim())
-      }
-    }
-
-    recog.onerror = (e) => {
-      console.error('SpeechRecognition error', e)
-      setInterim('')
-      setPhase('idle')
-    }
-
-    recog.onend = () => {
-      setInterim('')
-      // If we ended without a final result, go back to idle
-      if (!gotFinal) setPhase('idle')
-    }
-
-    recogRef.current = recog
+    // Transcribe with Whisper
     try {
-      recog.start()
-    } catch (e) {
-      console.error('SpeechRecognition start error', e)
+      const fd = new FormData()
+      fd.append('audio', new File([blob], 'audio.webm', { type: blob.type }))
+      const res = await fetch('/api/ai/roast/stt', { method: 'POST', body: fd })
+      const data = await res.json()
+      if (!res.ok || !data.transcript?.trim()) { setPhase('idle'); return }
+      await sendToAI(data.transcript.trim())
+    } catch {
       setPhase('idle')
     }
-  }, [phase, lang, sendToAI])
+  }, [phase, sendToAI])
+
+  // Touch/mouse hold handlers
+  const handlePressStart = useCallback((e: React.MouseEvent | React.TouchEvent) => {
+    e.preventDefault()
+    if (phase === 'speaking') { stopAudio(); setPhase('idle'); return }
+    if (phase !== 'idle') return
+    holdTimerRef.current = setTimeout(() => startRecording(), 100)
+  }, [phase, startRecording])
+
+  const handlePressEnd = useCallback((e: React.MouseEvent | React.TouchEvent) => {
+    e.preventDefault()
+    if (holdTimerRef.current) { clearTimeout(holdTimerRef.current); holdTimerRef.current = null }
+    if (phase === 'recording') stopRecording()
+  }, [phase, stopRecording])
 
   const currentMode = MODES.find(m => m.id === mode)!
-  const phaseLabel = PHASE_LABEL[phase][lang]
+  const hint = PHASE_HINT[phase][lang]
 
-  const orbColor = phase === 'listening' ? 'var(--accent)'
+  const orbColor = phase === 'recording' ? '#ef4444'
     : phase === 'thinking' ? 'var(--warn)'
     : phase === 'speaking' ? '#a855f7'
-    : 'var(--border-strong)'
+    : 'var(--accent)'
 
-  const orbBg = phase === 'listening' ? 'color-mix(in srgb, var(--accent) 15%, transparent)'
-    : phase === 'thinking' ? 'color-mix(in srgb, var(--warn) 15%, transparent)'
-    : phase === 'speaking' ? 'color-mix(in srgb, #a855f7 15%, transparent)'
-    : 'var(--bg-soft)'
+  const orbGlow = phase === 'recording'
+    ? '0 0 0 10px rgba(239,68,68,0.15), 0 0 50px rgba(239,68,68,0.3)'
+    : phase === 'speaking'
+    ? '0 0 0 10px rgba(168,85,247,0.15), 0 0 50px rgba(168,85,247,0.3)'
+    : phase === 'thinking'
+    ? '0 0 0 10px rgba(196,122,26,0.15), 0 0 50px rgba(196,122,26,0.2)'
+    : '0 0 0 6px color-mix(in srgb, var(--accent) 10%, transparent)'
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', height: isMobile ? 'calc(100dvh - 56px)' : '100vh', overflow: 'hidden', background: 'var(--bg)' }}>
@@ -216,26 +202,22 @@ export default function RoastPage() {
       <div style={{ padding: isMobile ? '12px 16px' : '14px 28px', borderBottom: '1px solid var(--border)', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexShrink: 0 }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
           <span style={{ fontSize: 22 }}>🔥</span>
-          <span style={{ fontWeight: 800, fontSize: 17, letterSpacing: '-0.02em' }}>AI Roast Me</span>
+          <span style={{ fontWeight: 800, fontSize: 17, letterSpacing: '-0.02em' }}>AI Roast</span>
         </div>
 
-        {/* Mode selector */}
         <div style={{ display: 'flex', gap: 4, background: 'var(--bg-soft)', padding: 4, borderRadius: 12, border: '1px solid var(--border)' }}>
           {MODES.map(m => (
-            <button
-              key={m.id}
-              onClick={() => { setMode(m.id); stopAudio(); setPhase('idle') }}
+            <button key={m.id} onClick={() => { setMode(m.id); stopAudio(); setPhase('idle') }}
               style={{
                 display: 'flex', alignItems: 'center', gap: isMobile ? 0 : 5,
-                padding: isMobile ? '6px 8px' : '6px 12px',
-                borderRadius: 8, fontSize: isMobile ? 15 : 13, fontWeight: 600,
+                padding: isMobile ? '6px 8px' : '6px 12px', borderRadius: 8,
+                fontSize: isMobile ? 15 : 13, fontWeight: 600,
                 background: mode === m.id ? 'var(--bg-elev)' : 'transparent',
                 color: mode === m.id ? 'var(--text)' : 'var(--text-3)',
                 border: mode === m.id ? '1px solid var(--border-strong)' : '1px solid transparent',
                 boxShadow: mode === m.id ? 'var(--shadow-sm)' : 'none',
                 transition: 'all 0.15s', cursor: 'pointer',
-              }}
-            >
+              }}>
               <span>{m.emoji}</span>
               {!isMobile && <span>{m.label[lang]}</span>}
             </button>
@@ -245,22 +227,24 @@ export default function RoastPage() {
 
       {/* Transcript */}
       <div style={{ flex: 1, overflowY: 'auto', padding: isMobile ? '16px 12px' : '24px 28px', display: 'flex', flexDirection: 'column', gap: 12 }}>
-        {messages.length === 0 && phase === 'idle' && (
-          <div className="animate-fade-up" style={{ margin: 'auto', textAlign: 'center', color: 'var(--text-3)', fontSize: 14 }}>
-            <div style={{ fontSize: 48, marginBottom: 12 }}>{currentMode.emoji}</div>
-            <div style={{ fontWeight: 600, color: 'var(--text-2)', marginBottom: 6 }}>{currentMode.label[lang]}</div>
-            <div>{lang === 'ru' ? 'Нажмите на микрофон и говорите'
-               : lang === 'kz' ? 'Микрофонды басып сөйлеңіз'
-               : lang === 'ky' ? 'Микрофонду басып сүйлөңүз'
-               : lang === 'uz' ? 'Mikrofonni bosib gapiring'
-               : 'Tap the mic and start talking'}</div>
+        {messages.length === 0 && (
+          <div className="animate-fade-up" style={{ margin: 'auto', textAlign: 'center' }}>
+            <div style={{ fontSize: 56, marginBottom: 14 }}>{currentMode.emoji}</div>
+            <div style={{ fontWeight: 700, fontSize: 18, letterSpacing: '-0.02em', marginBottom: 6 }}>{currentMode.label[lang]}</div>
+            <div style={{ fontSize: 14, color: 'var(--text-3)' }}>
+              {lang === 'ru' ? 'Зажмите кнопку микрофона и говорите'
+               : lang === 'kz' ? 'Микрофон батырмасын ұстап сөйлеңіз'
+               : lang === 'ky' ? 'Микрофон баскычын кармап сүйлөңүз'
+               : lang === 'uz' ? 'Mikrofon tugmasini ushlab gapiring'
+               : 'Hold the mic button and speak'}
+            </div>
           </div>
         )}
 
         {messages.map((msg, i) => (
           <div key={i} style={{ display: 'flex', justifyContent: msg.role === 'user' ? 'flex-end' : 'flex-start', gap: 8 }}>
             {msg.role === 'assistant' && (
-              <div style={{ width: 28, height: 28, borderRadius: '50%', background: orbBg, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 14, flexShrink: 0, marginTop: 2 }}>
+              <div style={{ width: 28, height: 28, borderRadius: '50%', background: 'var(--accent-soft)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 14, flexShrink: 0, marginTop: 2 }}>
                 {currentMode.emoji}
               </div>
             )}
@@ -278,55 +262,53 @@ export default function RoastPage() {
           </div>
         ))}
 
-        {/* Interim transcript */}
-        {interim && (
-          <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
-            <div style={{ maxWidth: '78%', padding: '10px 14px', borderRadius: '18px 18px 4px 18px', background: 'color-mix(in srgb, var(--accent) 30%, transparent)', color: 'var(--accent)', fontSize: 14, lineHeight: 1.6, fontStyle: 'italic' }}>
-              {interim}
-            </div>
+        {error && (
+          <div style={{ textAlign: 'center', fontSize: 13, color: 'var(--danger)', padding: '8px 16px', background: 'color-mix(in srgb, var(--danger) 8%, transparent)', borderRadius: 10, border: '1px solid color-mix(in srgb, var(--danger) 25%, transparent)' }}>
+            {error}
           </div>
         )}
 
         <div ref={bottomRef} />
       </div>
 
-      {/* Orb + controls */}
-      <div style={{ padding: isMobile ? '20px 16px 32px' : '24px 28px 36px', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 16, flexShrink: 0, borderTop: '1px solid var(--border)' }}>
-        {!supported && (
-          <div style={{ fontSize: 13, color: 'var(--danger)', marginBottom: 4 }}>
-            {lang === 'ru' ? 'Голосовой ввод не поддерживается в этом браузере. Попробуйте Chrome.' : 'Voice not supported. Try Chrome.'}
-          </div>
-        )}
+      {/* Mic orb */}
+      <div style={{ padding: isMobile ? '20px 16px 32px' : '24px 28px 36px', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 14, flexShrink: 0, borderTop: '1px solid var(--border)' }}>
 
-        {/* Mic orb */}
         <button
-          onClick={startListening}
-          disabled={!supported || phase === 'thinking'}
+          onMouseDown={handlePressStart}
+          onMouseUp={handlePressEnd}
+          onMouseLeave={handlePressEnd}
+          onTouchStart={handlePressStart}
+          onTouchEnd={handlePressEnd}
+          disabled={phase === 'thinking'}
           style={{
-            width: 80, height: 80, borderRadius: '50%',
-            background: orbBg,
-            border: `2px solid ${orbColor}`,
-            boxShadow: phase !== 'idle' ? `0 0 0 8px color-mix(in srgb, ${orbColor} 15%, transparent), 0 0 40px color-mix(in srgb, ${orbColor} 30%, transparent)` : 'none',
+            width: 80, height: 80, borderRadius: '50%', border: 'none',
+            background: `radial-gradient(circle at 35% 30%, color-mix(in srgb, ${orbColor} 60%, white), ${orbColor})`,
+            boxShadow: orbGlow,
             display: 'flex', alignItems: 'center', justifyContent: 'center',
             cursor: phase === 'thinking' ? 'not-allowed' : 'pointer',
-            transition: 'all 0.3s cubic-bezier(0.2, 0.7, 0.2, 1)',
-            animation: phase === 'listening' ? 'orbBreathe 1.5s ease-in-out infinite' : phase === 'speaking' ? 'orbSpeak 1.15s ease-in-out infinite' : 'none',
+            transition: 'all 0.2s cubic-bezier(0.2, 0.7, 0.2, 1)',
+            transform: phase === 'recording' ? 'scale(1.12)' : 'scale(1)',
+            animation: phase === 'recording' ? 'orbBreathe 1.2s ease-in-out infinite'
+              : phase === 'speaking' ? 'orbSpeak 1.15s ease-in-out infinite' : 'none',
+            userSelect: 'none', WebkitUserSelect: 'none',
+            touchAction: 'none',
           }}
         >
           {phase === 'thinking' ? (
             <div style={{ display: 'flex', gap: 4 }}>
               {[0,1,2].map(i => (
-                <div key={i} style={{ width: 6, height: 6, borderRadius: '50%', background: 'var(--warn)', animation: 'dotPulse 1.2s ease-in-out infinite', animationDelay: `${i * 0.2}s` }} />
+                <div key={i} style={{ width: 7, height: 7, borderRadius: '50%', background: 'white', animation: 'dotPulse 1.2s ease-in-out infinite', animationDelay: `${i * 0.2}s` }} />
               ))}
             </div>
           ) : phase === 'speaking' ? (
-            <svg width={28} height={28} viewBox="0 0 24 24" fill="none" stroke="#a855f7" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <svg width={30} height={30} viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
               <path d="M11 5L6 9H2v6h4l5 4V5z"/>
               <path d="M15.54 8.46a5 5 0 0 1 0 7.07"/>
               <path d="M19.07 4.93a10 10 0 0 1 0 14.14"/>
             </svg>
           ) : (
-            <svg width={28} height={28} viewBox="0 0 24 24" fill="none" stroke={phase === 'listening' ? 'var(--accent)' : 'var(--text-2)'} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <svg width={30} height={30} viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
               <rect x="9" y="3" width="6" height="12" rx="3"/>
               <path d="M5 11a7 7 0 0 0 14 0"/>
               <path d="M12 18v3"/>
@@ -334,11 +316,11 @@ export default function RoastPage() {
           )}
         </button>
 
-        <div style={{ fontSize: 13, color: 'var(--text-3)', fontWeight: 500 }}>{phaseLabel}</div>
+        <div style={{ fontSize: 13, color: 'var(--text-3)', fontWeight: 500 }}>{hint}</div>
 
         {messages.length > 0 && (
           <button
-            onClick={() => { stopAudio(); setMessages([]); setPhase('idle'); setInterim('') }}
+            onClick={() => { stopAudio(); setMessages([]); setPhase('idle'); setError('') }}
             style={{ fontSize: 12, color: 'var(--text-3)', background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}
           >
             {lang === 'ru' ? '↺ Начать заново' : lang === 'kz' ? '↺ Қайта бастау' : lang === 'ky' ? '↺ Кайра баштоо' : lang === 'uz' ? '↺ Qayta boshlash' : '↺ Start over'}
@@ -348,7 +330,7 @@ export default function RoastPage() {
 
       <style>{`
         @keyframes dotPulse {
-          0%, 80%, 100% { opacity: 0.3; transform: scale(0.8); }
+          0%, 80%, 100% { opacity: 0.4; transform: scale(0.8); }
           40% { opacity: 1; transform: scale(1); }
         }
       `}</style>
