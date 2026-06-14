@@ -6,334 +6,373 @@ import { useIsMobile } from '@/lib/hooks/useIsMobile'
 import type { RoastMode } from '@/app/api/ai/roast/route'
 
 type Lang = 'en' | 'ru' | 'kz' | 'ky' | 'uz'
-type Phase = 'idle' | 'recording' | 'thinking' | 'speaking'
-interface Message { role: 'user' | 'assistant'; content: string }
+type Status = 'connecting' | 'live' | 'ending'
 
-const MODES: { id: RoastMode; emoji: string; label: Record<Lang, string> }[] = [
-  { id: 'polite', emoji: '🎩', label: { en: 'Polite',     ru: 'Вежливый',     kz: 'Сыпайы',     ky: 'Сылык',     uz: 'Muloyim'   } },
-  { id: 'roast',  emoji: '🔥', label: { en: 'Roast',      ru: 'Роаст',        kz: 'Роаст',      ky: 'Роаст',     uz: 'Roast'     } },
-  { id: 'savage', emoji: '💀', label: { en: 'No filter',  ru: 'Без цензуры',  kz: 'Цензурасыз', ky: 'Цензурасыз',uz: 'Sensorsiz' } },
+const MODES: { id: RoastMode; emoji: string; voice: string; label: Record<Lang, string>; desc: Record<Lang, string> }[] = [
+  {
+    id: 'polite', emoji: '🎩', voice: 'sage',
+    label: { en: 'Polite',      ru: 'Вежливый',    kz: 'Сыпайы',     ky: 'Сылык',     uz: 'Muloyim'   },
+    desc:  { en: 'Kind mentor', ru: 'Добрый ментор',kz: 'Жылы ментор', ky: 'Жылуу ментор', uz: 'Mehribon' },
+  },
+  {
+    id: 'roast',  emoji: '🔥', voice: 'onyx',
+    label: { en: 'Roast',       ru: 'Роаст',        kz: 'Роаст',      ky: 'Роаст',     uz: 'Roast'     },
+    desc:  { en: 'Savage & fun',ru: 'Жёстко и смешно', kz: 'Қатал күлкілі', ky: 'Катуу күлкүлүү', uz: 'Qattiq va kulgili' },
+  },
+  {
+    id: 'savage', emoji: '💀', voice: 'echo',
+    label: { en: 'No filter',   ru: 'Без цензуры',  kz: 'Цензурасыз', ky: 'Цензурасыз',uz: 'Sensorsiz'  },
+    desc:  { en: '18+ no limit',ru: '18+ без рамок', kz: '18+ шексіз', ky: '18+ чексиз', uz: '18+ cheksiz' },
+  },
 ]
 
-const PHASE_HINT: Record<Phase, Record<Lang, string>> = {
-  idle:      { en: 'Hold to speak',   ru: 'Держите чтобы говорить', kz: 'Ұстап сөйлеңіз',      ky: 'Кармап сүйлөңүз',      uz: 'Ushlab gapiring'       },
-  recording: { en: 'Recording…',      ru: 'Запись…',                kz: 'Жазылуда…',            ky: 'Жазылууда…',           uz: 'Yozilmoqda…'           },
-  thinking:  { en: 'Thinking…',       ru: 'Думаю…',                 kz: 'Ойлап жатырмын…',     ky: 'Ойлонуп жатам…',       uz: 'O\'ylayapman…'          },
-  speaking:  { en: 'Speaking…',       ru: 'Говорю…',                kz: 'Сөйлеп жатырмын…',    ky: 'Сүйлөп жатам…',        uz: 'Gapirmoqdaman…'        },
-}
+const MicIcon = ({ size = 24, color = 'currentColor' }: { size?: number; color?: string }) => (
+  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+    <rect x="9" y="3" width="6" height="12" rx="3"/><path d="M5 11a7 7 0 0 0 14 0"/><path d="M12 18v3"/>
+  </svg>
+)
 
-export default function RoastPage() {
-  const { language } = useLanguage()
+/* ── Ready screen ── */
+function ReadyScreen({ mode, onModeChange, onStart, lang }: {
+  mode: RoastMode; onModeChange: (m: RoastMode) => void; onStart: () => void; lang: Lang
+}) {
   const isMobile = useIsMobile()
-  const lang = (language ?? 'en') as Lang
+  const current = MODES.find(m => m.id === mode)!
 
-  const [mode, setMode] = useState<RoastMode>('roast')
-  const [phase, setPhase] = useState<Phase>('idle')
-  const [messages, setMessages] = useState<Message[]>([])
-  const [error, setError] = useState('')
-
-  const mediaRecorderRef = useRef<MediaRecorder | null>(null)
-  const chunksRef = useRef<Blob[]>([])
-  const streamRef = useRef<MediaStream | null>(null)
-  const audioRef = useRef<HTMLAudioElement | null>(null)
-  const messagesRef = useRef<Message[]>([])
-  const bottomRef = useRef<HTMLDivElement>(null)
-  const holdTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
-
-  messagesRef.current = messages
-
-  useEffect(() => {
-    bottomRef.current?.scrollIntoView({ behavior: 'smooth' })
-  }, [messages])
-
-  // Cleanup on unmount
-  useEffect(() => () => {
-    streamRef.current?.getTracks().forEach(t => t.stop())
-    audioRef.current?.pause()
-  }, [])
-
-  const stopAudio = () => {
-    if (audioRef.current) { audioRef.current.pause(); audioRef.current.src = ''; audioRef.current = null }
+  const TITLE: Record<Lang, string> = { en: 'AI Roast', ru: 'AI Roast', kz: 'AI Roast', ky: 'AI Roast', uz: 'AI Roast' }
+  const DESC: Record<Lang, string> = {
+    en: 'Have a live voice conversation. The AI will roast your IELTS English in real time.',
+    ru: 'Живой голосовой разговор. ИИ прожарит ваш IELTS English в реальном времени.',
+    kz: 'Тікелей дауыстық сөйлесу. ЖИ сіздің IELTS English-іңізді нақты уақытта прожарить.',
+    ky: 'Түз үн маектешүү. ЖИ сиздин IELTS English-иңизди реалдуу убакытта прожарить.',
+    uz: "Jonli ovozli suhbat. AI sizning IELTS English-ingizni real vaqtda roast qiladi.",
   }
-
-  const speak = useCallback(async (text: string) => {
-    setPhase('speaking')
-    stopAudio()
-    try {
-      const res = await fetch('/api/ai/roast/tts', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ text, mode }),
-      })
-      if (!res.ok) throw new Error('TTS failed')
-      const blob = await res.blob()
-      const url = URL.createObjectURL(blob)
-      const audio = new Audio(url)
-      audioRef.current = audio
-      audio.onended = () => { URL.revokeObjectURL(url); audioRef.current = null; setPhase('idle') }
-      audio.onerror = () => setPhase('idle')
-      await audio.play()
-    } catch { setPhase('idle') }
-  }, [mode])
-
-  const sendToAI = useCallback(async (userText: string) => {
-    const newMessages: Message[] = [...messagesRef.current, { role: 'user', content: userText }]
-    setMessages(newMessages)
-    setPhase('thinking')
-    setError('')
-
-    try {
-      const res = await fetch('/api/ai/roast', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ messages: newMessages, mode, lang }),
-      })
-      const data = await res.json()
-      if (!res.ok) throw new Error(data.error ?? 'Error')
-      const reply: string = data.reply
-      setMessages(prev => [...prev, { role: 'assistant', content: reply }])
-      await speak(reply)
-    } catch (e: unknown) {
-      setError(e instanceof Error ? e.message : 'Error')
-      setPhase('idle')
-    }
-  }, [mode, lang, speak])
-
-  const startRecording = useCallback(async () => {
-    if (phase !== 'idle') return
-    setError('')
-
-    // Stop AI audio if talking
-    stopAudio()
-
-    try {
-      const stream = await navigator.mediaDevices.getUserMedia({ audio: true })
-      streamRef.current = stream
-
-      const mimeType = MediaRecorder.isTypeSupported('audio/webm;codecs=opus')
-        ? 'audio/webm;codecs=opus'
-        : MediaRecorder.isTypeSupported('audio/webm')
-        ? 'audio/webm'
-        : 'audio/mp4'
-
-      const recorder = new MediaRecorder(stream, { mimeType })
-      chunksRef.current = []
-      recorder.ondataavailable = e => { if (e.data.size > 0) chunksRef.current.push(e.data) }
-      recorder.start(100)
-      mediaRecorderRef.current = recorder
-      setPhase('recording')
-    } catch {
-      setError(lang === 'ru' ? 'Нет доступа к микрофону. Разрешите доступ в браузере.'
-        : lang === 'kz' ? 'Микрофонға қол жеткізу жоқ. Браузерде рұқсат беріңіз.'
-        : lang === 'ky' ? 'Микрофонго жетүү жок. Браузерде уруксат бериңиз.'
-        : lang === 'uz' ? 'Mikrofonnga ruxsat yo\'q. Brauzerda ruxsat bering.'
-        : 'Microphone access denied. Please allow it in your browser.')
-    }
-  }, [phase, lang])
-
-  const stopRecording = useCallback(async () => {
-    if (phase !== 'recording') return
-    setPhase('thinking')
-
-    const recorder = mediaRecorderRef.current
-    streamRef.current?.getTracks().forEach(t => t.stop())
-    streamRef.current = null
-
-    if (!recorder) return
-
-    const blob: Blob = await new Promise(resolve => {
-      recorder.onstop = () => resolve(new Blob(chunksRef.current, { type: recorder.mimeType || 'audio/webm' }))
-      try { recorder.stop() } catch { resolve(new Blob(chunksRef.current)) }
-    })
-
-    if (blob.size < 1000) {
-      // Too short — nothing was recorded
-      setPhase('idle')
-      return
-    }
-
-    // Transcribe with Whisper
-    try {
-      const fd = new FormData()
-      fd.append('audio', new File([blob], 'audio.webm', { type: blob.type }))
-      const res = await fetch('/api/ai/roast/stt', { method: 'POST', body: fd })
-      const data = await res.json()
-      if (!res.ok || !data.transcript?.trim()) { setPhase('idle'); return }
-      await sendToAI(data.transcript.trim())
-    } catch {
-      setPhase('idle')
-    }
-  }, [phase, sendToAI])
-
-  // Touch/mouse hold handlers
-  const handlePressStart = useCallback((e: React.MouseEvent | React.TouchEvent) => {
-    e.preventDefault()
-    if (phase === 'speaking') { stopAudio(); setPhase('idle'); return }
-    if (phase !== 'idle') return
-    holdTimerRef.current = setTimeout(() => startRecording(), 100)
-  }, [phase, startRecording])
-
-  const handlePressEnd = useCallback((e: React.MouseEvent | React.TouchEvent) => {
-    e.preventDefault()
-    if (holdTimerRef.current) { clearTimeout(holdTimerRef.current); holdTimerRef.current = null }
-    if (phase === 'recording') stopRecording()
-  }, [phase, stopRecording])
-
-  const currentMode = MODES.find(m => m.id === mode)!
-  const hint = PHASE_HINT[phase][lang]
-
-  const orbColor = phase === 'recording' ? '#ef4444'
-    : phase === 'thinking' ? 'var(--warn)'
-    : phase === 'speaking' ? '#a855f7'
-    : 'var(--accent)'
-
-  const orbGlow = phase === 'recording'
-    ? '0 0 0 10px rgba(239,68,68,0.15), 0 0 50px rgba(239,68,68,0.3)'
-    : phase === 'speaking'
-    ? '0 0 0 10px rgba(168,85,247,0.15), 0 0 50px rgba(168,85,247,0.3)'
-    : phase === 'thinking'
-    ? '0 0 0 10px rgba(196,122,26,0.15), 0 0 50px rgba(196,122,26,0.2)'
-    : '0 0 0 6px color-mix(in srgb, var(--accent) 10%, transparent)'
+  const START: Record<Lang, string> = { en: 'Start Conversation', ru: 'Начать разговор', kz: 'Сөйлесуді бастау', ky: 'Маектешүүнү баштоо', uz: 'Suhbatni boshlash' }
+  const PICK: Record<Lang, string> = { en: 'Pick a mode', ru: 'Выберите режим', kz: 'Режим таңдаңыз', ky: 'Режим тандаңыз', uz: 'Rejim tanlang' }
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', height: isMobile ? 'calc(100dvh - 56px)' : '100vh', overflow: 'hidden', background: 'var(--bg)' }}>
-
-      {/* Top bar */}
-      <div style={{ padding: isMobile ? '12px 16px' : '14px 28px', borderBottom: '1px solid var(--border)', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexShrink: 0 }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-          <span style={{ fontSize: 22 }}>🔥</span>
-          <span style={{ fontWeight: 800, fontSize: 17, letterSpacing: '-0.02em' }}>AI Roast</span>
+    <div style={{ flex: 1, background: 'radial-gradient(120% 80% at 50% -10%, var(--accent-soft) 0%, var(--bg) 55%)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: isMobile ? 18 : 24 }}>
+      <div className="animate-fade-up" style={{ maxWidth: 460, width: '100%', textAlign: 'center' }}>
+        <div style={{ display: 'inline-flex', padding: 24, borderRadius: '50%', background: 'var(--accent-soft)', marginBottom: 22, fontSize: 36, boxShadow: '0 0 0 1px color-mix(in srgb, var(--accent) 25%, transparent), 0 0 60px -10px color-mix(in srgb, var(--accent) 40%, transparent)' }}>
+          {current.emoji}
         </div>
+        <h1 style={{ fontSize: isMobile ? 28 : 36, fontWeight: 800, letterSpacing: '-0.03em', margin: '0 0 10px' }}>{TITLE[lang]}</h1>
+        <p style={{ fontSize: 15, color: 'var(--text-2)', lineHeight: 1.6, margin: '0 0 28px' }}>{DESC[lang]}</p>
 
-        <div style={{ display: 'flex', gap: 4, background: 'var(--bg-soft)', padding: 4, borderRadius: 12, border: '1px solid var(--border)' }}>
+        {/* Mode picker */}
+        <p style={{ fontSize: 12, fontWeight: 700, letterSpacing: '0.08em', color: 'var(--text-3)', marginBottom: 10 }}>{PICK[lang]}</p>
+        <div style={{ display: 'grid', gap: 8, marginBottom: 28 }}>
           {MODES.map(m => (
-            <button key={m.id} onClick={() => { setMode(m.id); stopAudio(); setPhase('idle') }}
+            <button key={m.id} onClick={() => onModeChange(m.id)}
               style={{
-                display: 'flex', alignItems: 'center', gap: isMobile ? 0 : 5,
-                padding: isMobile ? '6px 8px' : '6px 12px', borderRadius: 8,
-                fontSize: isMobile ? 15 : 13, fontWeight: 600,
-                background: mode === m.id ? 'var(--bg-elev)' : 'transparent',
-                color: mode === m.id ? 'var(--text)' : 'var(--text-3)',
-                border: mode === m.id ? '1px solid var(--border-strong)' : '1px solid transparent',
-                boxShadow: mode === m.id ? 'var(--shadow-sm)' : 'none',
-                transition: 'all 0.15s', cursor: 'pointer',
+                display: 'flex', alignItems: 'center', gap: 14, padding: '14px 18px',
+                borderRadius: 14, border: `2px solid ${mode === m.id ? 'var(--accent)' : 'var(--border)'}`,
+                background: mode === m.id ? 'var(--accent-soft)' : 'var(--bg-elev)',
+                cursor: 'pointer', textAlign: 'left', transition: 'all 0.15s',
               }}>
-              <span>{m.emoji}</span>
-              {!isMobile && <span>{m.label[lang]}</span>}
+              <span style={{ fontSize: 24 }}>{m.emoji}</span>
+              <div>
+                <div style={{ fontSize: 14, fontWeight: 700, color: mode === m.id ? 'var(--accent)' : 'var(--text)' }}>{m.label[lang]}</div>
+                <div style={{ fontSize: 12, color: 'var(--text-3)' }}>{m.desc[lang]}</div>
+              </div>
+              {mode === m.id && (
+                <svg style={{ marginLeft: 'auto', flexShrink: 0 }} width={16} height={16} viewBox="0 0 24 24" fill="none" stroke="var(--accent)" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M5 12l5 5L20 7"/></svg>
+              )}
             </button>
           ))}
         </div>
-      </div>
 
-      {/* Transcript */}
-      <div style={{ flex: 1, overflowY: 'auto', padding: isMobile ? '16px 12px' : '24px 28px', display: 'flex', flexDirection: 'column', gap: 12 }}>
-        {messages.length === 0 && (
-          <div className="animate-fade-up" style={{ margin: 'auto', textAlign: 'center' }}>
-            <div style={{ fontSize: 56, marginBottom: 14 }}>{currentMode.emoji}</div>
-            <div style={{ fontWeight: 700, fontSize: 18, letterSpacing: '-0.02em', marginBottom: 6 }}>{currentMode.label[lang]}</div>
-            <div style={{ fontSize: 14, color: 'var(--text-3)' }}>
-              {lang === 'ru' ? 'Зажмите кнопку микрофона и говорите'
-               : lang === 'kz' ? 'Микрофон батырмасын ұстап сөйлеңіз'
-               : lang === 'ky' ? 'Микрофон баскычын кармап сүйлөңүз'
-               : lang === 'uz' ? 'Mikrofon tugmasini ushlab gapiring'
-               : 'Hold the mic button and speak'}
+        <button onClick={onStart}
+          style={{ display: 'inline-flex', alignItems: 'center', gap: 10, padding: '14px 32px', borderRadius: 14, fontSize: 15, fontWeight: 700, background: 'var(--accent)', color: 'var(--accent-fg)', border: 'none', cursor: 'pointer', boxShadow: '0 10px 30px -10px color-mix(in srgb, var(--accent) 60%, transparent)' }}>
+          <MicIcon size={17} color="var(--accent-fg)" /> {START[lang]}
+        </button>
+      </div>
+    </div>
+  )
+}
+
+/* ── Live conversation screen ── */
+function LiveScreen({ mode, onExit, lang }: { mode: RoastMode; onExit: () => void; lang: Lang }) {
+  const isMobile = useIsMobile()
+  const [status, setStatus] = useState<Status>('connecting')
+  const [aiSpeaking, setAiSpeaking] = useState(false)
+  const [userSpeaking, setUserSpeaking] = useState(false)
+  const [lastAi, setLastAi] = useState('')
+  const [lastUser, setLastUser] = useState('')
+  const [connError, setConnError] = useState('')
+  const [elapsed, setElapsed] = useState(0)
+
+  const pcRef = useRef<RTCPeerConnection | null>(null)
+  const dcRef = useRef<RTCDataChannel | null>(null)
+  const micStreamRef = useRef<MediaStream | null>(null)
+  const remoteAudioRef = useRef<HTMLAudioElement | null>(null)
+  const audioCtxRef = useRef<AudioContext | null>(null)
+  const localAnalyserRef = useRef<AnalyserNode | null>(null)
+  const remoteAnalyserRef = useRef<AnalyserNode | null>(null)
+  const orbRef = useRef<HTMLDivElement>(null)
+  const rafRef = useRef<number | null>(null)
+  const startedRef = useRef(false)
+
+  const currentMode = MODES.find(m => m.id === mode)!
+
+  const END_BTN: Record<Lang, string> = { en: 'End', ru: 'Завершить', kz: 'Аяқтау', ky: 'Аяктоо', uz: 'Tugatish' }
+  const CONN: Record<Lang, string> = { en: 'Connecting…', ru: 'Подключение…', kz: 'Қосылуда…', ky: 'Туташтыруу…', uz: 'Ulanmoqda…' }
+  const AI_SPEAKING: Record<Lang, string> = { en: 'Speaking…', ru: 'Говорит…', kz: 'Сөйлеп жатыр…', ky: 'Сүйлөп жатат…', uz: 'Gapirmoqda…' }
+  const YOU_SPEAKING: Record<Lang, string> = { en: 'Listening…', ru: 'Слушает…', kz: 'Тыңдап жатыр…', ky: 'Угуп жатат…', uz: 'Eshitmoqda…' }
+  const WAITING: Record<Lang, string> = { en: 'Your turn…', ru: 'Ваша очередь…', kz: 'Сіздің кезегіңіз…', ky: 'Сиздин кезегиңиз…', uz: 'Sizning navbatingiz…' }
+
+  const cleanup = useCallback(() => {
+    if (rafRef.current) { cancelAnimationFrame(rafRef.current); rafRef.current = null }
+    try { dcRef.current?.close() } catch {}
+    try { pcRef.current?.getSenders().forEach(s => s.track?.stop()) } catch {}
+    try { pcRef.current?.close() } catch {}
+    micStreamRef.current?.getTracks().forEach(tr => tr.stop())
+    audioCtxRef.current?.close().catch(() => {})
+    if (remoteAudioRef.current) remoteAudioRef.current.srcObject = null
+    pcRef.current = null; dcRef.current = null; micStreamRef.current = null
+  }, [])
+
+  const ensureCtx = useCallback(() => {
+    if (!audioCtxRef.current) {
+      const C = window.AudioContext || (window as Window & { webkitAudioContext?: typeof AudioContext }).webkitAudioContext
+      if (C) audioCtxRef.current = new C()
+    }
+    return audioCtxRef.current
+  }, [])
+
+  const handleEvent = useCallback((raw: string) => {
+    let msg: { type?: string; transcript?: string }
+    try { msg = JSON.parse(raw) } catch { return }
+    switch (msg.type) {
+      case 'input_audio_buffer.speech_started': setUserSpeaking(true); break
+      case 'input_audio_buffer.speech_stopped': setUserSpeaking(false); break
+      case 'response.created':
+      case 'response.output_audio.delta':
+      case 'response.audio.delta': setAiSpeaking(true); break
+      case 'response.output_audio.done':
+      case 'response.audio.done':
+      case 'response.done': setAiSpeaking(false); break
+      case 'conversation.item.input_audio_transcription.completed':
+        if (msg.transcript?.trim()) setLastUser(msg.transcript.trim()); break
+      case 'response.output_audio_transcript.done':
+      case 'response.audio_transcript.done':
+        if (msg.transcript?.trim()) setLastAi(msg.transcript.trim()); break
+    }
+  }, [])
+
+  useEffect(() => {
+    if (startedRef.current) return
+    startedRef.current = true
+    let cancelled = false
+
+    ;(async () => {
+      try {
+        const mic = await navigator.mediaDevices.getUserMedia({ audio: true }).catch(() => null)
+        if (!mic) { if (!cancelled) setConnError(lang === 'ru' ? 'Нет доступа к микрофону.' : 'Microphone access denied.'); return }
+        if (cancelled) { mic.getTracks().forEach(tr => tr.stop()); return }
+        micStreamRef.current = mic
+
+        const ctx = ensureCtx()
+        if (ctx) {
+          if (ctx.state === 'suspended') await ctx.resume().catch(() => {})
+          const ls = ctx.createMediaStreamSource(mic)
+          const la = ctx.createAnalyser(); la.fftSize = 256; la.smoothingTimeConstant = 0.6
+          ls.connect(la); localAnalyserRef.current = la
+        }
+
+        const pc = new RTCPeerConnection()
+        pcRef.current = pc
+        pc.ontrack = e => {
+          if (remoteAudioRef.current) remoteAudioRef.current.srcObject = e.streams[0]
+          const c = ensureCtx()
+          if (c) {
+            try {
+              const rs = c.createMediaStreamSource(e.streams[0])
+              const ra = c.createAnalyser(); ra.fftSize = 256; ra.smoothingTimeConstant = 0.6
+              rs.connect(ra); remoteAnalyserRef.current = ra
+            } catch {}
+          }
+        }
+        pc.addTrack(mic.getTracks()[0], mic)
+
+        const dc = pc.createDataChannel('oai-events')
+        dcRef.current = dc
+        dc.onmessage = ev => handleEvent(ev.data)
+        dc.onopen = () => { try { dc.send(JSON.stringify({ type: 'response.create' })) } catch {} }
+
+        const offer = await pc.createOffer()
+        await pc.setLocalDescription(offer)
+
+        const resp = await fetch(`/api/ai/roast/realtime?mode=${mode}`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/sdp' },
+          body: offer.sdp ?? '',
+        })
+        if (!resp.ok) {
+          let m = 'Could not connect. Please try again.'
+          try { const j = await resp.clone().json(); if (j?.error) m = j.error } catch {}
+          if (!cancelled) setConnError(m)
+          cleanup(); return
+        }
+        const answer = await resp.text()
+        await pc.setRemoteDescription({ type: 'answer', sdp: answer })
+        if (!cancelled) setStatus('live')
+      } catch { if (!cancelled) setConnError('Connection failed. Please try again.') }
+    })()
+
+    return () => { cancelled = true; cleanup() }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
+
+  useEffect(() => {
+    const id = setInterval(() => setElapsed(s => s + 1), 1000)
+    return () => clearInterval(id)
+  }, [])
+
+  // Orb reactivity from audio levels
+  useEffect(() => {
+    if (status !== 'live') return
+    const orb = orbRef.current
+    if (!orb) return
+    let smooth = 0
+    const lbuf = new Uint8Array(256) as Uint8Array<ArrayBuffer>
+    const rbuf = new Uint8Array(256) as Uint8Array<ArrayBuffer>
+    const rms = (an: AnalyserNode | null, buf: Uint8Array<ArrayBuffer>) => {
+      if (!an) return 0
+      an.getByteTimeDomainData(buf)
+      let sum = 0
+      for (let i = 0; i < buf.length; i++) { const x = (buf[i] - 128) / 128; sum += x * x }
+      return Math.sqrt(sum / buf.length) * 3.4
+    }
+    const draw = () => {
+      const level = Math.min(1, Math.max(rms(localAnalyserRef.current, lbuf), rms(remoteAnalyserRef.current, rbuf)))
+      smooth += (level - smooth) * 0.25
+      orb.style.transform = `scale(${(1 + smooth * 0.4).toFixed(3)})`
+      orb.style.filter = `brightness(${(1 + smooth * 0.5).toFixed(2)})`
+      rafRef.current = requestAnimationFrame(draw)
+    }
+    rafRef.current = requestAnimationFrame(draw)
+    return () => {
+      if (rafRef.current) cancelAnimationFrame(rafRef.current)
+      if (orb) { orb.style.transform = ''; orb.style.filter = '' }
+    }
+  }, [status])
+
+  const handleEnd = () => { setStatus('ending'); cleanup(); onExit() }
+
+  const mm = String(Math.floor(elapsed / 60)).padStart(2, '0')
+  const ss = String(elapsed % 60).padStart(2, '0')
+  const orbSize = isMobile ? 168 : 212
+
+  const orbMode = status !== 'live' ? 'think' : aiSpeaking ? 'speak' : userSpeaking ? 'rec' : 'idle'
+
+  const caption = status === 'connecting' ? CONN[lang]
+    : status === 'ending' ? '…'
+    : aiSpeaking ? AI_SPEAKING[lang]
+    : userSpeaking ? YOU_SPEAKING[lang]
+    : WAITING[lang]
+
+  const ring = (delay: string) => (
+    <span style={{ position: 'absolute', inset: 0, borderRadius: '50%', background: 'color-mix(in srgb, var(--accent) 30%, transparent)', animation: 'pulse-ring 2.2s ease-out infinite', animationDelay: delay, pointerEvents: 'none' }}/>
+  )
+
+  return (
+    <div style={{ position: 'relative', flex: 1, background: 'radial-gradient(120% 70% at 50% -5%, var(--accent-soft) 0%, var(--bg) 55%)', display: 'flex', flexDirection: 'column' }}>
+      <audio ref={remoteAudioRef} autoPlay hidden />
+
+      {/* Header */}
+      <header style={{ padding: isMobile ? '12px 16px' : '14px 24px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', borderBottom: '1px solid var(--border)', flexShrink: 0 }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 9 }}>
+          <span style={{ width: 8, height: 8, borderRadius: '50%', background: status === 'live' ? 'var(--accent)' : 'var(--text-3)', boxShadow: status === 'live' ? '0 0 0 4px color-mix(in srgb, var(--accent) 20%, transparent)' : 'none' }}/>
+          <span style={{ fontSize: 13, fontWeight: 700 }}>{currentMode.emoji} {currentMode.label[lang]}</span>
+        </div>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+          <span style={{ fontSize: 13.5, color: 'var(--text-2)', fontFamily: 'var(--font-mono)' }}>{mm}:{ss}</span>
+          <button onClick={handleEnd} style={{ padding: '6px 14px', background: 'transparent', border: '1px solid var(--border-strong)', borderRadius: 8, fontSize: 12, color: 'var(--text-2)', cursor: 'pointer' }}>
+            {END_BTN[lang]}
+          </button>
+        </div>
+      </header>
+
+      {/* Orb */}
+      <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: isMobile ? '20px 16px 24px' : '28px 24px 32px', gap: 18 }}>
+        <div style={{ position: 'relative', width: orbSize, height: orbSize, flexShrink: 0 }}>
+          {(orbMode === 'speak' || orbMode === 'rec') && <>{ring('0s')}{ring('1.1s')}</>}
+          <div
+            ref={orbRef}
+            className={orbMode === 'idle' ? 'orb-breathe' : ''}
+            style={{
+              position: 'absolute', inset: 0, borderRadius: '50%', overflow: 'hidden',
+              background: 'radial-gradient(circle at 32% 26%, color-mix(in srgb, var(--accent) 80%, white) 0%, var(--accent) 46%, color-mix(in srgb, var(--accent) 55%, black) 100%)',
+              boxShadow: '0 24px 70px -14px color-mix(in srgb, var(--accent) 60%, transparent), inset 0 0 50px -10px color-mix(in srgb, white 45%, transparent)',
+              transition: 'filter .18s ease',
+            }}
+          >
+            <div className="orb-blob" style={{ position: 'absolute', width: '72%', height: '72%', top: '6%', left: '10%', borderRadius: '50%', background: 'radial-gradient(circle, color-mix(in srgb, white 55%, transparent), transparent 70%)', filter: 'blur(7px)' }}/>
+            <div className="orb-blob" style={{ position: 'absolute', width: '56%', height: '56%', bottom: '5%', right: '7%', borderRadius: '50%', background: 'radial-gradient(circle, color-mix(in srgb, var(--accent) 70%, black), transparent 70%)', filter: 'blur(9px)', animationDelay: '2.3s' }}/>
+            {orbMode === 'think' && (
+              <div className="orb-spin" style={{ position: 'absolute', inset: -1, borderRadius: '50%', background: 'conic-gradient(from 0deg, transparent 0deg, color-mix(in srgb, white 75%, transparent) 55deg, transparent 120deg)', WebkitMaskImage: 'radial-gradient(transparent 63%, black 65%)', maskImage: 'radial-gradient(transparent 63%, black 65%)' }}/>
+            )}
+            <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              <MicIcon size={isMobile ? 34 : 40} color="color-mix(in srgb, white 92%, transparent)" />
             </div>
           </div>
-        )}
+        </div>
 
-        {messages.map((msg, i) => (
-          <div key={i} style={{ display: 'flex', justifyContent: msg.role === 'user' ? 'flex-end' : 'flex-start', gap: 8 }}>
-            {msg.role === 'assistant' && (
-              <div style={{ width: 28, height: 28, borderRadius: '50%', background: 'var(--accent-soft)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 14, flexShrink: 0, marginTop: 2 }}>
-                {currentMode.emoji}
+        <div style={{ textAlign: 'center' }}>
+          <span style={{ fontSize: 15, fontWeight: 500, color: aiSpeaking ? 'var(--accent)' : 'var(--text-2)' }}>{caption}</span>
+        </div>
+
+        {/* Live transcript peek */}
+        {(lastAi || lastUser) && status === 'live' && (
+          <div style={{ width: '100%', maxWidth: 520, display: 'grid', gap: 10, marginTop: 4 }}>
+            {lastAi && (
+              <div style={{ background: 'var(--bg-elev)', border: '1px solid var(--border)', borderRadius: 14, padding: '12px 16px' }}>
+                <div style={{ fontSize: 10, letterSpacing: '0.08em', color: 'var(--text-3)', fontWeight: 600, marginBottom: 4 }}>AI</div>
+                <p style={{ margin: 0, fontSize: 14, lineHeight: 1.5, color: 'var(--text)' }}>{lastAi}</p>
               </div>
             )}
-            <div style={{
-              maxWidth: '78%', padding: '10px 14px',
-              borderRadius: msg.role === 'user' ? '18px 18px 4px 18px' : '18px 18px 18px 4px',
-              background: msg.role === 'user' ? 'var(--accent)' : 'var(--bg-elev)',
-              color: msg.role === 'user' ? 'var(--accent-fg)' : 'var(--text)',
-              fontSize: 14, lineHeight: 1.6,
-              border: msg.role === 'user' ? 'none' : '1px solid var(--border)',
-              whiteSpace: 'pre-wrap',
-            }}>
-              {msg.content}
-            </div>
-          </div>
-        ))}
-
-        {error && (
-          <div style={{ textAlign: 'center', fontSize: 13, color: 'var(--danger)', padding: '8px 16px', background: 'color-mix(in srgb, var(--danger) 8%, transparent)', borderRadius: 10, border: '1px solid color-mix(in srgb, var(--danger) 25%, transparent)' }}>
-            {error}
+            {lastUser && (
+              <div style={{ background: 'transparent', border: '1px solid var(--border)', borderRadius: 14, padding: '12px 16px' }}>
+                <div style={{ fontSize: 10, letterSpacing: '0.08em', color: 'var(--text-3)', fontWeight: 600, marginBottom: 4 }}>
+                  {lang === 'ru' ? 'ВЫ' : lang === 'kz' ? 'СІЗ' : lang === 'ky' ? 'СИЗ' : lang === 'uz' ? 'SIZ' : 'YOU'}
+                </div>
+                <p style={{ margin: 0, fontSize: 14, lineHeight: 1.5, color: 'var(--text-2)' }}>{lastUser}</p>
+              </div>
+            )}
           </div>
         )}
 
-        <div ref={bottomRef} />
+        {connError && <div style={{ fontSize: 13, color: 'var(--danger)', textAlign: 'center' }}>{connError}</div>}
       </div>
+    </div>
+  )
+}
 
-      {/* Mic orb */}
-      <div style={{ padding: isMobile ? '20px 16px 32px' : '24px 28px 36px', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 14, flexShrink: 0, borderTop: '1px solid var(--border)' }}>
+/* ── Main page ── */
+export default function RoastPage() {
+  const { language } = useLanguage()
+  const lang = (language ?? 'en') as Lang
+  const [started, setStarted] = useState(false)
+  const [mode, setMode] = useState<RoastMode>('roast')
+  const [key, setKey] = useState(0)
 
-        <button
-          onMouseDown={handlePressStart}
-          onMouseUp={handlePressEnd}
-          onMouseLeave={handlePressEnd}
-          onTouchStart={handlePressStart}
-          onTouchEnd={handlePressEnd}
-          disabled={phase === 'thinking'}
-          style={{
-            width: 80, height: 80, borderRadius: '50%', border: 'none',
-            background: `radial-gradient(circle at 35% 30%, color-mix(in srgb, ${orbColor} 60%, white), ${orbColor})`,
-            boxShadow: orbGlow,
-            display: 'flex', alignItems: 'center', justifyContent: 'center',
-            cursor: phase === 'thinking' ? 'not-allowed' : 'pointer',
-            transition: 'all 0.2s cubic-bezier(0.2, 0.7, 0.2, 1)',
-            transform: phase === 'recording' ? 'scale(1.12)' : 'scale(1)',
-            animation: phase === 'recording' ? 'orbBreathe 1.2s ease-in-out infinite'
-              : phase === 'speaking' ? 'orbSpeak 1.15s ease-in-out infinite' : 'none',
-            userSelect: 'none', WebkitUserSelect: 'none',
-            touchAction: 'none',
-          }}
-        >
-          {phase === 'thinking' ? (
-            <div style={{ display: 'flex', gap: 4 }}>
-              {[0,1,2].map(i => (
-                <div key={i} style={{ width: 7, height: 7, borderRadius: '50%', background: 'white', animation: 'dotPulse 1.2s ease-in-out infinite', animationDelay: `${i * 0.2}s` }} />
-              ))}
-            </div>
-          ) : phase === 'speaking' ? (
-            <svg width={30} height={30} viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <path d="M11 5L6 9H2v6h4l5 4V5z"/>
-              <path d="M15.54 8.46a5 5 0 0 1 0 7.07"/>
-              <path d="M19.07 4.93a10 10 0 0 1 0 14.14"/>
-            </svg>
-          ) : (
-            <svg width={30} height={30} viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <rect x="9" y="3" width="6" height="12" rx="3"/>
-              <path d="M5 11a7 7 0 0 0 14 0"/>
-              <path d="M12 18v3"/>
-            </svg>
-          )}
-        </button>
-
-        <div style={{ fontSize: 13, color: 'var(--text-3)', fontWeight: 500 }}>{hint}</div>
-
-        {messages.length > 0 && (
-          <button
-            onClick={() => { stopAudio(); setMessages([]); setPhase('idle'); setError('') }}
-            style={{ fontSize: 12, color: 'var(--text-3)', background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}
-          >
-            {lang === 'ru' ? '↺ Начать заново' : lang === 'kz' ? '↺ Қайта бастау' : lang === 'ky' ? '↺ Кайра баштоо' : lang === 'uz' ? '↺ Qayta boshlash' : '↺ Start over'}
-          </button>
-        )}
+  if (!started) {
+    return (
+      <div style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
+        <ReadyScreen mode={mode} onModeChange={setMode} onStart={() => setStarted(true)} lang={lang} />
       </div>
+    )
+  }
 
-      <style>{`
-        @keyframes dotPulse {
-          0%, 80%, 100% { opacity: 0.4; transform: scale(0.8); }
-          40% { opacity: 1; transform: scale(1); }
-        }
-      `}</style>
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
+      <LiveScreen
+        key={key}
+        mode={mode}
+        lang={lang}
+        onExit={() => { setStarted(false); setKey(k => k + 1) }}
+      />
     </div>
   )
 }
