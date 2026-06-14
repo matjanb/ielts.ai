@@ -39,7 +39,7 @@ function ReadyScreen({ mode, onModeChange, onStart, lang }: {
   const isMobile = useIsMobile()
   const current = MODES.find(m => m.id === mode)!
 
-  const TITLE: Record<Lang, string> = { en: 'AI Roast', ru: 'AI Roast', kz: 'AI Roast', ky: 'AI Roast', uz: 'AI Roast' }
+  const TITLE: Record<Lang, string> = { en: 'AI Coach', ru: 'AI Coach', kz: 'AI Coach', ky: 'AI Coach', uz: 'AI Coach' }
   const DESC: Record<Lang, string> = {
     en: 'Have a live voice conversation. The AI will roast your IELTS English in real time.',
     ru: 'Живой голосовой разговор. ИИ прожарит ваш IELTS English в реальном времени.',
