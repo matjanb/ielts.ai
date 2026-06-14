@@ -1,116 +1,198 @@
 'use client'
 
-import { useState, useRef, useEffect } from 'react'
+import { useState, useRef, useEffect, useCallback } from 'react'
 import { useLanguage } from '@/lib/i18n/LanguageContext'
 import { useIsMobile } from '@/lib/hooks/useIsMobile'
 import type { RoastMode } from '@/app/api/ai/roast/route'
 
 type Lang = 'en' | 'ru' | 'kz' | 'ky' | 'uz'
+type Phase = 'idle' | 'listening' | 'thinking' | 'speaking'
 interface Message { role: 'user' | 'assistant'; content: string }
 
-const MODES: { id: RoastMode; emoji: string; label: Record<Lang, string>; desc: Record<Lang, string> }[] = [
-  {
-    id: 'polite',
-    emoji: '🎩',
-    label: { en: 'Polite', ru: 'Вежливый', kz: 'Сыпайы', ky: 'Сылык', uz: 'Muloyim' },
-    desc:  { en: 'Gentle mentor', ru: 'Добрый ментор', kz: 'Жылы ментор', ky: 'Жылуу ментор', uz: 'Mehribon mentor' },
-  },
-  {
-    id: 'roast',
-    emoji: '🔥',
-    label: { en: 'Roast', ru: 'Роаст', kz: 'Роаст', ky: 'Роаст', uz: 'Roast' },
-    desc:  { en: 'Savage & funny', ru: 'Жёстко и смешно', kz: 'Қатты күлкілі', ky: 'Катуу күлкүлүү', uz: 'Qattiq va kulgili' },
-  },
-  {
-    id: 'savage',
-    emoji: '💀',
-    label: { en: 'Uncensored', ru: 'Без цензуры', kz: 'Цензурасыз', ky: 'Цензурасыз', uz: 'Sensorsiz' },
-    desc:  { en: '18+ no filter', ru: '18+ без фильтров', kz: '18+ сүзгісіз', ky: '18+ чыпкасыз', uz: '18+ filtersiz' },
-  },
-]
-
-const PLACEHOLDERS: Record<Lang, string> = {
-  en: 'Write your IELTS text or just chat…',
-  ru: 'Напишите ваш IELTS текст или просто поговорите…',
-  kz: 'IELTS мәтіңізді жазыңыз немесе жай сөйлесіңіз…',
-  ky: 'IELTS текстиңизди жазыңыз же жай маектешиңиз…',
-  uz: 'IELTS matningizni yozing yoki shunchaki suhbatlashing…',
+// SpeechRecognition types
+interface ISpeechRecognitionEvent extends Event {
+  resultIndex: number
+  results: { length: number; [i: number]: { isFinal: boolean; [j: number]: { transcript: string } } }
+}
+interface ISpeechRecognition extends EventTarget {
+  lang: string; continuous: boolean; interimResults: boolean; maxAlternatives: number
+  start(): void; stop(): void; abort(): void
+  onstart: ((e: Event) => void) | null
+  onend: ((e: Event) => void) | null
+  onerror: ((e: Event) => void) | null
+  onresult: ((e: ISpeechRecognitionEvent) => void) | null
+}
+declare global {
+  interface Window {
+    SpeechRecognition: new () => ISpeechRecognition
+    webkitSpeechRecognition: new () => ISpeechRecognition
+  }
 }
 
-const STARTER: Record<Lang, string[]> = {
-  en: ['Roast my IELTS writing sample', "What's my approximate band score?", 'How can I improve my vocabulary?'],
-  ru: ['Прожарь мой текст IELTS', 'Какой у меня примерный балл?', 'Как улучшить словарный запас?'],
-  kz: ['Менің IELTS мәтінімді прожарить', 'Менің балым қандай?', 'Сөздік қорымды қалай жақсартамын?'],
-  ky: ['Менин IELTS текстимди прожарить', 'Менин баллым кандай?', 'Лексикамды кантип жакшыртам?'],
-  uz: ["IELTS matnimni roast qil", "Taxminiy ballim qancha?", "Lug'atimni qanday yaxshilayman?"],
+const LANG_CODE: Record<Lang, string> = {
+  en: 'en-US', ru: 'ru-RU', kz: 'kk-KZ', ky: 'ky-KG', uz: 'uz-UZ',
+}
+
+const MODES: { id: RoastMode; emoji: string; label: Record<Lang, string> }[] = [
+  { id: 'polite', emoji: '🎩', label: { en: 'Polite', ru: 'Вежливый', kz: 'Сыпайы', ky: 'Сылык', uz: 'Muloyim' } },
+  { id: 'roast',  emoji: '🔥', label: { en: 'Roast',  ru: 'Роаст',    kz: 'Роаст',  ky: 'Роаст',  uz: 'Roast'   } },
+  { id: 'savage', emoji: '💀', label: { en: 'No filter', ru: 'Без цензуры', kz: 'Цензурасыз', ky: 'Цензурасыз', uz: 'Sensorsiz' } },
+]
+
+const PHASE_LABEL: Record<Phase, Record<Lang, string>> = {
+  idle:      { en: 'Tap to speak', ru: 'Нажмите чтобы говорить', kz: 'Сөйлеу үшін басыңыз', ky: 'Сүйлөө үчүн басыңыз', uz: 'Gapirish uchun bosing' },
+  listening: { en: 'Listening…',   ru: 'Слушаю…',               kz: 'Тыңдап жатырмын…',    ky: 'Угуп жатам…',         uz: 'Eshitmoqdaman…' },
+  thinking:  { en: 'Thinking…',    ru: 'Думаю…',                kz: 'Ойлап жатырмын…',     ky: 'Ойлонуп жатам…',      uz: 'O\'ylayapman…' },
+  speaking:  { en: 'Speaking…',    ru: 'Говорю…',               kz: 'Сөйлеп жатырмын…',   ky: 'Сүйлөп жатам…',       uz: 'Gapirmoqdaman…' },
 }
 
 export default function RoastPage() {
   const { language } = useLanguage()
-
   const isMobile = useIsMobile()
   const lang = (language ?? 'en') as Lang
 
   const [mode, setMode] = useState<RoastMode>('roast')
+  const [phase, setPhase] = useState<Phase>('idle')
   const [messages, setMessages] = useState<Message[]>([])
-  const [input, setInput] = useState('')
-  const [loading, setLoading] = useState(false)
-  const [detectedLang, setDetectedLang] = useState<Lang | null>(null)
+  const [interim, setInterim] = useState('')
+  const [supported, setSupported] = useState(true)
+
+  const recogRef = useRef<ISpeechRecognition | null>(null)
+  const audioRef = useRef<HTMLAudioElement | null>(null)
+  const messagesRef = useRef<Message[]>([])
   const bottomRef = useRef<HTMLDivElement>(null)
-  const textareaRef = useRef<HTMLTextAreaElement>(null)
+
+  messagesRef.current = messages
+
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const SR = window.SpeechRecognition ?? window.webkitSpeechRecognition
+      if (!SR) setSupported(false)
+    }
+  }, [])
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: 'smooth' })
-  }, [messages, loading])
+  }, [messages, interim])
 
-  const send = async (text?: string) => {
-    const content = (text ?? input).trim()
-    if (!content || loading) return
+  const stopAudio = () => {
+    if (audioRef.current) {
+      audioRef.current.pause()
+      audioRef.current.src = ''
+      audioRef.current = null
+    }
+  }
 
-    const newMessages: Message[] = [...messages, { role: 'user', content }]
+  const speak = useCallback(async (text: string) => {
+    setPhase('speaking')
+    stopAudio()
+    try {
+      const res = await fetch('/api/ai/roast/tts', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ text, mode }),
+      })
+      if (!res.ok) throw new Error('TTS failed')
+      const blob = await res.blob()
+      const url = URL.createObjectURL(blob)
+      const audio = new Audio(url)
+      audioRef.current = audio
+      audio.onended = () => {
+        URL.revokeObjectURL(url)
+        audioRef.current = null
+        setPhase('idle')
+      }
+      audio.onerror = () => setPhase('idle')
+      await audio.play()
+    } catch {
+      setPhase('idle')
+    }
+  }, [mode])
+
+  const sendToAI = useCallback(async (userText: string) => {
+    const newMessages: Message[] = [...messagesRef.current, { role: 'user', content: userText }]
     setMessages(newMessages)
-    setInput('')
-    setLoading(true)
+    setPhase('thinking')
 
     try {
       const res = await fetch('/api/ai/roast', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ messages: newMessages, mode, lang: detectedLang ?? undefined }),
+        body: JSON.stringify({ messages: newMessages, mode, lang }),
       })
       const data = await res.json()
       if (!res.ok) throw new Error(data.error ?? 'Error')
-      if (data.lang && !detectedLang) setDetectedLang(data.lang as Lang)
-      setMessages(prev => [...prev, { role: 'assistant', content: data.reply }])
+      const reply = data.reply as string
+      setMessages(prev => [...prev, { role: 'assistant', content: reply }])
+      await speak(reply)
     } catch (e: unknown) {
-      setMessages(prev => [...prev, { role: 'assistant', content: e instanceof Error ? e.message : 'Error' }])
-    } finally {
-      setLoading(false)
-      setTimeout(() => textareaRef.current?.focus(), 50)
+      const msg = e instanceof Error ? e.message : 'Error'
+      setMessages(prev => [...prev, { role: 'assistant', content: msg }])
+      setPhase('idle')
     }
-  }
+  }, [mode, lang, speak])
 
-  const handleKey = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
-    if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); send() }
-  }
+  const startListening = useCallback(() => {
+    if (phase !== 'idle') {
+      // Stop speaking if tapped mid-speech
+      stopAudio()
+      setPhase('idle')
+      return
+    }
+
+    const SR = window.SpeechRecognition ?? window.webkitSpeechRecognition
+    if (!SR) return
+
+    const recog = new SR()
+    recog.lang = LANG_CODE[lang] ?? 'en-US'
+    recog.continuous = false
+    recog.interimResults = true
+    recog.maxAlternatives = 1
+
+    recog.onstart = () => setPhase('listening')
+    recog.onresult = (e: ISpeechRecognitionEvent) => {
+      let final = ''
+      let inter = ''
+      for (let i = e.resultIndex; i < e.results.length; i++) {
+        const t = e.results[i][0].transcript
+        if (e.results[i].isFinal) final += t
+        else inter += t
+      }
+      setInterim(inter)
+      if (final.trim()) {
+        setInterim('')
+        recog.stop()
+        sendToAI(final.trim())
+      }
+    }
+    recog.onerror = () => { setInterim(''); setPhase('idle') }
+    recog.onend = () => { setInterim('') }
+
+    recogRef.current = recog
+    recog.start()
+  }, [phase, lang, sendToAI])
 
   const currentMode = MODES.find(m => m.id === mode)!
+  const phaseLabel = PHASE_LABEL[phase][lang]
+
+  const orbColor = phase === 'listening' ? 'var(--accent)'
+    : phase === 'thinking' ? 'var(--warn)'
+    : phase === 'speaking' ? '#a855f7'
+    : 'var(--border-strong)'
+
+  const orbBg = phase === 'listening' ? 'color-mix(in srgb, var(--accent) 15%, transparent)'
+    : phase === 'thinking' ? 'color-mix(in srgb, var(--warn) 15%, transparent)'
+    : phase === 'speaking' ? 'color-mix(in srgb, #a855f7 15%, transparent)'
+    : 'var(--bg-soft)'
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', height: isMobile ? 'calc(100dvh - 56px)' : 'calc(100vh - 0px)', overflow: 'hidden' }}>
+    <div style={{ display: 'flex', flexDirection: 'column', height: isMobile ? 'calc(100dvh - 56px)' : '100vh', overflow: 'hidden', background: 'var(--bg)' }}>
 
       {/* Top bar */}
-      <div style={{ padding: isMobile ? '12px 16px' : '14px 28px', borderBottom: '1px solid var(--border)', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexShrink: 0, background: 'var(--bg)', gap: 12 }}>
+      <div style={{ padding: isMobile ? '12px 16px' : '14px 28px', borderBottom: '1px solid var(--border)', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexShrink: 0 }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-          <div style={{ fontSize: 24 }}>🔥</div>
-          <div>
-            <div style={{ fontWeight: 800, fontSize: isMobile ? 15 : 17, letterSpacing: '-0.02em' }}>AI Roast Me</div>
-            {detectedLang && (
-              <div style={{ fontSize: 11, color: 'var(--text-3)' }}>
-                {{ en: 'English', ru: 'Русский', kz: 'Қазақша', ky: 'Кыргызча', uz: "O'zbek" }[detectedLang]}
-              </div>
-            )}
-          </div>
+          <span style={{ fontSize: 22 }}>🔥</span>
+          <span style={{ fontWeight: 800, fontSize: 17, letterSpacing: '-0.02em' }}>AI Roast Me</span>
         </div>
 
         {/* Mode selector */}
@@ -118,8 +200,7 @@ export default function RoastPage() {
           {MODES.map(m => (
             <button
               key={m.id}
-              onClick={() => setMode(m.id)}
-              title={m.desc[lang]}
+              onClick={() => { setMode(m.id); stopAudio(); setPhase('idle') }}
               style={{
                 display: 'flex', alignItems: 'center', gap: isMobile ? 0 : 5,
                 padding: isMobile ? '6px 8px' : '6px 12px',
@@ -128,8 +209,7 @@ export default function RoastPage() {
                 color: mode === m.id ? 'var(--text)' : 'var(--text-3)',
                 border: mode === m.id ? '1px solid var(--border-strong)' : '1px solid transparent',
                 boxShadow: mode === m.id ? 'var(--shadow-sm)' : 'none',
-                transition: 'all 0.15s',
-                cursor: 'pointer',
+                transition: 'all 0.15s', cursor: 'pointer',
               }}
             >
               <span>{m.emoji}</span>
@@ -139,54 +219,33 @@ export default function RoastPage() {
         </div>
       </div>
 
-      {/* Messages */}
+      {/* Transcript */}
       <div style={{ flex: 1, overflowY: 'auto', padding: isMobile ? '16px 12px' : '24px 28px', display: 'flex', flexDirection: 'column', gap: 12 }}>
-
-        {messages.length === 0 && (
-          <div className="animate-fade-up" style={{ margin: 'auto', textAlign: 'center', maxWidth: 420 }}>
-            <div style={{ fontSize: 52, marginBottom: 12 }}>{currentMode.emoji}</div>
-            <div style={{ fontWeight: 700, fontSize: 18, marginBottom: 6, letterSpacing: '-0.02em' }}>
-              {currentMode.label[lang]} {lang === 'ru' ? 'режим' : lang === 'kz' ? 'режим' : lang === 'ky' ? 'режим' : lang === 'uz' ? 'rejim' : 'mode'}
-            </div>
-            <div style={{ color: 'var(--text-2)', fontSize: 14, marginBottom: 24 }}>
-              {currentMode.desc[lang]}
-            </div>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-              {STARTER[lang].map((s, i) => (
-                <button
-                  key={i}
-                  onClick={() => send(s)}
-                  style={{
-                    padding: '10px 16px', borderRadius: 10, fontSize: 13, fontWeight: 500,
-                    border: '1px solid var(--border-strong)', background: 'var(--bg-elev)',
-                    color: 'var(--text)', cursor: 'pointer', textAlign: 'left',
-                    transition: 'background 0.15s',
-                  }}
-                  onMouseEnter={e => (e.currentTarget.style.background = 'var(--bg-soft)')}
-                  onMouseLeave={e => (e.currentTarget.style.background = 'var(--bg-elev)')}
-                >
-                  {s}
-                </button>
-              ))}
-            </div>
+        {messages.length === 0 && phase === 'idle' && (
+          <div className="animate-fade-up" style={{ margin: 'auto', textAlign: 'center', color: 'var(--text-3)', fontSize: 14 }}>
+            <div style={{ fontSize: 48, marginBottom: 12 }}>{currentMode.emoji}</div>
+            <div style={{ fontWeight: 600, color: 'var(--text-2)', marginBottom: 6 }}>{currentMode.label[lang]}</div>
+            <div>{lang === 'ru' ? 'Нажмите на микрофон и говорите'
+               : lang === 'kz' ? 'Микрофонды басып сөйлеңіз'
+               : lang === 'ky' ? 'Микрофонду басып сүйлөңүз'
+               : lang === 'uz' ? 'Mikrofonni bosib gapiring'
+               : 'Tap the mic and start talking'}</div>
           </div>
         )}
 
         {messages.map((msg, i) => (
-          <div key={i} style={{ display: 'flex', justifyContent: msg.role === 'user' ? 'flex-end' : 'flex-start' }}>
+          <div key={i} style={{ display: 'flex', justifyContent: msg.role === 'user' ? 'flex-end' : 'flex-start', gap: 8 }}>
             {msg.role === 'assistant' && (
-              <div style={{ width: 30, height: 30, borderRadius: '50%', background: 'var(--accent-soft)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 15, flexShrink: 0, marginRight: 8, marginTop: 2 }}>
+              <div style={{ width: 28, height: 28, borderRadius: '50%', background: orbBg, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 14, flexShrink: 0, marginTop: 2 }}>
                 {currentMode.emoji}
               </div>
             )}
             <div style={{
-              maxWidth: '75%',
-              padding: '10px 14px',
+              maxWidth: '78%', padding: '10px 14px',
               borderRadius: msg.role === 'user' ? '18px 18px 4px 18px' : '18px 18px 18px 4px',
               background: msg.role === 'user' ? 'var(--accent)' : 'var(--bg-elev)',
               color: msg.role === 'user' ? 'var(--accent-fg)' : 'var(--text)',
-              fontSize: 14,
-              lineHeight: 1.6,
+              fontSize: 14, lineHeight: 1.6,
               border: msg.role === 'user' ? 'none' : '1px solid var(--border)',
               whiteSpace: 'pre-wrap',
             }}>
@@ -195,15 +254,11 @@ export default function RoastPage() {
           </div>
         ))}
 
-        {loading && (
-          <div style={{ display: 'flex', alignItems: 'flex-start', gap: 8 }}>
-            <div style={{ width: 30, height: 30, borderRadius: '50%', background: 'var(--accent-soft)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 15, flexShrink: 0 }}>
-              {currentMode.emoji}
-            </div>
-            <div style={{ padding: '10px 16px', borderRadius: '18px 18px 18px 4px', background: 'var(--bg-elev)', border: '1px solid var(--border)', display: 'flex', gap: 5, alignItems: 'center' }}>
-              {[0,1,2].map(i => (
-                <div key={i} style={{ width: 7, height: 7, borderRadius: '50%', background: 'var(--text-3)', animation: 'pulse 1.2s ease-in-out infinite', animationDelay: `${i * 0.2}s` }} />
-              ))}
+        {/* Interim transcript */}
+        {interim && (
+          <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
+            <div style={{ maxWidth: '78%', padding: '10px 14px', borderRadius: '18px 18px 4px 18px', background: 'color-mix(in srgb, var(--accent) 30%, transparent)', color: 'var(--accent)', fontSize: 14, lineHeight: 1.6, fontStyle: 'italic' }}>
+              {interim}
             </div>
           </div>
         )}
@@ -211,63 +266,64 @@ export default function RoastPage() {
         <div ref={bottomRef} />
       </div>
 
-      {/* Input */}
-      <div style={{ padding: isMobile ? '10px 12px 16px' : '12px 28px 20px', borderTop: '1px solid var(--border)', background: 'var(--bg)', flexShrink: 0 }}>
+      {/* Orb + controls */}
+      <div style={{ padding: isMobile ? '20px 16px 32px' : '24px 28px 36px', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 16, flexShrink: 0, borderTop: '1px solid var(--border)' }}>
+        {!supported && (
+          <div style={{ fontSize: 13, color: 'var(--danger)', marginBottom: 4 }}>
+            {lang === 'ru' ? 'Голосовой ввод не поддерживается в этом браузере. Попробуйте Chrome.' : 'Voice not supported. Try Chrome.'}
+          </div>
+        )}
+
+        {/* Mic orb */}
+        <button
+          onClick={startListening}
+          disabled={!supported || phase === 'thinking'}
+          style={{
+            width: 80, height: 80, borderRadius: '50%',
+            background: orbBg,
+            border: `2px solid ${orbColor}`,
+            boxShadow: phase !== 'idle' ? `0 0 0 8px color-mix(in srgb, ${orbColor} 15%, transparent), 0 0 40px color-mix(in srgb, ${orbColor} 30%, transparent)` : 'none',
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            cursor: phase === 'thinking' ? 'not-allowed' : 'pointer',
+            transition: 'all 0.3s cubic-bezier(0.2, 0.7, 0.2, 1)',
+            animation: phase === 'listening' ? 'orbBreathe 1.5s ease-in-out infinite' : phase === 'speaking' ? 'orbSpeak 1.15s ease-in-out infinite' : 'none',
+          }}
+        >
+          {phase === 'thinking' ? (
+            <div style={{ display: 'flex', gap: 4 }}>
+              {[0,1,2].map(i => (
+                <div key={i} style={{ width: 6, height: 6, borderRadius: '50%', background: 'var(--warn)', animation: 'dotPulse 1.2s ease-in-out infinite', animationDelay: `${i * 0.2}s` }} />
+              ))}
+            </div>
+          ) : phase === 'speaking' ? (
+            <svg width={28} height={28} viewBox="0 0 24 24" fill="none" stroke="#a855f7" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M11 5L6 9H2v6h4l5 4V5z"/>
+              <path d="M15.54 8.46a5 5 0 0 1 0 7.07"/>
+              <path d="M19.07 4.93a10 10 0 0 1 0 14.14"/>
+            </svg>
+          ) : (
+            <svg width={28} height={28} viewBox="0 0 24 24" fill="none" stroke={phase === 'listening' ? 'var(--accent)' : 'var(--text-2)'} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <rect x="9" y="3" width="6" height="12" rx="3"/>
+              <path d="M5 11a7 7 0 0 0 14 0"/>
+              <path d="M12 18v3"/>
+            </svg>
+          )}
+        </button>
+
+        <div style={{ fontSize: 13, color: 'var(--text-3)', fontWeight: 500 }}>{phaseLabel}</div>
+
         {messages.length > 0 && (
           <button
-            onClick={() => { setMessages([]); setDetectedLang(null) }}
-            style={{ fontSize: 12, color: 'var(--text-3)', marginBottom: 8, background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}
+            onClick={() => { stopAudio(); setMessages([]); setPhase('idle'); setInterim('') }}
+            style={{ fontSize: 12, color: 'var(--text-3)', background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}
           >
-            {lang === 'ru' ? '↺ Новый чат' : lang === 'kz' ? '↺ Жаңа чат' : lang === 'ky' ? '↺ Жаңы чат' : lang === 'uz' ? '↺ Yangi chat' : '↺ New chat'}
+            {lang === 'ru' ? '↺ Начать заново' : lang === 'kz' ? '↺ Қайта бастау' : lang === 'ky' ? '↺ Кайра баштоо' : lang === 'uz' ? '↺ Qayta boshlash' : '↺ Start over'}
           </button>
         )}
-        <div style={{ display: 'flex', gap: 8, alignItems: 'flex-end' }}>
-          <textarea
-            ref={textareaRef}
-            value={input}
-            onChange={e => setInput(e.target.value)}
-            onKeyDown={handleKey}
-            placeholder={PLACEHOLDERS[lang]}
-            rows={1}
-            style={{
-              flex: 1, resize: 'none', padding: '11px 14px',
-              borderRadius: 12, border: '1px solid var(--border-strong)',
-              background: 'var(--bg-elev)', color: 'var(--text)',
-              fontSize: 14, lineHeight: 1.5, fontFamily: 'inherit',
-              outline: 'none', transition: 'border-color 0.15s',
-              maxHeight: 120, overflowY: 'auto',
-            }}
-            onFocus={e => (e.target.style.borderColor = 'var(--accent)')}
-            onBlur={e => (e.target.style.borderColor = 'var(--border-strong)')}
-            onInput={e => {
-              const el = e.currentTarget
-              el.style.height = 'auto'
-              el.style.height = Math.min(el.scrollHeight, 120) + 'px'
-            }}
-          />
-          <button
-            onClick={() => send()}
-            disabled={!input.trim() || loading}
-            style={{
-              width: 42, height: 42, borderRadius: 12, flexShrink: 0,
-              background: input.trim() && !loading ? 'var(--accent)' : 'var(--bg-soft)',
-              border: 'none', cursor: input.trim() && !loading ? 'pointer' : 'not-allowed',
-              display: 'flex', alignItems: 'center', justifyContent: 'center',
-              transition: 'background 0.15s',
-            }}
-          >
-            <svg width={18} height={18} viewBox="0 0 24 24" fill="none" stroke={input.trim() && !loading ? 'var(--accent-fg)' : 'var(--text-3)'} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <path d="M22 2L11 13M22 2L15 22l-4-9-9-4 20-7z"/>
-            </svg>
-          </button>
-        </div>
-        <div style={{ fontSize: 11, color: 'var(--text-3)', marginTop: 6, textAlign: 'center' }}>
-          Enter {lang === 'ru' ? 'для отправки' : lang === 'kz' ? 'жіберу үшін' : lang === 'ky' ? 'жиберүү үчүн' : lang === 'uz' ? 'yuborish uchun' : 'to send'} · Shift+Enter {lang === 'ru' ? 'новая строка' : lang === 'kz' ? 'жаңа жол' : lang === 'ky' ? 'жаңы сап' : lang === 'uz' ? 'yangi qator' : 'new line'}
-        </div>
       </div>
 
       <style>{`
-        @keyframes pulse {
+        @keyframes dotPulse {
           0%, 80%, 100% { opacity: 0.3; transform: scale(0.8); }
           40% { opacity: 1; transform: scale(1); }
         }
