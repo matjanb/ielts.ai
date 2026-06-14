@@ -134,22 +134,30 @@ export default function RoastPage() {
 
   const startListening = useCallback(() => {
     if (phase !== 'idle') {
-      // Stop speaking if tapped mid-speech
       stopAudio()
+      recogRef.current?.abort()
+      recogRef.current = null
       setPhase('idle')
+      setInterim('')
       return
     }
 
     const SR = window.SpeechRecognition ?? window.webkitSpeechRecognition
     if (!SR) return
 
+    // kk-KZ and ky-KG are rarely supported — fall back to ru-RU
+    const langCode = (lang === 'kz' || lang === 'ky') ? 'ru-RU' : (LANG_CODE[lang] ?? 'en-US')
+
     const recog = new SR()
-    recog.lang = LANG_CODE[lang] ?? 'en-US'
-    recog.continuous = false
+    recog.lang = langCode
+    recog.continuous = true   // keep listening until we get a final result
     recog.interimResults = true
     recog.maxAlternatives = 1
 
+    let gotFinal = false
+
     recog.onstart = () => setPhase('listening')
+
     recog.onresult = (e: ISpeechRecognitionEvent) => {
       let final = ''
       let inter = ''
@@ -158,18 +166,34 @@ export default function RoastPage() {
         if (e.results[i].isFinal) final += t
         else inter += t
       }
-      setInterim(inter)
-      if (final.trim()) {
+      setInterim(inter || final)
+      if (final.trim() && !gotFinal) {
+        gotFinal = true
         setInterim('')
         recog.stop()
         sendToAI(final.trim())
       }
     }
-    recog.onerror = () => { setInterim(''); setPhase('idle') }
-    recog.onend = () => { setInterim('') }
+
+    recog.onerror = (e) => {
+      console.error('SpeechRecognition error', e)
+      setInterim('')
+      setPhase('idle')
+    }
+
+    recog.onend = () => {
+      setInterim('')
+      // If we ended without a final result, go back to idle
+      if (!gotFinal) setPhase('idle')
+    }
 
     recogRef.current = recog
-    recog.start()
+    try {
+      recog.start()
+    } catch (e) {
+      console.error('SpeechRecognition start error', e)
+      setPhase('idle')
+    }
   }, [phase, lang, sendToAI])
 
   const currentMode = MODES.find(m => m.id === mode)!
