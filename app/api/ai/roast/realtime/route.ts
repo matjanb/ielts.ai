@@ -48,18 +48,19 @@ export async function POST(request: NextRequest) {
         output_modalities: ['audio'],
         audio: {
           input: {
-            transcription: { model: 'whisper-1' }, // no lang pin — auto-detect
+            transcription: { model: 'whisper-1', language: 'en' },
             noise_reduction: { type: 'near_field' },
             turn_detection: {
               type: 'server_vad',
-              threshold: 0.6,
-              prefix_padding_ms: 200,
-              silence_duration_ms: 600,
-              interrupt_response: true, // allow interrupting the roaster
+              threshold: 0.7,
+              prefix_padding_ms: 300,
+              silence_duration_ms: 700,
+              interrupt_response: false,
             },
           },
           output: {
-            voice: mode === 'polite' ? 'sage' : mode === 'roast' ? 'onyx' : 'echo',
+            // onyx/nova are TTS-only; Realtime API voices: alloy, ash, ballad, coral, echo, sage, shimmer, verse
+            voice: mode === 'polite' ? 'sage' : mode === 'roast' ? 'ash' : 'echo',
           },
         },
       },
