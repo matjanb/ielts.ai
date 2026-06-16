@@ -49,12 +49,14 @@ export async function POST(request: NextRequest) {
         audio: {
           input: {
             transcription: { model: 'whisper-1', language: 'en' },
+            // Filter background/transient noise before the VAD so a rustle or
+            // bump doesn't register as the candidate speaking.
             noise_reduction: { type: 'near_field' },
             turn_detection: {
               type: 'server_vad',
-              threshold: 0.7,
+              threshold: 0.8,            // need clearly louder speech to trigger (default 0.5); 0.8 ignores rustles/background noise
               prefix_padding_ms: 300,
-              silence_duration_ms: 700,
+              silence_duration_ms: 1200, // wait ~1.2s of silence before ending the turn so a thinking pause doesn't end it early
               interrupt_response: false,
             },
           },

@@ -49,9 +49,9 @@ export async function POST(request: NextRequest) {
             noise_reduction: { type: 'near_field' },
             turn_detection: {
               type: 'server_vad',
-              threshold: 0.7,            // need clearer/louder speech to trigger (default 0.5)
+              threshold: 0.8,            // need clearly louder speech to trigger (default 0.5); 0.8 ignores rustles/background noise
               prefix_padding_ms: 300,
-              silence_duration_ms: 700,  // wait a touch longer before ending the turn
+              silence_duration_ms: 1200, // wait ~1.2s of silence before ending the turn so a thinking pause doesn't hand the turn back to Sarah
               // Don't let a stray noise cut Sarah off mid-question; she finishes
               // speaking, then the candidate's turn is captured.
               interrupt_response: false,
