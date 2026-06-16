@@ -58,3 +58,29 @@ export async function POST(request: NextRequest) {
   }
   return NextResponse.json({ ok: true, code })
 }
+
+// Permanently delete a referral code. Past signups keep their plain-text
+// `referred_by` citation in profiles — only the referrer row is removed.
+export async function DELETE(request: NextRequest) {
+  const admin = await getAdminUser()
+  if (!admin) return err('Forbidden', 403)
+
+  let body: { code?: string }
+  try {
+    body = await request.json()
+  } catch {
+    return err('Invalid request body', 400)
+  }
+
+  const code = (body.code ?? '').trim().toLowerCase()
+  if (!code) return err('Code is required', 400)
+
+  const db = createAdminClient()
+  const { data, error } = await db.from('referrers').delete().eq('code', code).select('code')
+  if (error) {
+    console.error('[admin/referrals] delete', error)
+    return err('Failed to delete referral code', 500)
+  }
+  if (!data || data.length === 0) return err('Referral code not found', 404)
+  return NextResponse.json({ ok: true, code })
+}
