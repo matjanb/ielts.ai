@@ -20,11 +20,12 @@ interface GradeTurn {
   speech_rate_wpm?: number | null
 }
 interface CriterionResult { band: number; evidence: string }
+interface SpeakingError { type: string; quote: string; correction: string; explanation: string }
 interface FeedbackResult {
   band_score: number; fluency_score: number; lexical_score: number; grammar_score: number; pronunciation_score: number
   pronunciation_notes: string; pronunciation_from_audio?: boolean
   fluency_metrics?: FluencyMetrics | null
-  feedback: { overview: string; strengths: string[]; improvements: string[]; next_band_tip?: string; criteria?: { fluency: CriterionResult; lexical: CriterionResult; grammar: CriterionResult; pronunciation: CriterionResult } }
+  feedback: { overview: string; strengths: string[]; improvements: string[]; next_band_tip?: string; criteria?: { fluency: CriterionResult; lexical: CriterionResult; grammar: CriterionResult; pronunciation: CriterionResult }; errors?: SpeakingError[] }
 }
 interface CompletePayload { turns: GradeTurn[]; sessionId: string; durationMinutes: number; audioPath?: string; fluencyMetrics?: FluencyMetrics | null }
 type Phase = 'ready' | 'live' | 'feedback'
@@ -141,6 +142,26 @@ function FeedbackScreen({ result, onBack }: { result: FeedbackResult; onBack: ()
         </div>
       </div>
       {fb.overview && <div className="card" style={{ padding: 22, marginBottom: 16 }}><p style={{ fontSize: 14.5, lineHeight: 1.65, margin: 0, color: 'var(--text)' }}>{fb.overview}</p></div>}
+      {fb.errors && fb.errors.length > 0 && (
+        <div className="card" style={{ padding: isMobile ? 18 : 22, marginBottom: 16 }}>
+          <div style={{ display: 'flex', alignItems: 'baseline', gap: 8, marginBottom: 14 }}>
+            <span style={{ fontSize: 11, fontWeight: 700, letterSpacing: '0.08em', color: 'var(--warn)' }}>{t('speak.errors')}</span>
+            <span style={{ fontSize: 11, color: 'var(--text-3)', fontVariantNumeric: 'tabular-nums' }}>{fb.errors.length}</span>
+          </div>
+          <div style={{ display: 'grid', gap: 12 }}>
+            {fb.errors.map((e, i) => (
+              <div key={i} style={{ display: 'grid', gap: 5, paddingBottom: 12, borderBottom: i < fb.errors!.length - 1 ? '1px solid var(--border)' : 'none' }}>
+                <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: 8, fontSize: 13.5, lineHeight: 1.5 }}>
+                  <span style={{ color: 'var(--warn)', textDecoration: 'line-through', textDecorationColor: 'color-mix(in srgb, var(--warn) 60%, transparent)' }}>{e.quote}</span>
+                  <span style={{ color: 'var(--text-3)', flexShrink: 0 }}>→</span>
+                  <span style={{ color: 'var(--accent)', fontWeight: 600 }}>{e.correction}</span>
+                </div>
+                {e.explanation && <p style={{ fontSize: 12, color: 'var(--text-3)', margin: 0, lineHeight: 1.5 }}>{e.type ? <span style={{ fontWeight: 600, textTransform: 'capitalize' }}>{e.type}: </span> : null}{e.explanation}</p>}
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 260px), 1fr))', gap: 16, marginBottom: 16 }}>
         {fb.strengths?.length > 0 && (
           <div className="card" style={{ padding: 22 }}>

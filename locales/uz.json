@@ -610,7 +610,8 @@
     "youSpeak": "Tinglayapman…",
     "goAhead": "Gapiravering — shunchaki javob bering",
     "endScore": "Tugatib, ballni olish",
-    "realtimeError": "Imtihon oluvchiga ulana olmadim. Qayta urinib ko‘ring."
+    "realtimeError": "Imtihon oluvchiga ulana olmadim. Qayta urinib ko‘ring.",
+    "errors": "GRAMMATIKA VA LEKSIKA XATOLARI"
   },
   "hub": {
     "currentBand": "joriy ball",

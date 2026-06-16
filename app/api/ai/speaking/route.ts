@@ -33,8 +33,10 @@ interface IncomingTurn {
 }
 
 interface CriterionResult { band: number; evidence: string }
+interface SpeakingError { type: string; quote: string; correction: string; explanation: string }
 interface SpeakingResult {
   criteria: { fluency: CriterionResult; lexical: CriterionResult; grammar: CriterionResult; pronunciation: CriterionResult }
+  errors: SpeakingError[]
   overview: string
   strengths: string[]
   improvements: string[]
@@ -50,6 +52,9 @@ const JSON_SHAPE = `Return ONLY a JSON object with exactly this shape:
     "grammar":       { "band": <number>, "evidence": "<...>" },
     "pronunciation": { "band": <number>, "evidence": "<...>" }
   },
+  "errors": [
+    { "type": "<grammar | vocabulary | collocation | word form | tense | article | preposition | other>", "quote": "<the candidate's exact words, copied verbatim from the transcript>", "correction": "<the same phrase rewritten correctly>", "explanation": "<one short sentence on what is wrong and the rule>" }
+  ],
   "overview": "<2-3 sentence summary>",
   "strengths": ["<...>", "..."],
   "improvements": ["<...>", "..."],
@@ -67,15 +72,17 @@ function buildSystemPrompt(hasAudio: boolean, fluencySummary: string): string {
 ${SPEAKING_RUBRIC}
 
 SPEAKING BAND ANCHORS (apply strictly):
-- Band 2: barely communicates; mostly isolated words, long pauses, breakdowns.
-- Band 3: only simple, short responses; frequent breakdowns; very limited range; answers do not develop.
+- Band 1–2: barely communicates; mostly isolated words or memorised fragments, long pauses, breakdowns, or answers that do not actually address the questions.
+- Band 3: only simple, short responses; frequent breakdowns; very limited range; answers do not develop. One- or two-line answers throughout sit HERE, not higher.
 - Band 4: conveys basic meaning on familiar topics, but answers are short, error-prone and underdeveloped, with frequent grammatical and lexical mistakes.
 - Band 5: keeps simple exchanges going with some flexibility, but limited range and frequent errors; little complex language.
 - Band 6: generally effective communication, some complex language and reasonable development despite noticeable errors.
-- Band 7+: fluent, flexible and largely accurate, with well-developed answers.
-A test of very short, repetitive, error-heavy one-line answers is band 3 — not 4 or 5.
+- Band 7+: fluent, flexible and largely accurate, with well-developed answers across all parts.
+A test of very short, repetitive, error-heavy one-line answers is band 3 — never 4 or 5. When the candidate says very little or drifts off the question, lean toward band 2–3.
 
 Assess this full IELTS Speaking test (Parts 1–3) as a single examiner would — one band per criterion for the whole test. Do not average the criteria yourself.
+
+ERROR REPORTING (be exhaustive, not a sample): scan the whole transcript and list EVERY grammatical and lexical error you can substantiate — wrong tense, missing/extra articles, subject–verb agreement, prepositions, word form, word choice, collocation, plurals, etc. For each error, copy the candidate's exact words into "quote", give the corrected phrase in "correction", and a one-sentence reason in "explanation". Quote real text only; never invent an error that is not in the transcript. If the response is genuinely error-free, return an empty "errors" array. A transcript with many basic errors must show many entries here AND be reflected in a low Grammar/Lexical band — the two must agree.
 
 OBJECTIVE FLUENCY MEASUREMENTS (use these to ground Fluency & Coherence, alongside the wording): ${fluencySummary}
 
@@ -104,6 +111,17 @@ function parseAssessment(raw: string): SpeakingResult {
     band: clampBand(typeof c?.band === 'number' ? c.band : NaN),
     evidence: typeof c?.evidence === 'string' ? c.evidence : '',
   })
+  const str = (v: unknown): string => (typeof v === 'string' ? v : '')
+  const errors: SpeakingError[] = Array.isArray(j.errors)
+    ? j.errors
+        .map((e): SpeakingError => {
+          const o = (e ?? {}) as Partial<SpeakingError>
+          return { type: str(o.type), quote: str(o.quote), correction: str(o.correction), explanation: str(o.explanation) }
+        })
+        // keep only entries that actually show a mistake and its fix
+        .filter(e => e.quote.trim() && e.correction.trim())
+        .slice(0, 25)
+    : []
   return {
     criteria: {
       fluency: crit(j.criteria?.fluency),
@@ -111,6 +129,7 @@ function parseAssessment(raw: string): SpeakingResult {
       grammar: crit(j.criteria?.grammar),
       pronunciation: crit(j.criteria?.pronunciation),
     },
+    errors,
     overview: typeof j.overview === 'string' ? j.overview : '',
     strengths: Array.isArray(j.strengths) ? j.strengths.filter(s => typeof s === 'string') : [],
     improvements: Array.isArray(j.improvements) ? j.improvements.filter(s => typeof s === 'string') : [],
@@ -252,6 +271,7 @@ export async function POST(request: NextRequest) {
       improvements: result.improvements,
       next_band_tip: result.next_band_tip,
       criteria: result.criteria,
+      errors: result.errors,
     }
 
     const admin = createAdminClient()

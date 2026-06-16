@@ -649,7 +649,8 @@
     "youSpeak": "Listening…",
     "goAhead": "Go ahead — just speak",
     "endScore": "End test & get my band",
-    "realtimeError": "Could not reach the examiner. Please try again."
+    "realtimeError": "Could not reach the examiner. Please try again.",
+    "errors": "GRAMMAR & VOCABULARY ERRORS"
   },
   "hub": {
     "currentBand": "current band",
