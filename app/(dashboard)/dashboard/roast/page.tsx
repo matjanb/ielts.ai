@@ -110,6 +110,7 @@ function LiveScreen({ mode, onExit, lang }: { mode: RoastMode; onExit: () => voi
   const localAnalyserRef = useRef<AnalyserNode | null>(null)
   const remoteAnalyserRef = useRef<AnalyserNode | null>(null)
   const orbRef = useRef<HTMLDivElement>(null)
+  const turbulenceRef = useRef<SVGFETurbulenceElement>(null)
   const rafRef = useRef<number | null>(null)
   const startedRef = useRef(false)
 
@@ -229,12 +230,14 @@ function LiveScreen({ mode, onExit, lang }: { mode: RoastMode; onExit: () => voi
     return () => clearInterval(id)
   }, [])
 
-  // Orb reactivity from audio levels
+  // Cloud orb audio reactivity
   useEffect(() => {
     if (status !== 'live') return
     const orb = orbRef.current
+    const turb = turbulenceRef.current
     if (!orb) return
     let smooth = 0
+    let smoothFreq = 0.018
     const lbuf = new Uint8Array(256) as Uint8Array<ArrayBuffer>
     const rbuf = new Uint8Array(256) as Uint8Array<ArrayBuffer>
     const rms = (an: AnalyserNode | null, buf: Uint8Array<ArrayBuffer>) => {
@@ -242,19 +245,26 @@ function LiveScreen({ mode, onExit, lang }: { mode: RoastMode; onExit: () => voi
       an.getByteTimeDomainData(buf)
       let sum = 0
       for (let i = 0; i < buf.length; i++) { const x = (buf[i] - 128) / 128; sum += x * x }
-      return Math.sqrt(sum / buf.length) * 3.4
+      return Math.sqrt(sum / buf.length) * 4
     }
     const draw = () => {
-      const level = Math.min(1, Math.max(rms(localAnalyserRef.current, lbuf), rms(remoteAnalyserRef.current, rbuf)))
-      smooth += (level - smooth) * 0.25
-      orb.style.transform = `scale(${(1 + smooth * 0.4).toFixed(3)})`
-      orb.style.filter = `brightness(${(1 + smooth * 0.5).toFixed(2)})`
+      const localLvl = rms(localAnalyserRef.current, lbuf)
+      const remoteLvl = rms(remoteAnalyserRef.current, rbuf)
+      const level = Math.min(1, Math.max(localLvl, remoteLvl))
+      smooth += (level - smooth) * 0.18
+      // Scale: grows more dramatically with voice
+      const scale = 1 + smooth * 0.55
+      orb.style.transform = `scale(${scale.toFixed(3)})`
+      // Turbulence frequency rises with voice intensity — makes cloud churn
+      const targetFreq = 0.018 + smooth * 0.06
+      smoothFreq += (targetFreq - smoothFreq) * 0.12
+      if (turb) turb.setAttribute('baseFrequency', `${smoothFreq.toFixed(4)} ${(smoothFreq * 1.6).toFixed(4)}`)
       rafRef.current = requestAnimationFrame(draw)
     }
     rafRef.current = requestAnimationFrame(draw)
     return () => {
       if (rafRef.current) cancelAnimationFrame(rafRef.current)
-      if (orb) { orb.style.transform = ''; orb.style.filter = '' }
+      if (orb) orb.style.transform = ''
     }
   }, [status])
 
@@ -262,7 +272,7 @@ function LiveScreen({ mode, onExit, lang }: { mode: RoastMode; onExit: () => voi
 
   const mm = String(Math.floor(elapsed / 60)).padStart(2, '0')
   const ss = String(elapsed % 60).padStart(2, '0')
-  const orbSize = isMobile ? 168 : 212
+  const orbSize = isMobile ? 200 : 260
 
   const orbMode = status !== 'live' ? 'think' : aiSpeaking ? 'speak' : userSpeaking ? 'rec' : 'idle'
 
@@ -272,18 +282,41 @@ function LiveScreen({ mode, onExit, lang }: { mode: RoastMode; onExit: () => voi
     : userSpeaking ? YOU_SPEAKING[lang]
     : WAITING[lang]
 
-  const ring = (delay: string) => (
-    <span style={{ position: 'absolute', inset: 0, borderRadius: '50%', background: 'color-mix(in srgb, var(--accent) 30%, transparent)', animation: 'pulse-ring 2.2s ease-out infinite', animationDelay: delay, pointerEvents: 'none' }}/>
-  )
+  // Cloud color palette per mode
+  const CLOUD_COLORS = {
+    polite:  { c1: '#c4b5fd', c2: '#8b5cf6', c3: '#6d28d9', glow: '#8b5cf6' },
+    roast:   { c1: '#fca5a5', c2: '#f97316', c3: '#c2410c', glow: '#f97316' },
+    savage:  { c1: '#fca5a5', c2: '#dc2626', c3: '#7f1d1d', glow: '#dc2626' },
+  }
+  const cc = CLOUD_COLORS[mode]
 
   return (
-    <div style={{ position: 'relative', flex: 1, background: 'radial-gradient(120% 70% at 50% -5%, var(--accent-soft) 0%, var(--bg) 55%)', display: 'flex', flexDirection: 'column' }}>
+    <div style={{ position: 'relative', flex: 1, background: `radial-gradient(140% 80% at 50% -10%, color-mix(in srgb, ${cc.glow} 12%, transparent) 0%, var(--bg) 60%)`, display: 'flex', flexDirection: 'column' }}>
       <audio ref={remoteAudioRef} autoPlay hidden />
+
+      {/* SVG cloud filter — turbulence displaces the orb edges to look fluffy */}
+      <svg style={{ position: 'absolute', width: 0, height: 0 }} aria-hidden="true">
+        <defs>
+          <filter id="cloud-filter" x="-30%" y="-30%" width="160%" height="160%" colorInterpolationFilters="sRGB">
+            <feTurbulence
+              ref={turbulenceRef}
+              type="fractalNoise"
+              baseFrequency="0.018 0.028"
+              numOctaves="4"
+              seed="8"
+              result="noise"
+            />
+            <feDisplacementMap in="SourceGraphic" in2="noise" scale="28" xChannelSelector="R" yChannelSelector="G" result="displaced"/>
+            <feGaussianBlur in="displaced" stdDeviation="3" result="blurred"/>
+            <feComposite in="blurred" in2="displaced" operator="in"/>
+          </filter>
+        </defs>
+      </svg>
 
       {/* Header */}
       <header style={{ padding: isMobile ? '12px 16px' : '14px 24px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', borderBottom: '1px solid var(--border)', flexShrink: 0 }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 9 }}>
-          <span style={{ width: 8, height: 8, borderRadius: '50%', background: status === 'live' ? 'var(--accent)' : 'var(--text-3)', boxShadow: status === 'live' ? '0 0 0 4px color-mix(in srgb, var(--accent) 20%, transparent)' : 'none' }}/>
+          <span style={{ width: 8, height: 8, borderRadius: '50%', background: status === 'live' ? cc.glow : 'var(--text-3)', boxShadow: status === 'live' ? `0 0 0 4px color-mix(in srgb, ${cc.glow} 25%, transparent)` : 'none', transition: 'all 0.3s' }}/>
           <span style={{ fontSize: 13, fontWeight: 700 }}>{currentMode.emoji} {currentMode.label[lang]}</span>
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
@@ -294,30 +327,22 @@ function LiveScreen({ mode, onExit, lang }: { mode: RoastMode; onExit: () => voi
         </div>
       </header>
 
-      {/* Orb */}
-      <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: isMobile ? '20px 16px 24px' : '28px 24px 32px', gap: 18 }}>
-        <div style={{ position: 'relative', width: orbSize, height: orbSize, flexShrink: 0 }}>
-          {(orbMode === 'speak' || orbMode === 'rec') && <>{ring('0s')}{ring('1.1s')}</>}
-          <div
-            ref={orbRef}
-            className={orbMode === 'idle' ? 'orb-breathe' : ''}
-            style={{
-              position: 'absolute', inset: 0, borderRadius: '50%', overflow: 'hidden',
-              background: 'radial-gradient(circle at 32% 26%, color-mix(in srgb, var(--accent) 80%, white) 0%, var(--accent) 46%, color-mix(in srgb, var(--accent) 55%, black) 100%)',
-              boxShadow: '0 24px 70px -14px color-mix(in srgb, var(--accent) 60%, transparent), inset 0 0 50px -10px color-mix(in srgb, white 45%, transparent)',
-              transition: 'filter .18s ease',
-            }}
-          >
-            <div className="orb-blob" style={{ position: 'absolute', width: '72%', height: '72%', top: '6%', left: '10%', borderRadius: '50%', background: 'radial-gradient(circle, color-mix(in srgb, white 55%, transparent), transparent 70%)', filter: 'blur(7px)' }}/>
-            <div className="orb-blob" style={{ position: 'absolute', width: '56%', height: '56%', bottom: '5%', right: '7%', borderRadius: '50%', background: 'radial-gradient(circle, color-mix(in srgb, var(--accent) 70%, black), transparent 70%)', filter: 'blur(9px)', animationDelay: '2.3s' }}/>
-            {orbMode === 'think' && (
-              <div className="orb-spin" style={{ position: 'absolute', inset: -1, borderRadius: '50%', background: 'conic-gradient(from 0deg, transparent 0deg, color-mix(in srgb, white 75%, transparent) 55deg, transparent 120deg)', WebkitMaskImage: 'radial-gradient(transparent 63%, black 65%)', maskImage: 'radial-gradient(transparent 63%, black 65%)' }}/>
-            )}
-            <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-              <MicIcon size={isMobile ? 34 : 40} color="color-mix(in srgb, white 92%, transparent)" />
-            </div>
-          </div>
-        </div>
+      {/* Cloud Orb */}
+      <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: isMobile ? '20px 16px 24px' : '28px 24px 32px', gap: 22 }}>
+        <div
+          ref={orbRef}
+          style={{
+            width: orbSize, height: orbSize, flexShrink: 0,
+            borderRadius: '50%',
+            background: `radial-gradient(circle at 38% 32%, ${cc.c1} 0%, ${cc.c2} 42%, ${cc.c3} 100%)`,
+            filter: 'url(#cloud-filter)',
+            boxShadow: `0 0 80px 20px color-mix(in srgb, ${cc.glow} 35%, transparent)`,
+            animation: orbMode === 'idle' ? 'cloudIdle 5s ease-in-out infinite'
+              : orbMode === 'think' ? 'cloudThink 2s ease-in-out infinite'
+              : 'cloudTalk 1s ease-in-out infinite',
+            transition: 'box-shadow 0.4s ease',
+          }}
+        />
 
         <div style={{ textAlign: 'center' }}>
           <span style={{ fontSize: 15, fontWeight: 500, color: aiSpeaking ? 'var(--accent)' : 'var(--text-2)' }}>{caption}</span>
