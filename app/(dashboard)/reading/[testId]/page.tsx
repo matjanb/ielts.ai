@@ -182,7 +182,7 @@ function PassageText({ text }: { text: string }) {
           }
         }
 
-        return <p key={i} style={{ color: 'var(--text-2)', fontStyle: 'italic', margin: 0 }}>{trimmed}</p>
+        return <p key={i} style={{ color: 'var(--text)', margin: 0 }}>{trimmed}</p>
       })}
     </div>
   )
