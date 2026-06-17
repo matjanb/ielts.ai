@@ -41,11 +41,12 @@ const SPHERE_COLORS: Record<RoastMode, [string, string, string]> = {
 
 function drawSphere(
   ctx: CanvasRenderingContext2D, S: number,
-  particles: Particle[], rotY: number, audioLevel: number, mode: RoastMode,
+  particles: Particle[], rotY: number, audioLevel: number, pulse: number, mode: RoastMode,
 ) {
   ctx.clearRect(0, 0, S, S)
   const cx = S / 2, cy = S / 2
-  const R = S * 0.42 * (1 + audioLevel * 0.16)
+  // Radius grows dramatically with voice + extra burst on loud spikes
+  const R = S * 0.40 * (1 + audioLevel * 0.42 + pulse * 0.24)
   const cols = SPHERE_COLORS[mode]
   const cosR = Math.cos(rotY), sinR = Math.sin(rotY)
 
@@ -58,8 +59,8 @@ function drawSphere(
       sx: cx + rx * R * s,
       sy: cy - ry * R * s,
       z: rz,
-      size: p.baseSize * s * (1 + audioLevel * 0.6),
-      opacity: Math.min(1, (0.25 + 0.75 * ((rz + 1) / 2)) * (0.65 + audioLevel * 0.55)),
+      size: p.baseSize * s * (1 + audioLevel * 1.5 + pulse * 0.7),
+      opacity: Math.min(1, (0.25 + 0.75 * ((rz + 1) / 2)) * (0.65 + audioLevel * 0.75 + pulse * 0.4)),
       t: (ry + 1) / 2,
     }
   }).sort((a, b) => a.z - b.z)
@@ -72,7 +73,7 @@ function drawSphere(
     ctx.globalAlpha = p.opacity
     if (p.z > 0.05) {
       ctx.shadowColor = col
-      ctx.shadowBlur = p.size * 5 * (1 + audioLevel * 1.5)
+      ctx.shadowBlur = p.size * 7 * (1 + audioLevel * 2.5 + pulse * 1.5)
     } else {
       ctx.shadowBlur = 0
     }
@@ -326,6 +327,7 @@ function LiveScreen({ mode, onExit, lang }: { mode: RoastMode; onExit: () => voi
     const lbuf = new Uint8Array(256) as Uint8Array<ArrayBuffer>
     const rbuf = new Uint8Array(256) as Uint8Array<ArrayBuffer>
     let smooth = 0
+    let pulse = 0
     let alive = true
 
     const rms = (an: AnalyserNode | null, buf: Uint8Array<ArrayBuffer>) => {
@@ -339,9 +341,13 @@ function LiveScreen({ mode, onExit, lang }: { mode: RoastMode; onExit: () => voi
     const tick = () => {
       if (!alive) return
       const lvl = Math.min(1, Math.max(rms(localAnalyserRef.current, lbuf), rms(remoteAnalyserRef.current, rbuf)))
+      // Pulse: spikes when audio suddenly jumps (loud burst)
+      const spike = Math.max(0, lvl - smooth)
       smooth += (lvl - smooth) * 0.15
-      rotYRef.current += 0.005 + smooth * 0.014
-      drawSphere(ctx, CSS, particlesRef.current, rotYRef.current, smooth, mode)
+      pulse = Math.max(0, pulse * 0.82 + spike * 3.0)
+      // Rotate faster when speaking, extra spin on pulse bursts
+      rotYRef.current += 0.005 + smooth * 0.028 + pulse * 0.018
+      drawSphere(ctx, CSS, particlesRef.current, rotYRef.current, smooth, pulse, mode)
       rafRef.current = requestAnimationFrame(tick)
     }
     rafRef.current = requestAnimationFrame(tick)
