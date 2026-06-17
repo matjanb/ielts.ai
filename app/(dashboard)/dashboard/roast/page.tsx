@@ -284,9 +284,9 @@ function LiveScreen({ mode, onExit, lang }: { mode: RoastMode; onExit: () => voi
 
   // Cloud color palette per mode
   const CLOUD_COLORS = {
-    polite:  { c1: '#c4b5fd', c2: '#8b5cf6', c3: '#6d28d9', glow: '#8b5cf6' },
-    roast:   { c1: '#fca5a5', c2: '#f97316', c3: '#c2410c', glow: '#f97316' },
-    savage:  { c1: '#fca5a5', c2: '#dc2626', c3: '#7f1d1d', glow: '#dc2626' },
+    polite:  { c1: '#f0e8ff', c2: '#a78bfa', c3: '#7c3aed', glow: '#8b5cf6' },
+    roast:   { c1: '#fff3e8', c2: '#fb923c', c3: '#c2410c', glow: '#f97316' },
+    savage:  { c1: '#fff0f0', c2: '#f87171', c3: '#991b1b', glow: '#dc2626' },
   }
   const cc = CLOUD_COLORS[mode]
 
@@ -294,21 +294,20 @@ function LiveScreen({ mode, onExit, lang }: { mode: RoastMode; onExit: () => voi
     <div style={{ position: 'relative', flex: 1, background: `radial-gradient(140% 80% at 50% -10%, color-mix(in srgb, ${cc.glow} 12%, transparent) 0%, var(--bg) 60%)`, display: 'flex', flexDirection: 'column' }}>
       <audio ref={remoteAudioRef} autoPlay hidden />
 
-      {/* SVG cloud filter — turbulence displaces the orb edges to look fluffy */}
+      {/* SVG cloud filter — gentle turbulence + heavy blur = soft fluffy edges */}
       <svg style={{ position: 'absolute', width: 0, height: 0 }} aria-hidden="true">
         <defs>
-          <filter id="cloud-filter" x="-30%" y="-30%" width="160%" height="160%" colorInterpolationFilters="sRGB">
+          <filter id="cloud-filter" x="-50%" y="-50%" width="200%" height="200%" colorInterpolationFilters="sRGB">
             <feTurbulence
               ref={turbulenceRef}
               type="fractalNoise"
-              baseFrequency="0.018 0.028"
-              numOctaves="4"
-              seed="8"
+              baseFrequency="0.013 0.018"
+              numOctaves="5"
+              seed="3"
               result="noise"
             />
-            <feDisplacementMap in="SourceGraphic" in2="noise" scale="28" xChannelSelector="R" yChannelSelector="G" result="displaced"/>
-            <feGaussianBlur in="displaced" stdDeviation="3" result="blurred"/>
-            <feComposite in="blurred" in2="displaced" operator="in"/>
+            <feDisplacementMap in="SourceGraphic" in2="noise" scale="14" xChannelSelector="R" yChannelSelector="G" result="displaced"/>
+            <feGaussianBlur in="displaced" stdDeviation="10"/>
           </filter>
         </defs>
       </svg>
@@ -334,9 +333,9 @@ function LiveScreen({ mode, onExit, lang }: { mode: RoastMode; onExit: () => voi
           style={{
             width: orbSize, height: orbSize, flexShrink: 0,
             borderRadius: '50%',
-            background: `radial-gradient(circle at 38% 32%, ${cc.c1} 0%, ${cc.c2} 42%, ${cc.c3} 100%)`,
+            background: `radial-gradient(circle at 35% 30%, ${cc.c1} 0%, ${cc.c1} 18%, ${cc.c2} 52%, ${cc.c3} 100%)`,
             filter: 'url(#cloud-filter)',
-            boxShadow: `0 0 80px 20px color-mix(in srgb, ${cc.glow} 35%, transparent)`,
+            boxShadow: `0 0 100px 40px color-mix(in srgb, ${cc.glow} 45%, transparent), 0 0 40px 10px color-mix(in srgb, ${cc.c1} 30%, transparent)`,
             animation: orbMode === 'idle' ? 'cloudIdle 5s ease-in-out infinite'
               : orbMode === 'think' ? 'cloudThink 2s ease-in-out infinite'
               : 'cloudTalk 1s ease-in-out infinite',
