@@ -65,25 +65,19 @@ function drawSphere(
     }
   }).sort((a, b) => a.z - b.z)
 
+  // No per-particle shadowBlur (very expensive) — overall glow comes from CSS drop-shadow
   for (const p of proj) {
     if (p.size < 0.3 || p.opacity < 0.03) continue
     const col = p.t < 0.5
       ? lerpColor(cols[0], cols[1], p.t * 2)
       : lerpColor(cols[1], cols[2], (p.t - 0.5) * 2)
     ctx.globalAlpha = p.opacity
-    if (p.z > 0.05) {
-      ctx.shadowColor = col
-      ctx.shadowBlur = p.size * 6 * (1 + audioLevel * 1.8 + pulse * 1.0)
-    } else {
-      ctx.shadowBlur = 0
-    }
     ctx.fillStyle = col
     ctx.beginPath()
     ctx.arc(p.sx, p.sy, Math.max(0.4, p.size), 0, Math.PI * 2)
     ctx.fill()
   }
   ctx.globalAlpha = 1
-  ctx.shadowBlur = 0
 }
 /* ──────────────────────────────────────────────────────────── */
 
@@ -188,7 +182,7 @@ function LiveScreen({ mode, onExit, lang }: { mode: RoastMode; onExit: () => voi
   const localAnalyserRef = useRef<AnalyserNode | null>(null)
   const remoteAnalyserRef = useRef<AnalyserNode | null>(null)
   const canvasRef = useRef<HTMLCanvasElement>(null)
-  const particlesRef = useRef<Particle[]>(genParticles(420))
+  const particlesRef = useRef<Particle[]>(genParticles(280))
   const rotYRef = useRef(0)
   const rafRef = useRef<number | null>(null)
   const startedRef = useRef(false)
@@ -279,7 +273,16 @@ function LiveScreen({ mode, onExit, lang }: { mode: RoastMode; onExit: () => voi
         const dc = pc.createDataChannel('oai-events')
         dcRef.current = dc
         dc.onmessage = ev => handleEvent(ev.data)
-        dc.onopen = () => { try { dc.send(JSON.stringify({ type: 'response.create' })) } catch {} }
+        dc.onopen = () => {
+          // Send a greeting trigger so AI introduces itself, then waits for the user to speak
+          try {
+            dc.send(JSON.stringify({
+              type: 'conversation.item.create',
+              item: { type: 'message', role: 'user', content: [{ type: 'input_text', text: '[SESSION_START]' }] },
+            }))
+            dc.send(JSON.stringify({ type: 'response.create' }))
+          } catch {}
+        }
 
         const offer = await pc.createOffer()
         await pc.setLocalDescription(offer)
@@ -394,7 +397,7 @@ function LiveScreen({ mode, onExit, lang }: { mode: RoastMode; onExit: () => voi
           ref={canvasRef}
           style={{
             width: orbSize, height: orbSize, flexShrink: 0,
-            filter: `drop-shadow(0 0 32px color-mix(in srgb, ${glowColor} 55%, transparent))`,
+            filter: `drop-shadow(0 0 24px color-mix(in srgb, ${glowColor} 70%, transparent)) drop-shadow(0 0 48px color-mix(in srgb, ${glowColor} 35%, transparent))`,
           }}
         />
 
