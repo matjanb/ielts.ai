@@ -8,19 +8,97 @@ import type { RoastMode } from '@/app/api/ai/roast/route'
 type Lang = 'en' | 'ru' | 'kz' | 'ky' | 'uz'
 type Status = 'connecting' | 'live' | 'ending'
 
-const MODES: { id: RoastMode; emoji: string; voice: string; label: Record<Lang, string>; desc: Record<Lang, string> }[] = [
+/* ── Particle sphere ──────────────────────────────────────── */
+type Particle = { x: number; y: number; z: number; baseSize: number }
+
+function genParticles(count: number): Particle[] {
+  const pts: Particle[] = []
+  const phi = Math.PI * (Math.sqrt(5) - 1)
+  for (let i = 0; i < count; i++) {
+    const y = 1 - (i / (count - 1)) * 2
+    const r = Math.sqrt(Math.max(0, 1 - y * y))
+    const theta = phi * i
+    pts.push({ x: Math.cos(theta) * r, y, z: Math.sin(theta) * r, baseSize: 0.8 + Math.random() * 2.4 })
+  }
+  return pts
+}
+
+function lerpColor(a: string, b: string, t: number): string {
+  const pa = parseInt(a.slice(1), 16)
+  const pb = parseInt(b.slice(1), 16)
+  const r = Math.round(((pa >> 16) & 0xff) * (1 - t) + ((pb >> 16) & 0xff) * t)
+  const g = Math.round(((pa >> 8) & 0xff) * (1 - t) + ((pb >> 8) & 0xff) * t)
+  const bv = Math.round((pa & 0xff) * (1 - t) + (pb & 0xff) * t)
+  return `rgb(${r},${g},${bv})`
+}
+
+// Colors per mode: [top, mid, bottom]
+const SPHERE_COLORS: Record<RoastMode, [string, string, string]> = {
+  polite: ['#818cf8', '#c084fc', '#a78bfa'],   // indigo → violet
+  roast:  ['#38bdf8', '#fb923c', '#f97316'],   // blue → orange (like reference)
+  savage: ['#f87171', '#fb923c', '#b91c1c'],   // red → orange-red
+}
+
+function drawSphere(
+  ctx: CanvasRenderingContext2D, S: number,
+  particles: Particle[], rotY: number, audioLevel: number, mode: RoastMode,
+) {
+  ctx.clearRect(0, 0, S, S)
+  const cx = S / 2, cy = S / 2
+  const R = S * 0.42 * (1 + audioLevel * 0.16)
+  const cols = SPHERE_COLORS[mode]
+  const cosR = Math.cos(rotY), sinR = Math.sin(rotY)
+
+  const proj = particles.map(p => {
+    const rx = p.x * cosR + p.z * sinR
+    const rz = -p.x * sinR + p.z * cosR
+    const ry = p.y
+    const s = 3.5 / (3.5 + rz * 0.5)
+    return {
+      sx: cx + rx * R * s,
+      sy: cy - ry * R * s,
+      z: rz,
+      size: p.baseSize * s * (1 + audioLevel * 0.6),
+      opacity: Math.min(1, (0.25 + 0.75 * ((rz + 1) / 2)) * (0.65 + audioLevel * 0.55)),
+      t: (ry + 1) / 2,
+    }
+  }).sort((a, b) => a.z - b.z)
+
+  for (const p of proj) {
+    if (p.size < 0.3 || p.opacity < 0.03) continue
+    const col = p.t < 0.5
+      ? lerpColor(cols[0], cols[1], p.t * 2)
+      : lerpColor(cols[1], cols[2], (p.t - 0.5) * 2)
+    ctx.globalAlpha = p.opacity
+    if (p.z > 0.05) {
+      ctx.shadowColor = col
+      ctx.shadowBlur = p.size * 5 * (1 + audioLevel * 1.5)
+    } else {
+      ctx.shadowBlur = 0
+    }
+    ctx.fillStyle = col
+    ctx.beginPath()
+    ctx.arc(p.sx, p.sy, Math.max(0.4, p.size), 0, Math.PI * 2)
+    ctx.fill()
+  }
+  ctx.globalAlpha = 1
+  ctx.shadowBlur = 0
+}
+/* ──────────────────────────────────────────────────────────── */
+
+const MODES: { id: RoastMode; emoji: string; label: Record<Lang, string>; desc: Record<Lang, string> }[] = [
   {
-    id: 'polite', emoji: '🎩', voice: 'sage',
+    id: 'polite', emoji: '🎩',
     label: { en: 'Polite',      ru: 'Вежливый',    kz: 'Сыпайы',     ky: 'Сылык',     uz: 'Muloyim'   },
     desc:  { en: 'Kind mentor', ru: 'Добрый ментор',kz: 'Жылы ментор', ky: 'Жылуу ментор', uz: 'Mehribon' },
   },
   {
-    id: 'roast',  emoji: '🔥', voice: 'onyx',
+    id: 'roast', emoji: '🔥',
     label: { en: 'Roast',       ru: 'Роаст',        kz: 'Роаст',      ky: 'Роаст',     uz: 'Roast'     },
     desc:  { en: 'Savage & fun',ru: 'Жёстко и смешно', kz: 'Қатал күлкілі', ky: 'Катуу күлкүлүү', uz: 'Qattiq va kulgili' },
   },
   {
-    id: 'savage', emoji: '💀', voice: 'echo',
+    id: 'savage', emoji: '💀',
     label: { en: 'No filter',   ru: 'Без цензуры',  kz: 'Цензурасыз', ky: 'Цензурасыз',uz: 'Sensorsiz'  },
     desc:  { en: '18+ no limit',ru: '18+ без рамок', kz: '18+ шексіз', ky: '18+ чексиз', uz: '18+ cheksiz' },
   },
@@ -59,7 +137,6 @@ function ReadyScreen({ mode, onModeChange, onStart, lang }: {
         <h1 style={{ fontSize: isMobile ? 28 : 36, fontWeight: 800, letterSpacing: '-0.03em', margin: '0 0 10px' }}>{TITLE[lang]}</h1>
         <p style={{ fontSize: 15, color: 'var(--text-2)', lineHeight: 1.6, margin: '0 0 28px' }}>{DESC[lang]}</p>
 
-        {/* Mode picker */}
         <p style={{ fontSize: 12, fontWeight: 700, letterSpacing: '0.08em', color: 'var(--text-3)', marginBottom: 10 }}>{PICK[lang]}</p>
         <div style={{ display: 'grid', gap: 8, marginBottom: 28 }}>
           {MODES.map(m => (
@@ -109,17 +186,18 @@ function LiveScreen({ mode, onExit, lang }: { mode: RoastMode; onExit: () => voi
   const audioCtxRef = useRef<AudioContext | null>(null)
   const localAnalyserRef = useRef<AnalyserNode | null>(null)
   const remoteAnalyserRef = useRef<AnalyserNode | null>(null)
-  const orbRef = useRef<HTMLDivElement>(null)
-  const turbulenceRef = useRef<SVGFETurbulenceElement>(null)
+  const canvasRef = useRef<HTMLCanvasElement>(null)
+  const particlesRef = useRef<Particle[]>(genParticles(420))
+  const rotYRef = useRef(0)
   const rafRef = useRef<number | null>(null)
   const startedRef = useRef(false)
 
   const currentMode = MODES.find(m => m.id === mode)!
+  const glowColor = SPHERE_COLORS[mode][1]
 
   const END_BTN: Record<Lang, string> = { en: 'End', ru: 'Завершить', kz: 'Аяқтау', ky: 'Аяктоо', uz: 'Tugatish' }
   const CONN: Record<Lang, string> = { en: 'Connecting…', ru: 'Подключение…', kz: 'Қосылуда…', ky: 'Туташтыруу…', uz: 'Ulanmoqda…' }
   const AI_SPEAKING: Record<Lang, string> = { en: 'Speaking…', ru: 'Говорит…', kz: 'Сөйлеп жатыр…', ky: 'Сүйлөп жатат…', uz: 'Gapirmoqda…' }
-  const YOU_SPEAKING: Record<Lang, string> = { en: 'Listening…', ru: 'Слушает…', kz: 'Тыңдап жатыр…', ky: 'Угуп жатат…', uz: 'Eshitmoqda…' }
   const WAITING: Record<Lang, string> = { en: 'Your turn…', ru: 'Ваша очередь…', kz: 'Сіздің кезегіңіз…', ky: 'Сиздин кезегиңиз…', uz: 'Sizning navbatingiz…' }
 
   const cleanup = useCallback(() => {
@@ -161,6 +239,7 @@ function LiveScreen({ mode, onExit, lang }: { mode: RoastMode; onExit: () => voi
     }
   }, [])
 
+  // WebRTC connection
   useEffect(() => {
     if (startedRef.current) return
     startedRef.current = true
@@ -225,21 +304,30 @@ function LiveScreen({ mode, onExit, lang }: { mode: RoastMode; onExit: () => voi
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
+  // Timer
   useEffect(() => {
     const id = setInterval(() => setElapsed(s => s + 1), 1000)
     return () => clearInterval(id)
   }, [])
 
-  // Cloud orb audio reactivity
+  // Particle sphere animation loop
   useEffect(() => {
-    if (status !== 'live') return
-    const orb = orbRef.current
-    const turb = turbulenceRef.current
-    if (!orb) return
-    let smooth = 0
-    let smoothFreq = 0.018
+    const canvas = canvasRef.current
+    if (!canvas) return
+    const ctx = canvas.getContext('2d')
+    if (!ctx) return
+
+    const dpr = window.devicePixelRatio || 1
+    const CSS = isMobile ? 220 : 280
+    canvas.width = CSS * dpr
+    canvas.height = CSS * dpr
+    ctx.scale(dpr, dpr)
+
     const lbuf = new Uint8Array(256) as Uint8Array<ArrayBuffer>
     const rbuf = new Uint8Array(256) as Uint8Array<ArrayBuffer>
+    let smooth = 0
+    let alive = true
+
     const rms = (an: AnalyserNode | null, buf: Uint8Array<ArrayBuffer>) => {
       if (!an) return 0
       an.getByteTimeDomainData(buf)
@@ -247,127 +335,85 @@ function LiveScreen({ mode, onExit, lang }: { mode: RoastMode; onExit: () => voi
       for (let i = 0; i < buf.length; i++) { const x = (buf[i] - 128) / 128; sum += x * x }
       return Math.sqrt(sum / buf.length) * 4
     }
-    const draw = () => {
-      const localLvl = rms(localAnalyserRef.current, lbuf)
-      const remoteLvl = rms(remoteAnalyserRef.current, rbuf)
-      const level = Math.min(1, Math.max(localLvl, remoteLvl))
-      smooth += (level - smooth) * 0.18
-      // Scale: grows more dramatically with voice
-      const scale = 1 + smooth * 0.55
-      orb.style.transform = `scale(${scale.toFixed(3)})`
-      // Turbulence frequency rises with voice intensity — makes cloud churn
-      const targetFreq = 0.018 + smooth * 0.06
-      smoothFreq += (targetFreq - smoothFreq) * 0.12
-      if (turb) turb.setAttribute('baseFrequency', `${smoothFreq.toFixed(4)} ${(smoothFreq * 1.6).toFixed(4)}`)
-      rafRef.current = requestAnimationFrame(draw)
+
+    const tick = () => {
+      if (!alive) return
+      const lvl = Math.min(1, Math.max(rms(localAnalyserRef.current, lbuf), rms(remoteAnalyserRef.current, rbuf)))
+      smooth += (lvl - smooth) * 0.15
+      rotYRef.current += 0.005 + smooth * 0.014
+      drawSphere(ctx, CSS, particlesRef.current, rotYRef.current, smooth, mode)
+      rafRef.current = requestAnimationFrame(tick)
     }
-    rafRef.current = requestAnimationFrame(draw)
-    return () => {
-      if (rafRef.current) cancelAnimationFrame(rafRef.current)
-      if (orb) orb.style.transform = ''
-    }
-  }, [status])
+    rafRef.current = requestAnimationFrame(tick)
+
+    return () => { alive = false; if (rafRef.current) { cancelAnimationFrame(rafRef.current); rafRef.current = null } }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [mode, isMobile])
 
   const handleEnd = () => { setStatus('ending'); cleanup(); onExit() }
 
   const mm = String(Math.floor(elapsed / 60)).padStart(2, '0')
   const ss = String(elapsed % 60).padStart(2, '0')
-  const orbSize = isMobile ? 200 : 260
-
-  const orbMode = status !== 'live' ? 'think' : aiSpeaking ? 'speak' : userSpeaking ? 'rec' : 'idle'
+  const orbSize = isMobile ? 220 : 280
 
   const caption = status === 'connecting' ? CONN[lang]
     : status === 'ending' ? '…'
     : aiSpeaking ? AI_SPEAKING[lang]
-    : userSpeaking ? YOU_SPEAKING[lang]
+    : userSpeaking ? (lang === 'ru' ? 'Слушает…' : lang === 'kz' ? 'Тыңдап жатыр…' : lang === 'ky' ? 'Угуп жатат…' : lang === 'uz' ? 'Eshitmoqda…' : 'Listening…')
     : WAITING[lang]
 
-  // Cloud color palette per mode
-  const CLOUD_COLORS = {
-    polite:  { c1: '#f0e8ff', c2: '#a78bfa', c3: '#7c3aed', glow: '#8b5cf6' },
-    roast:   { c1: '#fff3e8', c2: '#fb923c', c3: '#c2410c', glow: '#f97316' },
-    savage:  { c1: '#fff0f0', c2: '#f87171', c3: '#991b1b', glow: '#dc2626' },
-  }
-  const cc = CLOUD_COLORS[mode]
-
   return (
-    <div style={{ position: 'relative', flex: 1, background: `radial-gradient(140% 80% at 50% -10%, color-mix(in srgb, ${cc.glow} 12%, transparent) 0%, var(--bg) 60%)`, display: 'flex', flexDirection: 'column' }}>
+    <div style={{ position: 'relative', flex: 1, background: '#07080a', display: 'flex', flexDirection: 'column' }}>
       <audio ref={remoteAudioRef} autoPlay hidden />
 
-      {/* SVG cloud filter — gentle turbulence + heavy blur = soft fluffy edges */}
-      <svg style={{ position: 'absolute', width: 0, height: 0 }} aria-hidden="true">
-        <defs>
-          <filter id="cloud-filter" x="-50%" y="-50%" width="200%" height="200%" colorInterpolationFilters="sRGB">
-            <feTurbulence
-              ref={turbulenceRef}
-              type="fractalNoise"
-              baseFrequency="0.013 0.018"
-              numOctaves="5"
-              seed="3"
-              result="noise"
-            />
-            <feDisplacementMap in="SourceGraphic" in2="noise" scale="14" xChannelSelector="R" yChannelSelector="G" result="displaced"/>
-            <feGaussianBlur in="displaced" stdDeviation="10"/>
-          </filter>
-        </defs>
-      </svg>
-
       {/* Header */}
-      <header style={{ padding: isMobile ? '12px 16px' : '14px 24px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', borderBottom: '1px solid var(--border)', flexShrink: 0 }}>
+      <header style={{ padding: isMobile ? '12px 16px' : '14px 24px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', borderBottom: '1px solid rgba(255,255,255,0.07)', flexShrink: 0 }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 9 }}>
-          <span style={{ width: 8, height: 8, borderRadius: '50%', background: status === 'live' ? cc.glow : 'var(--text-3)', boxShadow: status === 'live' ? `0 0 0 4px color-mix(in srgb, ${cc.glow} 25%, transparent)` : 'none', transition: 'all 0.3s' }}/>
-          <span style={{ fontSize: 13, fontWeight: 700 }}>{currentMode.emoji} {currentMode.label[lang]}</span>
+          <span style={{ width: 8, height: 8, borderRadius: '50%', background: status === 'live' ? glowColor : '#444', boxShadow: status === 'live' ? `0 0 0 4px color-mix(in srgb, ${glowColor} 25%, transparent)` : 'none', transition: 'all 0.3s' }}/>
+          <span style={{ fontSize: 13, fontWeight: 700, color: '#fff' }}>{currentMode.emoji} {currentMode.label[lang]}</span>
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-          <span style={{ fontSize: 13.5, color: 'var(--text-2)', fontFamily: 'var(--font-mono)' }}>{mm}:{ss}</span>
-          <button onClick={handleEnd} style={{ padding: '6px 14px', background: 'transparent', border: '1px solid var(--border-strong)', borderRadius: 8, fontSize: 12, color: 'var(--text-2)', cursor: 'pointer' }}>
+          <span style={{ fontSize: 13.5, color: 'rgba(255,255,255,0.35)', fontFamily: 'var(--font-mono)' }}>{mm}:{ss}</span>
+          <button onClick={handleEnd} style={{ padding: '6px 14px', background: 'transparent', border: '1px solid rgba(255,255,255,0.14)', borderRadius: 8, fontSize: 12, color: 'rgba(255,255,255,0.45)', cursor: 'pointer' }}>
             {END_BTN[lang]}
           </button>
         </div>
       </header>
 
-      {/* Cloud Orb */}
+      {/* Particle sphere */}
       <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: isMobile ? '20px 16px 24px' : '28px 24px 32px', gap: 22 }}>
-        <div
-          ref={orbRef}
+        <canvas
+          ref={canvasRef}
           style={{
             width: orbSize, height: orbSize, flexShrink: 0,
-            borderRadius: '50%',
-            background: `radial-gradient(circle at 35% 30%, ${cc.c1} 0%, ${cc.c1} 18%, ${cc.c2} 52%, ${cc.c3} 100%)`,
-            filter: 'url(#cloud-filter)',
-            boxShadow: `0 0 100px 40px color-mix(in srgb, ${cc.glow} 45%, transparent), 0 0 40px 10px color-mix(in srgb, ${cc.c1} 30%, transparent)`,
-            animation: orbMode === 'idle' ? 'cloudIdle 5s ease-in-out infinite'
-              : orbMode === 'think' ? 'cloudThink 2s ease-in-out infinite'
-              : 'cloudTalk 1s ease-in-out infinite',
-            transition: 'box-shadow 0.4s ease',
+            filter: `drop-shadow(0 0 32px color-mix(in srgb, ${glowColor} 55%, transparent))`,
           }}
         />
 
         <div style={{ textAlign: 'center' }}>
-          <span style={{ fontSize: 15, fontWeight: 500, color: aiSpeaking ? 'var(--accent)' : 'var(--text-2)' }}>{caption}</span>
+          <span style={{ fontSize: 15, fontWeight: 500, color: aiSpeaking ? glowColor : 'rgba(255,255,255,0.3)' }}>{caption}</span>
         </div>
 
-        {/* Live transcript peek */}
         {(lastAi || lastUser) && status === 'live' && (
           <div style={{ width: '100%', maxWidth: 520, display: 'grid', gap: 10, marginTop: 4 }}>
             {lastAi && (
-              <div style={{ background: 'var(--bg-elev)', border: '1px solid var(--border)', borderRadius: 14, padding: '12px 16px' }}>
-                <div style={{ fontSize: 10, letterSpacing: '0.08em', color: 'var(--text-3)', fontWeight: 600, marginBottom: 4 }}>AI</div>
-                <p style={{ margin: 0, fontSize: 14, lineHeight: 1.5, color: 'var(--text)' }}>{lastAi}</p>
+              <div style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.09)', borderRadius: 14, padding: '12px 16px' }}>
+                <div style={{ fontSize: 10, letterSpacing: '0.08em', color: 'rgba(255,255,255,0.28)', fontWeight: 600, marginBottom: 4 }}>AI</div>
+                <p style={{ margin: 0, fontSize: 14, lineHeight: 1.5, color: 'rgba(255,255,255,0.82)' }}>{lastAi}</p>
               </div>
             )}
             {lastUser && (
-              <div style={{ background: 'transparent', border: '1px solid var(--border)', borderRadius: 14, padding: '12px 16px' }}>
-                <div style={{ fontSize: 10, letterSpacing: '0.08em', color: 'var(--text-3)', fontWeight: 600, marginBottom: 4 }}>
+              <div style={{ background: 'transparent', border: '1px solid rgba(255,255,255,0.07)', borderRadius: 14, padding: '12px 16px' }}>
+                <div style={{ fontSize: 10, letterSpacing: '0.08em', color: 'rgba(255,255,255,0.22)', fontWeight: 600, marginBottom: 4 }}>
                   {lang === 'ru' ? 'ВЫ' : lang === 'kz' ? 'СІЗ' : lang === 'ky' ? 'СИЗ' : lang === 'uz' ? 'SIZ' : 'YOU'}
                 </div>
-                <p style={{ margin: 0, fontSize: 14, lineHeight: 1.5, color: 'var(--text-2)' }}>{lastUser}</p>
+                <p style={{ margin: 0, fontSize: 14, lineHeight: 1.5, color: 'rgba(255,255,255,0.48)' }}>{lastUser}</p>
               </div>
             )}
           </div>
         )}
 
-        {connError && <div style={{ fontSize: 13, color: 'var(--danger)', textAlign: 'center' }}>{connError}</div>}
+        {connError && <div style={{ fontSize: 13, color: '#f87171', textAlign: 'center' }}>{connError}</div>}
       </div>
     </div>
   )
@@ -391,12 +437,7 @@ export default function RoastPage() {
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
-      <LiveScreen
-        key={key}
-        mode={mode}
-        lang={lang}
-        onExit={() => { setStarted(false); setKey(k => k + 1) }}
-      />
+      <LiveScreen key={key} mode={mode} lang={lang} onExit={() => { setStarted(false); setKey(k => k + 1) }} />
     </div>
   )
 }
