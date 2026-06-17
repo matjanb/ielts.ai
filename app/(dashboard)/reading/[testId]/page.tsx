@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback, useRef } from 'react'
 import { useRouter, useParams } from 'next/navigation'
-import { Send, Clock, BookOpen, ChevronLeft, ChevronRight } from 'lucide-react'
+import { Send, Clock, BookOpen } from 'lucide-react'
 import { useLanguage } from '@/lib/i18n/LanguageContext'
 import type { IeltsTest, TestSection, Question } from '@/lib/types/database'
 import { getTestById, getSectionsByTestId, getTestQuestions } from '@/lib/services/tests'
@@ -451,7 +451,7 @@ export default function ReadingTestPage() {
             </div>
             <h2 style={{ fontSize: 15, fontWeight: 700, margin: 0, color: 'var(--text)' }}>{currentPassage?.title}</h2>
           </div>
-          <div style={{ flex: 1, overflowY: 'auto', padding: isMobile ? '14px 16px 80px' : '16px 24px' }}>
+          <div style={{ flex: 1, overflowY: 'auto', padding: isMobile ? '14px 16px 80px' : '16px 24px 80px' }}>
             <PassageText text={passageText} />
           </div>
         </div>
@@ -469,7 +469,7 @@ export default function ReadingTestPage() {
           display: isMobile && mobileTab !== 'questions' ? 'none' : 'flex',
           flexDirection: 'column', minWidth: 0, background: 'var(--bg-elev)',
         }}>
-          <div style={{ flex: 1, overflowY: 'auto', padding: isMobile ? '16px 16px 80px' : '20px 24px', display: 'flex', flexDirection: 'column', gap: 24 }}>
+          <div style={{ flex: 1, overflowY: 'auto', padding: isMobile ? '16px 16px 80px' : '20px 24px 80px', display: 'flex', flexDirection: 'column', gap: 24 }}>
             {questionGroups.map((group, gi) => (
               <div key={gi}>
                 <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: '0.08em', textTransform: 'uppercase', color: 'var(--accent)', marginBottom: 10, paddingBottom: 8, borderBottom: '1px solid var(--border)' }}>
@@ -518,44 +518,38 @@ export default function ReadingTestPage() {
         </div>
       </div>
 
-      {/* Passage navigation bottom bar — pinned to the viewport bottom on mobile
-          (in the flex flow it floated to mid-screen when a pane was short). */}
+      {/* Passage navigation bottom bar — same style as listening */}
       <div style={{
-        display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-        padding: isMobile ? '8px 10px' : '10px 16px', gap: 8,
-        borderTop: '1px solid var(--border)', background: 'var(--bg-elev)', flexShrink: 0,
-        paddingBottom: isMobile ? 'calc(8px + env(safe-area-inset-bottom))' : '10px',
-        ...(isMobile ? { position: 'fixed', left: 0, right: 0, bottom: 0, zIndex: 40 } : null),
+        position: 'fixed', bottom: 0, left: 0, right: 0, zIndex: 40,
+        background: 'color-mix(in srgb, var(--bg-elev) 92%, transparent)',
+        backdropFilter: 'blur(20px)',
+        borderTop: '1px solid var(--border)',
+        paddingBottom: 'env(safe-area-inset-bottom)',
       }}>
-        <button onClick={() => setActivePassage(p => Math.max(1, p - 1))} disabled={activePassage === 1}
-          style={{ display: 'flex', alignItems: 'center', gap: 6, padding: isMobile ? '8px 10px' : '7px 14px', borderRadius: 8, fontSize: 13, fontWeight: 500, color: 'var(--text-2)', background: 'none', border: '1px solid var(--border)', cursor: 'pointer', opacity: activePassage === 1 ? 0.3 : 1, flexShrink: 0 }}>
-          <ChevronLeft size={14} strokeWidth={2} /> {!isMobile && t('reading.previous')}
-        </button>
-
-        <div style={{ display: 'flex', gap: isMobile ? 6 : 8 }}>
+        <div style={{ display: 'flex' }}>
           {sections.map(sec => {
             const secQs = questions.filter(q => q.sectionNumber === sec.section_number)
-            const answered = secQs.filter(q => answers[q.id]).length
+            const done = secQs.filter(q => answers[q.id]).length
+            const allDone = done === secQs.length && secQs.length > 0
             const active = activePassage === sec.section_number
             return (
               <button key={sec.id} onClick={() => setActivePassage(sec.section_number)} style={{
-                display: 'flex', flexDirection: 'column', alignItems: 'center',
-                padding: isMobile ? '6px 12px' : '7px 20px', borderRadius: 8, fontSize: 13, fontWeight: 600,
-                background: active ? 'var(--accent)' : 'var(--bg-soft)',
-                color: active ? 'var(--accent-fg)' : 'var(--text-2)',
-                border: 'none', cursor: 'pointer', transition: 'all .15s',
+                flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center',
+                padding: '12px 8px',
+                borderTop: `2px solid ${active ? 'var(--accent)' : 'transparent'}`,
+                background: active ? 'var(--accent-soft)' : 'transparent',
+                cursor: 'pointer', transition: 'all .15s',
               }}>
-                <span>{isMobile ? sec.section_number : `${t('reading.passage')} ${sec.section_number}`}</span>
-                <span style={{ fontSize: 10, opacity: 0.7 }}>{answered}/{secQs.length}</span>
+                <span style={{ fontSize: 12, fontWeight: 700, color: active ? 'var(--accent)' : 'var(--text-2)' }}>
+                  {t('reading.passage')} {sec.section_number}
+                </span>
+                <span style={{ fontSize: 10, marginTop: 2, fontVariantNumeric: 'tabular-nums', color: allDone ? 'var(--accent)' : active ? 'color-mix(in srgb, var(--accent) 60%, transparent)' : 'var(--text-3)' }}>
+                  {done}/{secQs.length}
+                </span>
               </button>
             )
           })}
         </div>
-
-        <button onClick={() => setActivePassage(p => Math.min(sections.length, p + 1))} disabled={activePassage === sections.length}
-          style={{ display: 'flex', alignItems: 'center', gap: 6, padding: isMobile ? '8px 10px' : '7px 14px', borderRadius: 8, fontSize: 13, fontWeight: 500, color: 'var(--text-2)', background: 'none', border: '1px solid var(--border)', cursor: 'pointer', opacity: activePassage === sections.length ? 0.3 : 1, flexShrink: 0 }}>
-          {!isMobile && t('reading.next')} <ChevronRight size={14} strokeWidth={2} />
-        </button>
       </div>
     </div>
   )
