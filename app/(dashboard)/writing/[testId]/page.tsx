@@ -233,11 +233,11 @@ export default function WritingTestPage() {
             </div>
           ) : (
             <>
-              <p style={{ fontSize: 15, lineHeight: 1.65, fontWeight: 500, color: 'var(--text)', whiteSpace: 'pre-wrap', marginBottom: 16 }}>
+              <p style={{ fontSize: 16, lineHeight: 1.7, fontWeight: 500, color: 'var(--text)', whiteSpace: 'pre-wrap', marginBottom: 16 }}>
                 {currentPrompt.text}
               </p>
               {currentPrompt.note && (
-                <p style={{ fontSize: 13, fontStyle: 'italic', color: 'var(--text-3)', whiteSpace: 'pre-wrap' }}>{currentPrompt.note}</p>
+                <p style={{ fontSize: 14, fontStyle: 'italic', color: 'var(--text-3)', whiteSpace: 'pre-wrap' }}>{currentPrompt.note}</p>
               )}
               {currentPrompt.imageUrl && (
                 // eslint-disable-next-line @next/next/no-img-element

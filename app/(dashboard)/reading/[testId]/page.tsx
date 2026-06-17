@@ -61,7 +61,7 @@ function ReadingQuestion({
   const qText = question.question_text.replace(/^\[.*?\]\s*/, '')
 
   const selectStyle: React.CSSProperties = {
-    padding: '6px 10px', borderRadius: 8, fontSize: 13,
+    padding: '6px 10px', borderRadius: 8, fontSize: 14,
     border: '1px solid var(--border-strong)', background: 'var(--bg-elev)',
     color: 'var(--text)', outline: 'none', cursor: 'pointer',
   }
@@ -77,7 +77,7 @@ function ReadingQuestion({
           <option value="">{t('reading.select')}</option>
           <option>TRUE</option><option>FALSE</option><option>NOT GIVEN</option>
         </select>
-        <p style={{ fontSize: 14, color: 'var(--text)', lineHeight: 1.55, margin: 0 }}>{qText}</p>
+        <p style={{ fontSize: 15, color: 'var(--text)', lineHeight: 1.6, margin: 0 }}>{qText}</p>
       </div>
     )
   }
@@ -89,14 +89,14 @@ function ReadingQuestion({
     const letters = ['A', 'B', 'C', 'D']
     return (
       <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-        <p style={{ fontSize: 14, color: 'var(--text)', fontWeight: 500, margin: 0, lineHeight: 1.5 }}>{questionPart}</p>
+        <p style={{ fontSize: 15, color: 'var(--text)', fontWeight: 500, margin: 0, lineHeight: 1.6 }}>{questionPart}</p>
         <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
           {optionMatches.map((opt, i) => {
             const sel = answer === letters[i]
             return (
               <button key={i} onClick={() => onChange(letters[i])} style={{
                 width: '100%', textAlign: 'left', display: 'flex', alignItems: 'flex-start', gap: 10,
-                padding: '10px 14px', borderRadius: 10, fontSize: 14,
+                padding: '10px 14px', borderRadius: 10, fontSize: 15,
                 border: `1px solid ${sel ? 'var(--accent)' : 'var(--border)'}`,
                 background: sel ? 'var(--accent-soft)' : 'var(--bg-elev)',
                 color: sel ? 'var(--accent)' : 'var(--text)',
@@ -119,7 +119,7 @@ function ReadingQuestion({
     const allOptions = bracketMatch ? bracketMatch[1].match(/[A-H]=[^ ].*?(?= [A-H]=|\]|$)/g) ?? [] : []
     return (
       <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-        <p style={{ fontSize: 14, color: 'var(--text)', lineHeight: 1.55, margin: 0 }}>{qText}</p>
+        <p style={{ fontSize: 15, color: 'var(--text)', lineHeight: 1.6, margin: 0 }}>{qText}</p>
         <select value={answer} onChange={e => onChange(e.target.value)} style={selectStyle}
           onFocus={e => (e.currentTarget.style.borderColor = 'var(--accent)')}
           onBlur={e => (e.currentTarget.style.borderColor = 'var(--border-strong)')}
@@ -144,7 +144,7 @@ function ReadingQuestion({
       <p style={{ fontSize: 14, color: 'var(--text)', lineHeight: 1.55, margin: 0 }}>{qText}</p>
       <input type="text" value={answer} onChange={e => onChange(e.target.value)}
         placeholder={t('reading.typeAnswer')}
-        style={{ padding: '9px 12px', borderRadius: 8, fontSize: 14, border: '1px solid var(--border-strong)', background: 'var(--bg-elev)', color: 'var(--text)', outline: 'none' }}
+        style={{ padding: '9px 12px', borderRadius: 8, fontSize: 15, border: '1px solid var(--border-strong)', background: 'var(--bg-elev)', color: 'var(--text)', outline: 'none' }}
         onFocus={e => (e.currentTarget.style.borderColor = 'var(--accent)')}
         onBlur={e => (e.currentTarget.style.borderColor = 'var(--border-strong)')}
       />
@@ -160,12 +160,12 @@ function PassageText({ text }: { text: string }) {
   const lines = normalized.split('\n').filter(Boolean)
 
   return (
-    <div style={{ fontSize: 14, color: 'var(--text)', lineHeight: 1.65, display: 'flex', flexDirection: 'column', gap: 10 }}>
+    <div style={{ fontSize: 16, color: 'var(--text)', lineHeight: 1.7, display: 'flex', flexDirection: 'column', gap: 12 }}>
       {lines.map((line, i) => {
         const trimmed = line.trim()
 
         if (i === 0 || i === 1) {
-          return <p key={i} style={{ fontWeight: 700, color: 'var(--text)', fontSize: 15, margin: 0 }}>{trimmed}</p>
+          return <p key={i} style={{ fontWeight: 700, color: 'var(--text)', fontSize: 17, margin: 0 }}>{trimmed}</p>
         }
 
         if (hasParagraphs) {
