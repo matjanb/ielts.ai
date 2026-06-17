@@ -451,7 +451,7 @@ export default function ReadingTestPage() {
             </div>
             <h2 style={{ fontSize: 15, fontWeight: 700, margin: 0, color: 'var(--text)' }}>{currentPassage?.title}</h2>
           </div>
-          <div style={{ flex: 1, overflowY: 'auto', padding: isMobile ? '14px 16px 80px' : '16px 24px 80px' }}>
+          <div style={{ flex: 1, overflowY: 'auto', padding: isMobile ? '14px 16px 24px' : '16px 24px' }}>
             <PassageText text={passageText} />
           </div>
         </div>
@@ -469,7 +469,7 @@ export default function ReadingTestPage() {
           display: isMobile && mobileTab !== 'questions' ? 'none' : 'flex',
           flexDirection: 'column', minWidth: 0, background: 'var(--bg-elev)',
         }}>
-          <div style={{ flex: 1, overflowY: 'auto', padding: isMobile ? '16px 16px 80px' : '20px 24px 80px', display: 'flex', flexDirection: 'column', gap: 24 }}>
+          <div style={{ flex: 1, overflowY: 'auto', padding: isMobile ? '16px 16px 24px' : '20px 24px', display: 'flex', flexDirection: 'column', gap: 24 }}>
             {questionGroups.map((group, gi) => (
               <div key={gi}>
                 <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: '0.08em', textTransform: 'uppercase', color: 'var(--accent)', marginBottom: 10, paddingBottom: 8, borderBottom: '1px solid var(--border)' }}>
@@ -520,7 +520,7 @@ export default function ReadingTestPage() {
 
       {/* Passage navigation bottom bar — same style as listening */}
       <div style={{
-        position: 'fixed', bottom: 0, left: 0, right: 0, zIndex: 40,
+        flexShrink: 0,
         background: 'color-mix(in srgb, var(--bg-elev) 92%, transparent)',
         backdropFilter: 'blur(20px)',
         borderTop: '1px solid var(--border)',
