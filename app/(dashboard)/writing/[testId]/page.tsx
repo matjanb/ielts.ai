@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useMemo, useRef } from 'react'
+import { useState, useEffect, useMemo, useRef, useCallback } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import { Loader2 } from 'lucide-react'
 import { getTestById, getWritingPromptsForTest, type WritingPrompt } from '@/lib/services/tests'
@@ -37,6 +37,22 @@ export default function WritingTestPage() {
   const [error, setError]       = useState('')
 
   const editorRef = useRef<HTMLDivElement>(null)
+  const containerRef = useRef<HTMLDivElement>(null)
+  const [leftWidth, setLeftWidth] = useState(42)
+  const isResizing = useRef(false)
+
+  const startResize = useCallback((e: React.MouseEvent) => {
+    isResizing.current = true
+    e.preventDefault()
+    const onMove = (e: MouseEvent) => {
+      if (!isResizing.current || !containerRef.current) return
+      const rect = containerRef.current.getBoundingClientRect()
+      setLeftWidth(Math.min(70, Math.max(25, ((e.clientX - rect.left) / rect.width) * 100)))
+    }
+    const onUp = () => { isResizing.current = false }
+    window.addEventListener('mousemove', onMove)
+    window.addEventListener('mouseup', onUp, { once: true })
+  }, [])
 
   const [allPrompts, setAllPrompts]       = useState<WritingPrompt[]>([])
   const [promptsLoading, setPromptsLoading] = useState(true)
@@ -192,12 +208,12 @@ export default function WritingTestPage() {
         </div>
       ) : (
       /* Two-pane body: prompt + editor */
-      <div style={{ display: 'flex', flexDirection: isMobile ? 'column' : 'row', flex: 1, minHeight: 0 }}>
+      <div ref={containerRef} style={{ display: 'flex', flexDirection: isMobile ? 'column' : 'row', flex: 1, minHeight: 0 }}>
 
         {/* Pane 1: Prompt — collapses to a tappable bar on mobile */}
         <div style={{
-          width: isMobile ? '100%' : '42%',
-          borderRight: isMobile ? 'none' : '2px solid var(--border)',
+          width: isMobile ? '100%' : `${leftWidth}%`,
+          borderRight: isMobile ? 'none' : 'none',
           borderBottom: isMobile ? '1px solid var(--border)' : undefined,
           background: 'var(--bg-elev)', overflow: 'auto', flexShrink: 0,
           padding: isMobile ? '0 16px' : '20px 24px',
@@ -257,8 +273,15 @@ export default function WritingTestPage() {
           </>)}
         </div>
 
+        {/* Drag divider — desktop only */}
+        {!isMobile && (
+          <div onMouseDown={startResize} style={{ width: 6, background: 'var(--border)', cursor: 'col-resize', flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+            <div style={{ width: 3, height: 40, borderRadius: 999, background: 'var(--border-strong)' }}/>
+          </div>
+        )}
+
         {/* Pane 2: Writing area */}
-        <div style={{ flex: 1, display: 'flex', flexDirection: 'column', background: 'var(--bg-elev)' }}>
+        <div style={{ width: isMobile ? '100%' : `${100 - leftWidth}%`, display: 'flex', flexDirection: 'column', background: 'var(--bg-elev)' }}>
           <div style={{ padding: '10px 16px', background: 'var(--bg-soft)', borderBottom: '1px solid var(--border)', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexShrink: 0 }}>
             <div style={{ display: 'flex', gap: 4 }}>
               <button onClick={() => applyFormat('bold')}      style={{ padding: '3px 9px', fontSize: 12, fontWeight: 700, background: 'var(--bg-elev)', border: '1px solid var(--border)', borderRadius: 4, cursor: 'pointer', color: 'var(--text)' }}>B</button>
