@@ -292,7 +292,13 @@
     "basicFeedback": "Базовая обратная связь по письму",
     "studyGuides": "Доступ к учебным материалам",
     "communityAccess": "Доступ к сообществу",
-    "back": "Назад к дашборду"
+    "back": "Назад к дашборду",
+    "promoLabel": "Есть промокод?",
+    "promoPlaceholder": "Промокод",
+    "promoApply": "Применить",
+    "promoApplied": "{{code}} применён",
+    "promoOff": "скидка {{pct}}%",
+    "promoRemove": "Убрать"
   },
   "mockTest": {
     "startTest": "Начать тест",

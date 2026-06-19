@@ -292,7 +292,13 @@
     "basicFeedback": "Basic writing feedback",
     "studyGuides": "Access to study guides",
     "communityAccess": "Community access",
-    "back": "Back to dashboard"
+    "back": "Back to dashboard",
+    "promoLabel": "Have a promo code?",
+    "promoPlaceholder": "Promo code",
+    "promoApply": "Apply",
+    "promoApplied": "{{code}} applied",
+    "promoOff": "{{pct}}% off",
+    "promoRemove": "Remove"
   },
   "mockTest": {
     "startTest": "Start Test",

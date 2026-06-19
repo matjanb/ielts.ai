@@ -97,6 +97,24 @@ export async function POST(request: NextRequest) {
     const userId: string | undefined = data.custom_data?.user_id
     const customerId = typeof data.customer_id === 'string' ? data.customer_id : undefined
     const plan = planFromEvent(data)
+    // The Paddle discount applied to this purchase, if any. Transactions carry
+    // `discount_id`; subscriptions carry a `discount` object. We use it to credit
+    // the matching promo code (record_promo_redemption dedupes per user).
+    const discountId: string | undefined =
+      (typeof data.discount_id === 'string' && data.discount_id) ||
+      (typeof data.discount?.id === 'string' && data.discount.id) ||
+      undefined
+
+    // Credit a promo redemption for a granting event. Idempotent per (code, user)
+    // in the DB, so webhook retries and renewals never double-count.
+    async function recordPromo() {
+      if (!userId || !discountId) return
+      const { error } = await admin.rpc('record_promo_redemption', {
+        p_discount_id: discountId,
+        p_user_id: userId,
+      })
+      if (error) console.error('[paddle/webhook] promo redemption', error)
+    }
     // End of the current paid period as reported by Paddle (the authoritative
     // date for an active subscription).
     const paddlePeriodEnd: string | undefined =
@@ -122,6 +140,7 @@ export async function POST(request: NextRequest) {
         case 'subscription.activated':
         case 'transaction.completed':
           await setStatus(userId, 'pro', { customerId, expiresAt: grantExpiry(), plan, source: 'paddle', paid: true })
+          await recordPromo()
           break
         case 'subscription.updated': {
           // While active, keep 'pro' and extend the paid-through date. When not

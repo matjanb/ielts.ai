@@ -12,15 +12,22 @@ import { getProfile } from '@/lib/services/user'
 import { isSubscriptionActive } from '@/lib/subscription'
 import { DiagnosticSync } from '@/components/DiagnosticSync'
 
-// Open the Paddle overlay checkout for the chosen plan.
-async function handleCheckout(planId: string) {
+// Open the Paddle overlay checkout for the chosen plan, applying a promo
+// discount when one has been validated.
+async function handleCheckout(planId: string, discountId?: string | null) {
   try {
     const { user } = await getUser()
-    const opened = await openCheckout(planId, user)
+    const opened = await openCheckout(planId, user, discountId)
     if (!opened) alert('Checkout is not available yet.')
   } catch {
     alert('Network error. Please try again.')
   }
+}
+
+interface AppliedPromo {
+  code: string
+  discountId: string
+  percentOff: number | null
 }
 
 const FEATURES = [
@@ -52,6 +59,37 @@ function SubscriptionContent() {
   const [selected, setSelected] = useState('3mo')
   const [activating, setActivating] = useState(false)
   const [subscribed, setSubscribed] = useState(false)
+
+  // Promo code: the raw input, the validated discount (if any), and UI state.
+  const [promoInput, setPromoInput] = useState('')
+  const [promo, setPromo] = useState<AppliedPromo | null>(null)
+  const [promoError, setPromoError] = useState('')
+  const [checkingPromo, setCheckingPromo] = useState(false)
+
+  async function applyPromo(e: React.FormEvent) {
+    e.preventDefault()
+    const code = promoInput.trim()
+    if (!code) return
+    setCheckingPromo(true); setPromoError('')
+    try {
+      const res = await fetch('/api/promo/validate', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ code }),
+      })
+      const data = await res.json()
+      if (!res.ok) { setPromo(null); setPromoError(data.error ?? 'Invalid promo code'); return }
+      setPromo({ code: data.code, discountId: data.discountId, percentOff: data.percentOff ?? null })
+    } catch {
+      setPromoError('Network error. Please try again.')
+    } finally {
+      setCheckingPromo(false)
+    }
+  }
+
+  function clearPromo() {
+    setPromo(null); setPromoInput(''); setPromoError('')
+  }
 
   // Know whether the visitor already has an active plan — only then does
   // "Back to dashboard" make sense (non-subscribers would just bounce back here).
@@ -220,7 +258,7 @@ function SubscriptionContent() {
                 </ul>
 
                 <button
-                  onClick={e => { e.stopPropagation(); handleCheckout(plan.id) }}
+                  onClick={e => { e.stopPropagation(); handleCheckout(plan.id, promo?.discountId) }}
                   style={{
                     width: '100%', padding: '14px 16px', borderRadius: 12, fontSize: 14, fontWeight: 600,
                     background: plan.popular ? 'var(--accent)' : 'var(--bg-soft)',
@@ -235,6 +273,50 @@ function SubscriptionContent() {
               </div>
             )
           })}
+        </div>
+
+        {/* Promo code */}
+        <div style={{ maxWidth: 420, margin: '36px auto 0' }}>
+          {promo ? (
+            <div style={{
+              display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12,
+              padding: '12px 16px', borderRadius: 12, border: '1px solid var(--accent)',
+              background: 'var(--accent-soft)',
+            }}>
+              <span style={{ fontSize: 14, color: 'var(--text)', fontWeight: 600 }}>
+                {t('subscription.promoApplied', { code: promo.code })}
+                {promo.percentOff ? ` · ${t('subscription.promoOff', { pct: String(promo.percentOff) })}` : ''}
+              </span>
+              <button
+                onClick={clearPromo}
+                style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-2)', fontSize: 13, fontWeight: 600 }}
+              >
+                {t('subscription.promoRemove')}
+              </button>
+            </div>
+          ) : (
+            <form onSubmit={applyPromo}>
+              <label style={{ display: 'block', textAlign: 'center', fontSize: 13, color: 'var(--text-2)', marginBottom: 10 }}>
+                {t('subscription.promoLabel')}
+              </label>
+              <div style={{ display: 'flex', gap: 8 }}>
+                <input
+                  value={promoInput}
+                  onChange={e => { setPromoInput(e.target.value); if (promoError) setPromoError('') }}
+                  placeholder={t('subscription.promoPlaceholder')}
+                  style={{ flex: 1, padding: '11px 14px', borderRadius: 10, border: '1px solid var(--border-strong)', background: 'var(--bg-elev)', color: 'var(--text)', fontSize: 14, outline: 'none', textTransform: 'uppercase' }}
+                />
+                <button
+                  type="submit"
+                  disabled={checkingPromo || !promoInput.trim()}
+                  style={{ padding: '11px 20px', borderRadius: 10, border: 'none', background: 'var(--accent)', color: 'var(--accent-fg)', fontWeight: 600, fontSize: 14, cursor: checkingPromo || !promoInput.trim() ? 'default' : 'pointer', opacity: checkingPromo || !promoInput.trim() ? 0.6 : 1 }}
+                >
+                  {checkingPromo ? '…' : t('subscription.promoApply')}
+                </button>
+              </div>
+              {promoError && <div style={{ color: 'var(--danger)', fontSize: 13, marginTop: 8, textAlign: 'center' }}>{promoError}</div>}
+            </form>
+          )}
         </div>
 
         {/* Trust row */}

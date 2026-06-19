@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useState } from 'react'
 import Link from 'next/link'
 import { ReferralsPanel } from './ReferralsPanel'
+import { PromoCodesPanel } from './PromoCodesPanel'
 
 interface AdminUser {
   id: string
@@ -210,6 +211,8 @@ export function AdminClient() {
           </tbody>
         </table>
       </div>
+
+      <PromoCodesPanel />
 
       <ReferralsPanel />
     </div>

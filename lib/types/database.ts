@@ -352,6 +352,66 @@ export type Database = {
         }
         Relationships: []
       }
+      promo_codes: {
+        Row: {
+          id: string
+          code: string
+          paddle_discount_id: string
+          description: string | null
+          percent_off: number | null
+          is_active: boolean
+          expires_at: string | null
+          max_redemptions: number | null
+          redemption_count: number
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          code: string
+          paddle_discount_id: string
+          description?: string | null
+          percent_off?: number | null
+          is_active?: boolean
+          expires_at?: string | null
+          max_redemptions?: number | null
+          redemption_count?: number
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          code?: string
+          paddle_discount_id?: string
+          description?: string | null
+          percent_off?: number | null
+          is_active?: boolean
+          expires_at?: string | null
+          max_redemptions?: number | null
+          redemption_count?: number
+          created_at?: string
+        }
+        Relationships: []
+      }
+      promo_redemptions: {
+        Row: {
+          id: string
+          code: string
+          user_id: string | null
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          code: string
+          user_id?: string | null
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          code?: string
+          user_id?: string | null
+          created_at?: string
+        }
+        Relationships: []
+      }
       questions: {
         Row: {
           correct_answer: string | null
@@ -1215,6 +1275,10 @@ export type Database = {
           is_admin: boolean
         }[]
       }
+      record_promo_redemption: {
+        Args: { p_discount_id: string; p_user_id: string }
+        Returns: undefined
+      }
       admin_stats: {
         Args: Record<string, never>
         Returns: {
@@ -1442,3 +1506,4 @@ export type TestSection = Database['public']['Tables']['test_sections']['Row']
 export type Question = Database['public']['Tables']['questions']['Row']
 export type UserAttempt = Database['public']['Tables']['user_attempts']['Row']
 export type UserAnswer = Database['public']['Tables']['user_answers']['Row']
+export type PromoCode = Database['public']['Tables']['promo_codes']['Row']

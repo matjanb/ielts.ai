@@ -43,11 +43,14 @@ export const PADDLE_PRICE: Record<string, string | undefined> = {
 }
 
 /* Open the Paddle overlay checkout for a plan id. Attaches the user's email and
- * id so the webhook can link the resulting subscription back to the account.
- * Returns false when Paddle isn't ready or the price id is missing. */
+ * id so the webhook can link the resulting subscription back to the account. An
+ * optional Paddle discount id (resolved from a promo code) is applied so Paddle
+ * enforces the price cut. Returns false when Paddle isn't ready or the price id
+ * is missing. */
 export async function openCheckout(
   planId: string,
   user?: { id?: string; email?: string } | null,
+  discountId?: string | null,
 ): Promise<boolean> {
   const priceId = PADDLE_PRICE[planId]
   const paddle = await getPaddle()
@@ -56,6 +59,7 @@ export async function openCheckout(
     items: [{ priceId, quantity: 1 }],
     customer: user?.email ? { email: user.email } : undefined,
     customData: user?.id ? { user_id: user.id } : undefined,
+    ...(discountId ? { discountId } : {}),
     // Land back on the subscription page, which waits for the webhook to flip
     // the status to active and then forwards into the dashboard (avoids a
     // redirect loop if the webhook hasn't processed yet).
