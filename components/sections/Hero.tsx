@@ -191,7 +191,7 @@ export function Hero() {
           </p>
 
           <div style={{ display: 'flex', flexWrap: 'wrap', gap: 10, marginTop: 30 }}>
-            <Link href="/diagnostic/start" style={{
+            <Link href="/signup" style={{
               display: 'inline-flex', alignItems: 'center', gap: 8,
               padding: '14px 22px', borderRadius: 'var(--radius-lg)',
               fontWeight: 600, fontSize: 15,

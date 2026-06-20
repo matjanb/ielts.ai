@@ -99,7 +99,7 @@ export function Pricing() {
                   ))}
                 </ul>
 
-                <Link href="/diagnostic/start" style={{
+                <Link href="/signup" style={{
                   display: 'block', textAlign: 'center', padding: '11px', borderRadius: 10, fontSize: 14, fontWeight: 600,
                   background: popular ? 'var(--accent-fg)' : 'var(--accent)',
                   color: popular ? 'var(--accent)' : 'var(--accent-fg)',

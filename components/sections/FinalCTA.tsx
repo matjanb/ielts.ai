@@ -19,7 +19,7 @@ export function FinalCTA() {
         <p style={{ fontSize: 16, opacity: 0.85, margin: '12px 0 28px' }}>
           {t('finalCta.sub')}
         </p>
-        <Link href="/diagnostic/start" style={{
+        <Link href="/signup" style={{
           display: 'inline-flex', alignItems: 'center', gap: 8,
           padding: '14px 24px', borderRadius: 'var(--radius-lg)',
           fontWeight: 600, fontSize: 15,

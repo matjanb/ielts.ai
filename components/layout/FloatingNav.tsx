@@ -85,7 +85,7 @@ export function FloatingNav() {
             >
               {t('nav.login')}
             </Link>
-            <Link href="/diagnostic/start" style={{
+            <Link href="/signup" style={{
               display: 'inline-flex', alignItems: 'center',
               padding: '7px 14px', borderRadius: 'var(--radius)',
               fontSize: 13, fontWeight: 600,

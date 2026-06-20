@@ -36,7 +36,7 @@ export function ForSchools() {
             }}>
               {t('forSchools.contactCta')}
             </Link>
-            <Link href="/diagnostic/start" style={{
+            <Link href="/signup" style={{
               display: 'inline-flex', alignItems: 'center', gap: 8, padding: '12px 22px', borderRadius: 'var(--radius-lg)',
               fontSize: 14, fontWeight: 600, background: 'transparent', color: 'var(--text)', border: '1px solid var(--border-strong)', textDecoration: 'none',
             }}>

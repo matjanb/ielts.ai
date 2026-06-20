@@ -6,7 +6,6 @@ import { useRouter, useSearchParams } from 'next/navigation'
 import { Eye, EyeOff } from 'lucide-react'
 import { useLanguage } from '@/lib/i18n/LanguageContext'
 import { signIn, signInWithGoogle, resendConfirmation } from '@/lib/services/auth'
-import { createClient } from '@/lib/supabase/client'
 
 export default function LoginClient() {
   const { t } = useLanguage()
@@ -48,25 +47,6 @@ export default function LoginClient() {
       return
     }
 
-    // Check if diagnostic/onboarding was completed and redirect accordingly
-    router.refresh()
-    try {
-      const supabase = createClient()
-      const { data: { user } } = await supabase.auth.getUser()
-      if (user) {
-        const { data: profile } = await (supabase as any)
-          .from('profiles')
-          .select('onboarding_completed')
-          .eq('id', user.id)
-          .single()
-        if (!profile?.onboarding_completed) {
-          router.replace('/diagnostic/start')
-          return
-        }
-      }
-    } catch {
-      // ignore profile check errors — fall through to dashboard
-    }
     router.replace('/dashboard')
     // Keep loading=true so button stays disabled during navigation
   }
@@ -203,10 +183,9 @@ export default function LoginClient() {
           </button>
         </form>
 
-        {/* Sign up → start with the diagnostic so the account gets a study plan */}
         <p style={{ textAlign: 'center', fontSize: 14, color: 'var(--text-2)', marginTop: 20, marginBottom: 0 }}>
           {t('auth.noAccount')}{' '}
-          <Link href="/diagnostic/start" style={{ color: 'var(--accent)', fontWeight: 600 }}>
+          <Link href="/signup" style={{ color: 'var(--accent)', fontWeight: 600 }}>
             {t('auth.signUpLink')}
           </Link>
         </p>
