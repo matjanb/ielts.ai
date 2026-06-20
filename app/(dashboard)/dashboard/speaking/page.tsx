@@ -6,6 +6,7 @@ import { useIsMobile } from '@/lib/hooks/useIsMobile'
 import { createClient } from '@/lib/supabase/client'
 import { blobToWavSegments, type SpeechSegment } from '@/lib/utils/wavEncode'
 import { metricsFromSegments, type FluencyMetrics } from '@/lib/ielts/fluency'
+import { SpeakingFocus } from '@/components/speaking/SpeakingFocus'
 
 /* ── Types ─────────────────────────────────────────────────────────────────── */
 type Part = 1 | 2 | 3
@@ -47,7 +48,7 @@ function ReadyScreen({ onStart }: { onStart: () => void }) {
         <p style={{ fontSize: 15, color: 'var(--text-2)', lineHeight: 1.6, margin: '0 0 34px' }}>
           {t('speak.readyDesc')}
         </p>
-        <div style={{ display: 'grid', gap: 8, marginBottom: 34, textAlign: 'left' }}>
+        <div style={{ display: 'grid', gap: 8, marginBottom: 24, textAlign: 'left' }}>
           {[t('speak.b1'), t('speak.b2'), t('speak.b3'), t('speak.b4')].map((s, i) => (
             <div key={i} style={{ display: 'flex', gap: 12, alignItems: 'center', padding: '11px 16px', background: 'var(--bg-elev)', borderRadius: 12, border: '1px solid var(--border)' }}>
               <svg width={15} height={15} viewBox="0 0 24 24" fill="none" stroke="var(--accent)" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><path d="M5 12l5 5L20 7"/></svg>
@@ -55,6 +56,8 @@ function ReadyScreen({ onStart }: { onStart: () => void }) {
             </div>
           ))}
         </div>
+        <SpeakingFocus />
+        <div style={{ height: 28 }} />
         <button onClick={onStart} style={{ display: 'inline-flex', alignItems: 'center', gap: 10, padding: '15px 34px', borderRadius: 14, fontSize: 15, fontWeight: 700, background: 'var(--accent)', color: 'var(--accent-fg)', border: 'none', cursor: 'pointer', boxShadow: '0 10px 30px -10px color-mix(in srgb, var(--accent) 60%, transparent)' }}>
           <MicIcon size={17} color="var(--accent-fg)" /> {t('speak.start')}
         </button>

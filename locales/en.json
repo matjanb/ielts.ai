@@ -1006,6 +1006,16 @@
     "tipLexical": "Use precise, less-common vocabulary and correct collocations; avoid repetition.",
     "tipGrammar": "Mix simple and complex sentences, and proofread to cut errors."
   },
+  "speakingFocus": {
+    "title": "Your speaking weak spots",
+    "sub": "Average band per criterion across your sessions",
+    "badge": "Focus",
+    "empty": "Complete your first speaking test and your weak spots across the 4 criteria will show here.",
+    "tipFluency": "Speak at a natural pace without long pauses; use fillers like 'well' or 'you know' only sparingly.",
+    "tipLexical": "Use topic-specific vocabulary and paraphrase rather than repeating the same words.",
+    "tipGrammar": "Vary your sentence structures — mix conditionals, passives, and complex clauses.",
+    "tipPron": "Focus on word stress and sentence rhythm; record yourself and compare with native speakers."
+  },
   "writingCoach": {
     "title": "AI coach",
     "sub": "Personal advice from your grades and recurring mistakes",
