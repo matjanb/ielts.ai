@@ -52,8 +52,8 @@ function ReadyScreen({ onStart }: { onStart: () => void }) {
           </button>
         </div>
 
-        {/* Two columns — both start at the same level */}
-        <div style={{ display: 'flex', flexDirection: isMobile ? 'column' : 'row', alignItems: 'flex-start', gap: isMobile ? 28 : 44 }}>
+        {/* Two columns — stretch so both bottoms align */}
+        <div style={{ display: 'flex', flexDirection: isMobile ? 'column' : 'row', alignItems: isMobile ? 'flex-start' : 'stretch', gap: isMobile ? 28 : 44 }}>
           {/* Left */}
           <div style={{ flex: '0 0 auto', width: isMobile ? '100%' : 420, textAlign: isMobile ? 'center' : 'left' }}>
             <h1 style={{ fontSize: isMobile ? 28 : 38, fontWeight: 700, letterSpacing: '-0.03em', margin: '0 0 12px', color: 'var(--text)' }}>{t('speak.readyTitle')}</h1>
@@ -70,9 +70,9 @@ function ReadyScreen({ onStart }: { onStart: () => void }) {
             </div>
           </div>
 
-          {/* Right — weak spots */}
-          <div style={{ flex: 1, minWidth: 0, width: isMobile ? '100%' : undefined }}>
-            <SpeakingFocus />
+          {/* Right — weak spots, stretch to match left height */}
+          <div style={{ flex: 1, minWidth: 0, width: isMobile ? '100%' : undefined, display: 'flex', flexDirection: 'column' }}>
+            <SpeakingFocus fullHeight />
           </div>
         </div>
 

@@ -19,7 +19,7 @@ function barColor(band: number): string {
   return 'var(--accent)'
 }
 
-export function SpeakingFocus() {
+export function SpeakingFocus({ fullHeight }: { fullHeight?: boolean }) {
   const { t } = useLanguage()
   const [avgs, setAvgs] = useState<Record<string, number>>({})
   const [count, setCount] = useState(0)
@@ -59,7 +59,7 @@ export function SpeakingFocus() {
   const focusKey = measured[0]?.key
 
   return (
-    <div className="card" style={{ padding: 24, width: '100%' }}>
+    <div className="card" style={{ padding: 24, width: '100%', ...(fullHeight ? { flex: 1 } : {}) }}>
       <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 4 }}>
         <div style={{ width: 34, height: 34, borderRadius: 9, flexShrink: 0, background: 'var(--accent-soft)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
           <Target size={17} style={{ color: 'var(--accent)' }} />
