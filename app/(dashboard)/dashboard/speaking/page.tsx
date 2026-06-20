@@ -73,8 +73,8 @@ function ReadyScreen({ onStart }: { onStart: () => void }) {
             </div>
           </div>
 
-          {/* Right — card fills full grid cell height */}
-          <div style={{ height: '100%' }}>
+          {/* Right — flex column so card stretches to grid cell height */}
+          <div style={{ display: 'flex', flexDirection: 'column' }}>
             <SpeakingFocus fullHeight />
           </div>
         </div>

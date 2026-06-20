@@ -59,7 +59,7 @@ export function SpeakingFocus({ fullHeight }: { fullHeight?: boolean }) {
   const focusKey = measured[0]?.key
 
   return (
-    <div className="card" style={{ padding: 24, width: '100%', ...(fullHeight ? { height: '100%', boxSizing: 'border-box' } : {}) }}>
+    <div className="card" style={{ padding: 24, width: '100%', ...(fullHeight ? { flex: 1 } : {}) }}>
       <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 4 }}>
         <div style={{ width: 34, height: 34, borderRadius: 9, flexShrink: 0, background: 'var(--accent-soft)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
           <Target size={17} style={{ color: 'var(--accent)' }} />
