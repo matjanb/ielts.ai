@@ -44,14 +44,20 @@ function ReadyScreen({ onStart }: { onStart: () => void }) {
 
         {/* Left — CTA */}
         <div style={{ flex: '0 0 auto', width: isMobile ? '100%' : 380, textAlign: isMobile ? 'center' : 'left' }}>
-          <div style={{ display: isMobile ? 'inline-flex' : 'flex', padding: 22, borderRadius: '50%', background: 'var(--accent-soft)', marginBottom: 22, boxShadow: '0 0 0 1px color-mix(in srgb, var(--accent) 25%, transparent), 0 0 60px -10px color-mix(in srgb, var(--accent) 40%, transparent)', width: 'fit-content' }}>
-            <MicIcon size={40} color="var(--accent)" />
+          {/* Mic icon + Start button on the same row */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: 16, marginBottom: 22, justifyContent: isMobile ? 'center' : 'flex-start' }}>
+            <div style={{ flexShrink: 0, padding: 18, borderRadius: '50%', background: 'var(--accent-soft)', boxShadow: '0 0 0 1px color-mix(in srgb, var(--accent) 25%, transparent), 0 0 60px -10px color-mix(in srgb, var(--accent) 40%, transparent)', display: 'flex' }}>
+              <MicIcon size={36} color="var(--accent)" />
+            </div>
+            <button onClick={onStart} style={{ display: 'inline-flex', alignItems: 'center', gap: 10, padding: '13px 26px', borderRadius: 14, fontSize: 15, fontWeight: 700, background: 'var(--accent)', color: 'var(--accent-fg)', border: 'none', cursor: 'pointer', boxShadow: '0 10px 30px -10px color-mix(in srgb, var(--accent) 60%, transparent)', whiteSpace: 'nowrap' }}>
+              <MicIcon size={16} color="var(--accent-fg)" /> {t('speak.start')}
+            </button>
           </div>
           <h1 style={{ fontSize: isMobile ? 28 : 36, fontWeight: 700, letterSpacing: '-0.03em', margin: '0 0 12px', color: 'var(--text)' }}>{t('speak.readyTitle')}</h1>
           <p style={{ fontSize: 14.5, color: 'var(--text-2)', lineHeight: 1.6, margin: '0 0 24px' }}>
             {t('speak.readyDesc')}
           </p>
-          <div style={{ display: 'grid', gap: 7, marginBottom: 28, textAlign: 'left' }}>
+          <div style={{ display: 'grid', gap: 7, textAlign: 'left' }}>
             {[t('speak.b1'), t('speak.b2'), t('speak.b3'), t('speak.b4')].map((s, i) => (
               <div key={i} style={{ display: 'flex', gap: 12, alignItems: 'center', padding: '10px 14px', background: 'var(--bg-elev)', borderRadius: 12, border: '1px solid var(--border)' }}>
                 <svg width={14} height={14} viewBox="0 0 24 24" fill="none" stroke="var(--accent)" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><path d="M5 12l5 5L20 7"/></svg>
@@ -59,13 +65,10 @@ function ReadyScreen({ onStart }: { onStart: () => void }) {
               </div>
             ))}
           </div>
-          <button onClick={onStart} style={{ display: 'inline-flex', alignItems: 'center', gap: 10, padding: '14px 30px', borderRadius: 14, fontSize: 15, fontWeight: 700, background: 'var(--accent)', color: 'var(--accent-fg)', border: 'none', cursor: 'pointer', boxShadow: '0 10px 30px -10px color-mix(in srgb, var(--accent) 60%, transparent)' }}>
-            <MicIcon size={17} color="var(--accent-fg)" /> {t('speak.start')}
-          </button>
         </div>
 
-        {/* Right — weak spots */}
-        <div style={{ flex: 1, minWidth: 0, width: isMobile ? '100%' : undefined }}>
+        {/* Right — weak spots, offset to align with the title */}
+        <div style={{ flex: 1, minWidth: 0, width: isMobile ? '100%' : undefined, paddingTop: isMobile ? 0 : 90 }}>
           <SpeakingFocus />
         </div>
 
