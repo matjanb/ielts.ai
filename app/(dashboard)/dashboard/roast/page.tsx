@@ -4,6 +4,56 @@ import { useState, useRef, useEffect, useCallback } from 'react'
 import { useLanguage } from '@/lib/i18n/LanguageContext'
 import { useIsMobile } from '@/lib/hooks/useIsMobile'
 import type { RoastMode } from '@/app/api/ai/roast/route'
+import { createClient } from '@/lib/supabase/client'
+import { getUser } from '@/lib/services/auth'
+
+type SpeakingContext = {
+  sessionCount: number
+  avgBand: number | null
+  avgFluency: number | null
+  avgLexical: number | null
+  avgGrammar: number | null
+  avgPronunciation: number | null
+  recentImprovements: string[]
+}
+
+async function fetchSpeakingContext(): Promise<SpeakingContext> {
+  const empty: SpeakingContext = { sessionCount: 0, avgBand: null, avgFluency: null, avgLexical: null, avgGrammar: null, avgPronunciation: null, recentImprovements: [] }
+  try {
+    const { user } = await getUser()
+    if (!user) return empty
+    const { data } = await createClient()
+      .from('speaking_submissions')
+      .select('band_score, fluency_score, lexical_score, grammar_score, pronunciation_score, ai_feedback')
+      .eq('user_id', user.id)
+      .order('created_at', { ascending: false })
+      .limit(10)
+    const rows = data ?? []
+    if (rows.length === 0) return empty
+    const avg = (key: string) => {
+      const vals = rows.map(r => (r as Record<string, unknown>)[key]).filter((v): v is number => typeof v === 'number')
+      return vals.length ? vals.reduce((s, v) => s + v, 0) / vals.length : null
+    }
+    const improvements: string[] = []
+    for (const row of rows.slice(0, 3)) {
+      if (!row.ai_feedback) continue
+      try {
+        const fb = JSON.parse(row.ai_feedback) as { improvements?: string[] }
+        if (Array.isArray(fb.improvements)) improvements.push(...fb.improvements.slice(0, 2))
+      } catch { /* skip */ }
+      if (improvements.length >= 5) break
+    }
+    return {
+      sessionCount: rows.length,
+      avgBand:          avg('band_score'),
+      avgFluency:       avg('fluency_score'),
+      avgLexical:       avg('lexical_score'),
+      avgGrammar:       avg('grammar_score'),
+      avgPronunciation: avg('pronunciation_score'),
+      recentImprovements: [...new Set(improvements)].slice(0, 4),
+    }
+  } catch { return empty }
+}
 
 type Lang = 'en' | 'ru' | 'kz' | 'ky' | 'uz'
 type Status = 'connecting' | 'live' | 'ending'
@@ -164,7 +214,7 @@ function ReadyScreen({ mode, onModeChange, onStart, lang }: {
 }
 
 /* ── Live conversation screen ── */
-function LiveScreen({ mode, onExit, lang }: { mode: RoastMode; onExit: () => void; lang: Lang }) {
+function LiveScreen({ mode, onExit, lang, context }: { mode: RoastMode; onExit: () => void; lang: Lang; context: SpeakingContext | null }) {
   const isMobile = useIsMobile()
   const [status, setStatus] = useState<Status>('connecting')
   const [aiSpeaking, setAiSpeaking] = useState(false)
@@ -289,8 +339,8 @@ function LiveScreen({ mode, onExit, lang }: { mode: RoastMode; onExit: () => voi
 
         const resp = await fetch(`/api/ai/roast/realtime?mode=${mode}`, {
           method: 'POST',
-          headers: { 'Content-Type': 'application/sdp' },
-          body: offer.sdp ?? '',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ sdp: offer.sdp ?? '', context }),
         })
         if (!resp.ok) {
           let m = 'Could not connect. Please try again.'
@@ -437,18 +487,25 @@ export default function RoastPage() {
   const [started, setStarted] = useState(false)
   const [mode, setMode] = useState<RoastMode>('roast')
   const [key, setKey] = useState(0)
+  const [context, setContext] = useState<SpeakingContext | null>(null)
+
+  async function handleStart() {
+    const ctx = await fetchSpeakingContext()
+    setContext(ctx)
+    setStarted(true)
+  }
 
   if (!started) {
     return (
       <div style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
-        <ReadyScreen mode={mode} onModeChange={setMode} onStart={() => setStarted(true)} lang={lang} />
+        <ReadyScreen mode={mode} onModeChange={setMode} onStart={handleStart} lang={lang} />
       </div>
     )
   }
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
-      <LiveScreen key={key} mode={mode} lang={lang} onExit={() => { setStarted(false); setKey(k => k + 1) }} />
+      <LiveScreen key={key} mode={mode} lang={lang} context={context} onExit={() => { setStarted(false); setKey(k => k + 1) }} />
     </div>
   )
 }

@@ -5,6 +5,53 @@ import type { RoastMode } from '../route'
 
 const MODEL = 'gpt-realtime-mini'
 
+type SpeakingContext = {
+  sessionCount: number
+  avgBand: number | null
+  avgFluency: number | null
+  avgLexical: number | null
+  avgGrammar: number | null
+  avgPronunciation: number | null
+  recentImprovements: string[]
+}
+
+function buildContextBlock(ctx: SpeakingContext | null | undefined): string {
+  if (!ctx || ctx.sessionCount === 0) return ''
+
+  const scores = [
+    { label: 'Fluency & Coherence',    val: ctx.avgFluency },
+    { label: 'Lexical Resource',       val: ctx.avgLexical },
+    { label: 'Grammatical Range',      val: ctx.avgGrammar },
+    { label: 'Pronunciation',          val: ctx.avgPronunciation },
+  ].filter(s => s.val != null).sort((a, b) => (a.val ?? 0) - (b.val ?? 0))
+
+  const weakest = scores[0]
+
+  const lines: string[] = [
+    '\n\nSTUDENT SPEAKING HISTORY (real data from their actual IELTS speaking tests on this platform):',
+    `Sessions completed: ${ctx.sessionCount}`,
+    ctx.avgBand != null ? `Average overall band: ${ctx.avgBand.toFixed(1)} / 9.0` : '',
+    'Criterion averages:',
+    ...scores.map(s => `  ${s.label}: ${s.val!.toFixed(1)}${s === weakest ? ' ← WEAKEST — prioritise this' : ''}`),
+  ]
+
+  if (ctx.recentImprovements.length > 0) {
+    lines.push('Recurring issues from recent AI feedback:')
+    ctx.recentImprovements.forEach(imp => lines.push(`  • ${imp}`))
+  }
+
+  lines.push(
+    '',
+    'COACHING DIRECTIVE: Use this profile throughout the conversation.',
+    '- Proactively target their weakest criterion — design mini-exercises around it.',
+    '- Reference their actual band scores to motivate ("you\'re at 5.0 fluency, let\'s push to 6").',
+    '- When they speak, pay extra attention to the weak areas identified above.',
+    '- Give specific drills: ask them to paraphrase, use linking words, describe images, etc.',
+  )
+
+  return lines.filter(l => l !== '').join('\n')
+}
+
 const INSTRUCTIONS: Record<RoastMode, string> = {
   polite: `You are Alex, a warm and encouraging IELTS coach having a live voice conversation.
 CRITICAL LANGUAGE RULE: The user may speak Russian, Kazakh, Kyrgyz, Uzbek, or English. Detect their language from the first thing they say and ALWAYS respond in THAT SAME LANGUAGE for the entire conversation. Never switch to English unless they switch first.
@@ -55,8 +102,22 @@ export async function POST(request: NextRequest) {
   if (gate) return gate
 
   const mode = (request.nextUrl.searchParams.get('mode') ?? 'roast') as RoastMode
-  const offerSdp = await request.text()
+
+  const contentType = request.headers.get('content-type') ?? ''
+  let offerSdp: string
+  let speakingContext: SpeakingContext | null = null
+
+  if (contentType.includes('application/json')) {
+    const body = await request.json()
+    offerSdp = body.sdp ?? ''
+    speakingContext = body.context ?? null
+  } else {
+    offerSdp = await request.text()
+  }
   if (!offerSdp?.includes('v=')) return err('Missing SDP offer', 400)
+
+  const contextBlock = buildContextBlock(speakingContext)
+  const instructions = (INSTRUCTIONS[mode] ?? INSTRUCTIONS.roast) + contextBlock
 
   try {
     const secret = await openai.realtime.clientSecrets.create({
@@ -64,7 +125,7 @@ export async function POST(request: NextRequest) {
       session: {
         type: 'realtime',
         model: MODEL,
-        instructions: INSTRUCTIONS[mode] ?? INSTRUCTIONS.roast,
+        instructions,
         output_modalities: ['audio'],
         audio: {
           input: {
