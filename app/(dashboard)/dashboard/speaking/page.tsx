@@ -52,10 +52,13 @@ function ReadyScreen({ onStart }: { onStart: () => void }) {
           </button>
         </div>
 
-        {/* Two columns — stretch so both bottoms align */}
-        <div style={{ display: 'flex', flexDirection: isMobile ? 'column' : 'row', alignItems: isMobile ? 'flex-start' : 'stretch', gap: isMobile ? 28 : 44 }}>
+        {/* Two columns — CSS grid so align-items:stretch works reliably */}
+        <div style={isMobile
+          ? { display: 'flex', flexDirection: 'column', gap: 28 }
+          : { display: 'grid', gridTemplateColumns: '420px 1fr', gap: 44, alignItems: 'stretch' }
+        }>
           {/* Left */}
-          <div style={{ flex: '0 0 auto', width: isMobile ? '100%' : 420, textAlign: isMobile ? 'center' : 'left' }}>
+          <div style={{ textAlign: isMobile ? 'center' : 'left' }}>
             <h1 style={{ fontSize: isMobile ? 28 : 38, fontWeight: 700, letterSpacing: '-0.03em', margin: '0 0 12px', color: 'var(--text)' }}>{t('speak.readyTitle')}</h1>
             <p style={{ fontSize: 15, color: 'var(--text-2)', lineHeight: 1.65, margin: '0 0 22px' }}>
               {t('speak.readyDesc')}
@@ -70,8 +73,8 @@ function ReadyScreen({ onStart }: { onStart: () => void }) {
             </div>
           </div>
 
-          {/* Right — weak spots, stretch to match left height */}
-          <div style={{ flex: 1, minWidth: 0, width: isMobile ? '100%' : undefined, display: 'flex', flexDirection: 'column' }}>
+          {/* Right — card fills full grid cell height */}
+          <div style={{ height: '100%' }}>
             <SpeakingFocus fullHeight />
           </div>
         </div>
