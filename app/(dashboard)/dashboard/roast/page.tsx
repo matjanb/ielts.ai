@@ -326,7 +326,7 @@ function LiveScreen({ mode, onExit, lang, context }: { mode: RoastMode; onExit: 
         dc.onopen = () => {
           try {
             // Set temperature per mode — savage needs max chaos (1.2), roast is hot (1.0), polite is measured (0.8)
-            const temp = mode === 'savage' ? 1.2 : mode === 'roast' ? 1.0 : 0.8
+            const temp = mode === 'savage' ? 1.2 : mode === 'roast' ? 1.0 : 0.2
             dc.send(JSON.stringify({ type: 'session.update', session: { temperature: temp } }))
             dc.send(JSON.stringify({
               type: 'conversation.item.create',
