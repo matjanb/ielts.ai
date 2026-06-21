@@ -324,8 +324,10 @@ function LiveScreen({ mode, onExit, lang, context }: { mode: RoastMode; onExit: 
         dcRef.current = dc
         dc.onmessage = ev => handleEvent(ev.data)
         dc.onopen = () => {
-          // Send a greeting trigger so AI introduces itself, then waits for the user to speak
           try {
+            // Set temperature per mode — savage needs max chaos (1.2), roast is hot (1.0), polite is measured (0.8)
+            const temp = mode === 'savage' ? 1.2 : mode === 'roast' ? 1.0 : 0.8
+            dc.send(JSON.stringify({ type: 'session.update', session: { temperature: temp } }))
             dc.send(JSON.stringify({
               type: 'conversation.item.create',
               item: { type: 'message', role: 'user', content: [{ type: 'input_text', text: '[SESSION_START]' }] },
