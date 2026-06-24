@@ -59,8 +59,10 @@ export async function POST(request: NextRequest) {
   return NextResponse.json({ ok: true, code })
 }
 
-// Permanently delete a referral code. Past signups keep their plain-text
-// `referred_by` citation in profiles — only the referrer row is removed.
+// Deactivate a referral code (soft-delete). We never hard-delete: the funnel
+// stats join `referrers` by code, so removing the row would silently drop every
+// past signup from the panel even though their `referred_by` citation survives.
+// Setting is_active=false stops new attributions while keeping the history visible.
 export async function DELETE(request: NextRequest) {
   const admin = await getAdminUser()
   if (!admin) return err('Forbidden', 403)
@@ -76,11 +78,40 @@ export async function DELETE(request: NextRequest) {
   if (!code) return err('Code is required', 400)
 
   const db = createAdminClient()
-  const { data, error } = await db.from('referrers').delete().eq('code', code).select('code')
+  const { data, error } = await db
+    .from('referrers').update({ is_active: false }).eq('code', code).select('code')
   if (error) {
-    console.error('[admin/referrals] delete', error)
-    return err('Failed to delete referral code', 500)
+    console.error('[admin/referrals] deactivate', error)
+    return err('Failed to deactivate referral code', 500)
   }
   if (!data || data.length === 0) return err('Referral code not found', 404)
   return NextResponse.json({ ok: true, code })
+}
+
+// Toggle a referral code's active state (reactivate a soft-deleted code, or
+// pause one). Only attributions to is_active codes are credited at signup.
+export async function PATCH(request: NextRequest) {
+  const admin = await getAdminUser()
+  if (!admin) return err('Forbidden', 403)
+
+  let body: { code?: string; is_active?: boolean }
+  try {
+    body = await request.json()
+  } catch {
+    return err('Invalid request body', 400)
+  }
+
+  const code = (body.code ?? '').trim().toLowerCase()
+  if (!code) return err('Code is required', 400)
+  if (typeof body.is_active !== 'boolean') return err('is_active must be a boolean', 400)
+
+  const db = createAdminClient()
+  const { data, error } = await db
+    .from('referrers').update({ is_active: body.is_active }).eq('code', code).select('code')
+  if (error) {
+    console.error('[admin/referrals] toggle', error)
+    return err('Failed to update referral code', 500)
+  }
+  if (!data || data.length === 0) return err('Referral code not found', 404)
+  return NextResponse.json({ ok: true, code, is_active: body.is_active })
 }

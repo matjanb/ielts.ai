@@ -61,22 +61,21 @@ export function ReferralsPanel() {
     finally { setBusy(false) }
   }
 
-  async function remove(r: Referrer) {
-    const warn = r.signups > 0
-      ? `Delete referral code "${r.code}"? It already has ${r.signups} signup(s) — they will keep their record but the code will disappear from this list.`
-      : `Delete referral code "${r.code}"?`
-    if (!window.confirm(warn)) return
+  async function setActive(r: Referrer, active: boolean) {
+    if (!active && !window.confirm(
+      `Deactivate referral code "${r.code}"? New signups will no longer be credited to it. ` +
+      `Its ${r.signups} existing signup(s) stay counted — you can reactivate it anytime.`
+    )) return
     setDeleting(r.code); setError('')
     try {
       const res = await fetch('/api/admin/referrals', {
-        method: 'DELETE',
+        method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ code: r.code }),
+        body: JSON.stringify({ code: r.code, is_active: active }),
       })
       const data = await res.json()
-      if (!res.ok) { setError(data.error ?? 'Failed to delete'); return }
-      if (expanded === r.code) setExpanded(null)
-      setRows(prev => prev.filter(x => x.code !== r.code))
+      if (!res.ok) { setError(data.error ?? 'Failed to update'); return }
+      setRows(prev => prev.map(x => x.code === r.code ? { ...x, is_active: active } : x))
     } catch { setError('Network error') }
     finally { setDeleting(null) }
   }
@@ -152,10 +151,11 @@ export function ReferralsPanel() {
               const people = usersByCode[r.code]
               return (
                 <Fragment key={r.code}>
-                  <tr onClick={() => toggle(r.code)} style={{ cursor: 'pointer', background: open ? 'var(--bg-soft)' : 'transparent' }}>
+                  <tr onClick={() => toggle(r.code)} style={{ cursor: 'pointer', background: open ? 'var(--bg-soft)' : 'transparent', opacity: r.is_active ? 1 : 0.55 }}>
                     <td style={{ ...cell, fontWeight: 700, color: 'var(--text)' }}>
                       <span style={{ display: 'inline-block', width: 14, color: 'var(--text-3)', transform: open ? 'rotate(90deg)' : 'none', transition: 'transform .15s' }}>›</span>
                       {r.code}
+                      {!r.is_active && <span style={{ marginLeft: 8, fontSize: 11, fontWeight: 600, color: 'var(--text-3)' }}>(inactive)</span>}
                     </td>
                     <td style={{ ...cell, color: 'var(--text-2)' }}>{r.name ?? '—'}</td>
                     <td style={cell}>
@@ -167,12 +167,12 @@ export function ReferralsPanel() {
                     <td style={{ ...cell, textAlign: 'right', fontVariantNumeric: 'tabular-nums', fontWeight: 700, color: r.paid > 0 ? 'var(--accent)' : 'var(--text-3)' }}>{r.paid}</td>
                     <td style={{ ...cell, textAlign: 'right' }}>
                       <button
-                        onClick={e => { e.stopPropagation(); remove(r) }}
+                        onClick={e => { e.stopPropagation(); setActive(r, !r.is_active) }}
                         disabled={deleting === r.code}
-                        title="Delete referral code"
-                        style={{ fontSize: 12, fontWeight: 600, color: 'var(--danger)', background: 'transparent', border: '1px solid var(--border-strong)', padding: '4px 10px', borderRadius: 8, cursor: deleting === r.code ? 'default' : 'pointer', opacity: deleting === r.code ? 0.5 : 1 }}
+                        title={r.is_active ? 'Deactivate referral code' : 'Reactivate referral code'}
+                        style={{ fontSize: 12, fontWeight: 600, color: r.is_active ? 'var(--danger)' : 'var(--accent)', background: 'transparent', border: '1px solid var(--border-strong)', padding: '4px 10px', borderRadius: 8, cursor: deleting === r.code ? 'default' : 'pointer', opacity: deleting === r.code ? 0.5 : 1 }}
                       >
-                        {deleting === r.code ? '…' : 'Delete'}
+                        {deleting === r.code ? '…' : r.is_active ? 'Deactivate' : 'Activate'}
                       </button>
                     </td>
                   </tr>
