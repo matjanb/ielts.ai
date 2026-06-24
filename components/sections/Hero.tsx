@@ -206,23 +206,6 @@ export function Hero() {
                 <path d="M5 12h14M13 5l7 7-7 7"/>
               </svg>
             </Link>
-            <button
-              onClick={() => document.getElementById('how')?.scrollIntoView({ behavior: 'smooth' })}
-              style={{
-                display: 'inline-flex', alignItems: 'center', gap: 8,
-                padding: '14px 22px', borderRadius: 'var(--radius-lg)',
-                fontWeight: 600, fontSize: 15,
-                border: '1px solid var(--border-strong)', color: 'var(--text)',
-                transition: 'background 0.15s',
-              }}
-              onMouseEnter={e => (e.currentTarget.style.background = 'var(--bg-soft)')}
-              onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}
-            >
-              <svg width={14} height={14} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M6 4l14 8-14 8z"/>
-              </svg>
-              {t('hero.ctaSecondary')}
-            </button>
           </div>
         </div>
 
