@@ -2,7 +2,7 @@
 import { NextResponse } from 'next/server'
 import openai from '@/lib/openai/client'
 import { createAdminClient } from '@/lib/supabase/admin'
-import { getApiUser, hasActiveSubscription, recordUsage, enforceAiLimits, err } from '@/lib/api/helpers'
+import { getApiUser, canUseAiFeature, recordUsage, enforceAiLimits, err } from '@/lib/api/helpers'
 
 export const runtime = 'nodejs'
 
@@ -20,7 +20,7 @@ const SCHEMA = {
 export async function POST() {
   const user = await getApiUser()
   if (!user) return err('Unauthorized', 401)
-  if (!(await hasActiveSubscription(user.id))) return err('Subscription required.', 403)
+  if (!(await canUseAiFeature(user.id, 'writing_coach'))) return err('Subscription required.', 403)
   const limited = await enforceAiLimits(user.id, 'writing_coach')
   if (limited) return limited
 

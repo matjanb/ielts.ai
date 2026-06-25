@@ -1,13 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server'
 import openai from '@/lib/openai/client'
 import { createAdminClient } from '@/lib/supabase/admin'
-import { getApiUser, hasActiveSubscription, recordUsage, enforceAiLimits, err } from '@/lib/api/helpers'
+import { getApiUser, canUseAiFeature, recordUsage, enforceAiLimits, err } from '@/lib/api/helpers'
 
 export async function POST(request: NextRequest) {
   const user = await getApiUser()
   if (!user) return err('Unauthorized', 401)
 
-  const allowed = await hasActiveSubscription(user.id)
+  const allowed = await canUseAiFeature(user.id, 'band_estimate')
   if (!allowed) return err('Subscription required.', 403)
 
   const limited = await enforceAiLimits(user.id, 'band_estimate')

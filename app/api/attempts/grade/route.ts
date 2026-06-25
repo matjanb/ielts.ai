@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { getApiUser, hasActiveSubscription, err } from '@/lib/api/helpers'
+import { getApiUser, err } from '@/lib/api/helpers'
 import { gradeAttempt, type GradeSkill } from '@/lib/services/grading.server'
 
 export const runtime = 'nodejs'
@@ -11,8 +11,8 @@ export async function POST(request: NextRequest) {
   const user = await getApiUser()
   if (!user) return err('Unauthorized', 401)
 
-  const allowed = await hasActiveSubscription(user.id)
-  if (!allowed) return err('Subscription required.', 403)
+  // Reading/Listening auto-grading spends no AI tokens — free for all signed-in
+  // users. The paywall only applies to token-spending AI features.
 
   let body: {
     testId?: string

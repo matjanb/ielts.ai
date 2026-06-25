@@ -30,6 +30,46 @@ export async function recordUsage(userId: string, feature: string) {
   await admin.from('ai_usage').insert({ user_id: userId, feature })
 }
 
+// ── Free-tier entitlement for the (expensive) AI endpoints ───────────────────
+
+// Non-subscribers get one full mock test's worth of AI grading, then must pay.
+// We meter this off lifetime ai_usage counts (no extra column needed): each
+// feature below has a lifetime free allowance covering exactly one mock —
+// Writing Task 1 + Task 2, one Speaking session (grade + its transcription +
+// realtime connect) and one predicted overall band. Every other AI feature
+// (coach/roast, study plan, writing-coach chat, per-question explanations) is
+// paid-only — 0 free uses. Reading/Listening cost no tokens and aren't gated.
+export const FREE_LIFETIME_ALLOWANCE: Record<string, number> = {
+  writing:           2, // Task 1 + Task 2 of the one free mock
+  speaking:          1, // one speaking session grade
+  transcribe:        1, // that session's transcription
+  speaking_realtime: 1, // one realtime speaking session
+  band_estimate:     1, // one predicted overall band for the free mock
+}
+
+/** Lifetime count of how many times this user has used `feature`. */
+async function lifetimeUsageCount(userId: string, feature: string): Promise<number> {
+  const admin = createAdminClient()
+  const { count } = await admin
+    .from('ai_usage')
+    .select('id', { count: 'exact', head: true })
+    .eq('user_id', userId)
+    .eq('feature', feature)
+  return count ?? 0
+}
+
+/**
+ * May this user use a token-spending AI feature right now? Active subscribers
+ * always can; otherwise only while still within the one-free-mock allowance for
+ * this specific feature. See FREE_LIFETIME_ALLOWANCE.
+ */
+export async function canUseAiFeature(userId: string, feature: string): Promise<boolean> {
+  if (await hasActiveSubscription(userId)) return true
+  const free = FREE_LIFETIME_ALLOWANCE[feature] ?? 0
+  if (free <= 0) return false
+  return (await lifetimeUsageCount(userId, feature)) < free
+}
+
 // ── Abuse protection for the (expensive) AI endpoints ────────────────────────
 
 // Per-feature daily caps. Generous enough for real study, low enough that a
@@ -114,7 +154,7 @@ export async function gateAiRequest(feature: string): Promise<
   const user = await getApiUser()
   if (!user) return { user: null, error: err('Unauthorized', 401) }
   const [allowed, limited] = await Promise.all([
-    hasActiveSubscription(user.id),
+    canUseAiFeature(user.id, feature),
     enforceAiLimits(user.id, feature),
   ])
   if (!allowed) return { user: null, error: err('Subscription required.', 403) }

@@ -2,7 +2,7 @@
 import { NextResponse } from 'next/server'
 import openai from '@/lib/openai/client'
 import { createAdminClient } from '@/lib/supabase/admin'
-import { getApiUser, hasActiveSubscription, recordUsage, enforceAiLimits, err } from '@/lib/api/helpers'
+import { getApiUser, canUseAiFeature, recordUsage, enforceAiLimits, err } from '@/lib/api/helpers'
 
 /* Strict JSON schema — keeps the model's output in lockstep with what the page
  * renders. `qtype` lets a reading/listening task deep-link straight into the
@@ -60,7 +60,7 @@ export async function POST() {
   const user = await getApiUser()
   if (!user) return err('Unauthorized', 401)
 
-  const allowed = await hasActiveSubscription(user.id)
+  const allowed = await canUseAiFeature(user.id, 'study_plan')
   if (!allowed) return err('Subscription required.', 403)
 
   const limited = await enforceAiLimits(user.id, 'study_plan')
