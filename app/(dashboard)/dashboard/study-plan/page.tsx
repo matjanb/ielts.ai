@@ -5,6 +5,7 @@ import Link from 'next/link'
 import { BrainCircuit, Loader2, RefreshCw, AlertCircle, Calendar, Target, Clock, Layers, ArrowRight, Info } from 'lucide-react'
 import { useLanguage } from '@/lib/i18n/LanguageContext'
 import { getDailyPlan } from '@/lib/services/dailyPlan'
+import { redirectToPaywallOn403 } from '@/lib/paywall'
 import type { DailySummary, TaskReason } from '@/lib/dailyPlan'
 
 interface Task { day: string; skill: string; activity: string; minutes: number; qtype?: string }
@@ -167,6 +168,7 @@ export default function StudyPlanPage() {
     setGenerating(true)
     try {
       const res = await fetch('/api/ai/study-plan', { method: 'POST' })
+      if (redirectToPaywallOn403(res)) return
       const data = await res.json()
       if (!res.ok) setError(data.error ?? t('plan.failed'))
       else {

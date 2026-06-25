@@ -1,6 +1,8 @@
 // Client-side AI service — calls Next.js API routes only.
 // OPENAI_API_KEY is never exposed here.
 
+import { redirectToPaywallOn403 } from '@/lib/paywall'
+
 export interface WritingFeedback {
   submission_id: string
   band_score: number
@@ -54,6 +56,11 @@ async function post<T>(path: string, body: unknown): Promise<T> {
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(body),
   })
+
+  if (redirectToPaywallOn403(res)) {
+    // Navigation is underway; never resolve so callers don't flash an error.
+    return new Promise<T>(() => {})
+  }
 
   const data = await res.json()
 

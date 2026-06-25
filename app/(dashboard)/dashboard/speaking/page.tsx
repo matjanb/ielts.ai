@@ -7,6 +7,7 @@ import { createClient } from '@/lib/supabase/client'
 import { blobToWavSegments, type SpeechSegment } from '@/lib/utils/wavEncode'
 import { metricsFromSegments, type FluencyMetrics } from '@/lib/ielts/fluency'
 import { SpeakingFocus } from '@/components/speaking/SpeakingFocus'
+import { redirectToPaywallOn403 } from '@/lib/paywall'
 
 /* ── Types ─────────────────────────────────────────────────────────────────── */
 type Part = 1 | 2 | 3
@@ -419,6 +420,7 @@ function RealtimeExam({ sessionId, grading, error, onComplete, onExit }: {
           headers: { 'Content-Type': 'application/sdp' },
           body: offer.sdp ?? '',
         })
+        if (redirectToPaywallOn403(resp)) { cleanup(); return }
         if (!resp.ok) {
           let m = t('speak.realtimeError')
           try { const j = await resp.clone().json(); if (j?.error) m = j.error } catch {}

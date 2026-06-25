@@ -6,6 +6,7 @@ import { useIsMobile } from '@/lib/hooks/useIsMobile'
 import type { RoastMode } from '@/app/api/ai/roast/route'
 import { createClient } from '@/lib/supabase/client'
 import { getUser } from '@/lib/services/auth'
+import { redirectToPaywallOn403 } from '@/lib/paywall'
 
 type SpeakingContext = {
   sessionCount: number
@@ -344,6 +345,7 @@ function LiveScreen({ mode, onExit, lang, context }: { mode: RoastMode; onExit: 
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ sdp: offer.sdp ?? '', context }),
         })
+        if (redirectToPaywallOn403(resp)) { cleanup(); return }
         if (!resp.ok) {
           let m = 'Could not connect. Please try again.'
           try { const j = await resp.clone().json(); if (j?.error) m = j.error } catch {}

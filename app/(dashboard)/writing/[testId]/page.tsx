@@ -6,6 +6,7 @@ import { Loader2 } from 'lucide-react'
 import { getTestById, getWritingPromptsForTest, type WritingPrompt } from '@/lib/services/tests'
 import type { IeltsTest } from '@/lib/types/database'
 import { useLanguage } from '@/lib/i18n/LanguageContext'
+import { redirectToPaywallOn403 } from '@/lib/paywall'
 import { WritingFeedback, type FeedbackResult } from '@/components/writing/WritingFeedback'
 import { useIsMobile } from '@/lib/hooks/useIsMobile'
 
@@ -133,6 +134,7 @@ export default function WritingTestPage() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ content, task_type: taskType, prompt: currentPrompt.text }),
       })
+      if (redirectToPaywallOn403(res)) return
       const data = await res.json()
       if (!res.ok) setError(data.error ?? t('wtest.failed'))
       else { setResult(data); setGradedSig(sigOf(content, taskType)); setShowResult(true); window.scrollTo({ top: 0 }) }

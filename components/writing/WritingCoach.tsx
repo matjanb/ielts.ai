@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react'
 import { Sparkles, Loader2, RefreshCw } from 'lucide-react'
 import { useLanguage } from '@/lib/i18n/LanguageContext'
+import { redirectToPaywallOn403 } from '@/lib/paywall'
 
 interface Coach { focus: string; tips: string[] }
 
@@ -28,6 +29,7 @@ export function WritingCoach() {
     setLoading(true); setError(''); setEmpty(false)
     try {
       const res = await fetch('/api/ai/writing-coach', { method: 'POST' })
+      if (redirectToPaywallOn403(res)) return
       const d = await res.json()
       if (!res.ok) { setError(d.error ?? t('writingCoach.error')); return }
       if (d.empty) { setEmpty(true); setData(null); return }
