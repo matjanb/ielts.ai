@@ -10,6 +10,7 @@ import type { DailySummary, TaskReason } from '@/lib/dailyPlan'
 import { getUser } from '@/lib/services/auth'
 import type { Profile } from '@/lib/types/database'
 import { useIsMobile } from '@/lib/hooks/useIsMobile'
+import { FreeTierBanner } from '@/components/billing/FreeTierBanner'
 
 // ── Sparkline (mini SVG line chart) ───────────────────────────────────────────
 function Sparkline({ data, width = 120, height = 28 }: { data: number[]; width?: number; height?: number }) {
@@ -544,6 +545,9 @@ export default function DashboardPage() {
 
   return (
     <div style={{ padding: isMobile ? '20px 16px 80px' : '32px 32px 80px' }}>
+      {/* Free-tier nudge (hidden for subscribers) */}
+      <FreeTierBanner />
+
       {/* Greeting */}
       <div style={{ marginBottom: isMobile ? 20 : 28 }}>
         <h1 style={{ fontSize: isMobile ? 25 : 32, letterSpacing: '-0.025em', margin: 0, fontWeight: 700, color: 'var(--text)' }}>

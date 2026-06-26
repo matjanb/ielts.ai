@@ -291,8 +291,8 @@
     "planSubtitle": "Javoblaringiz asosida maqsadli rejangizni tuzamiz."
   },
   "subscription": {
-    "title": "Imkoniyatlarni kengaytiring",
-    "subtitle": "To'liq ball potensialingizni oching — hech qanday cheklovsiz.",
+    "title": "Cheksiz AI-tayyorgarlikni oching",
+    "subtitle": "Reading va Listening doim bepul. Obuna AI siz uchun qiladigan hamma narsadagi cheklovlarni olib tashlaydi.",
     "monthly": "Oylik",
     "yearly": "Yillik",
     "saveLabel": "2 oy bepul",
@@ -316,7 +316,16 @@
     "basicFeedback": "Asosiy yozish fikr-mulohazasi",
     "studyGuides": "O'quv qo'llanmalariga kirish",
     "communityAccess": "Hamjamiyatga kirish",
-    "back": "Boshqaruv paneliga qaytish"
+    "back": "Boshqaruv paneliga qaytish",
+    "freeColTitle": "Doim bepul",
+    "freeCol1": "Cheksiz Reading: mashq va testlar",
+    "freeCol2": "Cheksiz Listening: mashq va testlar",
+    "freeCol3": "AI-baholash bilan bitta to'liq mock",
+    "proColTitle": "Obuna bilan",
+    "proCol1": "Cheksiz AI Writing baholash (Task 1 va 2)",
+    "proCol2": "Cheksiz AI Speaking imtihonchisi",
+    "proCol3": "Shaxsiy AI-murabbiy",
+    "proCol4": "Moslashuvchan o'quv rejasi va to'liq tahlil"
   },
   "common": {
     "loading": "Yuklanmoqda…",
@@ -1144,5 +1153,17 @@
   "finalCta": {
     "title": "Siz tayyor bo'lganda boshlaymiz.",
     "sub": "Bepul diagnostika. Kartasiz."
+  },
+  "freeTier": {
+    "bannerTitle": "Bepul sinov testingiz tayyor",
+    "bannerBody": "Writing va Speaking bo'yicha haqiqiy AI-baholash bilan bitta to'liq mock topshiring — bepul, kartasiz. Reading va Listening doim bepul qoladi.",
+    "bannerCta": "Bepul mock boshlash",
+    "usedTitle": "Cheksiz AI-baholashni oching",
+    "usedBody": "Bepul AI-mock-dan foydalandingiz. Reading va Listening doim bepul — Writing va Speaking cheksiz baholash, AI-murabbiy va o'quv rejasi uchun obuna bo'ling.",
+    "usedCta": "Tariflarni ko'rish",
+    "navLock": "Obuna orqali mavjud",
+    "planFree": "Bepul reja",
+    "planPro": "Pro reja",
+    "upgrade": "Pro-ga o'tish"
   }
 }

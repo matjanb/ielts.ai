@@ -70,6 +70,22 @@ export async function canUseAiFeature(userId: string, feature: string): Promise<
   return (await lifetimeUsageCount(userId, feature)) < free
 }
 
+/**
+ * Billing state the client needs to tailor the UI: whether the user is on a
+ * paid plan, and (for free users) whether they've already spent their one free
+ * AI mock. "Used" = any Writing/Speaking AI grading has been recorded.
+ */
+export async function getEntitlement(userId: string): Promise<{ subscribed: boolean; freeMockUsed: boolean }> {
+  if (await hasActiveSubscription(userId)) return { subscribed: true, freeMockUsed: true }
+  const admin = createAdminClient()
+  const { count } = await admin
+    .from('ai_usage')
+    .select('id', { count: 'exact', head: true })
+    .eq('user_id', userId)
+    .in('feature', ['writing', 'speaking', 'speaking_realtime'])
+  return { subscribed: false, freeMockUsed: (count ?? 0) > 0 }
+}
+
 // ── Abuse protection for the (expensive) AI endpoints ────────────────────────
 
 // Per-feature daily caps. Generous enough for real study, low enough that a

@@ -189,6 +189,37 @@ function SubscriptionContent() {
           </p>
         </div>
 
+        {/* What's free vs what a plan adds — answers "what am I paying for?" */}
+        <div style={{
+          display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 280px), 1fr))',
+          gap: 16, maxWidth: 760, margin: '0 auto 48px',
+        }}>
+          <div className="card" style={{ padding: 24, background: 'var(--bg-elev)' }}>
+            <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--text-2)', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 14 }}>
+              {t('subscription.freeColTitle')}
+            </div>
+            <ul style={{ listStyle: 'none', padding: 0, margin: 0, display: 'grid', gap: 11 }}>
+              {['freeCol1', 'freeCol2', 'freeCol3'].map(k => (
+                <li key={k} style={{ display: 'flex', gap: 10, fontSize: 14, alignItems: 'flex-start', color: 'var(--text)' }}>
+                  <CheckIcon /><span>{t(`subscription.${k}`)}</span>
+                </li>
+              ))}
+            </ul>
+          </div>
+          <div className="card" style={{ padding: 24, borderColor: 'var(--accent)', background: 'var(--accent-soft)' }}>
+            <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--accent)', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 14 }}>
+              {t('subscription.proColTitle')}
+            </div>
+            <ul style={{ listStyle: 'none', padding: 0, margin: 0, display: 'grid', gap: 11 }}>
+              {['proCol1', 'proCol2', 'proCol3', 'proCol4'].map(k => (
+                <li key={k} style={{ display: 'flex', gap: 10, fontSize: 14, alignItems: 'flex-start', color: 'var(--text)' }}>
+                  <CheckIcon /><span>{t(`subscription.${k}`)}</span>
+                </li>
+              ))}
+            </ul>
+          </div>
+        </div>
+
         {/* Plan cards */}
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 260px), 1fr))', gap: 16, maxWidth: 1000, margin: '0 auto' }}>
           {PLANS.map(plan => {

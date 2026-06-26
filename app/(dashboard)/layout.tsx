@@ -13,11 +13,14 @@ import { LanguageSwitcher } from '@/components/ui/LanguageSwitcher'
 import { DiagnosticSync } from '@/components/DiagnosticSync'
 import { signOut, getUser } from '@/lib/services/auth'
 import { getNotifications, type NotifItem } from '@/lib/services/notifications'
+import { getEntitlement } from '@/lib/services/entitlement'
 import type { ReactNode } from 'react'
 
 const RAIL_W = 56
 const EXPANDED_W = 240
 
+// `pro: true` marks features with no free allowance — for non-subscribers these
+// show a lock badge in the nav (Reading/Listening and the one free mock stay open).
 const NAV_ITEMS = [
   { href: '/dashboard',            icon: 'home',      key: 'overview'   },
   { href: '/listening',            icon: 'headphones', key: 'listening'  },
@@ -26,8 +29,8 @@ const NAV_ITEMS = [
   { href: '/dashboard/speaking',   icon: 'mic',       key: 'speaking'   },
   { href: '/mock-tests',           icon: 'clipboard', key: 'mockTests'  },
   { href: '/vocabulary',           icon: 'layers',    key: 'vocabulary' },
-  { href: '/dashboard/study-plan', icon: 'calendar',  key: 'studyPlan'  },
-  { href: '/dashboard/roast',       icon: 'flame',     key: 'roast'      },
+  { href: '/dashboard/study-plan', icon: 'calendar',  key: 'studyPlan', pro: true },
+  { href: '/dashboard/roast',       icon: 'flame',     key: 'roast', pro: true },
   { href: '/dashboard/progress',   icon: 'activity',  key: 'progress'   },
   { href: '/dashboard/settings',   icon: 'settings',  key: 'settings'   },
 ]
@@ -63,6 +66,7 @@ const ICON_PATHS: Record<string, React.ReactNode> = {
   search:     <><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.5-4.5"/></>,
   user:       <><circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/></>,
   logout:     <><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><path d="M16 17l5-5-5-5M21 12H9"/></>,
+  lock:       <><rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></>,
 }
 
 function NavIcon({ name, size = 18, color = 'currentColor', strokeWidth = 1.8 }: { name: string; size?: number; color?: string; strokeWidth?: number }) {
@@ -114,6 +118,7 @@ function DashboardLayoutInner({ children }: { children: ReactNode }) {
   const [userName, setUserName] = useState('User')
   const [userEmail, setUserEmail] = useState('')
   const [userInitials, setUserInitials] = useState('U')
+  const [subscribed, setSubscribed] = useState(true) // assume Pro until known, so badges don't flash for paid users
 
   // Notifications
   const [notifications, setNotifications] = useState<NotifItem[]>([])
@@ -133,6 +138,7 @@ function DashboardLayoutInner({ children }: { children: ReactNode }) {
         setNotifications(await getNotifications(user.id))
       } catch { /* notifications are best-effort */ }
     })
+    getEntitlement().then(e => setSubscribed(e.subscribed))
   }, [])
 
   const unreadCount = notifications.filter(n =>
@@ -284,11 +290,13 @@ function DashboardLayoutInner({ children }: { children: ReactNode }) {
 
         {/* Nav items */}
         <nav style={{ flex: 1, padding: '12px 8px', display: 'flex', flexDirection: 'column', gap: 2, overflowY: 'auto', overflowX: 'hidden' }}>
-          {NAV_ITEMS.map(({ href, icon, key }) => {
+          {NAV_ITEMS.map(({ href, icon, key, pro }) => {
             const active = href === '/dashboard' ? pathname === '/dashboard' : pathname.startsWith(href)
+            const locked = !!pro && !subscribed
             return (
               <Link key={href} href={href}
                 onClick={() => { if (isMobile) setMobileNavOpen(false) }}
+                title={locked ? t('freeTier.navLock') : undefined}
                 style={{
                 display: 'flex', alignItems: 'center', gap: 12,
                 height: 40, padding: '0 12px', borderRadius: 8,
@@ -309,6 +317,11 @@ function DashboardLayoutInner({ children }: { children: ReactNode }) {
                 }}>
                   {t(`dashboard.${key}`)}
                 </span>
+                {locked && expanded && (
+                  <span style={{ marginLeft: 'auto', display: 'flex' }}>
+                    <NavIcon name="lock" size={13} color="var(--text-3)" strokeWidth={1.8} />
+                  </span>
+                )}
                 {active && (
                   <span style={{ position: 'absolute', left: 0, top: 8, bottom: 8, width: 3, background: 'var(--accent)', borderRadius: '0 2px 2px 0' }}/>
                 )}
@@ -343,7 +356,9 @@ function DashboardLayoutInner({ children }: { children: ReactNode }) {
               <>
                 <div style={{ flex: 1, minWidth: 0, textAlign: 'left' }}>
                   <div style={{ fontSize: 13, fontWeight: 600, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', color: 'var(--text)' }}>{userName}</div>
-                  <div style={{ fontSize: 11, color: 'var(--text-3)' }}>Pro plan</div>
+                  <div style={{ fontSize: 11, color: subscribed ? 'var(--text-3)' : 'var(--accent)', fontWeight: subscribed ? 400 : 600 }}>
+                    {subscribed ? t('freeTier.planPro') : t('freeTier.planFree')}
+                  </div>
                 </div>
                 <NavIcon name="dots" size={14} color="var(--text-2)" />
               </>
@@ -362,24 +377,26 @@ function DashboardLayoutInner({ children }: { children: ReactNode }) {
                 <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--text)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{userName}</div>
                 {userEmail && <div style={{ fontSize: 11, color: 'var(--text-3)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{userEmail}</div>}
               </div>
-              {[
+              {([
+                ...(subscribed ? [] : [{ icon: 'lock', label: t('freeTier.upgrade'), action: () => { router.push('/subscription'); setUserMenuOpen(false) }, accent: true }]),
                 { icon: 'settings', label: 'Settings', action: () => { router.push('/dashboard/settings'); setUserMenuOpen(false) } },
                 null,
                 { icon: 'logout', label: 'Sign out', action: handleSignOut, danger: true },
-              ].map((item, i) => {
+              ] as Array<{ icon: string; label: string; action: () => void; danger?: boolean; accent?: boolean } | null>).map((item, i) => {
                 if (!item) return <div key={i} style={{ height: 1, background: 'var(--border)', margin: '4px 0' }}/>
+                const tone = item.danger ? 'var(--danger)' : item.accent ? 'var(--accent)' : 'var(--text)'
                 return (
                   <button key={item.label} onClick={item.action} style={{
                     display: 'flex', alignItems: 'center', gap: 10, width: '100%',
                     padding: '8px 10px', borderRadius: 8, fontSize: 13,
-                    color: item.danger ? 'var(--danger)' : 'var(--text)',
+                    color: tone, fontWeight: item.accent ? 600 : 400,
                     background: 'transparent', border: 'none', cursor: 'pointer', textAlign: 'left',
                     transition: 'background .1s',
                   }}
                   onMouseEnter={e => (e.currentTarget.style.background = 'var(--bg-soft)')}
                   onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}
                   >
-                    <NavIcon name={item.icon} size={14} color={item.danger ? 'var(--danger)' : 'var(--text-2)'} />
+                    <NavIcon name={item.icon} size={14} color={item.danger ? 'var(--danger)' : item.accent ? 'var(--accent)' : 'var(--text-2)'} />
                     {item.label}
                   </button>
                 )

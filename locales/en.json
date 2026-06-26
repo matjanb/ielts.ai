@@ -266,8 +266,8 @@
     "planSubtitle": "Based on your answers, we've built a personalised plan to reach your goal."
   },
   "subscription": {
-    "title": "Unlock Your Full Potential",
-    "subtitle": "Remove all limits and reach your target band score faster.",
+    "title": "Unlock unlimited AI prep",
+    "subtitle": "Reading & Listening are free forever. A plan removes the limits on everything the AI does for you.",
     "monthly": "Monthly",
     "yearly": "Yearly",
     "saveLabel": "2 months free",
@@ -297,7 +297,16 @@
     "promoApply": "Apply",
     "promoApplied": "{{code}} applied",
     "promoOff": "{{pct}}% off",
-    "promoRemove": "Remove"
+    "promoRemove": "Remove",
+    "freeColTitle": "Always free",
+    "freeCol1": "Unlimited Reading practice & tests",
+    "freeCol2": "Unlimited Listening practice & tests",
+    "freeCol3": "One full mock with AI grading",
+    "proColTitle": "With a plan",
+    "proCol1": "Unlimited AI Writing grading (Task 1 & 2)",
+    "proCol2": "Unlimited AI Speaking examiner",
+    "proCol3": "Your personal AI coach",
+    "proCol4": "Adaptive study plan & full analytics"
   },
   "mockTest": {
     "startTest": "Start Test",
@@ -1160,5 +1169,17 @@
   "finalCta": {
     "title": "Ready when you are.",
     "sub": "Free diagnostic. No card required."
+  },
+  "freeTier": {
+    "bannerTitle": "Your free mock test is ready",
+    "bannerBody": "Take one full mock with real AI grading on Writing & Speaking — free, no card needed. Reading & Listening practice stays free forever.",
+    "bannerCta": "Start free mock",
+    "usedTitle": "Unlock unlimited AI grading",
+    "usedBody": "You've used your free AI mock. Reading & Listening stay free — upgrade for unlimited Writing & Speaking grading, your AI coach and study plan.",
+    "usedCta": "See plans",
+    "navLock": "Available on a plan",
+    "planFree": "Free plan",
+    "planPro": "Pro plan",
+    "upgrade": "Upgrade to Pro"
   }
 }
