@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { getApiUser, err } from '@/lib/api/helpers'
+import { getApiUser, hasActiveSubscription, err } from '@/lib/api/helpers'
 import { getPracticeSetServer } from '@/lib/services/practice.server'
 import type { Difficulty } from '@/lib/services/tests'
 
@@ -9,8 +9,9 @@ export async function POST(request: NextRequest) {
   const user = await getApiUser()
   if (!user) return err('Unauthorized', 401)
 
-  // Reading/Listening practice sets are static content (no AI tokens) — free for
-  // all signed-in users. The paywall only applies to token-spending AI features.
+  // Standalone practice drills are a paid feature. The free tier is exactly one
+  // full mock (taken through the test pages), nothing else.
+  if (!(await hasActiveSubscription(user.id))) return err('Subscription required.', 403)
 
   let body: { skill?: string; questionType?: string; difficulty?: string; limit?: number }
   try {

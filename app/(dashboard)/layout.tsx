@@ -10,17 +10,16 @@ import { ToastProvider, useToast } from '@/lib/toast'
 import { CommandPalette } from '@/components/ui/CommandPalette'
 import { NotificationsPanel } from '@/components/ui/NotificationsPanel'
 import { LanguageSwitcher } from '@/components/ui/LanguageSwitcher'
-import { DiagnosticSync } from '@/components/DiagnosticSync'
 import { signOut, getUser } from '@/lib/services/auth'
 import { getNotifications, type NotifItem } from '@/lib/services/notifications'
-import { getEntitlement } from '@/lib/services/entitlement'
+import { getEntitlement, type Entitlement } from '@/lib/services/entitlement'
 import type { ReactNode } from 'react'
 
 const RAIL_W = 56
 const EXPANDED_W = 240
 
-// `pro: true` marks features with no free allowance — for non-subscribers these
-// show a lock badge in the nav (Reading/Listening and the one free mock stay open).
+// Nav item `key` doubles as the entitlement "area" key, so a free user's locked
+// areas (from /api/entitlement) map straight onto the lock badges below.
 const NAV_ITEMS = [
   { href: '/dashboard',            icon: 'home',      key: 'overview'   },
   { href: '/listening',            icon: 'headphones', key: 'listening'  },
@@ -29,8 +28,8 @@ const NAV_ITEMS = [
   { href: '/dashboard/speaking',   icon: 'mic',       key: 'speaking'   },
   { href: '/mock-tests',           icon: 'clipboard', key: 'mockTests'  },
   { href: '/vocabulary',           icon: 'layers',    key: 'vocabulary' },
-  { href: '/dashboard/study-plan', icon: 'calendar',  key: 'studyPlan', pro: true },
-  { href: '/dashboard/roast',       icon: 'flame',     key: 'roast', pro: true },
+  { href: '/dashboard/study-plan', icon: 'calendar',  key: 'studyPlan'  },
+  { href: '/dashboard/roast',       icon: 'flame',     key: 'roast'      },
   { href: '/dashboard/progress',   icon: 'activity',  key: 'progress'   },
   { href: '/dashboard/settings',   icon: 'settings',  key: 'settings'   },
 ]
@@ -118,7 +117,11 @@ function DashboardLayoutInner({ children }: { children: ReactNode }) {
   const [userName, setUserName] = useState('User')
   const [userEmail, setUserEmail] = useState('')
   const [userInitials, setUserInitials] = useState('U')
-  const [subscribed, setSubscribed] = useState(true) // assume Pro until known, so badges don't flash for paid users
+  // null = not loaded yet. Assume full access until known so locks/redirects
+  // never flash for paying users.
+  const [ent, setEnt] = useState<Entitlement | null>(null)
+  const subscribed = ent?.subscribed ?? true
+  const lockedSet = new Set(ent?.locked ?? [])
 
   // Notifications
   const [notifications, setNotifications] = useState<NotifItem[]>([])
@@ -138,7 +141,7 @@ function DashboardLayoutInner({ children }: { children: ReactNode }) {
         setNotifications(await getNotifications(user.id))
       } catch { /* notifications are best-effort */ }
     })
-    getEntitlement().then(e => setSubscribed(e.subscribed))
+    getEntitlement().then(setEnt)
   }, [])
 
   const unreadCount = notifications.filter(n =>
@@ -210,6 +213,33 @@ function DashboardLayoutInner({ children }: { children: ReactNode }) {
     // Hard navigation so the server re-evaluates with the cleared session.
     window.location.href = '/'
   }
+
+  // Which locked area (if any) the current path belongs to. Past results stay
+  // readable, so /…/results is always exempt.
+  function areaOf(path: string): string | null {
+    if (path.includes('/results')) return null
+    if (path.includes('/practice')) return 'practice'
+    if (path.startsWith('/listening')) return 'listening'
+    if (path.startsWith('/reading')) return 'reading'
+    if (path.startsWith('/dashboard/writing')) return 'writing'
+    if (path.startsWith('/dashboard/speaking')) return 'speaking'
+    if (path.startsWith('/mock-tests')) return 'mockTests'
+    if (path.startsWith('/vocabulary')) return 'vocabulary'
+    if (path.startsWith('/dashboard/study-plan')) return 'studyPlan'
+    if (path.startsWith('/dashboard/roast')) return 'roast'
+    return null
+  }
+
+  // Once entitlement is known: new users finish onboarding first; then a free
+  // user landing on a locked area (direct URL or stale link) goes straight to
+  // /subscription — they never sit on a screen that will bounce them later.
+  useEffect(() => {
+    if (!ent) return
+    if (!ent.onboardingCompleted) { router.replace('/onboarding'); return }
+    if (ent.subscribed) return
+    const area = areaOf(pathname)
+    if (area && ent.locked.includes(area)) router.replace('/subscription')
+  }, [ent, pathname, router])
 
   // Current page label for breadcrumb
   const currentNav = NAV_ITEMS.find(n => {
@@ -290,11 +320,11 @@ function DashboardLayoutInner({ children }: { children: ReactNode }) {
 
         {/* Nav items */}
         <nav style={{ flex: 1, padding: '12px 8px', display: 'flex', flexDirection: 'column', gap: 2, overflowY: 'auto', overflowX: 'hidden' }}>
-          {NAV_ITEMS.map(({ href, icon, key, pro }) => {
+          {NAV_ITEMS.map(({ href, icon, key }) => {
             const active = href === '/dashboard' ? pathname === '/dashboard' : pathname.startsWith(href)
-            const locked = !!pro && !subscribed
+            const locked = lockedSet.has(key)
             return (
-              <Link key={href} href={href}
+              <Link key={href} href={locked ? '/subscription' : href}
                 onClick={() => { if (isMobile) setMobileNavOpen(false) }}
                 title={locked ? t('freeTier.navLock') : undefined}
                 style={{
@@ -545,7 +575,6 @@ function DashboardLayoutInner({ children }: { children: ReactNode }) {
 
       {/* Global overlays */}
       <CommandPalette open={paletteOpen} onClose={() => setPaletteOpen(false)} />
-      <DiagnosticSync />
     </div>
   )
 }

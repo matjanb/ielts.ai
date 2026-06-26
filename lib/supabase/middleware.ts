@@ -30,8 +30,9 @@ export async function updateSession(request: NextRequest) {
   // users may browse the dashboard and run unlimited Reading/Listening plus one
   // full mock with AI grading, and only hit "Subscription required" when they
   // reach for a token-spending action beyond that (see lib/api/helpers.ts).
-  // So every app route below only requires being logged in. The landing page and
-  // the /diagnostic funnel stay fully public for the pre-signup placement test.
+  // So every app route below only requires being logged in. The landing page
+  // stays fully public; new users sign up, do a 3-question onboarding, then land
+  // on the dashboard.
   const AUTH_ONLY_ROUTES = [
     '/dashboard', '/mock-tests', '/listening', '/reading', '/writing', '/vocabulary',
     '/onboarding', '/subscription', '/admin',

@@ -32,15 +32,17 @@ export async function recordUsage(userId: string, feature: string) {
 
 // ── Free-tier entitlement for the (expensive) AI endpoints ───────────────────
 
-// Non-subscribers get one full mock test's worth of AI grading, then must pay.
-// We meter this off lifetime ai_usage counts (no extra column needed): each
-// feature below has a lifetime free allowance covering exactly one mock —
-// Writing Task 1 + Task 2, one Speaking session (grade + its transcription +
-// realtime connect) and one predicted overall band. Every other AI feature
-// (coach/roast, study plan, writing-coach chat, per-question explanations) is
-// paid-only — 0 free uses. Reading/Listening cost no tokens and aren't gated.
+// Non-subscribers get exactly ONE full mock test, then everything locks. We
+// meter this off lifetime ai_usage counts (every graded action is logged there,
+// including Reading/Listening which we record for metering even though they
+// spend no tokens). One mock = 1 Reading + 1 Listening + Writing Task 1 & 2 +
+// one Speaking session. Every other feature (coach/roast, study plan,
+// writing-coach chat, per-question explanations, standalone practice drills,
+// vocabulary) is paid-only — 0 free uses.
 export const FREE_LIFETIME_ALLOWANCE: Record<string, number> = {
-  writing:           2, // Task 1 + Task 2 of the one free mock
+  reading:           1, // one Reading test of the free mock
+  listening:         1, // one Listening test of the free mock
+  writing:           2, // Task 1 + Task 2 of the free mock
   speaking:          1, // one speaking session grade
   transcribe:        1, // that session's transcription
   speaking_realtime: 1, // one realtime speaking session
@@ -70,20 +72,57 @@ export async function canUseAiFeature(userId: string, feature: string): Promise<
   return (await lifetimeUsageCount(userId, feature)) < free
 }
 
+export interface Entitlement {
+  subscribed: boolean
+  freeMockUsed: boolean
+  // Nav/area keys the free user can no longer open (drives nav locks + the
+  // central route guard). Empty for subscribers.
+  locked: string[]
+  // Whether the user finished the 3-question onboarding (gates the dashboard).
+  onboardingCompleted: boolean
+}
+
 /**
- * Billing state the client needs to tailor the UI: whether the user is on a
- * paid plan, and (for free users) whether they've already spent their one free
- * AI mock. "Used" = any Writing/Speaking AI grading has been recorded.
+ * Billing + onboarding state the client needs to tailor the UI. For free users
+ * we derive, from lifetime ai_usage, which areas are spent: each skill locks once
+ * its slice of the one free mock is used; practice drills, vocabulary, the AI
+ * coach and the study plan are always locked; Mock Tests locks once all four
+ * skills are spent.
  */
-export async function getEntitlement(userId: string): Promise<{ subscribed: boolean; freeMockUsed: boolean }> {
-  if (await hasActiveSubscription(userId)) return { subscribed: true, freeMockUsed: true }
+export async function getEntitlement(userId: string): Promise<Entitlement> {
   const admin = createAdminClient()
-  const { count } = await admin
-    .from('ai_usage')
-    .select('id', { count: 'exact', head: true })
-    .eq('user_id', userId)
-    .in('feature', ['writing', 'speaking', 'speaking_realtime'])
-  return { subscribed: false, freeMockUsed: (count ?? 0) > 0 }
+  const { data: profile } = await admin
+    .from('profiles')
+    .select('subscription_status, subscription_expires_at, lifetime_access, onboarding_completed')
+    .eq('id', userId)
+    .single<{ subscription_status: string; subscription_expires_at: string | null; lifetime_access: boolean | null; onboarding_completed: boolean | null }>()
+
+  const onboardingCompleted = profile?.onboarding_completed === true
+
+  if (isSubscriptionActive(profile)) {
+    return { subscribed: true, freeMockUsed: true, locked: [], onboardingCompleted }
+  }
+
+  const { data } = await admin.from('ai_usage').select('feature').eq('user_id', userId)
+  const counts: Record<string, number> = {}
+  for (const row of data ?? []) counts[row.feature] = (counts[row.feature] ?? 0) + 1
+  const used = (f: string) => counts[f] ?? 0
+
+  const readingDone   = used('reading')   >= (FREE_LIFETIME_ALLOWANCE.reading ?? 1)
+  const listeningDone = used('listening') >= (FREE_LIFETIME_ALLOWANCE.listening ?? 1)
+  const writingDone   = used('writing')   >= (FREE_LIFETIME_ALLOWANCE.writing ?? 2)
+  const speakingDone  = used('speaking') >= 1 || used('speaking_realtime') >= 1
+
+  // Always paid for free users.
+  const locked = ['vocabulary', 'studyPlan', 'roast', 'practice']
+  if (readingDone)   locked.push('reading')
+  if (listeningDone) locked.push('listening')
+  if (writingDone)   locked.push('writing')
+  if (speakingDone)  locked.push('speaking')
+  if (readingDone && listeningDone && writingDone && speakingDone) locked.push('mockTests')
+
+  const freeMockUsed = readingDone || listeningDone || used('writing') > 0 || speakingDone
+  return { subscribed: false, freeMockUsed, locked, onboardingCompleted }
 }
 
 // ── Abuse protection for the (expensive) AI endpoints ────────────────────────

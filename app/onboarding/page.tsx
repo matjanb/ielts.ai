@@ -13,7 +13,7 @@ import { saveOnboardingData, completeOnboarding } from '@/lib/services/user'
 import type { SkillType, StudyGoal, CurrentLevel, Timeline, StudyHours, ExperienceLevel } from '@/lib/types/database'
 import Link from 'next/link'
 
-const TOTAL_STEPS = 7
+const TOTAL_STEPS = 3
 
 type Answers = {
   experience: ExperienceLevel | null
@@ -45,15 +45,6 @@ function OnboardingContent() {
       if (!user) { router.push('/login'); return }
     })
   }, [router])
-
-  function toggleSkill(skill: SkillType) {
-    setAnswers(a => ({
-      ...a,
-      focusSkills: a.focusSkills.includes(skill)
-        ? a.focusSkills.filter(s => s !== skill)
-        : [...a.focusSkills, skill],
-    }))
-  }
 
   async function finish() {
     setSaving(true)
@@ -125,23 +116,6 @@ function OnboardingContent() {
 
           <div key={step} className="animate-step-in">
             {step === 1 && (
-              <StepCard title={t('onboarding.q1Title')}>
-                {([
-                  ['first_time', t('onboarding.q1Opt1')],
-                  ['studied_not_taken', t('onboarding.q1Opt2')],
-                  ['taken_before', t('onboarding.q1Opt3')],
-                ] as [ExperienceLevel, string][]).map(([value, label]) => (
-                  <OptionButton
-                    key={value}
-                    label={label}
-                    selected={answers.experience === value}
-                    onClick={() => setAnswers(a => ({ ...a, experience: value }))}
-                  />
-                ))}
-              </StepCard>
-            )}
-
-            {step === 2 && (
               <StepCard title={t('onboarding.q2Title')}>
                 <div className="grid grid-cols-4 sm:grid-cols-5 gap-2">
                   {[5, 5.5, 6, 6.5, 7, 7.5, 8, 8.5, 9].map(band => (
@@ -161,7 +135,7 @@ function OnboardingContent() {
               </StepCard>
             )}
 
-            {step === 3 && (
+            {step === 2 && (
               <StepCard title={t('onboarding.q3Title')}>
                 {([
                   ['beginner', t('onboarding.q3Opt1')],
@@ -179,7 +153,7 @@ function OnboardingContent() {
               </StepCard>
             )}
 
-            {step === 4 && (
+            {step === 3 && (
               <StepCard title={t('onboarding.q4Title')}>
                 {([
                   ['within_1_month', t('onboarding.q4Opt1')],
@@ -192,71 +166,6 @@ function OnboardingContent() {
                     label={label}
                     selected={answers.timeline === value}
                     onClick={() => setAnswers(a => ({ ...a, timeline: value }))}
-                  />
-                ))}
-              </StepCard>
-            )}
-
-            {step === 5 && (
-              <StepCard title={t('onboarding.q5Title')}>
-                <div className="grid grid-cols-2 gap-2.5">
-                  {([
-                    ['writing', t('onboarding.q5Writing')],
-                    ['speaking', t('onboarding.q5Speaking')],
-                    ['reading', t('onboarding.q5Reading')],
-                    ['listening', t('onboarding.q5Listening')],
-                  ] as [SkillType, string][]).map(([skill, label]) => {
-                    const selected = answers.focusSkills.includes(skill)
-                    return (
-                      <button
-                        key={skill}
-                        onClick={() => toggleSkill(skill)}
-                        className={`flex items-center justify-between px-4 py-4 rounded-2xl border text-sm font-medium transition-all duration-150 ${
-                          selected
-                            ? 'border-indigo-500 bg-indigo-50 dark:bg-indigo-500/10 text-indigo-700 dark:text-indigo-300'
-                            : 'border-gray-200 dark:border-gray-700/80 bg-gray-50/50 dark:bg-gray-800/40 text-gray-700 dark:text-gray-300 hover:border-indigo-300 dark:hover:border-indigo-500/40'
-                        }`}
-                      >
-                        {label}
-                        {selected && <Check size={13} strokeWidth={2.5} className="text-indigo-500" />}
-                      </button>
-                    )
-                  })}
-                </div>
-              </StepCard>
-            )}
-
-            {step === 6 && (
-              <StepCard title={t('onboarding.q6Title')}>
-                {([
-                  ['university', t('onboarding.q6Opt1')],
-                  ['immigration', t('onboarding.q6Opt2')],
-                  ['work', t('onboarding.q6Opt3')],
-                  ['personal', t('onboarding.q6Opt4')],
-                ] as [StudyGoal, string][]).map(([value, label]) => (
-                  <OptionButton
-                    key={value}
-                    label={label}
-                    selected={answers.studyGoal === value}
-                    onClick={() => setAnswers(a => ({ ...a, studyGoal: value }))}
-                  />
-                ))}
-              </StepCard>
-            )}
-
-            {step === 7 && (
-              <StepCard title={t('onboarding.q7Title')}>
-                {([
-                  ['30_min', t('onboarding.q7Opt1')],
-                  ['1_hour', t('onboarding.q7Opt2')],
-                  ['2_hours', t('onboarding.q7Opt3')],
-                  ['3_plus_hours', t('onboarding.q7Opt4')],
-                ] as [StudyHours, string][]).map(([value, label]) => (
-                  <OptionButton
-                    key={value}
-                    label={label}
-                    selected={answers.dailyHours === value}
-                    onClick={() => setAnswers(a => ({ ...a, dailyHours: value }))}
                   />
                 ))}
               </StepCard>

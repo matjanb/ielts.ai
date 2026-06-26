@@ -10,7 +10,6 @@ import { openCheckout } from '@/lib/paddle/client'
 import { getUser, signOut } from '@/lib/services/auth'
 import { getProfile } from '@/lib/services/user'
 import { isSubscriptionActive } from '@/lib/subscription'
-import { DiagnosticSync } from '@/components/DiagnosticSync'
 
 // Open the Paddle overlay checkout for the chosen plan, applying a promo
 // discount when one has been validated.
@@ -144,7 +143,6 @@ function SubscriptionContent() {
 
   return (
     <div style={{ minHeight: '100vh', background: 'var(--bg)' }}>
-      <DiagnosticSync />
       {/* Header */}
       <header style={{
         padding: '20px 32px', borderBottom: '1px solid var(--border)',

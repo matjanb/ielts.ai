@@ -6,8 +6,6 @@ import { useRouter } from 'next/navigation'
 import { Eye, EyeOff, Mail } from 'lucide-react'
 import { useLanguage } from '@/lib/i18n/LanguageContext'
 import { signUp, signInWithGoogle, resendConfirmation } from '@/lib/services/auth'
-import { saveDiagnosticData } from '@/lib/services/diagnostic'
-import { createClient } from '@/lib/supabase/client'
 
 export default function SignupPage() {
   const { t } = useLanguage()
@@ -54,19 +52,14 @@ export default function SignupPage() {
     console.log('[signup] success, user:', data?.user?.id, 'session:', data?.session ? 'present' : 'null (email confirmation pending)')
 
     if (data?.session) {
-      // Email confirmation disabled — save diagnostic data then go to dashboard
+      // Email confirmation disabled — this path skips /auth/callback, so attribute
+      // the referral here, then send the new user into the 3-question onboarding.
       try {
-        const supabase = createClient()
-        const { data: { user } } = await supabase.auth.getUser()
-        if (user) {
-          await saveDiagnosticData(user.id)
-        }
-        // This path skips /auth/callback, so attribute the referral here.
         await fetch('/api/referral/claim', { method: 'POST' })
       } catch {
-        // non-fatal — proceed to dashboard anyway
+        // non-fatal — proceed to onboarding anyway
       }
-      router.push('/dashboard')
+      router.push('/onboarding')
     } else {
       // Email confirmation required — show check-your-email screen
       setEmailSent(true)
