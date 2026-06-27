@@ -10,14 +10,17 @@ import { redirectToPaywallOn403 } from '@/lib/paywall'
 import { WritingFeedback, type FeedbackResult } from '@/components/writing/WritingFeedback'
 import { useIsMobile } from '@/lib/hooks/useIsMobile'
 
-export default function WritingTestPage() {
+// Embeddable Writing exam. Standalone route renders it via the wrapper below.
+// In the mock it grades both tasks, then reports the IELTS-weighted band
+// (Task 2 counts double) via onComplete instead of showing inline feedback.
+export function WritingExam({ testId, embedded = false, onComplete }: { testId: string; embedded?: boolean; onComplete?: (band: number) => void }) {
   const { t } = useLanguage()
-  const params = useParams<{ testId: string }>()
   const router = useRouter()
-  const testId = params.testId
 
   const [test, setTest] = useState<IeltsTest | null>(null)
   const [taskType, setTaskType] = useState<'1' | '2'>('1')
+  // Per-task bands captured in embedded (mock) mode; section completes at both.
+  const [gradedBands, setGradedBands] = useState<Partial<Record<'1' | '2', number>>>({})
 
   const [htmlContents, setHtmlContents] = useState<Record<'1' | '2', string>>({ '1': '', '2': '' })
   const [plainTexts, setPlainTexts]     = useState<Record<'1' | '2', string>>({ '1': '', '2': '' })
@@ -136,8 +139,21 @@ export default function WritingTestPage() {
       })
       if (redirectToPaywallOn403(res)) return
       const data = await res.json()
-      if (!res.ok) setError(data.error ?? t('wtest.failed'))
-      else { setResult(data); setGradedSig(sigOf(content, taskType)); setShowResult(true); window.scrollTo({ top: 0 }) }
+      if (!res.ok) { setError(data.error ?? t('wtest.failed')); return }
+      setGradedSig(sigOf(content, taskType))
+      if (embedded) {
+        // Record this task's band; complete the section once both are graded.
+        const band = Number(data.band_score ?? 0)
+        const next = { ...gradedBands, [taskType]: band }
+        setGradedBands(next)
+        if (next['1'] != null && next['2'] != null) {
+          onComplete?.(Math.round(((next['1'] + next['2'] * 2) / 3) * 2) / 2)
+        } else {
+          setTaskType(next['1'] == null ? '1' : '2') // jump to the ungraded task
+        }
+        return
+      }
+      setResult(data); setShowResult(true); window.scrollTo({ top: 0 })
     } catch { setError(t('wtest.networkError')) }
     finally { setLoading(false) }
   }
@@ -155,10 +171,12 @@ export default function WritingTestPage() {
       {/* IELTS dark header */}
       <div style={{ background: '#2b2b2b', color: '#fff', padding: '8px 16px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexShrink: 0 }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: isMobile ? 8 : 16, fontWeight: 700, fontSize: 14, minWidth: 0 }}>
-          <button onClick={() => router.push('/dashboard/writing')} style={{
-            background: 'none', border: 'none', color: 'rgba(255,255,255,0.5)', cursor: 'pointer',
-            fontSize: 18, lineHeight: 1, padding: '0 4px', display: 'flex', alignItems: 'center', flexShrink: 0,
-          }}>←</button>
+          {!embedded && (
+            <button onClick={() => router.push('/dashboard/writing')} style={{
+              background: 'none', border: 'none', color: 'rgba(255,255,255,0.5)', cursor: 'pointer',
+              fontSize: 18, lineHeight: 1, padding: '0 4px', display: 'flex', alignItems: 'center', flexShrink: 0,
+            }}>←</button>
+          )}
           <span style={{ background: '#ffcb05', color: '#000', padding: '3px 8px', borderRadius: 2, fontSize: 11, flexShrink: 0 }}>IELTS</span>
           {!isMobile && <span style={{ opacity: 0.7, fontWeight: 400, fontSize: 12 }}>{test?.title ?? t('dashboard.writing')}</span>}
           <div style={{ display: 'flex', gap: 4, marginLeft: isMobile ? 0 : 8, flexShrink: 0 }}>
@@ -327,4 +345,10 @@ export default function WritingTestPage() {
       )}
     </div>
   )
+}
+
+// Standalone /writing/[testId] route — full experience with inline feedback.
+export default function WritingTestPage() {
+  const params = useParams<{ testId: string }>()
+  return <WritingExam testId={params.testId} />
 }
