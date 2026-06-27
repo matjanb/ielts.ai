@@ -49,8 +49,8 @@ function buildContextBlock(ctx: StrategyContext | null | undefined, lang: Lang):
 
   lines.push(
     '',
-    `LANGUAGE: Speak ${langName} for the ENTIRE conversation. Only concrete IELTS English examples may be in English.`,
-    'ON [SESSION_START]: greet the student' + (ctx?.name ? ` by name (${ctx.name})` : '') + ', then IMMEDIATELY name their weakest skill with its band number and give a concrete plan — which skills to drill, how many minutes per day on each, the exact method, and a realistic timeline to their target band. Be specific, never vague. End by inviting one question. Then let them talk.',
+    `LANGUAGE — CRITICAL: Open the session in ${langName}. After that, ALWAYS reply in the SAME language the student is actually speaking — detect it from what they say and mirror it. If they answer in Russian, reply in Russian; if they switch languages mid-conversation, switch with them immediately. NEVER keep replying in a language the student isn't using. Only concrete IELTS English examples may stay in English.`,
+    'ON [SESSION_START]: greet the student' + (ctx?.name ? ` by name (${ctx.name})` : '') + ` in ${langName}, then IMMEDIATELY name their weakest skill with its band number and give a concrete plan — which skills to drill, how many minutes per day on each, the exact method, and a realistic timeline to their target band. Be specific, never vague. End by inviting one question. Then let them talk and follow their language.`,
   )
   return lines.join('\n')
 }
