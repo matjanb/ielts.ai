@@ -219,11 +219,12 @@ function StartScreen({ test, onStart }: { test: IeltsTest; onStart: () => void }
 
 // ── Main Page ─────────────────────────────────────────────────────────────────
 
-export default function ReadingTestPage() {
+// Embeddable Reading exam. Standalone route renders it via the wrapper below;
+// the mock flow renders it with `embedded` + `onComplete(band)` so it reports
+// its band and advances instead of navigating to its own results page.
+export function ReadingExam({ testId, embedded = false, onComplete }: { testId: string; embedded?: boolean; onComplete?: (band: number) => void }) {
   const { t } = useLanguage()
   const router = useRouter()
-  const params = useParams<{ testId: string }>()
-  const testId = params.testId
 
   const [test, setTest] = useState<IeltsTest | null>(null)
   const [sections, setSections] = useState<TestSection[]>([])
@@ -346,6 +347,7 @@ export default function ReadingTestPage() {
       }
     } catch { /* fall through to results; the attempt is still recoverable */ }
 
+    if (embedded) { onComplete?.(band); return }
     router.push(`/reading/${testId}/results?score=${score}&band=${band}&sections=${encodeURIComponent(JSON.stringify(sections))}&attempt=${finalAttempt ?? ''}`)
   }
 
@@ -553,4 +555,10 @@ export default function ReadingTestPage() {
       </div>
     </div>
   )
+}
+
+// Standalone /reading/[testId] route — full experience that navigates to results.
+export default function ReadingTestPage() {
+  const params = useParams<{ testId: string }>()
+  return <ReadingExam testId={params.testId} />
 }
