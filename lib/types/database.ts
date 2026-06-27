@@ -43,6 +43,87 @@ export type Database = {
           },
         ]
       }
+      user_attribution: {
+        Row: {
+          user_id: string
+          anon_id: string | null
+          utm_source: string | null
+          utm_medium: string | null
+          utm_campaign: string | null
+          utm_content: string | null
+          utm_term: string | null
+          referrer: string | null
+          landing_path: string | null
+          created_at: string
+        }
+        Insert: {
+          user_id: string
+          anon_id?: string | null
+          utm_source?: string | null
+          utm_medium?: string | null
+          utm_campaign?: string | null
+          utm_content?: string | null
+          utm_term?: string | null
+          referrer?: string | null
+          landing_path?: string | null
+          created_at?: string
+        }
+        Update: {
+          user_id?: string
+          anon_id?: string | null
+          utm_source?: string | null
+          utm_medium?: string | null
+          utm_campaign?: string | null
+          utm_content?: string | null
+          utm_term?: string | null
+          referrer?: string | null
+          landing_path?: string | null
+          created_at?: string
+        }
+        Relationships: []
+      }
+      funnel_events: {
+        Row: {
+          id: string
+          event: string
+          user_id: string | null
+          anon_id: string | null
+          utm_source: string | null
+          utm_medium: string | null
+          utm_campaign: string | null
+          referrer: string | null
+          path: string | null
+          metadata: Json | null
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          event: string
+          user_id?: string | null
+          anon_id?: string | null
+          utm_source?: string | null
+          utm_medium?: string | null
+          utm_campaign?: string | null
+          referrer?: string | null
+          path?: string | null
+          metadata?: Json | null
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          event?: string
+          user_id?: string | null
+          anon_id?: string | null
+          utm_source?: string | null
+          utm_medium?: string | null
+          utm_campaign?: string | null
+          referrer?: string | null
+          path?: string | null
+          metadata?: Json | null
+          created_at?: string
+        }
+        Relationships: []
+      }
       band_score_history: {
         Row: {
           id: string

@@ -2,6 +2,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { verifyPaddleSignature } from '@/lib/paddle/server'
 import { createAdminClient } from '@/lib/supabase/admin'
+import { logEventForUser } from '@/lib/analytics/track.server'
 import type { Database } from '@/lib/types/database'
 
 export const runtime = 'nodejs'
@@ -141,6 +142,7 @@ export async function POST(request: NextRequest) {
         case 'transaction.completed':
           await setStatus(userId, 'pro', { customerId, expiresAt: grantExpiry(), plan, source: 'paddle', paid: true })
           await recordPromo()
+          await logEventForUser('purchase_completed', userId, { plan, event_type: event.event_type })
           break
         case 'subscription.updated': {
           // While active, keep 'pro' and extend the paid-through date. When not

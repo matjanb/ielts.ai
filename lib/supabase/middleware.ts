@@ -103,5 +103,34 @@ export async function updateSession(request: NextRequest) {
     })
   }
 
+  // ── Analytics ────────────────────────────────────────────────────────────────
+  const secure = process.env.NODE_ENV === 'production'
+
+  // Stable anonymous id so the pre-signup → signed-up journey can be stitched.
+  if (!request.cookies.get('anon_id')) {
+    supabaseResponse.cookies.set('anon_id', crypto.randomUUID(), {
+      httpOnly: true, secure, sameSite: 'lax', maxAge: 365 * 24 * 60 * 60, path: '/',
+    })
+  }
+
+  // First-touch UTM attribution from the landing URL (don't overwrite if set).
+  const sp = request.nextUrl.searchParams
+  const utmSource = sp.get('utm_source')
+  if (utmSource && !request.cookies.get('ielts_attribution')) {
+    const cap = (v: string | null) => (v ? v.slice(0, 200) : null)
+    const attribution = {
+      utm_source: cap(utmSource),
+      utm_medium: cap(sp.get('utm_medium')),
+      utm_campaign: cap(sp.get('utm_campaign')),
+      utm_content: cap(sp.get('utm_content')),
+      utm_term: cap(sp.get('utm_term')),
+      referrer: cap(request.headers.get('referer')),
+      landing_path: pathname,
+    }
+    supabaseResponse.cookies.set('ielts_attribution', JSON.stringify(attribution), {
+      httpOnly: true, secure, sameSite: 'lax', maxAge: 60 * 24 * 60 * 60, path: '/',
+    })
+  }
+
   return supabaseResponse
 }

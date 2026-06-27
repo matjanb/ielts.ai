@@ -5,6 +5,7 @@ import { useEffect, useRef, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { getUser } from '@/lib/services/auth'
 import { saveBandScoreHistory } from '@/lib/services/attempts'
+import { track } from '@/lib/analytics/track'
 import { useLanguage } from '@/lib/i18n/LanguageContext'
 import { loadCurrentMock, clearCurrentMock, getMockProgress, type CurrentMock, type MockSkill } from '@/lib/services/mock'
 import { ListeningExam } from '@/app/(dashboard)/listening/[testId]/page'
@@ -34,6 +35,7 @@ export default function MockRunPage() {
   const [stepIdx, setStepIdx] = useState(0)
   const [bands, setBands] = useState<Partial<Record<MockSkill, number>>>({})
   const savedRef = useRef(false)
+  const startedTracked = useRef(false)
 
   useEffect(() => {
     let active = true
@@ -60,6 +62,7 @@ export default function MockRunPage() {
       if (!active) return
       setMock(m)
       setUserId(user?.id ?? null)
+      if (m && !startedTracked.current) { startedTracked.current = true; track('mock_test_started') }
       setLoaded(true)
     })
     return () => { active = false }
@@ -79,6 +82,7 @@ export default function MockRunPage() {
     if (!allDone || !userId || overall == null || savedRef.current) return
     savedRef.current = true
     saveBandScoreHistory(userId, 'overall', overall).catch(() => {})
+    track('mock_test_completed', { overall })
   }, [allDone, userId, overall])
 
   function complete(skill: MockSkill, band: number) {
