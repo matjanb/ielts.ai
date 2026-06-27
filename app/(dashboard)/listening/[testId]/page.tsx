@@ -1967,11 +1967,12 @@ function StartScreen({ test, sections, questionCount, starting, onStart, t }: {
 
 // ── Main Page ─────────────────────────────────────────────────────────────────
 
-export default function ListeningTestPage() {
+// Embeddable Listening exam. Standalone route renders it via the wrapper below;
+// the mock renders it with `embedded` + `onComplete(band)` so it reports its band
+// and advances instead of navigating to its own results page.
+export function ListeningExam({ testId, embedded = false, onComplete }: { testId: string; embedded?: boolean; onComplete?: (band: number) => void }) {
   const { t } = useLanguage()
   const router = useRouter()
-  const params = useParams<{ testId: string }>()
-  const testId = params?.testId ?? ''
   const isMobile = useIsMobile()
 
   const [test, setTest] = useState<IeltsTest | null>(null)
@@ -2110,6 +2111,7 @@ export default function ListeningTestPage() {
       }
     } catch { /* fall through to results; the attempt is still recoverable */ }
 
+    if (embedded) { onComplete?.(band); return }
     const sectionParam = encodeURIComponent(JSON.stringify(sections))
     router.push(
       `/listening/${testId}/results?score=${score}&band=${band}&sections=${sectionParam}&attempt=${finalAttempt ?? ''}`
@@ -2350,4 +2352,10 @@ export default function ListeningTestPage() {
       </div>
     </div>
   )
+}
+
+// Standalone /listening/[testId] route — full experience that navigates to results.
+export default function ListeningTestPage() {
+  const params = useParams<{ testId: string }>()
+  return <ListeningExam testId={params?.testId ?? ''} />
 }
