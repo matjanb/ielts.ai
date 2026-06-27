@@ -1,6 +1,29 @@
 import { createServerClient } from '@supabase/ssr'
 import { type NextRequest, NextResponse } from 'next/server'
 import type { Database } from '@/lib/types/database'
+import { isSubscriptionActive } from '@/lib/subscription'
+
+// Paths whose access depends on the paywall — we only read the profile for these,
+// keeping every other navigation a single auth check. Results stay readable and
+// the dashboard home/settings are always open.
+function isPaywalledPath(p: string): boolean {
+  if (p.includes('/results')) return false
+  if (p === '/dashboard' || p.startsWith('/dashboard/settings')) return false
+  return (
+    p.startsWith('/reading') || p.startsWith('/listening') || p.startsWith('/writing') ||
+    p.startsWith('/vocabulary') || p.startsWith('/dashboard/writing') ||
+    p.startsWith('/dashboard/speaking') || p.startsWith('/dashboard/study-plan') ||
+    p.startsWith('/dashboard/roast') || p.startsWith('/mock-tests')
+  )
+}
+
+// For a free (non-subscribed) user on a paywalled path: block everything except
+// running the single mock. The composer is open only until the free mock is claimed.
+function blockFreeUser(p: string, freeMockUsed: boolean): boolean {
+  if (p.startsWith('/mock-tests/run')) return false // the one free mock (and resume)
+  if (p.startsWith('/mock-tests')) return freeMockUsed // composer: closed once used
+  return true // standalone skills, practice, vocabulary, study plan, AI coach
+}
 
 export async function updateSession(request: NextRequest) {
   let supabaseResponse = NextResponse.next({ request })
@@ -50,6 +73,21 @@ export async function updateSession(request: NextRequest) {
 
   if (isAuthRoute && user) {
     return NextResponse.redirect(new URL('/dashboard', request.url))
+  }
+
+  // Authoritative server-side paywall. The free tier is exactly one mock (taken
+  // inside /mock-tests/run); everything else is paid. Read the profile only on
+  // paywalled paths, then redirect free users to /subscription. The client guard
+  // in layout.tsx is now just snappy UX backup, not the gate.
+  if (user && isPaywalledPath(pathname)) {
+    const { data: profile } = await supabase
+      .from('profiles')
+      .select('subscription_status, subscription_expires_at, lifetime_access, free_mock_used')
+      .eq('id', user.id)
+      .single()
+    if (!isSubscriptionActive(profile) && blockFreeUser(pathname, profile?.free_mock_used === true)) {
+      return NextResponse.redirect(new URL('/subscription', request.url))
+    }
   }
 
   // Referral capture: first visit with ?ref=<code> drops a 60-day cookie that the

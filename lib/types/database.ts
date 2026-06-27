@@ -259,6 +259,8 @@ export type Database = {
           country: string | null
           created_at: string
           current_level: Database["public"]["Enums"]["current_level"] | null
+          free_mock_started_at: string | null
+          free_mock_used: boolean
           full_name: string | null
           has_paid: boolean
           id: string
@@ -283,6 +285,8 @@ export type Database = {
           country?: string | null
           created_at?: string
           current_level?: Database["public"]["Enums"]["current_level"] | null
+          free_mock_started_at?: string | null
+          free_mock_used?: boolean
           full_name?: string | null
           has_paid?: boolean
           id: string
@@ -307,6 +311,8 @@ export type Database = {
           country?: string | null
           created_at?: string
           current_level?: Database["public"]["Enums"]["current_level"] | null
+          free_mock_started_at?: string | null
+          free_mock_used?: boolean
           full_name?: string | null
           has_paid?: boolean
           id?: string
