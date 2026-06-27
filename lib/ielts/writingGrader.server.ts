@@ -64,6 +64,21 @@ const WRITING_SCHEMA = {
   },
 } as const
 
+// Trimmed schema for the public checker: only the bands + a few issues we reveal
+// anonymously. Far fewer output tokens than the full assessment.
+const LEAN_SCHEMA = {
+  type: 'object', additionalProperties: false,
+  required: ['criteria', 'corrections'],
+  properties: {
+    criteria: {
+      type: 'object', additionalProperties: false,
+      required: ['task', 'coherence', 'lexical', 'grammar'],
+      properties: { task: criterion, coherence: criterion, lexical: criterion, grammar: criterion },
+    },
+    corrections: { type: 'array', items: correction, description: '3–5 of the most important concrete errors, each quoting the exact text' },
+  },
+} as const
+
 export interface CriterionResult { band: number; evidence: string }
 export interface Correction { quote: string; issue: string; fix: string; type: string }
 export interface TaskCheck { label: string; passed: boolean; note: string }
@@ -108,8 +123,10 @@ export async function gradeWriting(params: {
   content: string
   taskType: '1' | '2'
   prompt: string
+  model?: string
+  lean?: boolean
 }): Promise<{ scored: WritingScore; feedback: WritingFeedbackPayload }> {
-  const { content, taskType, prompt } = params
+  const { content, taskType, prompt, model = 'gpt-4o', lean = false } = params
   const rubric = taskType === '1' ? WRITING_TASK1_RUBRIC : WRITING_TASK2_RUBRIC
   const taskCriterionName = taskType === '1' ? 'Task Achievement' : 'Task Response'
   const minWords = taskType === '1' ? 150 : 250
@@ -128,12 +145,14 @@ export async function gradeWriting(params: {
 - Logical paragraphing, one central idea per paragraph.`
 
   const completion = await openai.chat.completions.create({
-    model: 'gpt-4o',
+    model,
     temperature: 0.2,
-    max_tokens: 2600,
+    max_tokens: lean ? 900 : 2600,
     response_format: {
       type: 'json_schema',
-      json_schema: { name: 'ielts_writing_assessment', strict: true, schema: WRITING_SCHEMA },
+      json_schema: lean
+        ? { name: 'ielts_writing_lean', strict: true, schema: LEAN_SCHEMA }
+        : { name: 'ielts_writing_assessment', strict: true, schema: WRITING_SCHEMA },
     },
     messages: [
       {
@@ -174,7 +193,8 @@ ${content}`,
     ],
   })
 
-  const result = JSON.parse(completion.choices[0]?.message?.content ?? '{}') as WritingResult
+  // Lean responses omit the heavy fields; default them so the payload shape holds.
+  const result = JSON.parse(completion.choices[0]?.message?.content ?? '{}') as Partial<WritingResult> & Pick<WritingResult, 'criteria' | 'corrections'>
 
   const task = clampBand(result.criteria.task.band)
   const coherence = clampBand(result.criteria.coherence.band)
@@ -190,14 +210,14 @@ ${content}`,
       grammatical_accuracy: grammar,
     },
     feedback: {
-      overview: result.overview,
-      strengths: result.strengths,
-      improvements: result.improvements,
-      corrections: result.corrections,
-      task_checks: result.task_checks,
-      off_topic: result.off_topic,
-      rewritten_paragraph: result.rewritten_paragraph,
-      next_band_tip: result.next_band_tip,
+      overview: result.overview ?? '',
+      strengths: result.strengths ?? [],
+      improvements: result.improvements ?? [],
+      corrections: result.corrections ?? [],
+      task_checks: result.task_checks ?? [],
+      off_topic: result.off_topic ?? { flag: false, note: '' },
+      rewritten_paragraph: result.rewritten_paragraph ?? '',
+      next_band_tip: result.next_band_tip ?? '',
       criteria: result.criteria,
     },
   }

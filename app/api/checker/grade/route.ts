@@ -89,6 +89,9 @@ export async function POST(request: NextRequest) {
       content,
       taskType,
       prompt: `(Task ${taskType} question not provided — assess the response on its own merits.)`,
+      // Public teaser: cheap model + trimmed output (~15–20× cheaper than gpt-4o).
+      model: 'gpt-4o-mini',
+      lean: true,
     })
 
     // Teaser only: overall + criteria bands + a couple of issues WITHOUT the fixes.
