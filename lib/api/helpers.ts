@@ -82,20 +82,24 @@ export interface Entitlement {
   onboardingCompleted: boolean
 }
 
+// Areas a free user can never open — their whole free allowance is the one mock,
+// taken inside /mock-tests/run. Standalone skills, practice drills, vocabulary,
+// the study plan and the AI coach are paid from the start.
+const FREE_ALWAYS_LOCKED = ['reading', 'listening', 'writing', 'speaking', 'vocabulary', 'studyPlan', 'roast', 'practice']
+
 /**
- * Billing + onboarding state the client needs to tailor the UI. For free users
- * we derive, from lifetime ai_usage, which areas are spent: each skill locks once
- * its slice of the one free mock is used; practice drills, vocabulary, the AI
- * coach and the study plan are always locked; Mock Tests locks once all four
- * skills are spent.
+ * Billing + onboarding state the client needs to tailor the UI. The free tier is
+ * exactly ONE mock: standalone areas above are always locked, and Mock Tests
+ * locks once `profiles.free_mock_used` flips (set atomically by /api/mock/start).
+ * Driven by the authoritative flag, not derived ai_usage counts.
  */
 export async function getEntitlement(userId: string): Promise<Entitlement> {
   const admin = createAdminClient()
   const { data: profile } = await admin
     .from('profiles')
-    .select('subscription_status, subscription_expires_at, lifetime_access, onboarding_completed')
+    .select('subscription_status, subscription_expires_at, lifetime_access, onboarding_completed, free_mock_used')
     .eq('id', userId)
-    .single<{ subscription_status: string; subscription_expires_at: string | null; lifetime_access: boolean | null; onboarding_completed: boolean | null }>()
+    .single<{ subscription_status: string; subscription_expires_at: string | null; lifetime_access: boolean | null; onboarding_completed: boolean | null; free_mock_used: boolean | null }>()
 
   const onboardingCompleted = profile?.onboarding_completed === true
 
@@ -103,25 +107,10 @@ export async function getEntitlement(userId: string): Promise<Entitlement> {
     return { subscribed: true, freeMockUsed: true, locked: [], onboardingCompleted }
   }
 
-  const { data } = await admin.from('ai_usage').select('feature').eq('user_id', userId)
-  const counts: Record<string, number> = {}
-  for (const row of data ?? []) counts[row.feature] = (counts[row.feature] ?? 0) + 1
-  const used = (f: string) => counts[f] ?? 0
+  const freeMockUsed = profile?.free_mock_used === true
+  const locked = [...FREE_ALWAYS_LOCKED]
+  if (freeMockUsed) locked.push('mockTests')
 
-  const readingDone   = used('reading')   >= (FREE_LIFETIME_ALLOWANCE.reading ?? 1)
-  const listeningDone = used('listening') >= (FREE_LIFETIME_ALLOWANCE.listening ?? 1)
-  const writingDone   = used('writing')   >= (FREE_LIFETIME_ALLOWANCE.writing ?? 2)
-  const speakingDone  = used('speaking') >= 1 || used('speaking_realtime') >= 1
-
-  // Always paid for free users.
-  const locked = ['vocabulary', 'studyPlan', 'roast', 'practice']
-  if (readingDone)   locked.push('reading')
-  if (listeningDone) locked.push('listening')
-  if (writingDone)   locked.push('writing')
-  if (speakingDone)  locked.push('speaking')
-  if (readingDone && listeningDone && writingDone && speakingDone) locked.push('mockTests')
-
-  const freeMockUsed = readingDone || listeningDone || used('writing') > 0 || speakingDone
   return { subscribed: false, freeMockUsed, locked, onboardingCompleted }
 }
 

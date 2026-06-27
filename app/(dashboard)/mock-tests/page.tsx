@@ -7,6 +7,7 @@ import { getListeningTests, getReadingTests, getWritingTests } from '@/lib/servi
 import { getDashboardData } from '@/lib/services/progress'
 import { getUser } from '@/lib/services/auth'
 import { saveCurrentMock, loadCurrentMock, type CurrentMock } from '@/lib/services/mock'
+import { redirectToPaywallOn403 } from '@/lib/paywall'
 import { useLanguage } from '@/lib/i18n/LanguageContext'
 import type { IeltsTest } from '@/lib/types/database'
 
@@ -74,19 +75,32 @@ export default function MockTestsPage() {
     setLid(listening[0]?.id ?? ''); setRid(reading[0]?.id ?? ''); setWid(writing[0]?.id ?? '')
   }
 
-  function startMock() {
-    const mock: CurrentMock = {
-      id: (globalThis.crypto?.randomUUID?.() ?? String(Date.now())),
-      startedAt: new Date().toISOString(),
-      listeningTestId: lid || null,
-      readingTestId: rid || null,
-      writingTestId: wid || null,
-      listeningTitle: listening.find(t => t.id === lid)?.title,
-      readingTitle: reading.find(t => t.id === rid)?.title,
-      writingTitle: writing.find(t => t.id === wid)?.title,
+  const [starting, setStarting] = useState(false)
+
+  async function startMock() {
+    if (starting) return
+    setStarting(true)
+    try {
+      // Server claims the single free mock (atomic). Subscribers always pass;
+      // a free user who already used theirs is sent to the paywall.
+      const res = await fetch('/api/mock/start', { method: 'POST' })
+      if (redirectToPaywallOn403(res)) return
+      if (!res.ok) { setStarting(false); return }
+      const mock: CurrentMock = {
+        id: (globalThis.crypto?.randomUUID?.() ?? String(Date.now())),
+        startedAt: new Date().toISOString(),
+        listeningTestId: lid || null,
+        readingTestId: rid || null,
+        writingTestId: wid || null,
+        listeningTitle: listening.find(t => t.id === lid)?.title,
+        readingTitle: reading.find(t => t.id === rid)?.title,
+        writingTitle: writing.find(t => t.id === wid)?.title,
+      }
+      saveCurrentMock(mock)
+      router.push('/mock-tests/run')
+    } catch {
+      setStarting(false)
     }
-    saveCurrentMock(mock)
-    router.push('/mock-tests/run')
   }
 
   const canStart = !!(lid || rid || wid)
@@ -172,12 +186,12 @@ export default function MockTestsPage() {
             </div>
           </div>
 
-          <button onClick={startMock} disabled={!canStart} style={{
+          <button onClick={startMock} disabled={!canStart || starting} style={{
             marginTop: 22, width: '100%', padding: '12px', borderRadius: 10, fontSize: 14, fontWeight: 700,
             background: canStart ? 'var(--accent)' : 'var(--bg-soft)', color: canStart ? 'var(--accent-fg)' : 'var(--text-3)',
-            border: 'none', cursor: canStart ? 'pointer' : 'default',
+            border: 'none', cursor: canStart && !starting ? 'pointer' : 'default', opacity: starting ? 0.7 : 1,
           }}>
-            {t('mock.startMock')}
+            {starting ? '…' : t('mock.startMock')}
           </button>
 
           {/* Previous mocks — real completed attempts */}
