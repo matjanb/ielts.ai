@@ -124,6 +124,12 @@ export type Database = {
         }
         Relationships: []
       }
+      anon_checker_usage: {
+        Row: { ip_hash: string; day: string; count: number; updated_at: string }
+        Insert: { ip_hash: string; day: string; count?: number; updated_at?: string }
+        Update: { ip_hash?: string; day?: string; count?: number; updated_at?: string }
+        Relationships: []
+      }
       band_score_history: {
         Row: {
           id: string
