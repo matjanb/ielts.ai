@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import openai from '@/lib/openai/client'
 import { createAdminClient } from '@/lib/supabase/admin'
-import { getApiUser, hasActiveSubscription, recordUsage, enforceAiLimits, err } from '@/lib/api/helpers'
+import { getApiUser, canUseAiFeature, recordUsage, enforceAiLimits, err } from '@/lib/api/helpers'
 import { WRITING_TASK1_RUBRIC, WRITING_TASK2_RUBRIC, EXAMINER_PERSONA } from '@/lib/ielts/rubrics'
 import { clampBand, overallBand } from '@/lib/ielts/band'
 
@@ -85,7 +85,7 @@ export async function POST(request: NextRequest) {
   const user = await getApiUser()
   if (!user) return err('Unauthorized', 401)
 
-  const allowed = await hasActiveSubscription(user.id)
+  const allowed = await canUseAiFeature(user.id, 'writing')
   if (!allowed) return err('Subscription required.', 403)
 
   const limited = await enforceAiLimits(user.id, 'writing')

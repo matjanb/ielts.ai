@@ -10,12 +10,13 @@ import { openCheckout } from '@/lib/paddle/client'
 import { getUser, signOut } from '@/lib/services/auth'
 import { getProfile } from '@/lib/services/user'
 import { isSubscriptionActive } from '@/lib/subscription'
-import { DiagnosticSync } from '@/components/DiagnosticSync'
+import { track } from '@/lib/analytics/track'
 
 // Open the Paddle overlay checkout for the chosen plan, applying a promo
 // discount when one has been validated.
 async function handleCheckout(planId: string, discountId?: string | null) {
   try {
+    track('checkout_started', { plan: planId })
     const { user } = await getUser()
     const opened = await openCheckout(planId, user, discountId)
     if (!opened) alert('Checkout is not available yet.')
@@ -91,6 +92,9 @@ function SubscriptionContent() {
     setPromo(null); setPromoInput(''); setPromoError('')
   }
 
+  // Funnel: did the user actually reach the paywall?
+  useEffect(() => { track('paywall_viewed') }, [])
+
   // Know whether the visitor already has an active plan — only then does
   // "Back to dashboard" make sense (non-subscribers would just bounce back here).
   useEffect(() => {
@@ -144,7 +148,6 @@ function SubscriptionContent() {
 
   return (
     <div style={{ minHeight: '100vh', background: 'var(--bg)' }}>
-      <DiagnosticSync />
       {/* Header */}
       <header style={{
         padding: '20px 32px', borderBottom: '1px solid var(--border)',
@@ -187,6 +190,37 @@ function SubscriptionContent() {
           <p style={{ fontSize: 17, color: 'var(--text-2)', margin: 0 }}>
             {t('subscription.subtitle')}
           </p>
+        </div>
+
+        {/* What's free vs what a plan adds — answers "what am I paying for?" */}
+        <div style={{
+          display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 280px), 1fr))',
+          gap: 16, maxWidth: 760, margin: '0 auto 48px',
+        }}>
+          <div className="card" style={{ padding: 24, background: 'var(--bg-elev)' }}>
+            <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--text-2)', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 14 }}>
+              {t('subscription.freeColTitle')}
+            </div>
+            <ul style={{ listStyle: 'none', padding: 0, margin: 0, display: 'grid', gap: 11 }}>
+              {['freeCol1', 'freeCol2', 'freeCol3'].map(k => (
+                <li key={k} style={{ display: 'flex', gap: 10, fontSize: 14, alignItems: 'flex-start', color: 'var(--text)' }}>
+                  <CheckIcon /><span>{t(`subscription.${k}`)}</span>
+                </li>
+              ))}
+            </ul>
+          </div>
+          <div className="card" style={{ padding: 24, borderColor: 'var(--accent)', background: 'var(--accent-soft)' }}>
+            <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--accent)', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 14 }}>
+              {t('subscription.proColTitle')}
+            </div>
+            <ul style={{ listStyle: 'none', padding: 0, margin: 0, display: 'grid', gap: 11 }}>
+              {['proCol1', 'proCol2', 'proCol3', 'proCol4'].map(k => (
+                <li key={k} style={{ display: 'flex', gap: 10, fontSize: 14, alignItems: 'flex-start', color: 'var(--text)' }}>
+                  <CheckIcon /><span>{t(`subscription.${k}`)}</span>
+                </li>
+              ))}
+            </ul>
+          </div>
         </div>
 
         {/* Plan cards */}

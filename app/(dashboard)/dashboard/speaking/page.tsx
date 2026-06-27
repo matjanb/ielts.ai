@@ -7,6 +7,7 @@ import { createClient } from '@/lib/supabase/client'
 import { blobToWavSegments, type SpeechSegment } from '@/lib/utils/wavEncode'
 import { metricsFromSegments, type FluencyMetrics } from '@/lib/ielts/fluency'
 import { SpeakingFocus } from '@/components/speaking/SpeakingFocus'
+import { redirectToPaywallOn403 } from '@/lib/paywall'
 
 /* ── Types ─────────────────────────────────────────────────────────────────── */
 type Part = 1 | 2 | 3
@@ -419,6 +420,7 @@ function RealtimeExam({ sessionId, grading, error, onComplete, onExit }: {
           headers: { 'Content-Type': 'application/sdp' },
           body: offer.sdp ?? '',
         })
+        if (redirectToPaywallOn403(resp)) { cleanup(); return }
         if (!resp.ok) {
           let m = t('speak.realtimeError')
           try { const j = await resp.clone().json(); if (j?.error) m = j.error } catch {}
@@ -671,7 +673,10 @@ function newSessionId(): string {
   try { return crypto.randomUUID() } catch { return `${Date.now()}-${Math.random().toString(36).slice(2)}` }
 }
 
-export default function SpeakingPage() {
+// Embeddable Speaking exam. Standalone route renders it via the wrapper below;
+// the mock renders it with `embedded` + `onComplete(band)` so it reports its band
+// once graded (it still shows the feedback screen).
+export function SpeakingExam({ embedded = false, onComplete }: { embedded?: boolean; onComplete?: (band: number) => void }) {
   const [phase, setPhase] = useState<Phase>('ready')
   const [sessionId, setSessionId] = useState('')
   const [grading, setGrading] = useState(false)
@@ -689,7 +694,10 @@ export default function SpeakingPage() {
       })
       const data = await res.json()
       if (!res.ok) setError(data.error ?? 'Failed to score the test.')
-      else { setResult(data); setPhase('feedback') }
+      else {
+        setResult(data); setPhase('feedback')
+        if (embedded) onComplete?.(Number(data.band_score))
+      }
     } catch { setError('Network error. Please try again.') }
     finally { setGrading(false) }
   }
@@ -710,4 +718,9 @@ export default function SpeakingPage() {
       onExit={() => { setError(''); setPhase('ready') }}
     />
   )
+}
+
+// Standalone /dashboard/speaking route.
+export default function SpeakingPage() {
+  return <SpeakingExam />
 }

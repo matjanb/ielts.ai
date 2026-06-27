@@ -6,51 +6,83 @@ import { useIsMobile } from '@/lib/hooks/useIsMobile'
 import type { RoastMode } from '@/app/api/ai/roast/route'
 import { createClient } from '@/lib/supabase/client'
 import { getUser } from '@/lib/services/auth'
+import { getDashboardData } from '@/lib/services/progress'
+import { getStreakInfo } from '@/lib/services/streak'
+import { redirectToPaywallOn403 } from '@/lib/paywall'
 
-type SpeakingContext = {
-  sessionCount: number
-  avgBand: number | null
-  avgFluency: number | null
-  avgLexical: number | null
-  avgGrammar: number | null
-  avgPronunciation: number | null
-  recentImprovements: string[]
+// All-skill snapshot the strategist reasons over (sent to the realtime route).
+type StrategyContext = {
+  name: string | null
+  targetBand: number | null
+  overall: number | null
+  perSkill: Partial<Record<'listening' | 'reading' | 'writing' | 'speaking', number>>
+  weakestSkill: string | null
+  trend: 'up' | 'flat' | 'down' | null
+  streakDays: number | null
+  dailyMinutes: number | null
+  timeline: string | null
+  themes: string[]
+  hasData: boolean
 }
 
-async function fetchSpeakingContext(): Promise<SpeakingContext> {
-  const empty: SpeakingContext = { sessionCount: 0, avgBand: null, avgFluency: null, avgLexical: null, avgGrammar: null, avgPronunciation: null, recentImprovements: [] }
+async function fetchStrategyContext(): Promise<StrategyContext> {
+  const empty: StrategyContext = {
+    name: null, targetBand: null, overall: null, perSkill: {}, weakestSkill: null,
+    trend: null, streakDays: null, dailyMinutes: null, timeline: null, themes: [], hasData: false,
+  }
   try {
     const { user } = await getUser()
     if (!user) return empty
-    const { data } = await createClient()
-      .from('speaking_submissions')
-      .select('band_score, fluency_score, lexical_score, grammar_score, pronunciation_score, ai_feedback')
-      .eq('user_id', user.id)
-      .order('created_at', { ascending: false })
-      .limit(10)
-    const rows = data ?? []
-    if (rows.length === 0) return empty
-    const avg = (key: string) => {
-      const vals = rows.map(r => (r as Record<string, unknown>)[key]).filter((v): v is number => typeof v === 'number')
-      return vals.length ? vals.reduce((s, v) => s + v, 0) / vals.length : null
+    const supabase = createClient()
+    const [dash, streak, onb, fb] = await Promise.all([
+      getDashboardData(user.id),
+      getStreakInfo(),
+      supabase.from('onboarding_data').select('timeline').eq('user_id', user.id).maybeSingle(),
+      supabase.from('speaking_submissions').select('ai_feedback').eq('user_id', user.id).order('created_at', { ascending: false }).limit(5),
+    ])
+
+    const profile = dash.profile as { full_name?: string | null; target_band_score?: number | null } | null
+    const history = (dash.bandHistory ?? []) as { skill: string; score: number }[]
+
+    // History is newest-first → first occurrence per skill is the latest band.
+    const perSkill: StrategyContext['perSkill'] = {}
+    let overall: number | null = null
+    const overallSeq: number[] = []
+    for (const row of history) {
+      if (row.skill === 'overall') { if (overall == null) overall = row.score; overallSeq.push(row.score); continue }
+      if (['listening', 'reading', 'writing', 'speaking'].includes(row.skill)) {
+        const s = row.skill as keyof StrategyContext['perSkill']
+        if (perSkill[s] == null) perSkill[s] = row.score
+      }
     }
-    const improvements: string[] = []
-    for (const row of rows.slice(0, 3)) {
+
+    const skillEntries = Object.entries(perSkill) as [string, number][]
+    const weakest = [...skillEntries].sort((a, b) => a[1] - b[1])[0]
+    const trend: StrategyContext['trend'] = overallSeq.length >= 2
+      ? (overallSeq[0] > overallSeq[1] ? 'up' : overallSeq[0] < overallSeq[1] ? 'down' : 'flat')
+      : null
+
+    const themes: string[] = []
+    for (const row of (fb.data ?? []) as { ai_feedback: string | null }[]) {
       if (!row.ai_feedback) continue
       try {
-        const fb = JSON.parse(row.ai_feedback) as { improvements?: string[] }
-        if (Array.isArray(fb.improvements)) improvements.push(...fb.improvements.slice(0, 2))
+        const parsed = JSON.parse(row.ai_feedback) as { improvements?: string[] }
+        if (Array.isArray(parsed.improvements)) themes.push(...parsed.improvements.slice(0, 2))
       } catch { /* skip */ }
-      if (improvements.length >= 5) break
     }
+
     return {
-      sessionCount: rows.length,
-      avgBand:          avg('band_score'),
-      avgFluency:       avg('fluency_score'),
-      avgLexical:       avg('lexical_score'),
-      avgGrammar:       avg('grammar_score'),
-      avgPronunciation: avg('pronunciation_score'),
-      recentImprovements: [...new Set(improvements)].slice(0, 4),
+      name: profile?.full_name ?? null,
+      targetBand: profile?.target_band_score ?? null,
+      overall,
+      perSkill,
+      weakestSkill: weakest?.[0] ?? null,
+      trend,
+      streakDays: streak.current ?? null,
+      dailyMinutes: streak.dailyMinutes ?? null,
+      timeline: (onb.data as { timeline?: string | null } | null)?.timeline ?? null,
+      themes: [...new Set(themes)].slice(0, 4),
+      hasData: overall != null || skillEntries.length > 0,
     }
   } catch { return empty }
 }
@@ -131,21 +163,22 @@ function drawSphere(
 }
 /* ──────────────────────────────────────────────────────────── */
 
+// All three are STRATEGISTS — only the tone differs.
 const MODES: { id: RoastMode; emoji: string; label: Record<Lang, string>; desc: Record<Lang, string> }[] = [
   {
-    id: 'polite', emoji: '🎩',
-    label: { en: 'Polite',      ru: 'Вежливый',    kz: 'Сыпайы',     ky: 'Сылык',     uz: 'Muloyim'   },
-    desc:  { en: 'Kind mentor', ru: 'Добрый ментор',kz: 'Жылы ментор', ky: 'Жылуу ментор', uz: 'Mehribon' },
+    id: 'polite', emoji: '🧭',
+    label: { en: 'Supportive', ru: 'Поддержка',  kz: 'Қолдау',     ky: 'Колдоо',     uz: 'Qo‘llab' },
+    desc:  { en: 'Warm, motivating mentor', ru: 'Тёплый, мотивирующий ментор', kz: 'Жылы, ынталандырушы ментор', ky: 'Жылуу, шыктандыруучу ментор', uz: 'Iliq, ilhomlantiruvchi murabbiy' },
   },
   {
-    id: 'roast', emoji: '🔥',
-    label: { en: 'Roast',       ru: 'Роаст',        kz: 'Роаст',      ky: 'Роаст',     uz: 'Roast'     },
-    desc:  { en: 'Savage & fun',ru: 'Жёстко и смешно', kz: 'Қатал күлкілі', ky: 'Катуу күлкүлүү', uz: 'Qattiq va kulgili' },
+    id: 'roast', emoji: '🎯',
+    label: { en: 'Tough love', ru: 'Жёстко',      kz: 'Қатал',      ky: 'Катуу',      uz: 'Qattiq' },
+    desc:  { en: 'Blunt & direct, still a plan', ru: 'Прямо и без воды, но всегда план', kz: 'Тура әрі ашық, бірақ әрқашан жоспар', ky: 'Түз жана ачык, бирок ар дайым план', uz: 'To‘g‘ridan-to‘g‘ri, lekin doim reja' },
   },
   {
     id: 'savage', emoji: '💀',
-    label: { en: 'No filter',   ru: 'Без цензуры',  kz: 'Цензурасыз', ky: 'Цензурасыз',uz: 'Sensorsiz'  },
-    desc:  { en: '18+ no limit',ru: '18+ без рамок', kz: '18+ шексіз', ky: '18+ чексиз', uz: '18+ cheksiz' },
+    label: { en: 'No filter', ru: 'Без цензуры', kz: 'Цензурасыз', ky: 'Цензурасыз', uz: 'Sensorsiz' },
+    desc:  { en: '18+ brutal — real plan under the swearing', ru: '18+ жёстко — но под матом реальный план', kz: '18+ қатал — боқтықтың астында нақты жоспар', ky: '18+ катуу — сөгүнүүнүн астында чыныгы план', uz: '18+ shafqatsiz — so‘kinish ostida real reja' },
   },
 ]
 
@@ -162,15 +195,15 @@ function ReadyScreen({ mode, onModeChange, onStart, lang }: {
   const isMobile = useIsMobile()
   const current = MODES.find(m => m.id === mode)!
 
-  const TITLE: Record<Lang, string> = { en: 'AI Coach', ru: 'AI Coach', kz: 'AI Coach', ky: 'AI Coach', uz: 'AI Coach' }
+  const TITLE: Record<Lang, string> = { en: 'Strategy', ru: 'Стратегия', kz: 'Стратегия', ky: 'Стратегия', uz: 'Strategiya' }
   const DESC: Record<Lang, string> = {
-    en: 'Have a live voice conversation. The AI will roast your IELTS English in real time.',
-    ru: 'Живой голосовой разговор. ИИ прожарит ваш IELTS English в реальном времени.',
-    kz: 'Тікелей дауыстық сөйлесу. ЖИ сіздің IELTS English-іңізді нақты уақытта прожарить.',
-    ky: 'Түз үн маектешүү. ЖИ сиздин IELTS English-иңизди реалдуу убакытта прожарить.',
-    uz: "Jonli ovozli suhbat. AI sizning IELTS English-ingizni real vaqtda roast qiladi.",
+    en: 'Your personal IELTS strategist. It reads your real scores, finds your weak spots, and builds your study plan — live, by voice.',
+    ru: 'Твой личный IELTS-стратег. Смотрит твои реальные баллы, находит слабые места и строит план обучения — вживую, голосом.',
+    kz: 'Сенің жеке IELTS-стратегің. Нақты баллдарыңды қарап, әлсіз тұстарыңды тауып, оқу жоспарыңды құрады — тікелей, дауыспен.',
+    ky: 'Сенин жеке IELTS-стратегиң. Чыныгы баллдарыңды карап, алсыз жактарыңды таап, окуу планыңды түзөт — түз эфирде, үн менен.',
+    uz: "Shaxsiy IELTS strategingiz. Real ballaringizni ko‘rib, zaif tomonlaringizni topadi va o‘quv rejangizni tuzadi — jonli, ovoz orqali.",
   }
-  const START: Record<Lang, string> = { en: 'Start Conversation', ru: 'Начать разговор', kz: 'Сөйлесуді бастау', ky: 'Маектешүүнү баштоо', uz: 'Suhbatni boshlash' }
+  const START: Record<Lang, string> = { en: 'Start session', ru: 'Начать сессию', kz: 'Сессияны бастау', ky: 'Сессияны баштоо', uz: 'Sessiyani boshlash' }
   const PICK: Record<Lang, string> = { en: 'Pick a mode', ru: 'Выберите режим', kz: 'Режим таңдаңыз', ky: 'Режим тандаңыз', uz: 'Rejim tanlang' }
 
   return (
@@ -214,7 +247,7 @@ function ReadyScreen({ mode, onModeChange, onStart, lang }: {
 }
 
 /* ── Live conversation screen ── */
-function LiveScreen({ mode, onExit, lang, context }: { mode: RoastMode; onExit: () => void; lang: Lang; context: SpeakingContext | null }) {
+function LiveScreen({ mode, onExit, lang, context }: { mode: RoastMode; onExit: () => void; lang: Lang; context: StrategyContext | null }) {
   const isMobile = useIsMobile()
   const [status, setStatus] = useState<Status>('connecting')
   const [aiSpeaking, setAiSpeaking] = useState(false)
@@ -342,8 +375,9 @@ function LiveScreen({ mode, onExit, lang, context }: { mode: RoastMode; onExit: 
         const resp = await fetch(`/api/ai/roast/realtime?mode=${mode}`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ sdp: offer.sdp ?? '', context }),
+          body: JSON.stringify({ sdp: offer.sdp ?? '', context, lang }),
         })
+        if (redirectToPaywallOn403(resp)) { cleanup(); return }
         if (!resp.ok) {
           let m = 'Could not connect. Please try again.'
           try { const j = await resp.clone().json(); if (j?.error) m = j.error } catch {}
@@ -485,14 +519,15 @@ function LiveScreen({ mode, onExit, lang, context }: { mode: RoastMode; onExit: 
 /* ── Main page ── */
 export default function RoastPage() {
   const { language } = useLanguage()
-  const lang = (language ?? 'en') as Lang
+  // App uses 'kg' for Kyrgyz; this page/route key it as 'ky'.
+  const lang = (language === 'kg' ? 'ky' : (language ?? 'en')) as Lang
   const [started, setStarted] = useState(false)
   const [mode, setMode] = useState<RoastMode>('roast')
   const [key, setKey] = useState(0)
-  const [context, setContext] = useState<SpeakingContext | null>(null)
+  const [context, setContext] = useState<StrategyContext | null>(null)
 
   async function handleStart() {
-    const ctx = await fetchSpeakingContext()
+    const ctx = await fetchStrategyContext()
     setContext(ctx)
     setStarted(true)
   }

@@ -27,7 +27,7 @@
     "badge": "AI-powered IELTS prep",
     "headline": "Your shortest path to",
     "headlineAccent": "Band 8+",
-    "subtitle": "Mock tests, daily drills and a personal AI coach across Listening, Reading, Writing, Speaking. Built around the real computer-based IELTS Academic format.",
+    "subtitle": "Mock tests, daily drills and a personal strategy coach across Listening, Reading, Writing, Speaking. Built around the real computer-based IELTS Academic format.",
     "cta": "Get started",
     "stat1Value": "50,000+",
     "stat1Label": "Active learners",
@@ -263,11 +263,12 @@
     "q7Opt3": "2 hours",
     "q7Opt4": "3+ hours",
     "planReady": "Your study plan is ready!",
-    "planSubtitle": "Based on your answers, we've built a personalised plan to reach your goal."
+    "planSubtitle": "Based on your answers, we've built a personalised plan to reach your goal.",
+    "step": "Step"
   },
   "subscription": {
-    "title": "Unlock Your Full Potential",
-    "subtitle": "Remove all limits and reach your target band score faster.",
+    "title": "Unlock unlimited AI prep",
+    "subtitle": "Your free trial is one full mock. A plan unlocks unlimited practice, tests and everything the AI does for you.",
     "monthly": "Monthly",
     "yearly": "Yearly",
     "saveLabel": "2 months free",
@@ -297,7 +298,16 @@
     "promoApply": "Apply",
     "promoApplied": "{{code}} applied",
     "promoOff": "{{pct}}% off",
-    "promoRemove": "Remove"
+    "promoRemove": "Remove",
+    "freeColTitle": "Free trial",
+    "freeCol1": "One full mock test (all 4 skills)",
+    "freeCol2": "Real AI grading on Writing & Speaking",
+    "freeCol3": "Your predicted band score",
+    "proColTitle": "With a plan",
+    "proCol1": "Unlimited mock tests & practice",
+    "proCol2": "Unlimited AI Writing & Speaking grading",
+    "proCol3": "Your personal strategy coach",
+    "proCol4": "Adaptive study plan & full analytics"
   },
   "mockTest": {
     "startTest": "Start Test",
@@ -351,7 +361,7 @@
     "mockTests": "Mock Tests",
     "vocabulary": "Vocabulary",
     "studyPlan": "Study Plan",
-    "roast": "AI Coach",
+    "roast": "Strategy",
     "progress": "Progress",
     "settings": "Settings",
     "bandScores": "Band Scores",
@@ -1160,5 +1170,17 @@
   "finalCta": {
     "title": "Ready when you are.",
     "sub": "Free diagnostic. No card required."
+  },
+  "freeTier": {
+    "bannerTitle": "Your free mock test is ready",
+    "bannerBody": "Take one full mock test — all four skills with real AI grading on Writing & Speaking. Free, no card. One time.",
+    "bannerCta": "Start free mock",
+    "usedTitle": "Unlock unlimited AI grading",
+    "usedBody": "You've used your free mock. Upgrade to unlock unlimited mocks, AI Writing & Speaking grading, your strategy coach and a personal study plan.",
+    "usedCta": "See plans",
+    "navLock": "Available on a plan",
+    "planFree": "Free plan",
+    "planPro": "Pro plan",
+    "upgrade": "Upgrade to Pro"
   }
 }

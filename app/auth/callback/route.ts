@@ -2,6 +2,7 @@ import { createServerClient } from '@supabase/ssr'
 import { cookies } from 'next/headers'
 import { NextResponse, type NextRequest } from 'next/server'
 import { attributeReferral } from '@/lib/services/referral.server'
+import { attributeUtm } from '@/lib/analytics/track.server'
 
 function getOrigin(request: NextRequest): string {
   // On Vercel (and any reverse-proxy), the public-facing host is in x-forwarded-host.
@@ -72,7 +73,7 @@ export async function GET(request: NextRequest) {
     // email-without-confirmation path attributes via /api/referral/claim instead.
     {
       const { data: { user } } = await supabase.auth.getUser()
-      if (user) await attributeReferral(user.id)
+      if (user) { await attributeReferral(user.id); await attributeUtm(user.id) }
     }
 
     return NextResponse.redirect(`${origin}${next}`)

@@ -236,7 +236,7 @@
     "speaking": "Gapirish",
     "mockTests": "Mashq testlari",
     "studyPlan": "O'quv rejasi",
-    "roast": "AI Coach",
+    "roast": "Strategiya",
     "progress": "Taraqqiyot",
     "settings": "Sozlamalar",
     "bandScores": "Balllar",
@@ -288,11 +288,12 @@
     "q7Opt3": "Kuniga 2 soat",
     "q7Opt4": "Kuniga 3+ soat",
     "planReady": "O'quv rejangiz tayyor!",
-    "planSubtitle": "Javoblaringiz asosida maqsadli rejangizni tuzamiz."
+    "planSubtitle": "Javoblaringiz asosida maqsadli rejangizni tuzamiz.",
+    "step": "Qadam"
   },
   "subscription": {
-    "title": "Imkoniyatlarni kengaytiring",
-    "subtitle": "To'liq ball potensialingizni oching — hech qanday cheklovsiz.",
+    "title": "Cheksiz AI-tayyorgarlikni oching",
+    "subtitle": "Bepul — bitta to'liq mock. Obuna cheksiz mashq, testlar va AI qiladigan hamma narsani ochadi.",
     "monthly": "Oylik",
     "yearly": "Yillik",
     "saveLabel": "2 oy bepul",
@@ -316,7 +317,16 @@
     "basicFeedback": "Asosiy yozish fikr-mulohazasi",
     "studyGuides": "O'quv qo'llanmalariga kirish",
     "communityAccess": "Hamjamiyatga kirish",
-    "back": "Boshqaruv paneliga qaytish"
+    "back": "Boshqaruv paneliga qaytish",
+    "freeColTitle": "Bepul sinov",
+    "freeCol1": "Bitta to'liq mock (4 bo'lim)",
+    "freeCol2": "Writing va Speaking haqiqiy AI-baholash",
+    "freeCol3": "Band bahoyingiz prognozi",
+    "proColTitle": "Obuna bilan",
+    "proCol1": "Cheksiz mock-testlar va mashq",
+    "proCol2": "Cheksiz Writing va Speaking AI-baholash",
+    "proCol3": "Shaxsiy strateg-murabbiy",
+    "proCol4": "Moslashuvchan o'quv rejasi va to'liq tahlil"
   },
   "common": {
     "loading": "Yuklanmoqda…",
@@ -1144,5 +1154,17 @@
   "finalCta": {
     "title": "Siz tayyor bo'lganda boshlaymiz.",
     "sub": "Bepul diagnostika. Kartasiz."
+  },
+  "freeTier": {
+    "bannerTitle": "Bepul sinov testingiz tayyor",
+    "bannerBody": "Bitta to'liq sinov mock topshiring — 4 bo'lim, Writing va Speaking haqiqiy AI-baholash bilan. Bepul, kartasiz. Bir marta.",
+    "bannerCta": "Bepul mock boshlash",
+    "usedTitle": "Cheksiz AI-baholashni oching",
+    "usedBody": "Bepul mock-dan foydalandingiz. Cheksiz mock-testlar, Writing va Speaking AI-baholash, strateg va shaxsiy o'quv rejasi uchun obuna bo'ling.",
+    "usedCta": "Tariflarni ko'rish",
+    "navLock": "Obuna orqali mavjud",
+    "planFree": "Bepul reja",
+    "planPro": "Pro reja",
+    "upgrade": "Pro-ga o'tish"
   }
 }

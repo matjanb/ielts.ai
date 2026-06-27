@@ -10,14 +10,16 @@ import { ToastProvider, useToast } from '@/lib/toast'
 import { CommandPalette } from '@/components/ui/CommandPalette'
 import { NotificationsPanel } from '@/components/ui/NotificationsPanel'
 import { LanguageSwitcher } from '@/components/ui/LanguageSwitcher'
-import { DiagnosticSync } from '@/components/DiagnosticSync'
 import { signOut, getUser } from '@/lib/services/auth'
 import { getNotifications, type NotifItem } from '@/lib/services/notifications'
+import { getEntitlement, type Entitlement } from '@/lib/services/entitlement'
 import type { ReactNode } from 'react'
 
 const RAIL_W = 56
 const EXPANDED_W = 240
 
+// Nav item `key` doubles as the entitlement "area" key, so a free user's locked
+// areas (from /api/entitlement) map straight onto the lock badges below.
 const NAV_ITEMS = [
   { href: '/dashboard',            icon: 'home',      key: 'overview'   },
   { href: '/listening',            icon: 'headphones', key: 'listening'  },
@@ -27,7 +29,7 @@ const NAV_ITEMS = [
   { href: '/mock-tests',           icon: 'clipboard', key: 'mockTests'  },
   { href: '/vocabulary',           icon: 'layers',    key: 'vocabulary' },
   { href: '/dashboard/study-plan', icon: 'calendar',  key: 'studyPlan'  },
-  { href: '/dashboard/roast',       icon: 'flame',     key: 'roast'      },
+  { href: '/dashboard/roast',       icon: 'compass',   key: 'roast'      },
   { href: '/dashboard/progress',   icon: 'activity',  key: 'progress'   },
   { href: '/dashboard/settings',   icon: 'settings',  key: 'settings'   },
 ]
@@ -52,6 +54,7 @@ const ICON_PATHS: Record<string, React.ReactNode> = {
   layers:     <><path d="M12 3l9 5-9 5-9-5z"/><path d="M3 13l9 5 9-5"/><path d="M3 18l9 5 9-5"/></>,
   calendar:   <><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 9h18M8 3v4M16 3v4"/></>,
   flame:      <path d="M8.5 14.5A5.5 5.5 0 0 0 14 20c2.5 0 5-2 5-5.5 0-2.7-1.5-4.5-3-6l-1.5-1.5-1 2s-1-2.5-3-4c0 0 .5 3-2 5.5A3.5 3.5 0 0 0 8.5 14.5z"/>,
+  compass:    <><circle cx="12" cy="12" r="9"/><path d="M16 8l-2.5 5.5L8 16l2.5-5.5z"/></>,
   activity:   <path d="M3 12h4l3-8 4 16 3-8h4"/>,
   settings:   <><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1A1.7 1.7 0 0 0 4.6 9a1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></>,
   dots:       <><circle cx="5" cy="12" r="1.5"/><circle cx="12" cy="12" r="1.5"/><circle cx="19" cy="12" r="1.5"/></>,
@@ -63,6 +66,7 @@ const ICON_PATHS: Record<string, React.ReactNode> = {
   search:     <><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.5-4.5"/></>,
   user:       <><circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/></>,
   logout:     <><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><path d="M16 17l5-5-5-5M21 12H9"/></>,
+  lock:       <><rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></>,
 }
 
 function NavIcon({ name, size = 18, color = 'currentColor', strokeWidth = 1.8 }: { name: string; size?: number; color?: string; strokeWidth?: number }) {
@@ -114,6 +118,11 @@ function DashboardLayoutInner({ children }: { children: ReactNode }) {
   const [userName, setUserName] = useState('User')
   const [userEmail, setUserEmail] = useState('')
   const [userInitials, setUserInitials] = useState('U')
+  // null = not loaded yet. Assume full access until known so locks/redirects
+  // never flash for paying users.
+  const [ent, setEnt] = useState<Entitlement | null>(null)
+  const subscribed = ent?.subscribed ?? true
+  const lockedSet = new Set(ent?.locked ?? [])
 
   // Notifications
   const [notifications, setNotifications] = useState<NotifItem[]>([])
@@ -133,6 +142,7 @@ function DashboardLayoutInner({ children }: { children: ReactNode }) {
         setNotifications(await getNotifications(user.id))
       } catch { /* notifications are best-effort */ }
     })
+    getEntitlement().then(setEnt)
   }, [])
 
   const unreadCount = notifications.filter(n =>
@@ -204,6 +214,33 @@ function DashboardLayoutInner({ children }: { children: ReactNode }) {
     // Hard navigation so the server re-evaluates with the cleared session.
     window.location.href = '/'
   }
+
+  // Which locked area (if any) the current path belongs to. Past results stay
+  // readable, so /…/results is always exempt.
+  function areaOf(path: string): string | null {
+    if (path.includes('/results')) return null
+    if (path.includes('/practice')) return 'practice'
+    if (path.startsWith('/listening')) return 'listening'
+    if (path.startsWith('/reading')) return 'reading'
+    if (path.startsWith('/dashboard/writing')) return 'writing'
+    if (path.startsWith('/dashboard/speaking')) return 'speaking'
+    if (path.startsWith('/mock-tests')) return 'mockTests'
+    if (path.startsWith('/vocabulary')) return 'vocabulary'
+    if (path.startsWith('/dashboard/study-plan')) return 'studyPlan'
+    if (path.startsWith('/dashboard/roast')) return 'roast'
+    return null
+  }
+
+  // Once entitlement is known: new users finish onboarding first; then a free
+  // user landing on a locked area (direct URL or stale link) goes straight to
+  // /subscription — they never sit on a screen that will bounce them later.
+  useEffect(() => {
+    if (!ent) return
+    if (!ent.onboardingCompleted) { router.replace('/onboarding'); return }
+    if (ent.subscribed) return
+    const area = areaOf(pathname)
+    if (area && ent.locked.includes(area)) router.replace('/subscription')
+  }, [ent, pathname, router])
 
   // Current page label for breadcrumb
   const currentNav = NAV_ITEMS.find(n => {
@@ -286,9 +323,11 @@ function DashboardLayoutInner({ children }: { children: ReactNode }) {
         <nav style={{ flex: 1, padding: '12px 8px', display: 'flex', flexDirection: 'column', gap: 2, overflowY: 'auto', overflowX: 'hidden' }}>
           {NAV_ITEMS.map(({ href, icon, key }) => {
             const active = href === '/dashboard' ? pathname === '/dashboard' : pathname.startsWith(href)
+            const locked = lockedSet.has(key)
             return (
-              <Link key={href} href={href}
+              <Link key={href} href={locked ? '/subscription' : href}
                 onClick={() => { if (isMobile) setMobileNavOpen(false) }}
+                title={locked ? t('freeTier.navLock') : undefined}
                 style={{
                 display: 'flex', alignItems: 'center', gap: 12,
                 height: 40, padding: '0 12px', borderRadius: 8,
@@ -309,6 +348,11 @@ function DashboardLayoutInner({ children }: { children: ReactNode }) {
                 }}>
                   {t(`dashboard.${key}`)}
                 </span>
+                {locked && expanded && (
+                  <span style={{ marginLeft: 'auto', display: 'flex' }}>
+                    <NavIcon name="lock" size={13} color="var(--text-3)" strokeWidth={1.8} />
+                  </span>
+                )}
                 {active && (
                   <span style={{ position: 'absolute', left: 0, top: 8, bottom: 8, width: 3, background: 'var(--accent)', borderRadius: '0 2px 2px 0' }}/>
                 )}
@@ -343,7 +387,9 @@ function DashboardLayoutInner({ children }: { children: ReactNode }) {
               <>
                 <div style={{ flex: 1, minWidth: 0, textAlign: 'left' }}>
                   <div style={{ fontSize: 13, fontWeight: 600, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', color: 'var(--text)' }}>{userName}</div>
-                  <div style={{ fontSize: 11, color: 'var(--text-3)' }}>Pro plan</div>
+                  <div style={{ fontSize: 11, color: subscribed ? 'var(--text-3)' : 'var(--accent)', fontWeight: subscribed ? 400 : 600 }}>
+                    {subscribed ? t('freeTier.planPro') : t('freeTier.planFree')}
+                  </div>
                 </div>
                 <NavIcon name="dots" size={14} color="var(--text-2)" />
               </>
@@ -362,24 +408,26 @@ function DashboardLayoutInner({ children }: { children: ReactNode }) {
                 <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--text)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{userName}</div>
                 {userEmail && <div style={{ fontSize: 11, color: 'var(--text-3)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{userEmail}</div>}
               </div>
-              {[
+              {([
+                ...(subscribed ? [] : [{ icon: 'lock', label: t('freeTier.upgrade'), action: () => { router.push('/subscription'); setUserMenuOpen(false) }, accent: true }]),
                 { icon: 'settings', label: 'Settings', action: () => { router.push('/dashboard/settings'); setUserMenuOpen(false) } },
                 null,
                 { icon: 'logout', label: 'Sign out', action: handleSignOut, danger: true },
-              ].map((item, i) => {
+              ] as Array<{ icon: string; label: string; action: () => void; danger?: boolean; accent?: boolean } | null>).map((item, i) => {
                 if (!item) return <div key={i} style={{ height: 1, background: 'var(--border)', margin: '4px 0' }}/>
+                const tone = item.danger ? 'var(--danger)' : item.accent ? 'var(--accent)' : 'var(--text)'
                 return (
                   <button key={item.label} onClick={item.action} style={{
                     display: 'flex', alignItems: 'center', gap: 10, width: '100%',
                     padding: '8px 10px', borderRadius: 8, fontSize: 13,
-                    color: item.danger ? 'var(--danger)' : 'var(--text)',
+                    color: tone, fontWeight: item.accent ? 600 : 400,
                     background: 'transparent', border: 'none', cursor: 'pointer', textAlign: 'left',
                     transition: 'background .1s',
                   }}
                   onMouseEnter={e => (e.currentTarget.style.background = 'var(--bg-soft)')}
                   onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}
                   >
-                    <NavIcon name={item.icon} size={14} color={item.danger ? 'var(--danger)' : 'var(--text-2)'} />
+                    <NavIcon name={item.icon} size={14} color={item.danger ? 'var(--danger)' : item.accent ? 'var(--accent)' : 'var(--text-2)'} />
                     {item.label}
                   </button>
                 )
@@ -528,7 +576,6 @@ function DashboardLayoutInner({ children }: { children: ReactNode }) {
 
       {/* Global overlays */}
       <CommandPalette open={paletteOpen} onClose={() => setPaletteOpen(false)} />
-      <DiagnosticSync />
     </div>
   )
 }

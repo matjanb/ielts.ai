@@ -9,8 +9,9 @@ export async function POST(request: NextRequest) {
   const user = await getApiUser()
   if (!user) return err('Unauthorized', 401)
 
-  const allowed = await hasActiveSubscription(user.id)
-  if (!allowed) return err('Subscription required.', 403)
+  // Standalone practice drills are a paid feature. The free tier is exactly one
+  // full mock (taken through the test pages), nothing else.
+  if (!(await hasActiveSubscription(user.id))) return err('Subscription required.', 403)
 
   let body: { skill?: string; questionType?: string; difficulty?: string; limit?: number }
   try {

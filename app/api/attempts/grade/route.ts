@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { getApiUser, hasActiveSubscription, err } from '@/lib/api/helpers'
+import { getApiUser, canUseAiFeature, recordUsage, err } from '@/lib/api/helpers'
 import { gradeAttempt, type GradeSkill } from '@/lib/services/grading.server'
 
 export const runtime = 'nodejs'
@@ -10,9 +10,6 @@ const MAX_ANSWER_LEN = 500
 export async function POST(request: NextRequest) {
   const user = await getApiUser()
   if (!user) return err('Unauthorized', 401)
-
-  const allowed = await hasActiveSubscription(user.id)
-  if (!allowed) return err('Subscription required.', 403)
 
   let body: {
     testId?: string
@@ -31,6 +28,10 @@ export async function POST(request: NextRequest) {
   if (!testId || (skill !== 'reading' && skill !== 'listening')) {
     return err('testId and a valid skill (reading|listening) are required', 400)
   }
+
+  // Free users get one Reading and one Listening test (their slice of the single
+  // free mock); after that the skill is paid. Recorded below so it counts once.
+  if (!(await canUseAiFeature(user.id, skill))) return err('Subscription required.', 403)
   if (typeof body.answers !== 'object' || body.answers === null || Array.isArray(body.answers)) {
     return err('answers must be an object of questionId -> answer', 400)
   }
@@ -61,6 +62,8 @@ export async function POST(request: NextRequest) {
       attemptId: typeof body.attemptId === 'string' ? body.attemptId : null,
       durationSeconds,
     })
+    // Meter the free allowance (also harmless for subscribers, whose caps are ignored).
+    await recordUsage(user.id, skill)
     return NextResponse.json(result)
   } catch (e) {
     console.error('[attempts/grade]', e)

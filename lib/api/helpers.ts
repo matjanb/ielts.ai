@@ -30,6 +30,90 @@ export async function recordUsage(userId: string, feature: string) {
   await admin.from('ai_usage').insert({ user_id: userId, feature })
 }
 
+// ── Free-tier entitlement for the (expensive) AI endpoints ───────────────────
+
+// Non-subscribers get exactly ONE full mock test, then everything locks. We
+// meter this off lifetime ai_usage counts (every graded action is logged there,
+// including Reading/Listening which we record for metering even though they
+// spend no tokens). One mock = 1 Reading + 1 Listening + Writing Task 1 & 2 +
+// one Speaking session. Every other feature (coach/roast, study plan,
+// writing-coach chat, per-question explanations, standalone practice drills,
+// vocabulary) is paid-only — 0 free uses.
+export const FREE_LIFETIME_ALLOWANCE: Record<string, number> = {
+  reading:           1, // one Reading test of the free mock
+  listening:         1, // one Listening test of the free mock
+  writing:           2, // Task 1 + Task 2 of the free mock
+  speaking:          1, // one speaking session grade
+  transcribe:        1, // that session's transcription
+  speaking_realtime: 1, // one realtime speaking session
+  band_estimate:     1, // one predicted overall band for the free mock
+}
+
+/** Lifetime count of how many times this user has used `feature`. */
+async function lifetimeUsageCount(userId: string, feature: string): Promise<number> {
+  const admin = createAdminClient()
+  const { count } = await admin
+    .from('ai_usage')
+    .select('id', { count: 'exact', head: true })
+    .eq('user_id', userId)
+    .eq('feature', feature)
+  return count ?? 0
+}
+
+/**
+ * May this user use a token-spending AI feature right now? Active subscribers
+ * always can; otherwise only while still within the one-free-mock allowance for
+ * this specific feature. See FREE_LIFETIME_ALLOWANCE.
+ */
+export async function canUseAiFeature(userId: string, feature: string): Promise<boolean> {
+  if (await hasActiveSubscription(userId)) return true
+  const free = FREE_LIFETIME_ALLOWANCE[feature] ?? 0
+  if (free <= 0) return false
+  return (await lifetimeUsageCount(userId, feature)) < free
+}
+
+export interface Entitlement {
+  subscribed: boolean
+  freeMockUsed: boolean
+  // Nav/area keys the free user can no longer open (drives nav locks + the
+  // central route guard). Empty for subscribers.
+  locked: string[]
+  // Whether the user finished the 3-question onboarding (gates the dashboard).
+  onboardingCompleted: boolean
+}
+
+// Areas a free user can never open — their whole free allowance is the one mock,
+// taken inside /mock-tests/run. Standalone skills, practice drills, vocabulary,
+// the study plan and the AI coach are paid from the start.
+const FREE_ALWAYS_LOCKED = ['reading', 'listening', 'writing', 'speaking', 'vocabulary', 'studyPlan', 'roast', 'practice']
+
+/**
+ * Billing + onboarding state the client needs to tailor the UI. The free tier is
+ * exactly ONE mock: standalone areas above are always locked, and Mock Tests
+ * locks once `profiles.free_mock_used` flips (set atomically by /api/mock/start).
+ * Driven by the authoritative flag, not derived ai_usage counts.
+ */
+export async function getEntitlement(userId: string): Promise<Entitlement> {
+  const admin = createAdminClient()
+  const { data: profile } = await admin
+    .from('profiles')
+    .select('subscription_status, subscription_expires_at, lifetime_access, onboarding_completed, free_mock_used')
+    .eq('id', userId)
+    .single<{ subscription_status: string; subscription_expires_at: string | null; lifetime_access: boolean | null; onboarding_completed: boolean | null; free_mock_used: boolean | null }>()
+
+  const onboardingCompleted = profile?.onboarding_completed === true
+
+  if (isSubscriptionActive(profile)) {
+    return { subscribed: true, freeMockUsed: true, locked: [], onboardingCompleted }
+  }
+
+  const freeMockUsed = profile?.free_mock_used === true
+  const locked = [...FREE_ALWAYS_LOCKED]
+  if (freeMockUsed) locked.push('mockTests')
+
+  return { subscribed: false, freeMockUsed, locked, onboardingCompleted }
+}
+
 // ── Abuse protection for the (expensive) AI endpoints ────────────────────────
 
 // Per-feature daily caps. Generous enough for real study, low enough that a
@@ -114,7 +198,7 @@ export async function gateAiRequest(feature: string): Promise<
   const user = await getApiUser()
   if (!user) return { user: null, error: err('Unauthorized', 401) }
   const [allowed, limited] = await Promise.all([
-    hasActiveSubscription(user.id),
+    canUseAiFeature(user.id, feature),
     enforceAiLimits(user.id, feature),
   ])
   if (!allowed) return { user: null, error: err('Subscription required.', 403) }

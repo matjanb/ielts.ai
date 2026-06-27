@@ -11,10 +11,12 @@ import { ForSchools } from '@/components/sections/ForSchools'
 import { Testimonials } from '@/components/sections/Testimonials'
 import { FinalCTA } from '@/components/sections/FinalCTA'
 import { Footer } from '@/components/sections/Footer'
+import { TrackView } from '@/components/analytics/TrackView'
 
 export default function LandingPage() {
   return (
     <main>
+      <TrackView event="landing_viewed" />
       <FloatingNav />
       <Hero />
       <UniversitiesMarquee />
