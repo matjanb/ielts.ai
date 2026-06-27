@@ -673,7 +673,10 @@ function newSessionId(): string {
   try { return crypto.randomUUID() } catch { return `${Date.now()}-${Math.random().toString(36).slice(2)}` }
 }
 
-export default function SpeakingPage() {
+// Embeddable Speaking exam. Standalone route renders it via the wrapper below;
+// the mock renders it with `embedded` + `onComplete(band)` so it reports its band
+// once graded (it still shows the feedback screen).
+export function SpeakingExam({ embedded = false, onComplete }: { embedded?: boolean; onComplete?: (band: number) => void }) {
   const [phase, setPhase] = useState<Phase>('ready')
   const [sessionId, setSessionId] = useState('')
   const [grading, setGrading] = useState(false)
@@ -691,7 +694,10 @@ export default function SpeakingPage() {
       })
       const data = await res.json()
       if (!res.ok) setError(data.error ?? 'Failed to score the test.')
-      else { setResult(data); setPhase('feedback') }
+      else {
+        setResult(data); setPhase('feedback')
+        if (embedded) onComplete?.(Number(data.band_score))
+      }
     } catch { setError('Network error. Please try again.') }
     finally { setGrading(false) }
   }
@@ -712,4 +718,9 @@ export default function SpeakingPage() {
       onExit={() => { setError(''); setPhase('ready') }}
     />
   )
+}
+
+// Standalone /dashboard/speaking route.
+export default function SpeakingPage() {
+  return <SpeakingExam />
 }
