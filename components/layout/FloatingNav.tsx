@@ -70,6 +70,18 @@ export function FloatingNav() {
           </Link>
 
           <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+            <Link href="/essay-checker" className="mobile-hidden" style={{
+              display: 'inline-flex', alignItems: 'center', gap: 6,
+              padding: '7px 14px', borderRadius: 'var(--radius)',
+              fontSize: 13, fontWeight: 600, color: 'var(--accent)', background: 'var(--accent-soft)',
+              border: '1px solid color-mix(in srgb, var(--accent) 30%, transparent)',
+              transition: 'background 0.15s',
+            }}
+            onMouseEnter={e => (e.currentTarget.style.background = 'color-mix(in srgb, var(--accent) 16%, transparent)')}
+            onMouseLeave={e => (e.currentTarget.style.background = 'var(--accent-soft)')}
+            >
+              ✓ {t('nav.essayChecker')}
+            </Link>
             <ThemeToggle />
             <LanguageSwitcher />
             <Link href="/login" style={{

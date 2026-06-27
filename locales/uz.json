@@ -16,7 +16,8 @@
     "dashboard": "Kabinet",
     "subscription": "Obuna",
     "logout": "Chiqish",
-    "skills": "Ko'nikmalar"
+    "skills": "Ko'nikmalar",
+    "essayChecker": "Esse tekshiruvi"
   },
   "stat": {
     "students": "faol o'quvchi",

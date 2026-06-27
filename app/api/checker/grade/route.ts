@@ -16,12 +16,14 @@ function hashIp(ip: string): string {
   return createHash('sha256').update(ip + salt).digest('hex')
 }
 
-// Verify the Cloudflare Turnstile token. Enforced only when the secret is
-// configured, so local dev (no keys) still works; in prod set the env var.
+// Soft Turnstile check: if a token is present we verify it (and reject a bad
+// one); if the widget didn't load / no token, we still allow — the per-IP daily
+// limit + word cap + cheap model are the real cost guards, so a flaky captcha
+// never blocks a real user. Only enforced (verified) when the secret is set.
 async function verifyCaptcha(token: string | undefined, ip: string): Promise<boolean> {
   const secret = process.env.TURNSTILE_SECRET_KEY
   if (!secret) return true // not configured → skip (dev)
-  if (!token) return false
+  if (!token) return true  // no token (widget blocked/not loaded) → allow; rate limit guards
   try {
     const res = await fetch('https://challenges.cloudflare.com/turnstile/v0/siteverify', {
       method: 'POST',
