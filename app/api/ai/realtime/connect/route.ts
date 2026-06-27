@@ -43,17 +43,23 @@ export async function POST(request: NextRequest) {
         output_modalities: ['audio'],
         audio: {
           input: {
-            transcription: { model: 'whisper-1', language: 'en' },
+            // gpt-4o-transcribe is far more accurate on accents and barely
+            // hallucinates on silence/noise (whisper-1 notoriously emits
+            // "thank you"/"bye" on near-silent clips). A short prompt biases it
+            // toward natural IELTS English.
+            transcription: {
+              model: 'gpt-4o-transcribe',
+              language: 'en',
+              prompt: 'A candidate answering IELTS Speaking questions in natural English.',
+            },
             // Filter background/transient noise before it reaches the VAD, so a
             // rustle or a bump doesn't register as the candidate speaking.
             noise_reduction: { type: 'near_field' },
+            // Semantic VAD decides turn boundaries from speech content, so a bump
+            // or rustle won't open or end a turn the way an energy threshold can.
             turn_detection: {
-              type: 'server_vad',
-              threshold: 0.7,            // need clearer/louder speech to trigger (default 0.5)
-              prefix_padding_ms: 300,
-              silence_duration_ms: 700,  // wait a touch longer before ending the turn
-              // Don't let a stray noise cut Sarah off mid-question; she finishes
-              // speaking, then the candidate's turn is captured.
+              type: 'semantic_vad',
+              eagerness: 'medium',
               interrupt_response: false,
             },
           },
