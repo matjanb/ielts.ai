@@ -1,10 +1,11 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { Eye, EyeOff, Mail } from 'lucide-react'
 import { useLanguage } from '@/lib/i18n/LanguageContext'
+import { track } from '@/lib/analytics/track'
 import { signUp, signInWithGoogle, resendConfirmation } from '@/lib/services/auth'
 import { saveDiagnosticData } from '@/lib/services/diagnostic'
 import { createClient } from '@/lib/supabase/client'
@@ -22,6 +23,8 @@ export default function SignupPage() {
   const [emailSent, setEmailSent] = useState(false)
   const [resendLoading, setResendLoading] = useState(false)
   const [resendSuccess, setResendSuccess] = useState(false)
+
+  useEffect(() => { track('signup_started') }, [])
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()

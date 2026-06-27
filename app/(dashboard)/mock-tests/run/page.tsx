@@ -1,10 +1,11 @@
 'use client'
 
 import Link from 'next/link'
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { getUser } from '@/lib/services/auth'
 import { saveBandScoreHistory } from '@/lib/services/attempts'
+import { track } from '@/lib/analytics/track'
 import { useLanguage } from '@/lib/i18n/LanguageContext'
 import {
   loadCurrentMock, clearCurrentMock, getMockProgress,
@@ -33,6 +34,7 @@ export default function MockRunPage() {
   const [progress, setProgress] = useState<MockProgress>({})
   const [loaded, setLoaded] = useState(false)
   const [tick, setTick] = useState(0) // bump to reload progress (button / focus)
+  const startedTracked = useRef(false)
 
   useEffect(() => {
     let active = true
@@ -42,6 +44,7 @@ export default function MockRunPage() {
       if (!active) return
       setMock(m)
       setUserId(user?.id ?? null)
+      if (m && !startedTracked.current) { startedTracked.current = true; track('mock_test_started') }
       if (m && user) {
         const p = await getMockProgress({
           userId: user.id,
@@ -78,6 +81,7 @@ export default function MockRunPage() {
     if (localStorage.getItem(flag)) return
     localStorage.setItem(flag, '1')
     saveBandScoreHistory(userId, 'overall', overall).catch(() => {})
+    track('mock_test_completed', { overall })
   }, [mock, userId, allDone, overall])
 
   if (loaded && !mock) {

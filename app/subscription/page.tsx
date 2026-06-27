@@ -10,12 +10,14 @@ import { openCheckout } from '@/lib/paddle/client'
 import { getUser, signOut } from '@/lib/services/auth'
 import { getProfile } from '@/lib/services/user'
 import { isSubscriptionActive } from '@/lib/subscription'
+import { track } from '@/lib/analytics/track'
 import { DiagnosticSync } from '@/components/DiagnosticSync'
 
 // Open the Paddle overlay checkout for the chosen plan, applying a promo
 // discount when one has been validated.
 async function handleCheckout(planId: string, discountId?: string | null) {
   try {
+    track('checkout_started', { plan: planId })
     const { user } = await getUser()
     const opened = await openCheckout(planId, user, discountId)
     if (!opened) alert('Checkout is not available yet.')
@@ -90,6 +92,9 @@ function SubscriptionContent() {
   function clearPromo() {
     setPromo(null); setPromoInput(''); setPromoError('')
   }
+
+  // Funnel: did the user actually reach the paywall?
+  useEffect(() => { track('paywall_viewed') }, [])
 
   // Know whether the visitor already has an active plan — only then does
   // "Back to dashboard" make sense (non-subscribers would just bounce back here).
