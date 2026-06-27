@@ -288,7 +288,8 @@
     "q7Opt3": "Kuniga 2 soat",
     "q7Opt4": "Kuniga 3+ soat",
     "planReady": "O'quv rejangiz tayyor!",
-    "planSubtitle": "Javoblaringiz asosida maqsadli rejangizni tuzamiz."
+    "planSubtitle": "Javoblaringiz asosida maqsadli rejangizni tuzamiz.",
+    "step": "Qadam"
   },
   "subscription": {
     "title": "Cheksiz AI-tayyorgarlikni oching",

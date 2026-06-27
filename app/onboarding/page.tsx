@@ -2,27 +2,23 @@
 
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
-import { ChevronRight, ChevronLeft, Check } from 'lucide-react'
-import { useLanguage } from '@/lib/i18n/LanguageContext'
+import Link from 'next/link'
+import { useLanguage, LanguageProvider } from '@/lib/i18n/LanguageContext'
 import { ThemeProvider } from '@/components/providers/ThemeProvider'
-import { LanguageProvider } from '@/lib/i18n/LanguageContext'
 import { ThemeToggle } from '@/components/ui/ThemeToggle'
 import { LanguageSwitcher } from '@/components/ui/LanguageSwitcher'
 import { createClient } from '@/lib/supabase/client'
 import { saveOnboardingData, completeOnboarding } from '@/lib/services/user'
-import type { SkillType, StudyGoal, CurrentLevel, Timeline, StudyHours, ExperienceLevel } from '@/lib/types/database'
-import Link from 'next/link'
+import type { CurrentLevel, Timeline } from '@/lib/types/database'
 
 const TOTAL_STEPS = 3
+const BAND_MIN = 4
+const BAND_MAX = 9
 
 type Answers = {
-  experience: ExperienceLevel | null
   targetBand: number
   currentLevel: CurrentLevel | null
   timeline: Timeline | null
-  focusSkills: SkillType[]
-  studyGoal: StudyGoal | null
-  dailyHours: StudyHours | null
 }
 
 function OnboardingContent() {
@@ -31,39 +27,38 @@ function OnboardingContent() {
   const [step, setStep] = useState(1)
   const [saving, setSaving] = useState(false)
   const [answers, setAnswers] = useState<Answers>({
-    experience: null,
     targetBand: 7,
     currentLevel: null,
     timeline: null,
-    focusSkills: [],
-    studyGoal: null,
-    dailyHours: null,
   })
 
   useEffect(() => {
     createClient().auth.getUser().then(({ data: { user } }) => {
-      if (!user) { router.push('/login'); return }
+      if (!user) router.push('/login')
     })
   }, [router])
+
+  // Can't advance until the current step has an answer (target band always has one).
+  const canAdvance =
+    step === 1 ? true :
+    step === 2 ? answers.currentLevel != null :
+    answers.timeline != null
 
   async function finish() {
     setSaving(true)
     const { data: { user } } = await createClient().auth.getUser()
-    if (!user) return
+    if (!user) { setSaving(false); return }
 
     await saveOnboardingData(user.id, {
-      experience: answers.experience,
+      experience: null,
       target_band: answers.targetBand,
       current_level: answers.currentLevel,
       timeline: answers.timeline,
-      focus_skills: answers.focusSkills.length ? answers.focusSkills : ['writing', 'speaking'],
-      study_goal: answers.studyGoal,
-      daily_hours: answers.dailyHours,
+      // Inferred later from the first mock — not asked up front.
+      focus_skills: ['writing', 'speaking'],
+      study_goal: null,
+      daily_hours: null,
     })
-
-    // No placeholder plan here — the real, AI-generated plan is created on demand
-    // from the Study Plan page, which produces the shape that page renders. New
-    // users see a clean "Generate plan" empty state.
     await completeOnboarding(user.id)
     router.push('/dashboard')
   }
@@ -71,72 +66,70 @@ function OnboardingContent() {
   const progress = (step / TOTAL_STEPS) * 100
 
   return (
-    <div className="min-h-screen bg-[var(--bg)] flex flex-col">
+    <div style={{ minHeight: '100vh', background: 'var(--bg)', display: 'flex', flexDirection: 'column' }}>
       {/* Top bar */}
-      <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100 dark:border-gray-800/60">
-        <Link href="/" className="flex items-center gap-2">
-          <div className="w-6 h-6 rounded-lg bg-gradient-to-br from-indigo-500 to-violet-600 flex items-center justify-center">
-            <span className="text-white text-[10px] font-bold">i</span>
-          </div>
-          <span className="text-sm font-semibold text-gray-900 dark:text-white">IELTS Camp</span>
+      <header style={{
+        display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+        padding: '18px 24px', borderBottom: '1px solid var(--border)', background: 'var(--bg-elev)',
+      }}>
+        <Link href="/" style={{ display: 'inline-flex', alignItems: 'center', gap: 8, fontWeight: 700, letterSpacing: '-0.02em', fontSize: 16, color: 'var(--text)', textDecoration: 'none' }}>
+          <svg width={20} height={20} viewBox="0 0 24 24" fill="none">
+            <path d="M4 19L10 5l3 7 2.5-4L20 19" stroke="var(--accent)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+            <circle cx="20" cy="6" r="2" fill="var(--accent)"/>
+          </svg>
+          ielts<span style={{ color: 'var(--accent)' }}>.</span>camp
         </Link>
-        <div className="flex items-center gap-1">
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
           <LanguageSwitcher />
           <ThemeToggle />
         </div>
-      </div>
+      </header>
 
       {/* Progress bar */}
-      <div className="h-0.5 bg-gray-100 dark:bg-gray-800">
-        <div
-          className="h-0.5 bg-indigo-500 transition-all duration-500 ease-out"
-          style={{ width: `${progress}%` }}
-        />
+      <div style={{ height: 3, background: 'var(--bg-soft)' }}>
+        <div style={{ height: '100%', width: `${progress}%`, background: 'var(--accent)', transition: 'width .4s cubic-bezier(.2,.7,.2,1)' }} />
       </div>
 
       {/* Content */}
-      <div className="flex-1 flex flex-col items-center justify-center px-4 py-16">
-        <div className="w-full max-w-md">
-
+      <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '40px 20px' }}>
+        <div style={{ width: '100%', maxWidth: 540 }}>
           {/* Step dots */}
-          <div className="flex items-center justify-center gap-1.5 mb-12">
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6, marginBottom: 36 }}>
             {Array.from({ length: TOTAL_STEPS }, (_, i) => (
-              <div
-                key={i}
-                className={`rounded-full transition-all duration-300 ${
-                  i + 1 === step
-                    ? 'w-6 h-1.5 bg-indigo-600'
-                    : i + 1 < step
-                    ? 'w-1.5 h-1.5 bg-indigo-300 dark:bg-indigo-600/60'
-                    : 'w-1.5 h-1.5 bg-gray-200 dark:bg-gray-700'
-                }`}
-              />
+              <div key={i} style={{
+                height: 6, borderRadius: 999, transition: 'all .3s',
+                width: i + 1 === step ? 26 : 6,
+                background: i + 1 <= step ? 'var(--accent)' : 'var(--border-strong)',
+              }} />
             ))}
           </div>
 
-          <div key={step} className="animate-step-in">
+          <div key={step} className="animate-fade-up">
             {step === 1 && (
-              <StepCard title={t('onboarding.q2Title')}>
-                <div className="grid grid-cols-4 sm:grid-cols-5 gap-2">
-                  {[5, 5.5, 6, 6.5, 7, 7.5, 8, 8.5, 9].map(band => (
-                    <button
-                      key={band}
-                      onClick={() => setAnswers(a => ({ ...a, targetBand: band }))}
-                      className={`py-3.5 rounded-xl text-sm font-semibold transition-all duration-150 ${
-                        answers.targetBand === band
-                          ? 'bg-indigo-600 text-white shadow-sm shadow-indigo-600/25'
-                          : 'bg-gray-50 dark:bg-gray-800/80 border border-gray-200 dark:border-gray-700 text-gray-700 dark:text-gray-300 hover:border-indigo-400 hover:text-indigo-600 dark:hover:text-indigo-400'
-                      }`}
-                    >
-                      {band}
-                    </button>
-                  ))}
+              <StepCard eyebrow={`${t('onboarding.step')} 1 / ${TOTAL_STEPS}`} title={t('onboarding.q2Title')}>
+                <div style={{ textAlign: 'center', marginTop: 8 }}>
+                  <div style={{ fontFamily: 'var(--font-display)', fontStyle: 'italic', fontSize: 88, lineHeight: 1, color: 'var(--accent)', fontWeight: 600 }}>
+                    {answers.targetBand.toFixed(1)}
+                  </div>
+                  <input
+                    type="range"
+                    min={BAND_MIN}
+                    max={BAND_MAX}
+                    step={0.5}
+                    value={answers.targetBand}
+                    onChange={e => setAnswers(a => ({ ...a, targetBand: parseFloat(e.target.value) }))}
+                    style={{ width: '100%', marginTop: 28, accentColor: 'var(--accent)', cursor: 'pointer' }}
+                  />
+                  <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12, color: 'var(--text-3)', fontVariantNumeric: 'tabular-nums', marginTop: 6 }}>
+                    <span>{BAND_MIN.toFixed(1)}</span>
+                    <span>{BAND_MAX.toFixed(1)}</span>
+                  </div>
                 </div>
               </StepCard>
             )}
 
             {step === 2 && (
-              <StepCard title={t('onboarding.q3Title')}>
+              <StepCard eyebrow={`${t('onboarding.step')} 2 / ${TOTAL_STEPS}`} title={t('onboarding.q3Title')}>
                 {([
                   ['beginner', t('onboarding.q3Opt1')],
                   ['intermediate', t('onboarding.q3Opt2')],
@@ -154,7 +147,7 @@ function OnboardingContent() {
             )}
 
             {step === 3 && (
-              <StepCard title={t('onboarding.q4Title')}>
+              <StepCard eyebrow={`${t('onboarding.step')} 3 / ${TOTAL_STEPS}`} title={t('onboarding.q4Title')}>
                 {([
                   ['within_1_month', t('onboarding.q4Opt1')],
                   ['1_3_months', t('onboarding.q4Opt2')],
@@ -173,35 +166,42 @@ function OnboardingContent() {
           </div>
 
           {/* Navigation */}
-          <div className="flex items-center justify-between mt-10">
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: 32 }}>
             <button
               onClick={() => setStep(s => Math.max(1, s - 1))}
               disabled={step === 1}
-              className="flex items-center gap-1.5 px-4 py-2.5 rounded-xl text-sm font-medium text-gray-400 dark:text-gray-500 disabled:opacity-0 hover:text-gray-700 dark:hover:text-gray-300 transition-colors"
+              style={{
+                padding: '10px 16px', borderRadius: 10, fontSize: 14, fontWeight: 600,
+                background: 'transparent', border: 'none', color: 'var(--text-3)',
+                cursor: step === 1 ? 'default' : 'pointer', opacity: step === 1 ? 0 : 1,
+              }}
             >
-              <ChevronLeft size={15} strokeWidth={2} />
-              {t('onboarding.back')}
+              ← {t('onboarding.back')}
             </button>
 
             {step < TOTAL_STEPS ? (
               <button
                 onClick={() => setStep(s => s + 1)}
-                className="flex items-center gap-2 px-6 py-2.5 rounded-xl text-sm font-semibold btn-primary text-white"
+                disabled={!canAdvance}
+                style={{
+                  padding: '11px 24px', borderRadius: 10, fontSize: 14, fontWeight: 700,
+                  background: 'var(--accent)', color: 'var(--accent-fg)', border: 'none',
+                  cursor: canAdvance ? 'pointer' : 'default', opacity: canAdvance ? 1 : 0.5,
+                }}
               >
-                {t('onboarding.next')}
-                <ChevronRight size={15} strokeWidth={2.5} />
+                {t('onboarding.next')} →
               </button>
             ) : (
               <button
                 onClick={finish}
-                disabled={saving}
-                className="flex items-center gap-2 px-6 py-2.5 rounded-xl text-sm font-semibold btn-primary text-white disabled:opacity-60"
+                disabled={!canAdvance || saving}
+                style={{
+                  padding: '11px 24px', borderRadius: 10, fontSize: 14, fontWeight: 700,
+                  background: 'var(--accent)', color: 'var(--accent-fg)', border: 'none',
+                  cursor: !canAdvance || saving ? 'default' : 'pointer', opacity: !canAdvance || saving ? 0.5 : 1,
+                }}
               >
-                {saving
-                  ? <><span className="w-4 h-4 rounded-full border-2 border-white/40 border-t-white animate-spin" />{' '}</>
-                  : null
-                }
-                {t('onboarding.finish')}
+                {saving ? '…' : t('onboarding.finish')}
               </button>
             )}
           </div>
@@ -211,13 +211,16 @@ function OnboardingContent() {
   )
 }
 
-function StepCard({ title, children }: { title: string; children: React.ReactNode }) {
+function StepCard({ eyebrow, title, children }: { eyebrow: string; title: string; children: React.ReactNode }) {
   return (
-    <div>
-      <h2 className="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-white text-center mb-8 tracking-tight leading-snug">
+    <div className="card" style={{ padding: 'clamp(24px, 5vw, 36px)' }}>
+      <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase', color: 'var(--text-3)', marginBottom: 10, textAlign: 'center' }}>
+        {eyebrow}
+      </div>
+      <h1 style={{ fontSize: 'clamp(22px, 5vw, 28px)', fontWeight: 700, letterSpacing: '-0.025em', color: 'var(--text)', textAlign: 'center', margin: '0 0 24px', lineHeight: 1.15 }}>
         {title}
-      </h2>
-      <div className="space-y-2.5">{children}</div>
+      </h1>
+      <div style={{ display: 'grid', gap: 10 }}>{children}</div>
     </div>
   )
 }
@@ -226,18 +229,29 @@ function OptionButton({ label, selected, onClick }: { label: string; selected: b
   return (
     <button
       onClick={onClick}
-      className={`w-full flex items-center justify-between px-5 py-4 rounded-2xl border text-sm font-medium transition-all duration-150 ${
-        selected
-          ? 'border-indigo-500 bg-indigo-50 dark:bg-indigo-500/10 text-indigo-700 dark:text-indigo-300'
-          : 'border-gray-200 dark:border-gray-700/80 bg-gray-50/50 dark:bg-gray-800/40 text-gray-700 dark:text-gray-300 hover:border-indigo-300 dark:hover:border-indigo-500/40 hover:bg-white dark:hover:bg-gray-800/60'
-      }`}
+      style={{
+        display: 'flex', alignItems: 'center', justifyContent: 'space-between', width: '100%',
+        padding: '15px 18px', borderRadius: 'var(--radius)', fontSize: 14.5, fontWeight: 500, textAlign: 'left',
+        border: `1px solid ${selected ? 'var(--accent)' : 'var(--border-strong)'}`,
+        background: selected ? 'var(--accent-soft)' : 'var(--bg-elev)',
+        color: selected ? 'var(--accent)' : 'var(--text)',
+        cursor: 'pointer', transition: 'border-color .15s, background .15s',
+      }}
+      onMouseEnter={e => { if (!selected) e.currentTarget.style.borderColor = 'var(--accent)' }}
+      onMouseLeave={e => { if (!selected) e.currentTarget.style.borderColor = 'var(--border-strong)' }}
     >
       {label}
-      <div className={`w-4.5 h-4.5 rounded-full border-2 flex items-center justify-center transition-all shrink-0 ${
-        selected ? 'border-indigo-500 bg-indigo-500' : 'border-gray-300 dark:border-gray-600'
-      }`} style={{ width: '18px', height: '18px' }}>
-        {selected && <Check size={10} strokeWidth={3} className="text-white" />}
-      </div>
+      <span style={{
+        width: 18, height: 18, borderRadius: '50%', flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center',
+        border: `2px solid ${selected ? 'var(--accent)' : 'var(--border-strong)'}`,
+        background: selected ? 'var(--accent)' : 'transparent',
+      }}>
+        {selected && (
+          <svg width={10} height={10} viewBox="0 0 24 24" fill="none" stroke="var(--accent-fg)" strokeWidth="3.5" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M5 12l5 5L20 7"/>
+          </svg>
+        )}
+      </span>
     </button>
   )
 }

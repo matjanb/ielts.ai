@@ -263,7 +263,8 @@
     "q7Opt3": "2 hours",
     "q7Opt4": "3+ hours",
     "planReady": "Your study plan is ready!",
-    "planSubtitle": "Based on your answers, we've built a personalised plan to reach your goal."
+    "planSubtitle": "Based on your answers, we've built a personalised plan to reach your goal.",
+    "step": "Step"
   },
   "subscription": {
     "title": "Unlock unlimited AI prep",
