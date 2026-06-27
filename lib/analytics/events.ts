@@ -8,6 +8,11 @@ export const FUNNEL_EVENTS = [
   'paywall_viewed',
   'checkout_started',
   'purchase_completed',
+  // Public essay-checker lead magnet
+  'checker_viewed',
+  'checker_submitted',
+  'checker_result_viewed',
+  'checker_signup_cta_clicked',
 ] as const
 
 export type FunnelEvent = (typeof FUNNEL_EVENTS)[number]
