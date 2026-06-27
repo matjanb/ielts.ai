@@ -30,17 +30,33 @@ export function EssayCheckerForm() {
 
   useEffect(() => { track('checker_viewed') }, [])
 
-  // Explicitly render the Turnstile widget once its script has loaded.
-  function renderTurnstile() {
-    const ts = (window as unknown as { turnstile?: { render: (el: HTMLElement, opts: Record<string, unknown>) => void } }).turnstile
-    if (!SITE_KEY || !ts || !turnstileRef.current || turnstileRef.current.childElementCount > 0) return
-    ts.render(turnstileRef.current, { sitekey: SITE_KEY, callback: (t: string) => setToken(t) })
-  }
+  // Render the Turnstile widget as soon as its script is available. Polling
+  // (rather than relying on Script.onLoad) handles a cached script that never
+  // re-fires onLoad. Non-blocking: if it never loads, submit still works.
+  useEffect(() => {
+    if (!SITE_KEY) return
+    let tries = 0
+    const id = setInterval(() => {
+      const ts = (window as unknown as { turnstile?: { render: (el: HTMLElement, opts: Record<string, unknown>) => void } }).turnstile
+      if (ts && turnstileRef.current && turnstileRef.current.childElementCount === 0) {
+        ts.render(turnstileRef.current, {
+          sitekey: SITE_KEY,
+          callback: (t: string) => setToken(t),
+          'expired-callback': () => setToken(''),
+          'error-callback': () => setToken(''),
+        })
+        clearInterval(id)
+      }
+      if (++tries > 50) clearInterval(id) // give up after ~10s
+    }, 200)
+    return () => clearInterval(id)
+  }, [])
 
   const words = content.trim() ? content.trim().split(/\s+/).filter(Boolean).length : 0
   const tooShort = words > 0 && words < MIN_WORDS
-  const captchaReady = !SITE_KEY || !!token
-  const canSubmit = words >= MIN_WORDS && captchaReady && !loading
+  // Captcha never blocks the button — it's verified server-side only if a token
+  // is present (soft). The button lights as soon as there are enough words.
+  const canSubmit = words >= MIN_WORDS && !loading
 
   async function submit() {
     if (!canSubmit) return
@@ -66,7 +82,7 @@ export function EssayCheckerForm() {
 
   return (
     <div>
-      {SITE_KEY && <Script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer onLoad={renderTurnstile} />}
+      {SITE_KEY && <Script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer />}
 
       {/* ── Input ─────────────────────────────────────────────────────────────── */}
       {!result && !limitHit && (
@@ -81,6 +97,10 @@ export function EssayCheckerForm() {
               }}>Writing Task {tt}</button>
             ))}
           </div>
+
+          <p style={{ fontSize: 12.5, color: 'var(--text-3)', margin: '0 0 10px' }}>
+            {taskType === '1' ? 'Task 1 — report/letter (aim for 150+ words).' : 'Task 2 — opinion/discussion essay (aim for 250+ words).'}
+          </p>
 
           <textarea
             value={content}
@@ -108,7 +128,7 @@ export function EssayCheckerForm() {
             background: canSubmit ? 'var(--accent)' : 'var(--bg-soft)', color: canSubmit ? 'var(--accent-fg)' : 'var(--text-3)',
             cursor: canSubmit ? 'pointer' : 'default',
           }}>
-            {loading ? 'Analysing your essay…' : 'Check my band score'}
+            {loading ? 'Analysing your essay…' : words < MIN_WORDS ? `Add ${MIN_WORDS - words} more words` : 'Check my band score'}
           </button>
         </div>
       )}

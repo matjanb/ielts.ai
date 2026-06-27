@@ -16,7 +16,8 @@
     "dashboard": "Башкаруу панели",
     "subscription": "Жазылуу",
     "logout": "Чыгуу",
-    "skills": "Көндүмдөр"
+    "skills": "Көндүмдөр",
+    "essayChecker": "Эссе текшерүү"
   },
   "stat": {
     "students": "активдүү окуучу",

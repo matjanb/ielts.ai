@@ -16,7 +16,8 @@
     "dashboard": "Dashboard",
     "subscription": "Subscription",
     "logout": "Sign Out",
-    "skills": "Skills"
+    "skills": "Skills",
+    "essayChecker": "Free Essay Checker"
   },
   "stat": {
     "students": "active learners",

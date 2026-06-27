@@ -16,7 +16,8 @@
     "dashboard": "Кабинет",
     "subscription": "Подписка",
     "logout": "Выйти",
-    "skills": "Навыки"
+    "skills": "Навыки",
+    "essayChecker": "Проверка эссе"
   },
   "stat": {
     "students": "активных учеников",
