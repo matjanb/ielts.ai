@@ -109,25 +109,37 @@ export default function MockRunPage() {
   // ── Final summary — overall band only after every section ────────────────────
   if (allDone) {
     return (
-      <div style={{ padding: '32px 32px 80px', maxWidth: 620, margin: '0 auto' }}>
-        <div style={{ textAlign: 'center', marginBottom: 28 }}>
-          <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase', color: 'var(--text-3)' }}>{t('mock.overallBand')}</div>
-          <div style={{ fontFamily: 'var(--font-display)', fontStyle: 'italic', fontSize: 80, lineHeight: 1, color: 'var(--accent)', fontWeight: 600, margin: '6px 0' }}>
+      <div style={{ padding: '32px 24px 80px', maxWidth: 620, margin: '0 auto' }}>
+        {/* Overall band hero */}
+        <div className="card" style={{
+          textAlign: 'center', padding: 'clamp(24px, 6vw, 36px)', marginBottom: 16,
+          background: 'var(--accent-soft)', borderColor: 'var(--accent)',
+        }}>
+          <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: '0.12em', textTransform: 'uppercase', color: 'var(--accent)' }}>
+            {t('mock.overallBand')}
+          </div>
+          <div style={{ fontFamily: 'var(--font-display)', fontStyle: 'italic', fontSize: 'clamp(56px, 16vw, 84px)', lineHeight: 1, color: 'var(--accent)', fontWeight: 600, margin: '8px 0 4px' }}>
             {overall != null ? overall.toFixed(1) : '—'}
           </div>
+          <div style={{ fontSize: 12.5, color: 'var(--text-2)' }}>out of 9.0</div>
         </div>
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+
+        {/* Per-skill tiles (label + band stacked — never collide) */}
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(130px, 1fr))', gap: 12 }}>
           {steps.map(s => (
-            <div key={s} className="card" style={{ padding: '16px 20px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-              <span style={{ fontSize: 14, fontWeight: 600, color: 'var(--text)' }}>{t('dashboard.' + s)}</span>
-              <span style={{ fontFamily: 'var(--font-display)', fontStyle: 'italic', fontSize: 20, fontWeight: 700, color: 'var(--accent)' }}>
+            <div key={s} className="card" style={{ padding: '16px 18px' }}>
+              <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: '0.06em', textTransform: 'uppercase', color: 'var(--text-3)', marginBottom: 8 }}>
+                {t('dashboard.' + s)}
+              </div>
+              <div style={{ fontFamily: 'var(--font-display)', fontStyle: 'italic', fontSize: 32, fontWeight: 700, lineHeight: 1, color: 'var(--accent)' }}>
                 {bands[s] != null ? bands[s]!.toFixed(1) : '—'}
-              </span>
+              </div>
             </div>
           ))}
         </div>
+
         <button onClick={finish} style={{
-          marginTop: 24, width: '100%', padding: '13px', borderRadius: 12, fontSize: 14, fontWeight: 700,
+          marginTop: 24, width: '100%', padding: '14px', borderRadius: 12, fontSize: 14, fontWeight: 700,
           background: 'var(--accent)', color: 'var(--accent-fg)', border: 'none', cursor: 'pointer',
         }}>
           {t('mock.finishClear')}
