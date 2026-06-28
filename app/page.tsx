@@ -2,7 +2,6 @@ import { FloatingNav } from '@/components/layout/FloatingNav'
 import { LiveActivityToaster } from '@/components/layout/LiveActivityToaster'
 import { Hero } from '@/components/sections/Hero'
 import { UniversitiesMarquee } from '@/components/sections/UniversitiesMarquee'
-import { StatsStrip } from '@/components/sections/StatsStrip'
 import { DashboardShowcase } from '@/components/sections/DashboardShowcase'
 import { Features } from '@/components/sections/Features'
 import { HowItWorks } from '@/components/sections/HowItWorks'
@@ -20,7 +19,6 @@ export default function LandingPage() {
       <FloatingNav />
       <Hero />
       <UniversitiesMarquee />
-      <StatsStrip />
       <DashboardShowcase />
       <Features />
       <HowItWorks />
