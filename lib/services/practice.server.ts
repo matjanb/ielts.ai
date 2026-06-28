@@ -48,6 +48,24 @@ export async function getPracticeSetServer(opts: {
     bySection.get(q.section_id)!.push(q)
   }
 
+  // Matching-pool questions keep the A–G option box only on the first item; the
+  // rest are `matching_pool_ref`. Copy the resolved pool onto every matching
+  // question in the section so each one renders standalone (a letter dropdown).
+  for (const qs of bySection.values()) {
+    const anchor = qs.find(q => {
+      const o = q.options as { format?: string; pool?: unknown } | null
+      return o?.format === 'matching_pool' && Array.isArray(o.pool)
+    })
+    if (!anchor) continue
+    const ao = anchor.options as { pool: unknown; instruction?: unknown }
+    for (const q of qs) {
+      const o = q.options as { format?: string } | null
+      if (o?.format === 'matching_pool' || o?.format === 'matching_pool_ref') {
+        q.options = { ...o, pool: ao.pool, instruction: ao.instruction } as Question['options']
+      }
+    }
+  }
+
   const usable = sectionList.filter(s => bySection.has(s.id))
   for (let i = usable.length - 1; i > 0; i--) {
     const j = Math.floor(Math.random() * (i + 1))
