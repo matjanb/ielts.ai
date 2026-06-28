@@ -58,14 +58,6 @@ export function ForSchools() {
               </div>
             </div>
           ))}
-          <div style={{ display: 'flex', gap: 24, padding: '8px 4px 0' }}>
-            {[['500+', t('forSchools.statSchools')], ['40k+', t('forSchools.statStudents')], ['+1.2', t('forSchools.statBandGain')]].map(([v, l]) => (
-              <div key={l}>
-                <div style={{ fontSize: 24, fontWeight: 700, color: 'var(--text)', letterSpacing: '-0.02em' }}>{v}</div>
-                <div style={{ fontSize: 12, color: 'var(--text-3)' }}>{l}</div>
-              </div>
-            ))}
-          </div>
         </div>
       </div>
     </section>
