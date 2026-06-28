@@ -23,6 +23,14 @@ function parseKeyed(src: string): { key: string; label: string }[] {
   return out
 }
 
+/* Matching-pool questions (e.g. "match each person to a comment A–G") store the
+   shared A–G option box on `options.pool`; the answer is a letter. */
+function matchingPool(q: Question): { key: string; text: string }[] | null {
+  const o = q.options as { pool?: { key: string; text: string }[]; format?: string } | null
+  if (o && Array.isArray(o.pool) && (o.format === 'matching_pool' || o.format === 'matching_pool_ref')) return o.pool
+  return null
+}
+
 const selectStyle: CSSProperties = {
   padding: '8px 12px', borderRadius: 8, fontSize: 14,
   border: '1px solid var(--border-strong)', background: 'var(--bg-elev)',
@@ -164,6 +172,16 @@ export function QuestionRenderer({
       </select>
     ) : (
       <input value={value} onChange={e => onChange(e.target.value)} disabled={revealed} style={inputStyle} placeholder={t('practice.qrYourAnswer')} />
+    )
+
+  // ── Matching pool (choose a letter A–G from a shared option box) ──────────
+  } else if (matchingPool(question)) {
+    const pool = matchingPool(question)!
+    input = (
+      <select value={value} onChange={e => onChange(e.target.value)} disabled={revealed} style={selectStyle}>
+        <option value="">{t('practice.qrSelect')}</option>
+        {pool.map(p => <option key={p.key} value={p.key}>{p.key} — {p.text}</option>)}
+      </select>
     )
 
   // ── Fill in the blank / anything else (free text, optional diagram) ───────
