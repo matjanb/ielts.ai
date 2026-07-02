@@ -43,6 +43,47 @@ export type Database = {
           },
         ]
       }
+      agent_messages: {
+        Row: {
+          id: string
+          user_id: string
+          sent_at: string
+          signal_type: string
+          channel: string
+          content: string
+          resource_url: string | null
+          user_reaction: string | null
+        }
+        Insert: {
+          id?: string
+          user_id: string
+          sent_at?: string
+          signal_type: string
+          channel: string
+          content: string
+          resource_url?: string | null
+          user_reaction?: string | null
+        }
+        Update: {
+          id?: string
+          user_id?: string
+          sent_at?: string
+          signal_type?: string
+          channel?: string
+          content?: string
+          resource_url?: string | null
+          user_reaction?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "agent_messages_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       resources: {
         Row: {
           id: string
@@ -425,6 +466,7 @@ export type Database = {
           is_admin: boolean
           lifetime_access: boolean
           onboarding_completed: boolean
+          preferred_language: string | null
           referred_at: string | null
           referred_by: string | null
           stripe_customer_id: string | null
@@ -451,6 +493,7 @@ export type Database = {
           is_admin?: boolean
           lifetime_access?: boolean
           onboarding_completed?: boolean
+          preferred_language?: string | null
           referred_at?: string | null
           referred_by?: string | null
           stripe_customer_id?: string | null
@@ -477,6 +520,7 @@ export type Database = {
           is_admin?: boolean
           lifetime_access?: boolean
           onboarding_completed?: boolean
+          preferred_language?: string | null
           referred_at?: string | null
           referred_by?: string | null
           stripe_customer_id?: string | null

@@ -61,6 +61,19 @@ export function LanguageProvider({ children }: { children: ReactNode }) {
     localStorage.setItem(STORAGE_KEY, lang)
     if (lang === 'en') setTranslations(EN)
     else loadTranslations(lang).then(setTranslations)
+    // Best-effort profile sync: server-side coach messages (evening digest,
+    // later Telegram) have no access to localStorage, so the choice must live
+    // in the profile too. Never blocks the UI switch.
+    ;(async () => {
+      try {
+        const { createClient } = await import('@/lib/supabase/client')
+        const supabase = createClient()
+        const { data } = await supabase.auth.getUser()
+        if (data.user) {
+          await supabase.from('profiles').update({ preferred_language: lang }).eq('id', data.user.id)
+        }
+      } catch { /* signed out or offline — localStorage still has it */ }
+    })()
   }
 
   function t(key: string, params?: Record<string, string>): string {

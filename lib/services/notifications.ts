@@ -7,7 +7,7 @@ function db() {
 
 export interface NotifItem {
   id: string
-  kind: 'writing' | 'speaking' | 'attempt' | 'streak'
+  kind: 'writing' | 'speaking' | 'attempt' | 'streak' | 'coach'
   icon: string
   color: string
   title: string
@@ -42,7 +42,7 @@ const STREAK_MILESTONES = new Set([3, 7, 14, 21, 30, 50, 75, 100])
 export async function getNotifications(userId: string): Promise<NotifItem[]> {
   const supabase = db()
 
-  const [writingRes, speakingRes, attemptsRes, sessionsRes] = await Promise.all([
+  const [writingRes, speakingRes, attemptsRes, sessionsRes, coachRes] = await Promise.all([
     supabase.from('writing_submissions')
       .select('id, task_type, band_score, created_at')
       .eq('user_id', userId)
@@ -64,9 +64,28 @@ export async function getNotifications(userId: string): Promise<NotifItem[]> {
       .eq('user_id', userId)
       .order('created_at', { ascending: false })
       .limit(60),
+    supabase.from('agent_messages')
+      .select('id, content, sent_at')
+      .eq('user_id', userId)
+      .eq('channel', 'in-app')
+      .order('sent_at', { ascending: false })
+      .limit(3),
   ])
 
   const items: NotifItem[] = []
+
+  // Coach digest notes (evening agent). Shown in full — they ARE the message,
+  // not a pointer to something else.
+  for (const m of (coachRes.data ?? [])) {
+    items.push({
+      id: `coach-${m.id}`,
+      kind: 'coach',
+      icon: 'compass',
+      color: 'var(--accent)',
+      title: m.content,
+      time: m.sent_at,
+    })
+  }
 
   for (const w of (writingRes.data ?? [])) {
     const band = w.band_score != null ? Number(w.band_score).toFixed(1) : null
