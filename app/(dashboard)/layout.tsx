@@ -8,6 +8,7 @@ import { ThemeProvider } from '@/components/providers/ThemeProvider'
 import { LanguageProvider, useLanguage } from '@/lib/i18n/LanguageContext'
 import { ToastProvider, useToast } from '@/lib/toast'
 import { CommandPalette } from '@/components/ui/CommandPalette'
+import { SessionTracker } from '@/components/analytics/SessionTracker'
 import { NotificationsPanel } from '@/components/ui/NotificationsPanel'
 import { LanguageSwitcher } from '@/components/ui/LanguageSwitcher'
 import { signOut, getUser } from '@/lib/services/auth'
@@ -585,6 +586,7 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
     <ThemeProvider>
       <LanguageProvider>
         <ToastProvider>
+          <SessionTracker />
           <DashboardLayoutInner>{children}</DashboardLayoutInner>
         </ToastProvider>
       </LanguageProvider>

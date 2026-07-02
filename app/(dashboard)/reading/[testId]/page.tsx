@@ -11,6 +11,7 @@ import { getUser } from '@/lib/services/auth'
 import { groupQuestions as groupMultiSelect } from '@/lib/utils/multiSelect'
 import { MultiSelectQuestion } from '@/components/practice/MultiSelectQuestion'
 import { useIsMobile } from '@/lib/hooks/useIsMobile'
+import { useAbandonTracker } from '@/lib/agent/useAbandonTracker'
 
 type QuestionWithSection = Question & { sectionNumber: number; sectionTitle: string; passageText: string }
 
@@ -245,6 +246,18 @@ export function ReadingExam({ testId, embedded = false, onComplete }: { testId: 
   const startedAtRef = useRef<number | null>(null)
   const [leftWidth, setLeftWidth] = useState(50)
   const isResizing = useRef(false)
+
+  useAbandonTracker({
+    module: 'reading',
+    testId,
+    active: started && !submitting,
+    getProgress: () => ({
+      progressPct: questions.length
+        ? Math.round((Object.keys(answers).length / questions.length) * 100)
+        : 0,
+      part: activePassage,
+    }),
+  })
 
   const startResize = useCallback((e: React.MouseEvent) => {
     isResizing.current = true

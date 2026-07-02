@@ -11,6 +11,7 @@ import { getTestById, getSectionsByTestId, getTestQuestions } from '@/lib/servic
 import { createAttempt, saveAnswer as saveAnswerService } from '@/lib/services/attempts'
 import { getUser } from '@/lib/services/auth'
 import { useIsMobile } from '@/lib/hooks/useIsMobile'
+import { useAbandonTracker } from '@/lib/agent/useAbandonTracker'
 
 type QuestionWithSection = Question & { sectionNumber: number; sectionTitle: string }
 
@@ -1989,6 +1990,18 @@ export function ListeningExam({ testId, embedded = false, onComplete }: { testId
   const [sectionToast, setSectionToast] = useState<string | null>(null)
   const toastTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const startedAtRef = useRef<number | null>(null)
+
+  useAbandonTracker({
+    module: 'listening',
+    testId,
+    active: started && !submitting,
+    getProgress: () => ({
+      progressPct: questions.length
+        ? Math.round((Object.keys(answers).length / questions.length) * 100)
+        : 0,
+      part: sections[currentSectionIdx]?.section_number ?? null,
+    }),
+  })
 
   // Load test data on mount
   useEffect(() => {

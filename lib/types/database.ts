@@ -43,6 +43,41 @@ export type Database = {
           },
         ]
       }
+      user_events: {
+        Row: {
+          id: string
+          user_id: string
+          event_type: string
+          module: string | null
+          payload: Json
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          user_id: string
+          event_type: string
+          module?: string | null
+          payload?: Json
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          user_id?: string
+          event_type?: string
+          module?: string | null
+          payload?: Json
+          created_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_events_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       user_attribution: {
         Row: {
           user_id: string
