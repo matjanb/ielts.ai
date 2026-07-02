@@ -9,6 +9,7 @@ import { LanguageProvider, useLanguage } from '@/lib/i18n/LanguageContext'
 import { ToastProvider, useToast } from '@/lib/toast'
 import { CommandPalette } from '@/components/ui/CommandPalette'
 import { SessionTracker } from '@/components/analytics/SessionTracker'
+import { CoachToaster } from '@/components/agent/CoachToaster'
 import { NotificationsPanel } from '@/components/ui/NotificationsPanel'
 import { LanguageSwitcher } from '@/components/ui/LanguageSwitcher'
 import { signOut, getUser } from '@/lib/services/auth'
@@ -587,6 +588,7 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
       <LanguageProvider>
         <ToastProvider>
           <SessionTracker />
+          <CoachToaster />
           <DashboardLayoutInner>{children}</DashboardLayoutInner>
         </ToastProvider>
       </LanguageProvider>

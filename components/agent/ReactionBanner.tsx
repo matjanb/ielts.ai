@@ -24,9 +24,11 @@ export function ReactionBanner() {
     } catch { /* malformed — skip the banner */ }
   }, [])
 
-  // Freeze the wording per mount: re-renders must not reshuffle the pieces.
+  // Prefer the server-rendered text so the banner, the notification feed and
+  // Telegram all say the same thing; fall back to a local render (frozen per
+  // mount — re-renders must not reshuffle the pieces).
   const text = useMemo(
-    () => (ctx ? renderReaction(language, ctx) : null),
+    () => (ctx ? ctx.text ?? renderReaction(language, ctx) : null),
     [ctx, language],
   )
 

@@ -71,9 +71,19 @@ export async function POST(request: NextRequest) {
     // Best-effort: grading never fails because the reaction couldn't be built.
     let reaction: ReactionContext | null = null
     try {
-      reaction = await buildInstantReaction(
-        createAdminClient(), user.id, skill, result.band, result.attemptId
-      )
+      const admin = createAdminClient()
+      reaction = await buildInstantReaction(admin, user.id, skill, result.band, result.attemptId)
+      // Also into the coach feed: the notifications panel and the floating
+      // card pick it up from here. instant_reaction is invisible to the
+      // digest's anti-spam.
+      if (reaction.text) {
+        await admin.from('agent_messages').insert({
+          user_id: user.id,
+          signal_type: 'instant_reaction',
+          channel: 'in-app',
+          content: reaction.text,
+        })
+      }
     } catch (e) {
       console.error('[attempts/grade] reaction failed', e)
     }

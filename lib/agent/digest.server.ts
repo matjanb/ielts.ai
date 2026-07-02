@@ -25,10 +25,13 @@ export async function digestForUser(db: Db, userId: string, now = new Date()): P
   const primary = pickPrimarySignal(signals)
   if (!primary) return 'silence'
 
+  // instant_reaction rows are constructor output, not digest sends — they
+  // must not count against the one-message-per-day budget.
   const { data: recent } = await db
     .from('agent_messages')
     .select('sent_at, signal_type')
     .eq('user_id', userId)
+    .neq('signal_type', 'instant_reaction')
     .order('sent_at', { ascending: false })
     .limit(5)
 

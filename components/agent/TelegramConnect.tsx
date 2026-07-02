@@ -1,8 +1,21 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { Send, Unlink } from 'lucide-react'
+import { Unlink } from 'lucide-react'
 import { redirectToPaywallOn403 } from '@/lib/paywall'
+
+// Official Telegram logo: brand-blue circle + white paper plane.
+function TelegramIcon({ size = 16 }: { size?: number }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 240 240" aria-hidden>
+      <circle cx="120" cy="120" r="120" fill="#29A9EB" />
+      <path
+        fill="#fff"
+        d="M54 118.5l114.7-44.2c5.3-1.9 10 1.3 8.3 9.4l-19.5 92c-1.5 6.5-5.6 8.1-11.3 5l-29.8-22-14.4 13.9c-1.6 1.6-2.9 2.9-6 2.9l2.1-30.3 55.3-50c2.4-2.1-.5-3.3-3.7-1.2l-68.4 43.1-29.5-9.2c-6.4-2-6.5-6.4 2.2-9.4z"
+      />
+    </svg>
+  )
+}
 
 type LinkStatus = { linked: boolean; bot: string }
 type LinkCode = { code: string; deepLink: string; expiresInMin: number }
@@ -47,7 +60,7 @@ export function TelegramConnect({ t }: { t: (k: string) => string }) {
     <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 16, flexWrap: 'wrap' }}>
       <div style={{ minWidth: 220 }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 6 }}>
-          <Send size={15} style={{ color: 'var(--text-3)' }} />
+          <TelegramIcon size={16} />
           <span style={{ fontSize: 13, color: 'var(--text-2)' }}>
             {status?.linked ? t('settings.telegramLinked') : t('settings.telegramDesc')}
           </span>
@@ -75,21 +88,21 @@ export function TelegramConnect({ t }: { t: (k: string) => string }) {
         </button>
       ) : code ? (
         <a href={code.deepLink} target="_blank" rel="noopener noreferrer" style={{
-          display: 'inline-flex', alignItems: 'center', gap: 6, padding: '9px 16px', borderRadius: 10,
+          display: 'inline-flex', alignItems: 'center', gap: 7, padding: '9px 16px', borderRadius: 10,
           fontSize: 14, fontWeight: 600, textDecoration: 'none',
-          background: 'var(--accent)', color: '#fff',
+          background: '#29A9EB', color: '#fff',
         }}>
-          <Send size={13} />
+          <TelegramIcon size={15} />
           {t('settings.telegramOpen')}
         </a>
       ) : (
         <button onClick={connect} disabled={busy || !status} style={{
-          display: 'inline-flex', alignItems: 'center', gap: 6, padding: '9px 16px', borderRadius: 10,
+          display: 'inline-flex', alignItems: 'center', gap: 7, padding: '9px 16px', borderRadius: 10,
           fontSize: 14, fontWeight: 600, cursor: 'pointer',
-          background: 'var(--accent)', color: '#fff', border: 'none',
+          background: '#29A9EB', color: '#fff', border: 'none',
           opacity: busy || !status ? 0.6 : 1,
         }}>
-          <Send size={13} />
+          <TelegramIcon size={15} />
           {t('settings.telegramConnect')}
         </button>
       )}

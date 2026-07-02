@@ -16,6 +16,8 @@ export type ReactionPieceSet = {
   greetingsNamed: string[]
   greetingsPlain: string[]
   observations: Record<ReactionBranch, string[]>
+  /** plateau wording once the same band repeats 3+ times — {streak} carries the count */
+  plateauStreak: string[]
   closers: Record<ReactionTone, string[]>
 }
 
@@ -58,6 +60,11 @@ export const REACTION_PIECES: Record<ReactionLocale, ReactionPieceSet> = {
         'first {module} result on the board: {band}.',
       ],
     },
+    plateauStreak: [
+      '{module}: {band} for the {streak}th test in a row.',
+      'that\'s {streak} {module} tests straight at {band}.',
+      '{module} has been sitting at {band} for {streak} tests now.',
+    ],
     closers: {
       celebrate: [
         'Clean work. Keep that pace.',
@@ -124,6 +131,11 @@ export const REACTION_PIECES: Record<ReactionLocale, ReactionPieceSet> = {
         'первый результат в {module}: {band}.',
       ],
     },
+    plateauStreak: [
+      '{module}: {band} уже {streak}-й тест подряд.',
+      'это {streak} тестов подряд на {band} в {module}.',
+      '{module} стоит на {band} вот уже {streak} теста(ов).',
+    ],
     closers: {
       celebrate: [
         'Красиво. Так и держи.',
@@ -183,6 +195,10 @@ export const REACTION_PIECES: Record<ReactionLocale, ReactionPieceSet> = {
         '{module} бойынша бастапқы нүкте — {band}.',
       ],
     },
+    plateauStreak: [
+      '{module}: қатарынан {streak}-ші тест {band} деңгейінде.',
+      '{module} бойынша {streak} тест қатарынан {band}.',
+    ],
     closers: {
       celebrate: [
         'Жақсы қарқын — тоқтама!',
@@ -236,6 +252,10 @@ export const REACTION_PIECES: Record<ReactionLocale, ReactionPieceSet> = {
         '{module} боюнча баштапкы чекит — {band}.',
       ],
     },
+    plateauStreak: [
+      '{module}: катары менен {streak}-чи тест {band} деңгээлинде.',
+      '{module} боюнча {streak} тест катары менен {band}.',
+    ],
     closers: {
       celebrate: [
         'Жакшы темп — токтобо!',
@@ -289,6 +309,10 @@ export const REACTION_PIECES: Record<ReactionLocale, ReactionPieceSet> = {
         "{module} bo'yicha boshlang'ich nuqta — {band}.",
       ],
     },
+    plateauStreak: [
+      '{module}: ketma-ket {streak}-chi test {band} darajasida.',
+      "{module} bo'yicha {streak} test ketma-ket {band}.",
+    ],
     closers: {
       celebrate: [
         "Zo'r sur'at — to'xtama!",

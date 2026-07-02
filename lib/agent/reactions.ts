@@ -23,7 +23,13 @@ export type ReactionContext = {
   delta: number | null
   /** completed tests of this module, including the one just finished */
   testsCount: number
+  /** consecutive tests (incl. this one) at exactly this band — fuels
+   *  "3rd test in a row at 6.5" wording once it reaches 3 */
+  sameBandStreak: number
   firstName: string | null
+  /** server-rendered text in the user's language; clients prefer it so the
+   *  banner, the notification feed and Telegram all say the same thing */
+  text?: string
 }
 
 /** Bands celebrate only from here up — "stuck at 2.5, great job" is a tone bug. */
@@ -60,6 +66,7 @@ function fill(template: string, ctx: ReactionContext): string {
     .replaceAll('{band}', fmtBand(ctx.band))
     .replaceAll('{prev}', ctx.prevBand !== null ? fmtBand(ctx.prevBand) : '')
     .replaceAll('{delta}', ctx.delta !== null ? `${ctx.delta > 0 ? '+' : ''}${fmtBand(ctx.delta)}` : '')
+    .replaceAll('{streak}', String(ctx.sameBandStreak))
 }
 
 // IELTS skill names stay in English across all locales — that is how the exam
@@ -84,7 +91,12 @@ export function renderReaction(
   const greeting = ctx.firstName
     ? fill(pick(pieces.greetingsNamed, rand), ctx)
     : pick(pieces.greetingsPlain, rand)
-  const observation = fill(pick(pieces.observations[ctx.branch], rand), ctx)
+  // A 3+ streak at the same band is the story — say the number, not just "again".
+  const observationBank =
+    ctx.branch === 'plateau' && ctx.sameBandStreak >= 3
+      ? pieces.plateauStreak
+      : pieces.observations[ctx.branch]
+  const observation = fill(pick(observationBank, rand), ctx)
   const closer = pick(pieces.closers[toneFor(ctx)], rand)
   return `${greeting} ${observation} ${closer}`
 }
@@ -112,7 +124,7 @@ export async function buildInstantReaction(
       .order('completed_at', { ascending: true })
       .limit(200),
     db.from('tests').select('id, type').eq('type', module),
-    db.from('profiles').select('full_name').eq('id', userId).maybeSingle(),
+    db.from('profiles').select('full_name, preferred_language').eq('id', userId).maybeSingle(),
   ])
 
   const moduleTestIds = new Set((testsRes.data ?? []).map(t => t.id))
@@ -122,13 +134,20 @@ export async function buildInstantReaction(
   const prevBand = prior.length ? prior[prior.length - 1].band_score : null
   const fullName = profileRes.data?.full_name ?? null
 
-  return {
+  // Consecutive tests at exactly this band, counting backwards incl. this one.
+  let sameBandStreak = 1
+  for (let i = prior.length - 1; i >= 0 && prior[i].band_score === band; i--) sameBandStreak++
+
+  const ctx: ReactionContext = {
     branch: pickReactionBranch(prevBand, band),
     module,
     band,
     prevBand,
     delta: prevBand !== null ? Math.round((band - prevBand) * 10) / 10 : null,
     testsCount: prior.length + 1,
+    sameBandStreak,
     firstName: fullName ? fullName.trim().split(/\s+/)[0] : null,
   }
+  ctx.text = renderReaction(profileRes.data?.preferred_language ?? 'en', ctx)
+  return ctx
 }
