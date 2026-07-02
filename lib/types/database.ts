@@ -43,6 +43,42 @@ export type Database = {
           },
         ]
       }
+      resources: {
+        Row: {
+          id: string
+          module: string
+          problem_tag: string
+          resource_type: string
+          title: string
+          url: string
+          instruction: string
+          is_active: boolean
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          module: string
+          problem_tag: string
+          resource_type: string
+          title: string
+          url: string
+          instruction: string
+          is_active?: boolean
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          module?: string
+          problem_tag?: string
+          resource_type?: string
+          title?: string
+          url?: string
+          instruction?: string
+          is_active?: boolean
+          created_at?: string
+        }
+        Relationships: []
+      }
       user_events: {
         Row: {
           id: string
