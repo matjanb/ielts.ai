@@ -12,6 +12,7 @@ import { createAttempt, saveAnswer as saveAnswerService } from '@/lib/services/a
 import { getUser } from '@/lib/services/auth'
 import { useIsMobile } from '@/lib/hooks/useIsMobile'
 import { useAbandonTracker } from '@/lib/agent/useAbandonTracker'
+import { REACTION_STORAGE_KEY } from '@/components/agent/ReactionBanner'
 
 type QuestionWithSection = Question & { sectionNumber: number; sectionTitle: string }
 
@@ -2121,6 +2122,9 @@ export function ListeningExam({ testId, embedded = false, onComplete }: { testId
         band = data.band ?? 0
         sections = data.sections ?? {}
         finalAttempt = data.attemptId ?? attemptId
+        if (data.reaction) {
+          try { sessionStorage.setItem(REACTION_STORAGE_KEY, JSON.stringify(data.reaction)) } catch { /* ignore */ }
+        }
       }
     } catch { /* fall through to results; the attempt is still recoverable */ }
 

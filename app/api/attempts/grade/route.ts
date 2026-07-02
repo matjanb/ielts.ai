@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getApiUser, canUseAiFeature, recordUsage, err } from '@/lib/api/helpers'
 import { gradeAttempt, type GradeSkill } from '@/lib/services/grading.server'
+import { createAdminClient } from '@/lib/supabase/admin'
+import { buildInstantReaction, type ReactionContext } from '@/lib/agent/reactions'
 
 export const runtime = 'nodejs'
 
@@ -64,7 +66,18 @@ export async function POST(request: NextRequest) {
     })
     // Meter the free allowance (also harmless for subscribers, whose caps are ignored).
     await recordUsage(user.id, skill)
-    return NextResponse.json(result)
+
+    // Instant-reaction context for the results page (coach agent, 0 tokens).
+    // Best-effort: grading never fails because the reaction couldn't be built.
+    let reaction: ReactionContext | null = null
+    try {
+      reaction = await buildInstantReaction(
+        createAdminClient(), user.id, skill, result.band, result.attemptId
+      )
+    } catch (e) {
+      console.error('[attempts/grade] reaction failed', e)
+    }
+    return NextResponse.json({ ...result, reaction })
   } catch (e) {
     console.error('[attempts/grade]', e)
     return err('Failed to grade attempt. Please try again.', 500)

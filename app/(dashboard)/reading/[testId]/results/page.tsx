@@ -6,6 +6,7 @@ import { useLanguage } from '@/lib/i18n/LanguageContext'
 import type { Question, TestSection } from '@/lib/types/database'
 import { getSectionsByTestId, getTestQuestions } from '@/lib/services/tests'
 import { getAttemptWithAnswers } from '@/lib/services/attempts'
+import { ReactionBanner } from '@/components/agent/ReactionBanner'
 
 type QuestionWithSection = Question & { sectionNumber: number; sectionTitle: string }
 type UserAnswer = { question_id: string; user_answer: string | null; is_correct: boolean | null }
@@ -78,6 +79,7 @@ export default function ReadingResultsPage() {
 
   return (
     <div style={{ padding: '32px 32px 80px' }}>
+      <ReactionBanner />
 
       {/* Top nav */}
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 28 }}>

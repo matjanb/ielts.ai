@@ -7,6 +7,7 @@ import type { Question, TestSection } from '@/lib/types/database'
 import { isAnswerCorrect } from '@/lib/utils/answerChecking'
 import { getSectionsByTestId, getTestQuestions } from '@/lib/services/tests'
 import { getAttemptWithAnswers } from '@/lib/services/attempts'
+import { ReactionBanner } from '@/components/agent/ReactionBanner'
 
 type QuestionWithSection = Question & { sectionNumber: number; sectionTitle: string }
 interface SectionScore { correct: number; total: number }
@@ -71,6 +72,7 @@ export default function ListeningResultsPage() {
 
   return (
     <div style={{ padding: '32px 32px 80px' }}>
+      <ReactionBanner />
 
       {/* Header */}
       <div style={{ textAlign: 'center', marginBottom: 32 }}>
