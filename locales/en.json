@@ -936,7 +936,14 @@
     "deleteConfirm": "Are you sure? This is permanent.",
     "deleting": "Deleting…",
     "deleteForever": "Yes, delete forever",
-    "deleteFailed": "Failed to delete account."
+    "deleteFailed": "Failed to delete account.",
+    "telegramTitle": "Telegram coach",
+    "telegramDesc": "Get your evening reviews from the AI coach in Telegram",
+    "telegramLinked": "Telegram is connected — evening reviews arrive in the chat",
+    "telegramConnect": "Connect Telegram",
+    "telegramDisconnect": "Disconnect",
+    "telegramOpen": "Open the bot",
+    "telegramCodeHint": "Open the bot and press Start — or send it this code:"
   },
   "wtest": {
     "words": "words",

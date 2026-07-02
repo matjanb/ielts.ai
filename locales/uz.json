@@ -891,7 +891,14 @@
     "deleteConfirm": "Ishonchingiz komilmi? Bu qaytarib bo'lmaydi.",
     "deleting": "O'chirilmoqda…",
     "deleteForever": "Ha, butunlay o'chirish",
-    "deleteFailed": "Hisobni o'chirib bo'lmadi."
+    "deleteFailed": "Hisobni o'chirib bo'lmadi.",
+    "telegramTitle": "Telegram-murabbiy",
+    "telegramDesc": "AI-murabbiyning kechki tahlillarini Telegramda ol",
+    "telegramLinked": "Telegram ulangan — kechki tahlillar chatga keladi",
+    "telegramConnect": "Telegram ulash",
+    "telegramDisconnect": "Uzish",
+    "telegramOpen": "Botni ochish",
+    "telegramCodeHint": "Botni ochib, Start bos — yoki unga shu kodni yubor:"
   },
   "wtest": {
     "words": "so‘z",

@@ -930,7 +930,14 @@
     "deleteConfirm": "Сенімдісіз бе? Бұл қайтарылмайды.",
     "deleting": "Жойылуда…",
     "deleteForever": "Иә, біржола жою",
-    "deleteFailed": "Аккаунтты жою сәтсіз аяқталды."
+    "deleteFailed": "Аккаунтты жою сәтсіз аяқталды.",
+    "telegramTitle": "Telegram-жаттықтырушы",
+    "telegramDesc": "AI-жаттықтырушының кешкі талдауларын Telegram-нан ал",
+    "telegramLinked": "Telegram қосылған — кешкі талдаулар чатқа келеді",
+    "telegramConnect": "Telegram қосу",
+    "telegramDisconnect": "Ажырату",
+    "telegramOpen": "Ботты ашу",
+    "telegramCodeHint": "Ботты ашып, Start бас — немесе оған осы кодты жібер:"
   },
   "wtest": {
     "words": "сөз",

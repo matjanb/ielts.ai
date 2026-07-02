@@ -936,7 +936,14 @@
     "deleteConfirm": "Вы уверены? Это необратимо.",
     "deleting": "Удаление…",
     "deleteForever": "Да, удалить навсегда",
-    "deleteFailed": "Не удалось удалить аккаунт."
+    "deleteFailed": "Не удалось удалить аккаунт.",
+    "telegramTitle": "Telegram-тренер",
+    "telegramDesc": "Получай вечерние разборы от AI-тренера в Telegram",
+    "telegramLinked": "Telegram подключён — вечерние разборы приходят в чат",
+    "telegramConnect": "Подключить Telegram",
+    "telegramDisconnect": "Отключить",
+    "telegramOpen": "Открыть бота",
+    "telegramCodeHint": "Открой бота и нажми Start — или отправь ему этот код:"
   },
   "wtest": {
     "words": "слов",

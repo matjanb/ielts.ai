@@ -5,6 +5,7 @@ import { analyzeUser, pickPrimarySignal } from './signals.ts'
 import { getResourceForSignal } from './resources.ts'
 import { antiSpamVerdict } from './antiSpam.ts'
 import { composeDigest } from './composer.server'
+import { sendAgentMessage } from './send.server'
 
 type Db = SupabaseClient<Database>
 
@@ -40,21 +41,23 @@ export async function digestForUser(db: Db, userId: string, now = new Date()): P
   ])
   const fullName = profileRes.data?.full_name ?? null
 
+  const language = profileRes.data?.preferred_language ?? null
   const content = await composeDigest({
     firstName: fullName ? fullName.trim().split(/\s+/)[0] : null,
-    language: profileRes.data?.preferred_language ?? null,
+    language,
     signal: primary,
     resource,
   })
 
-  const { error: insertErr } = await db.from('agent_messages').insert({
-    user_id: userId,
-    signal_type: primary.type,
-    channel: 'in-app',
+  // Writes in-app always; delivers to Telegram when linked + subscribed
+  // (the second paywall check lives inside sendAgentMessage).
+  await sendAgentMessage(db, {
+    userId,
+    signalType: primary.type,
     content,
-    resource_url: resource?.url ?? null,
+    resourceUrl: resource?.url ?? null,
+    language,
   })
-  if (insertErr) throw new Error(`digest insert failed: ${insertErr.message}`)
 
   // Metering only — the digest is not user-initiated, so it bypasses gateAiRequest.
   await db.from('ai_usage').insert({ user_id: userId, feature: 'agent_digest' })

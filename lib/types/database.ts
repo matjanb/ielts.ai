@@ -43,6 +43,44 @@ export type Database = {
           },
         ]
       }
+      telegram_links: {
+        Row: {
+          user_id: string
+          telegram_chat_id: number | null
+          link_code: string | null
+          link_code_expires_at: string | null
+          linked_at: string | null
+          paused_at: string | null
+          created_at: string
+        }
+        Insert: {
+          user_id: string
+          telegram_chat_id?: number | null
+          link_code?: string | null
+          link_code_expires_at?: string | null
+          linked_at?: string | null
+          paused_at?: string | null
+          created_at?: string
+        }
+        Update: {
+          user_id?: string
+          telegram_chat_id?: number | null
+          link_code?: string | null
+          link_code_expires_at?: string | null
+          linked_at?: string | null
+          paused_at?: string | null
+          created_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "telegram_links_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: true
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       agent_messages: {
         Row: {
           id: string
@@ -53,6 +91,7 @@ export type Database = {
           content: string
           resource_url: string | null
           user_reaction: string | null
+          telegram_message_id: number | null
         }
         Insert: {
           id?: string
@@ -63,6 +102,7 @@ export type Database = {
           content: string
           resource_url?: string | null
           user_reaction?: string | null
+          telegram_message_id?: number | null
         }
         Update: {
           id?: string
@@ -73,6 +113,7 @@ export type Database = {
           content?: string
           resource_url?: string | null
           user_reaction?: string | null
+          telegram_message_id?: number | null
         }
         Relationships: [
           {

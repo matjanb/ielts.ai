@@ -9,6 +9,7 @@ import { ThemeToggle } from '@/components/ui/ThemeToggle'
 import { LanguageSwitcher } from '@/components/ui/LanguageSwitcher'
 import { getProfile, updateProfile } from '@/lib/services/user'
 import { getUser, updatePassword, signOut } from '@/lib/services/auth'
+import { TelegramConnect } from '@/components/agent/TelegramConnect'
 
 const BANDS = [4, 4.5, 5, 5.5, 6, 6.5, 7, 7.5, 8, 8.5, 9]
 
@@ -232,6 +233,12 @@ export default function SettingsPage() {
               <ExternalLink size={13} />
             </Link>
           </div>
+        </section>
+
+        {/* Telegram coach */}
+        <section className="card" style={{ padding: 24 }}>
+          <SectionHeader title={t('settings.telegramTitle')} />
+          <TelegramConnect t={t} />
         </section>
 
         {/* Appearance & Language */}

@@ -931,7 +931,14 @@
     "deleteConfirm": "Чын элеби? Бул кайтарылбайт.",
     "deleting": "Өчүрүлүүдө…",
     "deleteForever": "Ооба, биротоло өчүрүү",
-    "deleteFailed": "Аккаунтту өчүрүү мүмкүн болбоду."
+    "deleteFailed": "Аккаунтту өчүрүү мүмкүн болбоду.",
+    "telegramTitle": "Telegram-машыктыруучу",
+    "telegramDesc": "AI-машыктыруучунун кечки талдоолорун Telegram аркылуу ал",
+    "telegramLinked": "Telegram кошулган — кечки талдоолор чатка келет",
+    "telegramConnect": "Telegram кошуу",
+    "telegramDisconnect": "Ажыратуу",
+    "telegramOpen": "Ботту ачуу",
+    "telegramCodeHint": "Ботту ачып, Start бас — же ага ушул кодду жөнөт:"
   },
   "wtest": {
     "words": "сөз",
