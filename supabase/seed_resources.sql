@@ -6,7 +6,9 @@
 -- Instructions are in English: they are INPUT for the AI formulator, which
 -- rewrites them in the user's language — not shown to users verbatim.
 --
--- Idempotent: unique (module, problem_tag, title) + on conflict do nothing.
+-- Re-runnable as the source of truth: upsert on (module, problem_tag, title),
+-- so editing a url/instruction here and re-running the whole file updates the
+-- live rows in place.
 
 insert into resources (module, problem_tag, resource_type, title, url, instruction) values
 
@@ -80,4 +82,8 @@ insert into resources (module, problem_tag, resource_type, title, url, instructi
  '/vocabulary',
  'Ten minutes daily beats an hour weekly — the review queue does the scheduling for you.')
 
-on conflict (module, problem_tag, title) do nothing;
+on conflict (module, problem_tag, title) do update set
+  url           = excluded.url,
+  instruction   = excluded.instruction,
+  resource_type = excluded.resource_type,
+  is_active     = true;
