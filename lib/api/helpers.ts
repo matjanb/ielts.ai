@@ -27,7 +27,8 @@ export async function hasActiveSubscription(userId: string): Promise<boolean> {
 
 export async function recordUsage(userId: string, feature: string) {
   const admin = createAdminClient()
-  await admin.from('ai_usage').insert({ user_id: userId, feature })
+  const { error } = await admin.from('ai_usage').insert({ user_id: userId, feature })
+  if (error) console.error('[recordUsage]', feature, error.message)
 }
 
 // ── Free-tier entitlement for the (expensive) AI endpoints ───────────────────
@@ -49,14 +50,23 @@ export const FREE_LIFETIME_ALLOWANCE: Record<string, number> = {
   band_estimate:     1, // one predicted overall band for the free mock
 }
 
-/** Lifetime count of how many times this user has used `feature`. */
+/**
+ * Lifetime count of how many times this user has used `feature`.
+ * FAIL-CLOSED: if the count query errors, report "allowance exhausted" rather
+ * than 0 — otherwise an ai_usage hiccup would silently hand out unlimited free
+ * usage of the paid AI endpoints.
+ */
 async function lifetimeUsageCount(userId: string, feature: string): Promise<number> {
   const admin = createAdminClient()
-  const { count } = await admin
+  const { count, error } = await admin
     .from('ai_usage')
     .select('id', { count: 'exact', head: true })
     .eq('user_id', userId)
     .eq('feature', feature)
+  if (error) {
+    console.error('[lifetimeUsageCount]', feature, error.message)
+    return Number.MAX_SAFE_INTEGER
+  }
   return count ?? 0
 }
 
@@ -151,17 +161,25 @@ function burstLimit(key: string, limit: number, windowMs: number): boolean {
   return true
 }
 
-/** How many times this user has used `feature` since 00:00 UTC today. */
-async function dailyUsageCount(userId: string, feature: string): Promise<number> {
+/**
+ * How many times this user has used `feature` since 00:00 UTC today.
+ * Returns null when the count query fails — callers must treat that as
+ * "cannot verify" and deny (fail-closed), not as zero usage.
+ */
+async function dailyUsageCount(userId: string, feature: string): Promise<number | null> {
   const admin = createAdminClient()
   const since = new Date()
   since.setUTCHours(0, 0, 0, 0)
-  const { count } = await admin
+  const { count, error } = await admin
     .from('ai_usage')
     .select('id', { count: 'exact', head: true })
     .eq('user_id', userId)
     .eq('feature', feature)
     .gte('created_at', since.toISOString())
+  if (error) {
+    console.error('[dailyUsageCount]', feature, error.message)
+    return null
+  }
   return count ?? 0
 }
 
@@ -175,6 +193,9 @@ export async function enforceAiLimits(userId: string, feature: string): Promise<
   }
   const limit = AI_DAILY_LIMITS[feature] ?? 60
   const used = await dailyUsageCount(userId, feature)
+  if (used === null) {
+    return err('Usage limits are temporarily unavailable. Please try again in a moment.', 503)
+  }
   if (used >= limit) {
     return err(`You've reached today's limit of ${limit} for this feature. It resets at midnight UTC.`, 429)
   }

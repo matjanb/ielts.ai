@@ -16,14 +16,15 @@ function hashIp(ip: string): string {
   return createHash('sha256').update(ip + salt).digest('hex')
 }
 
-// Soft Turnstile check: if a token is present we verify it (and reject a bad
-// one); if the widget didn't load / no token, we still allow — the per-IP daily
-// limit + word cap + cheap model are the real cost guards, so a flaky captcha
-// never blocks a real user. Only enforced (verified) when the secret is set.
+// Turnstile check: skipped entirely when no secret is configured (dev), and
+// REQUIRED once it is — a missing token used to be allowed "in case the widget
+// didn't load", which meant any script could skip the captcha by simply not
+// sending a token. The CSP explicitly allows challenges.cloudflare.com, so a
+// real browser always gets a token.
 async function verifyCaptcha(token: string | undefined, ip: string): Promise<boolean> {
   const secret = process.env.TURNSTILE_SECRET_KEY
   if (!secret) return true // not configured → skip (dev)
-  if (!token) return true  // no token (widget blocked/not loaded) → allow; rate limit guards
+  if (!token) return false
   try {
     const res = await fetch('https://challenges.cloudflare.com/turnstile/v0/siteverify', {
       method: 'POST',

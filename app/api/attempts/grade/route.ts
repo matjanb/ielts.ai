@@ -31,6 +31,33 @@ export async function POST(request: NextRequest) {
     return err('testId and a valid skill (reading|listening) are required', 400)
   }
 
+  // Replay of an already-graded attempt returns the saved result. Checked
+  // BEFORE the paywall gate: a free user whose first grade succeeded but whose
+  // response was lost must get their result back on retry, not a 403 (their
+  // usage was already metered by the first request).
+  if (typeof body.attemptId === 'string' && body.attemptId) {
+    const { data: prior } = await createAdminClient()
+      .from('user_attempts')
+      .select('id, user_id, test_id, completed_at')
+      .eq('id', body.attemptId)
+      .maybeSingle()
+    if (prior && prior.user_id === user.id && prior.test_id === testId && prior.completed_at) {
+      try {
+        const result = await gradeAttempt({
+          userId: user.id,
+          testId,
+          skill: skill as GradeSkill,
+          answers: {},
+          attemptId: body.attemptId,
+        })
+        return NextResponse.json({ ...result, reaction: null })
+      } catch (e) {
+        console.error('[attempts/grade] replay', e)
+        return err('Failed to load attempt result. Please try again.', 500)
+      }
+    }
+  }
+
   // Free users get one Reading and one Listening test (their slice of the single
   // free mock); after that the skill is paid. Recorded below so it counts once.
   if (!(await canUseAiFeature(user.id, skill))) return err('Subscription required.', 403)
@@ -64,6 +91,10 @@ export async function POST(request: NextRequest) {
       attemptId: typeof body.attemptId === 'string' ? body.attemptId : null,
       durationSeconds,
     })
+    // A replayed (already graded) attempt returns the saved result: don't meter
+    // the free allowance again and don't emit a second coach reaction.
+    if (result.replay) return NextResponse.json({ ...result, reaction: null })
+
     // Meter the free allowance (also harmless for subscribers, whose caps are ignored).
     await recordUsage(user.id, skill)
 

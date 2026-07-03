@@ -1985,6 +1985,7 @@ export function ListeningExam({ testId, embedded = false, onComplete }: { testId
   const [started, setStarted] = useState(false)
   const [starting, setStarting] = useState(false)
   const [submitting, setSubmitting] = useState(false)
+  const [submitError, setSubmitError] = useState(false)
   const [attemptId, setAttemptId] = useState<string | null>(null)
   const [loading, setLoading] = useState(true)
   const [loadError, setLoadError] = useState<string | null>(null)
@@ -2093,11 +2094,18 @@ export function ListeningExam({ testId, embedded = false, onComplete }: { testId
     saveAnswer(questionId, value)
   }
 
-  const handleTimeExpire = useCallback(() => { handleSubmit() }, []) // eslint-disable-line react-hooks/exhaustive-deps
+  // The timer must call the LATEST handleSubmit. A useCallback with [] deps
+  // would freeze the first render's closure (answers={}, attemptId=null) and
+  // submit an empty test as band 0 when time runs out. The ref is refreshed on
+  // every render so onExpire always sees current state.
+  const submitRef = useRef<() => void>(() => {})
+  useEffect(() => { submitRef.current = handleSubmit })
+  const handleTimeExpire = useCallback(() => { submitRef.current() }, [])
 
   async function handleSubmit() {
     if (submitting) return
     setSubmitting(true)
+    setSubmitError(false)
 
     const durationSeconds = startedAtRef.current
       ? Math.round((Date.now() - startedAtRef.current) / 1000)
@@ -2116,17 +2124,22 @@ export function ListeningExam({ testId, embedded = false, onComplete }: { testId
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ testId, skill: 'listening', answers, attemptId, durationSeconds }),
       })
-      if (res.ok) {
-        const data = await res.json()
-        score = data.score ?? 0
-        band = data.band ?? 0
-        sections = data.sections ?? {}
-        finalAttempt = data.attemptId ?? attemptId
-        if (data.reaction) {
-          try { sessionStorage.setItem(REACTION_STORAGE_KEY, JSON.stringify(data.reaction)) } catch { /* ignore */ }
-        }
+      if (!res.ok) throw new Error(`grade failed: ${res.status}`)
+      const data = await res.json()
+      score = data.score ?? 0
+      band = data.band ?? 0
+      sections = data.sections ?? {}
+      finalAttempt = data.attemptId ?? attemptId
+      if (data.reaction) {
+        try { sessionStorage.setItem(REACTION_STORAGE_KEY, JSON.stringify(data.reaction)) } catch { /* ignore */ }
       }
-    } catch { /* fall through to results; the attempt is still recoverable */ }
+    } catch {
+      // Never show a fake 0.0: keep the user on the test with a retry banner.
+      // Grading is idempotent server-side, so retrying is always safe.
+      setSubmitting(false)
+      setSubmitError(true)
+      return
+    }
 
     if (embedded) { onComplete?.(band); return }
     const sectionParam = encodeURIComponent(JSON.stringify(sections))
@@ -2230,6 +2243,19 @@ export function ListeningExam({ testId, embedded = false, onComplete }: { testId
         <div style={{ position: 'sticky', top: 0, zIndex: 50, display: 'flex', justifyContent: 'center', pointerEvents: 'none' }}>
           <div style={{ marginTop: 6, padding: '5px 16px', borderRadius: 999, background: 'var(--accent)', color: 'var(--accent-fg)', fontSize: 12, fontWeight: 600, boxShadow: 'var(--shadow-lg)' }}>
             🎧 {sectionToast}
+          </div>
+        </div>
+      )}
+
+      {/* ── Grading failed: retry banner ── */}
+      {submitError && (
+        <div style={{ position: 'sticky', top: 0, zIndex: 60, display: 'flex', justifyContent: 'center' }}>
+          <div style={{ marginTop: 6, padding: '8px 16px', borderRadius: 10, background: 'var(--danger)', color: '#fff', fontSize: 13, fontWeight: 600, boxShadow: 'var(--shadow-lg)', display: 'flex', alignItems: 'center', gap: 12 }}>
+            {t('common.gradeFailed')}
+            <button onClick={handleSubmit} disabled={submitting}
+              style={{ padding: '4px 12px', borderRadius: 8, border: 'none', background: '#fff', color: 'var(--danger)', fontSize: 12, fontWeight: 700, cursor: 'pointer' }}>
+              {t('common.retry')}
+            </button>
           </div>
         </div>
       )}

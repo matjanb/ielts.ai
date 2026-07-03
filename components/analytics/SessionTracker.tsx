@@ -11,10 +11,13 @@ const KEY = 'agent_session_started_at'
 // same session — analysis takes the last one, so that's harmless.
 export function SessionTracker() {
   useEffect(() => {
-    let startedAt = Number(sessionStorage.getItem(KEY)) || 0
+    // sessionStorage can THROW (Safari private mode, some webviews with
+    // storage disabled) — and an uncaught throw here unmounts the whole tree.
+    let startedAt = 0
+    try { startedAt = Number(sessionStorage.getItem(KEY)) || 0 } catch { /* ignore */ }
     if (!startedAt) {
       startedAt = Date.now()
-      sessionStorage.setItem(KEY, String(startedAt))
+      try { sessionStorage.setItem(KEY, String(startedAt)) } catch { /* ignore */ }
       logAgentEvent('session_start')
     }
     const onHide = () => {

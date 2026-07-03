@@ -38,13 +38,6 @@ export interface StudyPlanData {
   }
 }
 
-export interface BandEstimate {
-  overall_band: number
-  reading_band: number | null
-  listening_band: number | null
-  notes: string
-}
-
 export interface TestExplanation {
   explanation: string
   tip: string
@@ -81,15 +74,6 @@ export async function getWritingFeedback(params: {
 
 export async function generateStudyPlan(): Promise<StudyPlanData> {
   return post('/api/ai/study-plan', {})
-}
-
-export async function estimateBandScore(params: {
-  correct: number
-  total: number
-  sections?: Record<string, { correct: number; total: number }>
-  test_id?: string
-}): Promise<BandEstimate> {
-  return post('/api/ai/band-estimate', params)
 }
 
 export async function getTestExplanation(params: {

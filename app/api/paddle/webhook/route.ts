@@ -74,8 +74,9 @@ export async function POST(request: NextRequest) {
   ) {
     const patch: Database['public']['Tables']['profiles']['Update'] = {
       subscription_status: status,
-      // Paddle is never a lifetime grant — only the admin "forever" sets this.
-      lifetime_access: false,
+      // lifetime_access is deliberately NOT touched here: it's an admin-only
+      // grant, and a Paddle event (e.g. a cancelled trial sub) must never
+      // revoke it. Access checks treat lifetime as an independent OR-branch.
       updated_at: new Date().toISOString(),
     }
     // A real payment marks the account as having paid at least once (for referral
@@ -89,7 +90,13 @@ export async function POST(request: NextRequest) {
     if (opts.expiresAt) patch.subscription_expires_at = opts.expiresAt
     if (opts.plan) patch.subscription_plan = opts.plan
     if (opts.source) patch.subscription_source = opts.source
-    await admin.from('profiles').update(patch).eq('id', userId)
+    // A silently failed update here means a paid user without access — the
+    // worst failure mode this route has. Throw so the caller returns 5xx and
+    // Paddle retries the event.
+    const { data: updated, error } = await admin
+      .from('profiles').update(patch).eq('id', userId).select('id')
+    if (error) throw new Error(`profiles update failed: ${error.message}`)
+    if (!updated?.length) throw new Error(`profiles update matched no row for user ${userId}`)
   }
 
   try {
@@ -172,7 +179,16 @@ export async function POST(request: NextRequest) {
     }
   } catch (e) {
     console.error('[paddle/webhook] handler error', e)
-    // Still 200 so Paddle doesn't retry forever on a non-signature error.
+    // Release the dedup claim (otherwise Paddle's retry would be swallowed as a
+    // duplicate) and return 5xx so Paddle actually retries the event.
+    if (eventId) {
+      const { error: releaseErr } = await admin
+        .from('processed_webhooks').delete().eq('event_id', eventId)
+      if (releaseErr) {
+        console.error(`[paddle/webhook] FAILED to release claim for ${eventId} — event is lost to dedup, fix manually:`, releaseErr)
+      }
+    }
+    return NextResponse.json({ error: 'Processing failed' }, { status: 500 })
   }
 
   return NextResponse.json({ received: true })

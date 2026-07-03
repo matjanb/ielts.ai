@@ -17,6 +17,13 @@ export interface CurrentMock {
   listeningTitle?: string
   readingTitle?: string
   writingTitle?: string
+  /**
+   * Bands of the sections finished IN THIS MOCK, written as each completes.
+   * This is the source of truth on resume for writing/speaking — their
+   * submissions carry no test id, so "latest submission since startedAt" could
+   * pick up a standalone drill done mid-mock.
+   */
+  progress?: Partial<Record<MockSkill, number>>
 }
 
 export type MockSkill = 'listening' | 'reading' | 'writing' | 'speaking'
@@ -41,9 +48,11 @@ export function clearCurrentMock() {
 export type MockProgress = Partial<Record<MockSkill, number>>
 
 /**
- * Per-section bands for an in-progress mock, derived from the user's real
- * activity since `since`: completed listening/reading attempts on the chosen
- * tests, and the latest writing/speaking submissions.
+ * Listening/reading bands for an in-progress mock, derived from completed
+ * attempts on the chosen tests since `since`. Writing/speaking are NOT
+ * recovered from the DB — their submissions carry no test id, so any
+ * standalone drill would masquerade as a mock section. They resume from
+ * CurrentMock.progress instead.
  */
 export async function getMockProgress(opts: {
   userId: string
@@ -51,46 +60,24 @@ export async function getMockProgress(opts: {
   readingTestId: string | null
   since: string
 }): Promise<MockProgress> {
-  const supabase = db()
   const testIds = [opts.listeningTestId, opts.readingTestId].filter(Boolean) as string[]
+  if (testIds.length === 0) return {}
 
-  const [attemptsRes, writingRes, speakingRes] = await Promise.all([
-    testIds.length
-      ? supabase.from('user_attempts')
-          .select('test_id, band_score, completed_at')
-          .eq('user_id', opts.userId)
-          .in('test_id', testIds)
-          .not('completed_at', 'is', null)
-          .gte('completed_at', opts.since)
-          .order('completed_at', { ascending: false })
-      : Promise.resolve({ data: [] }),
-    supabase.from('writing_submissions')
-      .select('band_score, created_at')
-      .eq('user_id', opts.userId)
-      .gte('created_at', opts.since)
-      .order('created_at', { ascending: false })
-      .limit(1),
-    supabase.from('speaking_submissions')
-      .select('band_score, created_at')
-      .eq('user_id', opts.userId)
-      .gte('created_at', opts.since)
-      .order('created_at', { ascending: false })
-      .limit(1),
-  ])
+  const { data } = await db()
+    .from('user_attempts')
+    .select('test_id, band_score, completed_at')
+    .eq('user_id', opts.userId)
+    .in('test_id', testIds)
+    .not('completed_at', 'is', null)
+    .gte('completed_at', opts.since)
+    .order('completed_at', { ascending: false })
 
   const progress: MockProgress = {}
-
   // first (newest) completed attempt per chosen test id
-  for (const a of (attemptsRes.data ?? []) as any[]) {
+  for (const a of (data ?? []) as any[]) {
     if (a.band_score == null) continue
     if (a.test_id === opts.listeningTestId && progress.listening == null) progress.listening = Number(a.band_score)
     if (a.test_id === opts.readingTestId && progress.reading == null) progress.reading = Number(a.band_score)
   }
-
-  const w = (writingRes.data ?? [])[0]
-  if (w?.band_score != null) progress.writing = Number(w.band_score)
-  const s = (speakingRes.data ?? [])[0]
-  if (s?.band_score != null) progress.speaking = Number(s.band_score)
-
   return progress
 }

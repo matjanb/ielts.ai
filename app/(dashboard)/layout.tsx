@@ -92,10 +92,16 @@ function DashboardLayoutInner({ children }: { children: ReactNode }) {
 
   // Sidebar hover state
   const [hover, setHover] = useState(false)
-  const [pinned, setPinned] = useState(() => {
-    if (typeof window === 'undefined') return false
-    return localStorage.getItem('sidebar-pinned') === 'true'
-  })
+  // Read from localStorage AFTER mount: reading it in the useState initializer
+  // makes the first client render differ from the server HTML (hydration
+  // mismatch — React 19 throws away the tree or crashes in dev).
+  const [pinned, setPinned] = useState(false)
+  useEffect(() => {
+    try {
+      // eslint-disable-next-line react-hooks/set-state-in-effect -- one-time post-hydration read
+      if (localStorage.getItem('sidebar-pinned') === 'true') setPinned(true)
+    } catch { /* storage unavailable (private mode / webview) */ }
+  }, [])
   const hoverTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
   const userMenuRef = useRef<HTMLDivElement>(null)
 

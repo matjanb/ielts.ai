@@ -234,6 +234,7 @@ export function ReadingExam({ testId, embedded = false, onComplete }: { testId: 
   const [answers, setAnswers] = useState<Record<string, string>>({})
   const [started, setStarted] = useState(false)
   const [submitting, setSubmitting] = useState(false)
+  const [submitError, setSubmitError] = useState(false)
   const [attemptId, setAttemptId] = useState<string | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -269,7 +270,12 @@ export function ReadingExam({ testId, embedded = false, onComplete }: { testId: 
       const newLeft = ((e.clientX - rect.left) / rect.width) * 100
       setLeftWidth(Math.min(75, Math.max(25, newLeft)))
     }
-    const onUp = () => { isResizing.current = false }
+    // Both listeners come off on mouseup — the mousemove used to stay attached
+    // for the page's lifetime, one more copy per drag.
+    const onUp = () => {
+      isResizing.current = false
+      window.removeEventListener('mousemove', onMove)
+    }
     window.addEventListener('mousemove', onMove)
     window.addEventListener('mouseup', onUp, { once: true })
   }, [])
@@ -329,11 +335,18 @@ export function ReadingExam({ testId, embedded = false, onComplete }: { testId: 
     saveAnswer(questionId, value)
   }
 
-  const handleTimeExpire = useCallback(() => { handleSubmit() }, [answers]) // eslint-disable-line react-hooks/exhaustive-deps
+  // The timer must call the LATEST handleSubmit. A useCallback would freeze a
+  // stale closure (e.g. attemptId=null before any answer) and submit a broken
+  // attempt when time runs out; a stable identity also stops the Timer's
+  // effect from re-running on every answer change.
+  const submitRef = useRef<() => void>(() => {})
+  useEffect(() => { submitRef.current = handleSubmit })
+  const handleTimeExpire = useCallback(() => { submitRef.current() }, [])
 
   async function handleSubmit() {
     if (submitting) return
     setSubmitting(true)
+    setSubmitError(false)
 
     const durationSeconds = startedAtRef.current
       ? Math.round((Date.now() - startedAtRef.current) / 1000)
@@ -352,17 +365,22 @@ export function ReadingExam({ testId, embedded = false, onComplete }: { testId: 
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ testId, skill: 'reading', answers, attemptId, durationSeconds }),
       })
-      if (res.ok) {
-        const data = await res.json()
-        score = data.score ?? 0
-        band = data.band ?? 0
-        sections = data.sections ?? {}
-        finalAttempt = data.attemptId ?? attemptId
-        if (data.reaction) {
-          try { sessionStorage.setItem(REACTION_STORAGE_KEY, JSON.stringify(data.reaction)) } catch { /* ignore */ }
-        }
+      if (!res.ok) throw new Error(`grade failed: ${res.status}`)
+      const data = await res.json()
+      score = data.score ?? 0
+      band = data.band ?? 0
+      sections = data.sections ?? {}
+      finalAttempt = data.attemptId ?? attemptId
+      if (data.reaction) {
+        try { sessionStorage.setItem(REACTION_STORAGE_KEY, JSON.stringify(data.reaction)) } catch { /* ignore */ }
       }
-    } catch { /* fall through to results; the attempt is still recoverable */ }
+    } catch {
+      // Never show a fake 0.0: keep the user on the test with a retry banner.
+      // Grading is idempotent server-side, so retrying is always safe.
+      setSubmitting(false)
+      setSubmitError(true)
+      return
+    }
 
     if (embedded) { onComplete?.(band); return }
     router.push(`/reading/${testId}/results?score=${score}&band=${band}&sections=${encodeURIComponent(JSON.stringify(sections))}&attempt=${finalAttempt ?? ''}`)
@@ -419,6 +437,19 @@ export function ReadingExam({ testId, embedded = false, onComplete }: { testId: 
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', flex: 1, minHeight: 0 }}>
+
+      {/* Grading failed: retry banner */}
+      {submitError && (
+        <div style={{ position: 'sticky', top: 0, zIndex: 60, display: 'flex', justifyContent: 'center' }}>
+          <div style={{ marginTop: 6, padding: '8px 16px', borderRadius: 10, background: 'var(--danger)', color: '#fff', fontSize: 13, fontWeight: 600, boxShadow: 'var(--shadow-lg)', display: 'flex', alignItems: 'center', gap: 12 }}>
+            {t('common.gradeFailed')}
+            <button onClick={handleSubmit} disabled={submitting}
+              style={{ padding: '4px 12px', borderRadius: 8, border: 'none', background: '#fff', color: 'var(--danger)', fontSize: 12, fontWeight: 700, cursor: 'pointer' }}>
+              {t('common.retry')}
+            </button>
+          </div>
+        </div>
+      )}
 
       {/* IELTS dark header */}
       <div style={{ background: '#2b2b2b', color: '#fff', padding: '8px 16px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexShrink: 0 }}>
