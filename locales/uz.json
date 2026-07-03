@@ -333,6 +333,7 @@
     "loading": "Yuklanmoqda…",
     "error": "Xatolik yuz berdi",
     "retry": "Qayta urinish",
+    "gradeFailed": "Testni tekshirib bo'lmadi. Javoblaringiz saqlangan — qayta urinib ko'ring.",
     "back": "Orqaga",
     "save": "Saqlash",
     "cancel": "Bekor qilish",

@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import Link from 'next/link'
+import { useRouter } from 'next/navigation'
 import { useLanguage } from '@/lib/i18n/LanguageContext'
 import { getStreakInfo, type StreakInfo } from '@/lib/services/streak'
 import { getDashboardData } from '@/lib/services/progress'
@@ -401,6 +402,7 @@ function TodayCard({ sessions, daily, note, onToggle }: { sessions: Session[]; d
 // ── Main page ─────────────────────────────────────────────────────────────────
 export default function DashboardPage() {
   const { t } = useLanguage()
+  const router = useRouter()
   const isMobile = useIsMobile()
   const [profile, setProfile]         = useState<Profile | null>(null)
   const [scores, setScores]           = useState<Record<string, number>>({})
@@ -419,8 +421,10 @@ export default function DashboardPage() {
 
   useEffect(() => {
     async function load() {
+      // An expired session used to `return` here with loading=true — an
+      // infinite spinner. Send the user to login instead.
       const { user } = await getUser()
-      if (!user) return
+      if (!user) { router.replace('/login'); return }
 
       // The dashboard data, today's plan and the streak are independent — run them
       // in parallel instead of one after another (this was the main slowdown).
@@ -498,9 +502,10 @@ export default function DashboardPage() {
       }
 
       setStreakInfo(streak)
-      setLoading(false)
     }
-    load()
+    // However load() ends — success or a failed fetch — drop the spinner; the
+    // page renders fine with whatever subset of the data arrived.
+    load().catch(e => console.error('[dashboard] load failed', e)).finally(() => setLoading(false))
   }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
   if (loading) {

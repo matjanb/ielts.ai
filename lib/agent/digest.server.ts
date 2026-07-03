@@ -84,18 +84,25 @@ async function activeUserIds(db: Db, days: number): Promise<string[]> {
   return [...ids].slice(0, MAX_USERS_PER_RUN)
 }
 
+/** Users processed concurrently. Small: keeps DB/OpenAI load gentle while
+ *  cutting wall-clock enough that 200 users fit the cron's 300s budget. */
+const DIGEST_CONCURRENCY = 5
+
 export async function runDailyDigest(db: Db): Promise<Record<string, number>> {
   const users = await activeUserIds(db, 14)
   const tally: Record<string, number> = {}
-  for (const userId of users) {
-    let outcome: DigestOutcome
-    try {
-      outcome = await digestForUser(db, userId)
-    } catch (e) {
-      console.error(`[agent/digest] user ${userId}:`, e)
-      outcome = 'error'
-    }
-    tally[outcome] = (tally[outcome] ?? 0) + 1
+  for (let i = 0; i < users.length; i += DIGEST_CONCURRENCY) {
+    const outcomes = await Promise.all(
+      users.slice(i, i + DIGEST_CONCURRENCY).map(async (userId): Promise<DigestOutcome> => {
+        try {
+          return await digestForUser(db, userId)
+        } catch (e) {
+          console.error(`[agent/digest] user ${userId}:`, e)
+          return 'error'
+        }
+      }),
+    )
+    for (const outcome of outcomes) tally[outcome] = (tally[outcome] ?? 0) + 1
   }
   return { users: users.length, ...tally }
 }

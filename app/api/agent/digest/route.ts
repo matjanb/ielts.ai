@@ -3,7 +3,7 @@ import { createAdminClient } from '@/lib/supabase/admin'
 import { runDailyDigest } from '@/lib/agent/digest.server'
 
 export const runtime = 'nodejs'
-// One cheap completion per user, sequential; 200-user cap fits comfortably.
+// One cheap completion per user, small concurrent batches; 200-user cap fits.
 export const maxDuration = 300
 
 // Evening coach digest, fired by Vercel cron (vercel.json, 15:00 UTC = 20:00

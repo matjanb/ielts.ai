@@ -229,6 +229,21 @@ create policy "Users can update own profile"
 create policy "Service can insert profiles"
   on profiles for insert with check (true);
 
+-- The update policy limits WHICH ROWS, not WHICH COLUMNS. Restrict the UPDATE
+-- grant to a client-editable allowlist so users can't set is_admin,
+-- lifetime_access, subscription_*, free_mock_used, etc. (see migration 035).
+revoke update on public.profiles from anon, authenticated;
+grant update (
+  full_name,
+  avatar_url,
+  country,
+  target_band_score,
+  current_level,
+  onboarding_completed,
+  preferred_language,
+  updated_at
+) on public.profiles to authenticated;
+
 -- onboarding_data
 drop policy if exists "Users manage own onboarding" on onboarding_data;
 create policy "Users manage own onboarding"
@@ -274,6 +289,10 @@ create policy "Users view own scores"
   on band_score_history for select using (auth.uid() = user_id);
 create policy "Users can insert own band scores"
   on band_score_history for insert with check (auth.uid() = user_id);
+
+-- Score history is written only by server routes (service role) — a client
+-- insert would let users forge their own band history (see migration 036).
+revoke insert, update on band_score_history from anon, authenticated;
 
 -- study_sessions
 drop policy if exists "Users manage own study sessions"        on study_sessions;

@@ -14,7 +14,12 @@ const EMPTY: StreakInfo = { current: 0, best: 0, todayDone: false, freezes: 0, d
 
 export async function getStreakInfo(): Promise<StreakInfo> {
   try {
-    const res = await fetch('/api/streak', { method: 'POST' })
+    // The server counts streak days in the user's local calendar, not UTC.
+    const res = await fetch('/api/streak', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ tzOffset: new Date().getTimezoneOffset() }),
+    })
     if (res.ok) return await res.json()
   } catch { /* fall through */ }
   return EMPTY

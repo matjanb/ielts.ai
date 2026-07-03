@@ -4,10 +4,9 @@ import Link from 'next/link'
 import { useEffect, useRef, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { getUser } from '@/lib/services/auth'
-import { saveBandScoreHistory } from '@/lib/services/attempts'
 import { track } from '@/lib/analytics/track'
 import { useLanguage } from '@/lib/i18n/LanguageContext'
-import { loadCurrentMock, clearCurrentMock, getMockProgress, type CurrentMock, type MockSkill } from '@/lib/services/mock'
+import { loadCurrentMock, saveCurrentMock, clearCurrentMock, getMockProgress, type CurrentMock, type MockSkill } from '@/lib/services/mock'
 import { ListeningExam } from '@/app/(dashboard)/listening/[testId]/page'
 import { ReadingExam } from '@/app/(dashboard)/reading/[testId]/page'
 import { WritingExam } from '@/app/(dashboard)/writing/[testId]/page'
@@ -41,16 +40,19 @@ export default function MockRunPage() {
     let active = true
     getUser().then(async ({ user }) => {
       const m = loadCurrentMock()
-      // Resume after a refresh: rehydrate sections already completed this mock
-      // (since startedAt) and jump to the first unfinished one.
+      // Resume after a refresh: sections completed in THIS mock come from the
+      // stored mock record (authoritative for writing/speaking, whose
+      // submissions have no test id); listening/reading are additionally
+      // recoverable from completed attempts on the chosen tests.
       if (m && user) {
         try {
-          const p = await getMockProgress({
+          const fromDb = await getMockProgress({
             userId: user.id,
             listeningTestId: m.listeningTestId,
             readingTestId: m.readingTestId,
             since: m.startedAt,
           })
+          const p = { ...fromDb, ...(m.progress ?? {}) }
           if (active && Object.keys(p).length) {
             setBands(p)
             const order = stepsOf(m)
@@ -77,16 +79,28 @@ export default function MockRunPage() {
     ? Math.round((steps.reduce((a, s) => a + (bands[s] ?? 0), 0) / steps.length) * 2) / 2
     : null
 
-  // Persist the overall band once, only when the whole mock is finished.
+  // Persist the overall band once the whole mock is finished. The server route
+  // dedupes on the mock id (so an F5 of this screen can't append a duplicate
+  // history row) and skips partial mocks, whose 1-2 section average isn't a
+  // real IELTS overall.
   useEffect(() => {
-    if (!allDone || !userId || overall == null || savedRef.current) return
+    if (!allDone || !userId || overall == null || savedRef.current || !mock) return
     savedRef.current = true
-    saveBandScoreHistory(userId, 'overall', overall).catch(() => {})
+    fetch('/api/mock/overall', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ mockId: mock.id, overall, skills: steps }),
+    }).catch(() => {})
     track('mock_test_completed', { overall })
-  }, [allDone, userId, overall])
+  }, [allDone, userId, overall]) // eslint-disable-line react-hooks/exhaustive-deps
 
   function complete(skill: MockSkill, band: number) {
-    setBands(prev => ({ ...prev, [skill]: band }))
+    setBands(prev => {
+      const next = { ...prev, [skill]: band }
+      // Persist into the mock record so a refresh resumes with the right bands.
+      if (mock) saveCurrentMock({ ...mock, progress: next })
+      return next
+    })
     setStepIdx(i => i + 1)
   }
 

@@ -378,6 +378,7 @@
     "loading": "Loading…",
     "error": "An error occurred",
     "retry": "Try Again",
+    "gradeFailed": "We couldn't grade your test. Your answers are safe — please try again.",
     "back": "Go Back",
     "save": "Save",
     "cancel": "Cancel",

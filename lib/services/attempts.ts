@@ -1,6 +1,6 @@
  
 import { createClient } from '@/lib/supabase/client'
-import type { UserAttempt, UserAnswer, SkillType, Json } from '@/lib/types/database'
+import type { UserAttempt, UserAnswer, SkillType } from '@/lib/types/database'
 
 function db() {
   return createClient()
@@ -41,54 +41,6 @@ export async function saveAnswer(attemptId: string, questionId: string, userAnsw
     )
 }
 
-export async function saveAnswerWithResult(
-  attemptId: string,
-  questionId: string,
-  userAnswer: string | null,
-  isCorrect: boolean
-) {
-  await db()
-    .from('user_answers')
-    .upsert(
-      { attempt_id: attemptId, question_id: questionId, user_answer: userAnswer, is_correct: isCorrect },
-      { onConflict: 'attempt_id,question_id' }
-    )
-}
-
-/**
- * Persist all answers for an attempt in a single round-trip. Used on submit so
- * we don't fire one network request per question (40 sequential upserts → ~1).
- */
-export async function saveAnswersWithResults(
-  attemptId: string,
-  rows: { questionId: string; userAnswer: string | null; isCorrect: boolean }[]
-) {
-  if (rows.length === 0) return
-  await db()
-    .from('user_answers')
-    .upsert(
-      rows.map(r => ({ attempt_id: attemptId, question_id: r.questionId, user_answer: r.userAnswer, is_correct: r.isCorrect })),
-      { onConflict: 'attempt_id,question_id' }
-    )
-}
-
-export async function completeAttempt(
-  attemptId: string,
-  totalScore: number,
-  bandScore: number,
-  sectionScores: Record<string, unknown>
-) {
-  await db()
-    .from('user_attempts')
-    .update({
-      completed_at: new Date().toISOString(),
-      total_score: totalScore,
-      band_score: bandScore,
-      section_scores: sectionScores as unknown as Json,
-    })
-    .eq('id', attemptId)
-}
-
 export async function getAttemptWithAnswers(attemptId: string) {
   const db_ = db()
   const [attempt, answers] = await Promise.all([
@@ -101,19 +53,3 @@ export async function getAttemptWithAnswers(attemptId: string) {
   }
 }
 
-export async function saveBandScoreHistory(
-  userId: string,
-  skill: string,
-  score: number,
-  attemptId?: string
-) {
-  await db()
-    .from('band_score_history')
-    .insert({
-      user_id: userId,
-      skill,
-      score,
-      source: 'mock_test',
-      source_id: attemptId ?? null,
-    })
-}

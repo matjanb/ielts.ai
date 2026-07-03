@@ -18,6 +18,8 @@ async function tg(method: string, payload: Record<string, unknown>): Promise<Rec
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(payload),
+      // A hung Telegram call must not eat the digest cron's time budget.
+      signal: AbortSignal.timeout(10_000),
     })
     const json = await res.json()
     if (!json.ok) {

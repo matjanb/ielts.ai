@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import openai from '@/lib/openai/client'
-import { err } from '@/lib/api/helpers'
+import { gateAiRequest, err } from '@/lib/api/helpers'
 import type { RoastMode } from '../route'
 
 const VOICE: Record<RoastMode, 'nova' | 'onyx' | 'echo'> = {
@@ -10,6 +10,9 @@ const VOICE: Record<RoastMode, 'nova' | 'onyx' | 'echo'> = {
 }
 
 export async function POST(req: NextRequest) {
+  const { error: gate } = await gateAiRequest('roast')
+  if (gate) return gate
+
   let body: { text: string; mode: RoastMode }
   try { body = await req.json() } catch { return err('Invalid JSON', 400) }
 
@@ -33,6 +36,7 @@ export async function POST(req: NextRequest) {
       },
     })
   } catch (e: unknown) {
-    return err(e instanceof Error ? e.message : 'TTS error', 500)
+    console.error('roast/tts:', e)
+    return err('TTS error', 500)
   }
 }

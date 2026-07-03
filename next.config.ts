@@ -6,17 +6,18 @@ const withNextIntl = createNextIntlPlugin();
 const isDev = process.env.NODE_ENV !== "production";
 
 // Content-Security-Policy. Allows exactly what the app talks to: Supabase
-// (REST/Realtime/Storage) and Paddle (overlay checkout). `unsafe-inline` is kept
-// for scripts/styles because the app uses inline styles throughout and Next
-// injects inline bootstrap scripts; `unsafe-eval` is dev-only (HMR).
+// (REST/Realtime/Storage), Paddle (overlay checkout) and Cloudflare Turnstile
+// (essay-checker captcha: script + iframe + siteverify beacon). `unsafe-inline`
+// is kept for scripts/styles because the app uses inline styles throughout and
+// Next injects inline bootstrap scripts; `unsafe-eval` is dev-only (HMR).
 const csp = [
   `default-src 'self'`,
-  `script-src 'self' 'unsafe-inline'${isDev ? " 'unsafe-eval'" : ""} https://cdn.paddle.com https://*.paddle.com`,
+  `script-src 'self' 'unsafe-inline'${isDev ? " 'unsafe-eval'" : ""} https://cdn.paddle.com https://*.paddle.com https://challenges.cloudflare.com`,
   `style-src 'self' 'unsafe-inline'`,
   `img-src 'self' data: blob: https://*.supabase.co https://*.paddle.com`,
   `font-src 'self' data:`,
-  `connect-src 'self' https://*.supabase.co wss://*.supabase.co https://*.paddle.com`,
-  `frame-src https://*.paddle.com https://*.paddlepay.com`,
+  `connect-src 'self' https://*.supabase.co wss://*.supabase.co https://*.paddle.com https://challenges.cloudflare.com`,
+  `frame-src https://*.paddle.com https://*.paddlepay.com https://challenges.cloudflare.com`,
   `media-src 'self' blob: https://*.supabase.co`,
   `object-src 'none'`,
   `base-uri 'self'`,

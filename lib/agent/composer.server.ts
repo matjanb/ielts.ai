@@ -9,6 +9,7 @@ import { DIGEST_SYSTEM_PROMPT, buildDigestUserMessage, type DigestInput } from '
 const DIGEST_MODEL = 'gpt-4o-mini'
 
 export async function composeDigest(input: DigestInput): Promise<string> {
+  // Bounded per-user: one stuck completion must not eat the cron's 300s budget.
   const res = await openai.chat.completions.create({
     model: DIGEST_MODEL,
     temperature: 0.7,
@@ -17,7 +18,7 @@ export async function composeDigest(input: DigestInput): Promise<string> {
       { role: 'system', content: DIGEST_SYSTEM_PROMPT },
       { role: 'user', content: buildDigestUserMessage(input) },
     ],
-  })
+  }, { timeout: 30_000, maxRetries: 1 })
   const text = res.choices[0]?.message?.content?.trim()
   if (!text) throw new Error('composeDigest: empty completion')
   return text

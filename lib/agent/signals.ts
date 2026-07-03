@@ -118,25 +118,28 @@ function chunk<T>(items: T[], size: number): T[][] {
 }
 
 async function loadBandSeriesAndActivity(db: Db, userId: string) {
+  // Fetch newest-first then reverse: `ascending+limit` would keep the OLDEST
+  // rows, so a heavy user's latest test would fall outside the window and the
+  // coach would analyse stale history.
   const [attemptsRes, testsRes, writingRes, speakingRes, sessionsRes] = await Promise.all([
     db.from('user_attempts')
       .select('id, test_id, band_score, completed_at')
       .eq('user_id', userId)
       .not('completed_at', 'is', null)
-      .order('completed_at', { ascending: true })
+      .order('completed_at', { ascending: false })
       .limit(200),
     db.from('tests').select('id, type'),
     db.from('writing_submissions')
       .select('band_score, created_at')
       .eq('user_id', userId)
       .not('band_score', 'is', null)
-      .order('created_at', { ascending: true })
+      .order('created_at', { ascending: false })
       .limit(100),
     db.from('speaking_submissions')
       .select('band_score, created_at')
       .eq('user_id', userId)
       .not('band_score', 'is', null)
-      .order('created_at', { ascending: true })
+      .order('created_at', { ascending: false })
       .limit(100),
     db.from('study_sessions')
       .select('created_at')
@@ -150,22 +153,27 @@ async function loadBandSeriesAndActivity(db: Db, userId: string) {
 
   const typeByTest = new Map((testsRes.data ?? []).map(t => [t.id, t.type as SkillType]))
 
+  // Everything downstream (band series trends, slice(-N) answer windows)
+  // assumes chronological order — restore it after the newest-first fetch.
   const attempts = (attemptsRes.data ?? [])
+    .reverse()
     .map(a => ({ ...a, module: typeByTest.get(a.test_id) }))
     .filter((a): a is typeof a & { module: SkillType } => a.module === 'listening' || a.module === 'reading')
+  const writingRows = (writingRes.data ?? []).reverse()
+  const speakingRows = (speakingRes.data ?? []).reverse()
 
   const series: Partial<Record<SkillType, BandPoint[]>> = {}
   for (const a of attempts) {
     if (a.band_score == null) continue
     ;(series[a.module] ??= []).push({ band: a.band_score, at: a.completed_at! })
   }
-  for (const w of writingRes.data ?? []) (series.writing ??= []).push({ band: w.band_score!, at: w.created_at })
-  for (const s of speakingRes.data ?? []) (series.speaking ??= []).push({ band: s.band_score!, at: s.created_at })
+  for (const w of writingRows) (series.writing ??= []).push({ band: w.band_score!, at: w.created_at })
+  for (const s of speakingRows) (series.speaking ??= []).push({ band: s.band_score!, at: s.created_at })
 
   const activityDates = [
     ...attempts.map(a => a.completed_at!),
-    ...(writingRes.data ?? []).map(w => w.created_at),
-    ...(speakingRes.data ?? []).map(s => s.created_at),
+    ...writingRows.map(w => w.created_at),
+    ...speakingRows.map(s => s.created_at),
     ...(sessionsRes.data ?? []).map(s => s.created_at),
   ]
 
