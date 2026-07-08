@@ -236,7 +236,7 @@
     "speaking": "Gapirish",
     "mockTests": "Mashq testlari",
     "studyPlan": "O'quv rejasi",
-    "roast": "AI Coach",
+    "roast": "Strategiya",
     "progress": "Taraqqiyot",
     "settings": "Sozlamalar",
     "bandScores": "Balllar",
@@ -325,7 +325,7 @@
     "proColTitle": "Obuna bilan",
     "proCol1": "Cheksiz mock-testlar va mashq",
     "proCol2": "Cheksiz Writing va Speaking AI-baholash",
-    "proCol3": "Shaxsiy AI-murabbiy",
+    "proCol3": "Shaxsiy strateg-murabbiy",
     "proCol4": "Moslashuvchan o'quv rejasi va to'liq tahlil"
   },
   "common": {
@@ -1160,7 +1160,7 @@
     "bannerBody": "Bitta to'liq sinov mock topshiring — 4 bo'lim, Writing va Speaking haqiqiy AI-baholash bilan. Bepul, kartasiz. Bir marta.",
     "bannerCta": "Bepul mock boshlash",
     "usedTitle": "Cheksiz AI-baholashni oching",
-    "usedBody": "Bepul mock-dan foydalandingiz. Cheksiz mock-testlar, Writing va Speaking AI-baholash, AI-murabbiy va shaxsiy o'quv rejasi uchun obuna bo'ling.",
+    "usedBody": "Bepul mock-dan foydalandingiz. Cheksiz mock-testlar, Writing va Speaking AI-baholash, strateg va shaxsiy o'quv rejasi uchun obuna bo'ling.",
     "usedCta": "Tariflarni ko'rish",
     "navLock": "Obuna orqali mavjud",
     "planFree": "Bepul reja",
