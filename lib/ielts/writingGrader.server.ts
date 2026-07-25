@@ -68,7 +68,7 @@ const WRITING_SCHEMA = {
 // anonymously. Far fewer output tokens than the full assessment.
 const LEAN_SCHEMA = {
   type: 'object', additionalProperties: false,
-  required: ['criteria', 'corrections'],
+  required: ['criteria', 'corrections', 'next_band_tip'],
   properties: {
     criteria: {
       type: 'object', additionalProperties: false,
@@ -76,6 +76,7 @@ const LEAN_SCHEMA = {
       properties: { task: criterion, coherence: criterion, lexical: criterion, grammar: criterion },
     },
     corrections: { type: 'array', items: correction, description: '3–5 of the most important concrete errors, each quoting the exact text' },
+    next_band_tip: { type: 'string', description: 'The single most important change to reach the next half band' },
   },
 } as const
 
@@ -125,11 +126,14 @@ export async function gradeWriting(params: {
   prompt: string
   model?: string
   lean?: boolean
+  // Short diagnostic sample (onboarding mini-task): estimate bands from the
+  // language shown, without the full-essay length/structure penalties.
+  diagnostic?: boolean
 }): Promise<{ scored: WritingScore; feedback: WritingFeedbackPayload }> {
-  const { content, taskType, prompt, model = 'gpt-4o', lean = false } = params
+  const { content, taskType, prompt, model = 'gpt-4o', lean = false, diagnostic = false } = params
   const rubric = taskType === '1' ? WRITING_TASK1_RUBRIC : WRITING_TASK2_RUBRIC
   const taskCriterionName = taskType === '1' ? 'Task Achievement' : 'Task Response'
-  const minWords = taskType === '1' ? 150 : 250
+  const minWords = diagnostic ? 30 : taskType === '1' ? 150 : 250
   const wordCount = content.trim().split(/\s+/).filter(Boolean).length
 
   const TASK_CHECKS = taskType === '1'
@@ -174,7 +178,9 @@ CORRECTIONS: Return 3–8 of the highest-impact errors in 'corrections'. Each MU
 
 OFF-TOPIC / MEMORISED: Set off_topic.flag = true if the response does not answer THIS prompt or pads with memorised template sentences; explain in note. If flagged, ${taskCriterionName} MUST be 4 or lower regardless of language quality.
 
-LENGTH: Penalise under-length responses (below ${minWords} words) on the task criterion.
+${diagnostic
+  ? `LENGTH: This is a short diagnostic sample (${minWords}+ words), NOT a full essay. Do not penalise length or missing essay structure — estimate the band the candidate's language (grammar, vocabulary, sentence-level coherence) would earn in a full response.`
+  : `LENGTH: Penalise under-length responses (below ${minWords} words) on the task criterion.`}
 
 ENGLISH ONLY: IELTS Writing must be in English. If the response is wholly or mostly in another language, award ${taskCriterionName} and all four criteria band 1–2, set off_topic.flag = true, and do NOT translate it to grade it.
 

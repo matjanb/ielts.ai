@@ -170,8 +170,9 @@ input, textarea, select { font: inherit; color: inherit; }
   width: 100%;
   padding: 11px 14px;
   border-radius: 8px;
-  font-size: 14px;
   font: inherit;
+  /* ≥16px or iOS Safari zooms into the field on focus */
+  font-size: 16px;
   border: 1px solid var(--border-strong);
   background: var(--bg-elev);
   color: var(--text);
