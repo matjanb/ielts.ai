@@ -2,6 +2,8 @@ import { createServerClient } from '@supabase/ssr'
 import { type EmailOtpType } from '@supabase/supabase-js'
 import { cookies } from 'next/headers'
 import { NextResponse, type NextRequest } from 'next/server'
+import { attributeUtm } from '@/lib/analytics/track.server'
+import { attributeReferral } from '@/lib/services/referral.server'
 
 function getOrigin(request: NextRequest): string {
   const forwardedHost = request.headers.get('x-forwarded-host')
@@ -53,6 +55,14 @@ export async function GET(request: NextRequest) {
     if (error) {
       console.error('[auth/confirm] verifyOtp error:', error.message)
       return NextResponse.redirect(`${origin}/login?error=${encodeURIComponent(error.message)}`)
+    }
+
+    // Email-confirm signups never pass through /auth/callback, so referral +
+    // first-touch attribution (which also emits signup_completed exactly once)
+    // must happen here — this was why signup_completed undercounted 14×.
+    if (type === 'signup' || type === 'email') {
+      const { data: { user } } = await supabase.auth.getUser()
+      if (user) { await attributeReferral(user.id); await attributeUtm(user.id) }
     }
 
     return NextResponse.redirect(`${origin}${next}`)
