@@ -25,7 +25,7 @@ export const metadata: Metadata = {
 // Public, no-login lead magnet. Server-rendered hero (indexable) + client form.
 export default function EssayCheckerPage() {
   return (
-    <main style={{ minHeight: '100vh', background: 'var(--bg)', color: 'var(--text)' }}>
+    <main style={{ minHeight: 'var(--full-h)', background: 'var(--bg)', color: 'var(--text)' }}>
       <section style={{ maxWidth: 760, margin: '0 auto', padding: 'clamp(32px, 7vw, 64px) 20px 80px' }}>
         <header style={{ textAlign: 'center', marginBottom: 32 }}>
           <span style={{ display: 'inline-block', fontSize: 11, fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase', color: 'var(--accent)', background: 'var(--accent-soft)', padding: '4px 12px', borderRadius: 999, marginBottom: 16 }}>

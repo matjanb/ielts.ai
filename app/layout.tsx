@@ -45,7 +45,9 @@ export const metadata: Metadata = {
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="en" suppressHydrationWarning className={`${manrope.variable} ${newsreader.variable} ${jetbrainsMono.variable}`}>
-      <body className="min-h-screen antialiased">
+      {/* min-height comes from globals.css (var(--full-h)) — min-h-screen would
+          overshoot under the large-monitor body zoom */}
+      <body className="antialiased">
         <ThemeProvider>
           <LanguageProvider>
             {children}

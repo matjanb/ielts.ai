@@ -8,7 +8,7 @@ export default function AuthLayout({ children }: { children: ReactNode }) {
   return (
     <ThemeProvider>
       <LanguageProvider>
-        <div style={{ minHeight: '100vh', background: 'var(--bg)', display: 'flex', flexDirection: 'column' }}>
+        <div style={{ minHeight: 'var(--full-h)', background: 'var(--bg)', display: 'flex', flexDirection: 'column' }}>
           {/* Top bar */}
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '20px 32px', borderBottom: '1px solid var(--border)' }}>
             <Link href="/" style={{ display: 'inline-flex', alignItems: 'center', gap: 8, fontWeight: 700, letterSpacing: '-0.02em', fontSize: 15, color: 'var(--text)', textDecoration: 'none' }}>

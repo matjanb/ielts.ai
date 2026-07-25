@@ -137,7 +137,7 @@ function SubscriptionContent() {
 
   if (activating) {
     return (
-      <div style={{ minHeight: '100vh', background: 'var(--bg)', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 16, padding: 24, textAlign: 'center' }}>
+      <div style={{ minHeight: 'var(--full-h)', background: 'var(--bg)', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 16, padding: 24, textAlign: 'center' }}>
         <div style={{ width: 36, height: 36, border: '3px solid var(--border)', borderTopColor: 'var(--accent)', borderRadius: '50%', animation: 'spin 0.8s linear infinite' }} />
         <div style={{ fontSize: 18, fontWeight: 600, color: 'var(--text)' }}>Activating your subscription…</div>
         <div style={{ fontSize: 14, color: 'var(--text-2)' }}>This only takes a few seconds.</div>
@@ -147,7 +147,7 @@ function SubscriptionContent() {
   }
 
   return (
-    <div style={{ minHeight: '100vh', background: 'var(--bg)' }}>
+    <div style={{ minHeight: 'var(--full-h)', background: 'var(--bg)' }}>
       {/* Header */}
       <header style={{
         padding: '20px 32px', borderBottom: '1px solid var(--border)',

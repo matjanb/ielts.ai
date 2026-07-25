@@ -66,7 +66,7 @@ function OnboardingContent() {
   const progress = (step / TOTAL_STEPS) * 100
 
   return (
-    <div style={{ minHeight: '100vh', background: 'var(--bg)', display: 'flex', flexDirection: 'column' }}>
+    <div style={{ minHeight: 'var(--full-h)', background: 'var(--bg)', display: 'flex', flexDirection: 'column' }}>
       {/* Top bar */}
       <header style={{
         display: 'flex', alignItems: 'center', justifyContent: 'space-between',

@@ -10,7 +10,7 @@ export function LegalPage({ title, updated, intro, sections }: {
   sections: Section[]
 }) {
   return (
-    <div style={{ minHeight: '100vh', background: 'var(--bg)', color: 'var(--text)' }}>
+    <div style={{ minHeight: 'var(--full-h)', background: 'var(--bg)', color: 'var(--text)' }}>
       {/* Header */}
       <header style={{
         position: 'sticky', top: 0, zIndex: 40,

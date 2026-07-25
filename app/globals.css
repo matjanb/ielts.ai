@@ -254,6 +254,22 @@ input, textarea, select { font: inherit; color: inherit; }
   color: var(--accent);
 }
 
+/* ── Large-monitor scaling ──────────────────────────────── */
+/* The UI is designed at ~1280–1440px with fixed px sizes everywhere; on wider
+   viewports scale the whole page proportionally instead of leaving it tiny.
+   zoom does NOT compensate viewport units (100vh inside zoom:1.25 renders as
+   125% of the screen), so full-height shells must use var(--full-h), never
+   100vh directly. */
+:root {
+  --ui-zoom: 1;
+  --full-h: calc(100vh / var(--ui-zoom));
+}
+@media (min-width: 1600px) { :root { --ui-zoom: 1.1; } }
+@media (min-width: 1920px) { :root { --ui-zoom: 1.25; } }
+@media (min-width: 2560px) { :root { --ui-zoom: 1.5; } }
+@media (min-width: 3840px) { :root { --ui-zoom: 2; } }
+body { zoom: var(--ui-zoom); min-height: var(--full-h); }
+
 /* ── Mobile responsiveness helpers ──────────────────────── */
 /* Guard against horizontal overflow from fixed-width desktop layouts. */
 html, body { max-width: 100%; overflow-x: hidden; }

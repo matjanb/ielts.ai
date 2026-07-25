@@ -257,7 +257,7 @@ function DashboardLayoutInner({ children }: { children: ReactNode }) {
   })
 
   return (
-    <div style={{ position: 'relative', minHeight: '100vh', background: 'var(--bg)' }}>
+    <div style={{ position: 'relative', minHeight: 'var(--full-h)', background: 'var(--bg)' }}>
 
       {/* Invisible left-edge hover zone (desktop only) */}
       {!isMobile && (
@@ -449,7 +449,7 @@ function DashboardLayoutInner({ children }: { children: ReactNode }) {
       <main style={{
         marginLeft: isMobile ? 0 : (pinned ? EXPANDED_W : RAIL_W),
         transition: 'margin-left .25s cubic-bezier(.2,.7,.2,1)',
-        minHeight: '100vh', height: '100vh', display: 'flex', flexDirection: 'column', overflow: 'hidden',
+        minHeight: 'var(--full-h)', height: 'var(--full-h)', display: 'flex', flexDirection: 'column', overflow: 'hidden',
       }}>
         {/* Topbar */}
         <header style={{
