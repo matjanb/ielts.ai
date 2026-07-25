@@ -13,6 +13,12 @@ export const FUNNEL_EVENTS = [
   'checker_submitted',
   'checker_result_viewed',
   'checker_signup_cta_clicked',
+  // First-session aha flow (post-signup onboarding)
+  'onboarding_started',
+  'onboarding_aha_submitted',
+  'onboarding_aha_result_viewed',
+  'onboarding_aha_skipped',
+  'onboarding_survey_completed',
 ] as const
 
 export type FunnelEvent = (typeof FUNNEL_EVENTS)[number]
