@@ -6,8 +6,18 @@ import Script from 'next/script'
 import { track } from '@/lib/analytics/track'
 
 const SITE_KEY = process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY
-const MIN_WORDS = 50
+const MIN_WORDS_ESSAY = 50
+// Mini diagnostic: a few sentences typed on a phone — most mobile visitors
+// don't have an essay at hand (200 page views → 2 submissions before this).
+const MIN_WORDS_MINI = 30
 const MAX_WORDS = 500
+
+// The writing sample itself is always in English.
+const MINI_PROMPTS = [
+  'Some people prefer to study alone, while others learn better in a group. Which do you prefer, and why?',
+  'Is it better to live in a big city or in a small town? Explain your choice.',
+  'Some people believe technology makes our lives easier. Do you agree or disagree? Why?',
+]
 
 interface CheckerResult {
   band: number
@@ -20,6 +30,8 @@ const card: React.CSSProperties = { background: 'var(--bg-elev)', border: '1px s
 
 export function EssayCheckerForm() {
   const [taskType, setTaskType] = useState<'1' | '2'>('2')
+  const [mode, setMode] = useState<'essay' | 'mini'>('essay')
+  const [miniPrompt] = useState(() => MINI_PROMPTS[Math.floor(Math.random() * MINI_PROMPTS.length)])
   const [content, setContent] = useState('')
   const [loading, setLoading] = useState(false)
   const [result, setResult] = useState<CheckerResult | null>(null)
@@ -52,21 +64,28 @@ export function EssayCheckerForm() {
     return () => clearInterval(id)
   }, [])
 
+  const minWords = mode === 'mini' ? MIN_WORDS_MINI : MIN_WORDS_ESSAY
   const words = content.trim() ? content.trim().split(/\s+/).filter(Boolean).length : 0
-  const tooShort = words > 0 && words < MIN_WORDS
+  const tooShort = words > 0 && words < minWords
   // Captcha never blocks the button — it's verified server-side only if a token
   // is present (soft). The button lights as soon as there are enough words.
-  const canSubmit = words >= MIN_WORDS && !loading
+  const canSubmit = words >= minWords && !loading
 
   async function submit() {
     if (!canSubmit) return
     setLoading(true); setError(''); setResult(null); setLimitHit(false)
-    track('checker_submitted', { taskType, words })
+    track('checker_submitted', { taskType, words, mode })
     try {
       const res = await fetch('/api/checker/grade', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ content, taskType, turnstileToken: token }),
+        body: JSON.stringify({
+          content,
+          taskType: mode === 'mini' ? '2' : taskType,
+          mode,
+          ...(mode === 'mini' ? { prompt: miniPrompt } : {}),
+          turnstileToken: token,
+        }),
       })
       if (res.status === 429) { setLimitHit(true); return }
       const data = await res.json()
@@ -87,28 +106,40 @@ export function EssayCheckerForm() {
       {/* ── Input ─────────────────────────────────────────────────────────────── */}
       {!result && !limitHit && (
         <div style={{ ...card, padding: 'clamp(16px, 4vw, 24px)' }}>
-          <div style={{ display: 'flex', gap: 8, marginBottom: 14 }}>
-            {(['1', '2'] as const).map(tt => (
-              <button key={tt} onClick={() => setTaskType(tt)} style={{
-                flex: 1, padding: '10px', borderRadius: 10, fontSize: 14, fontWeight: 600, cursor: 'pointer',
-                border: `1px solid ${taskType === tt ? 'var(--accent)' : 'var(--border-strong)'}`,
-                background: taskType === tt ? 'var(--accent-soft)' : 'var(--bg-elev)',
-                color: taskType === tt ? 'var(--accent)' : 'var(--text)',
-              }}>Writing Task {tt}</button>
-            ))}
-          </div>
+          {mode === 'essay' ? (
+            <>
+              <div style={{ display: 'flex', gap: 8, marginBottom: 14 }}>
+                {(['1', '2'] as const).map(tt => (
+                  <button key={tt} onClick={() => setTaskType(tt)} style={{
+                    flex: 1, padding: '10px', minHeight: 44, borderRadius: 10, fontSize: 14, fontWeight: 600, cursor: 'pointer',
+                    border: `1px solid ${taskType === tt ? 'var(--accent)' : 'var(--border-strong)'}`,
+                    background: taskType === tt ? 'var(--accent-soft)' : 'var(--bg-elev)',
+                    color: taskType === tt ? 'var(--accent)' : 'var(--text)',
+                  }}>Writing Task {tt}</button>
+                ))}
+              </div>
 
-          <p style={{ fontSize: 12.5, color: 'var(--text-3)', margin: '0 0 10px' }}>
-            {taskType === '1' ? 'Task 1 — report/letter (aim for 150+ words).' : 'Task 2 — opinion/discussion essay (aim for 250+ words).'}
-          </p>
+              <p style={{ fontSize: 12.5, color: 'var(--text-3)', margin: '0 0 10px' }}>
+                {taskType === '1' ? 'Task 1 — report/letter (aim for 150+ words).' : 'Task 2 — opinion/discussion essay (aim for 250+ words).'}
+              </p>
+            </>
+          ) : (
+            <div style={{ padding: '12px 14px', borderRadius: 12, background: 'var(--accent-soft)', marginBottom: 12 }}>
+              <div style={{ fontSize: 10.5, fontWeight: 700, letterSpacing: '0.08em', textTransform: 'uppercase', color: 'var(--accent)', marginBottom: 4 }}>
+                Your topic
+              </div>
+              <div style={{ fontSize: 14.5, fontWeight: 600, color: 'var(--text)', lineHeight: 1.45 }}>{miniPrompt}</div>
+            </div>
+          )}
 
           <textarea
             value={content}
             onChange={e => setContent(e.target.value)}
-            placeholder="Paste your IELTS essay here…"
-            rows={12}
+            placeholder={mode === 'mini' ? 'Write 3–4 sentences in English here…' : 'Paste your IELTS essay here…'}
+            rows={mode === 'mini' ? 6 : 12}
             style={{
-              width: '100%', resize: 'vertical', padding: 14, borderRadius: 12, fontSize: 15, lineHeight: 1.6,
+              // 16px keeps iOS Safari from zooming into the field.
+              width: '100%', resize: 'vertical', padding: 14, borderRadius: 12, fontSize: 16, lineHeight: 1.6,
               border: '1px solid var(--border-strong)', background: 'var(--bg)', color: 'var(--text)',
               outline: 'none', fontFamily: 'var(--font-sans)',
             }}
@@ -116,19 +147,25 @@ export function EssayCheckerForm() {
 
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: 8, fontSize: 13 }}>
             <span style={{ color: tooShort ? 'var(--danger)' : words > MAX_WORDS ? 'var(--warn)' : 'var(--text-3)', fontVariantNumeric: 'tabular-nums' }}>
-              {words} words {tooShort ? `· need ${MIN_WORDS}+` : words > MAX_WORDS ? `· max ${MAX_WORDS} graded` : ''}
+              {words} words {tooShort ? `· need ${minWords}+` : words > MAX_WORDS ? `· max ${MAX_WORDS} graded` : ''}
             </span>
+            <button
+              onClick={() => { setMode(m => m === 'mini' ? 'essay' : 'mini') }}
+              style={{ background: 'none', border: 'none', color: 'var(--accent)', fontSize: 13, fontWeight: 600, cursor: 'pointer', padding: '8px 0', textAlign: 'right' }}
+            >
+              {mode === 'mini' ? 'I have a full essay — paste it' : 'No essay? Write a few sentences'}
+            </button>
           </div>
 
           {SITE_KEY && <div ref={turnstileRef} style={{ marginTop: 14 }} />}
           {error && <div style={{ color: 'var(--danger)', fontSize: 13, marginTop: 10 }}>{error}</div>}
 
           <button onClick={submit} disabled={!canSubmit} style={{
-            marginTop: 16, width: '100%', padding: 14, borderRadius: 12, fontSize: 15, fontWeight: 700, border: 'none',
+            marginTop: 16, width: '100%', minHeight: 50, padding: 14, borderRadius: 12, fontSize: 15, fontWeight: 700, border: 'none',
             background: canSubmit ? 'var(--accent)' : 'var(--bg-soft)', color: canSubmit ? 'var(--accent-fg)' : 'var(--text-3)',
             cursor: canSubmit ? 'pointer' : 'default',
           }}>
-            {loading ? 'Analysing your essay…' : words < MIN_WORDS ? `Add ${MIN_WORDS - words} more words` : 'Check my band score'}
+            {loading ? 'Analysing…' : words < minWords ? `Add ${minWords - words} more words` : 'Check my band score'}
           </button>
         </div>
       )}
@@ -150,7 +187,7 @@ export function EssayCheckerForm() {
             <div style={{ fontFamily: 'var(--font-display)', fontStyle: 'italic', fontSize: 72, lineHeight: 1, color: 'var(--accent)', fontWeight: 600, margin: '6px 0 16px' }}>
               {result.band.toFixed(1)}
             </div>
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 8 }}>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(110px, 1fr))', gap: 8 }}>
               {([['Task', result.criteria.task], ['Coherence', result.criteria.coherence], ['Lexical', result.criteria.lexical], ['Grammar', result.criteria.grammar]] as const).map(([label, v]) => (
                 <div key={label} style={{ padding: '10px 6px', background: 'var(--bg-soft)', borderRadius: 10 }}>
                   <div style={{ fontSize: 18, fontWeight: 700, color: 'var(--text)', fontVariantNumeric: 'tabular-nums' }}>{v.toFixed(1)}</div>
