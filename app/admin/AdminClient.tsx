@@ -5,6 +5,7 @@ import Link from 'next/link'
 import { ReferralsPanel } from './ReferralsPanel'
 import { PromoCodesPanel } from './PromoCodesPanel'
 import { FunnelPanel } from './FunnelPanel'
+import { TelegramPanel } from './TelegramPanel'
 
 interface AdminUser {
   id: string
@@ -214,6 +215,8 @@ export function AdminClient() {
       </div>
 
       <FunnelPanel />
+
+      <TelegramPanel />
 
       <PromoCodesPanel />
 
