@@ -3,6 +3,7 @@ import { createHash } from 'crypto'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { err, getApiUser, recordUsage } from '@/lib/api/helpers'
 import { gradeWriting } from '@/lib/ielts/writingGrader.server'
+import { sendUpsell } from '@/lib/agent/upsell.server'
 
 export const runtime = 'nodejs'
 
@@ -91,6 +92,12 @@ export async function POST(request: NextRequest) {
     // Fail-closed like the other AI limits: a count error must not mean free unlimited.
     const used = countError ? Number.MAX_SAFE_INTEGER : (count ?? 0)
     if (used >= limit) {
+      // Highest-intent refusal there is: they wanted one more check.
+      try {
+        await sendUpsell(admin, { userId: user.id, kind: 'checker_limit' })
+      } catch (e) {
+        console.error('[checker/grade] upsell:', e)
+      }
       return NextResponse.json(
         { error: 'limit', message: 'Quick checks are used up — submit a full essay in Writing for complete feedback.' },
         { status: 429 },

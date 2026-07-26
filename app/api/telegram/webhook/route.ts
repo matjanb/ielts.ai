@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import type { SupabaseClient } from '@supabase/supabase-js'
 import type { Database, SkillType } from '@/lib/types/database'
 import { createAdminClient } from '@/lib/supabase/admin'
+import { hasActiveSubscription } from '@/lib/api/helpers'
 import { sendTelegramMessage, answerCallbackQuery } from '@/lib/telegram/api'
 import { tgTexts, type TgTexts } from '@/lib/telegram/texts'
 
@@ -87,7 +88,10 @@ async function handleMessage(db: Db, message: any): Promise<void> {
           paused_at: null,
         }).eq('user_id', match.user_id)
         const t = await textsFor(db, match.user_id)
-        await sendTelegramMessage(chatId, t.linked)
+        // Free accounts get the bonus/expectations welcome; the "evening
+        // reviews at 20:00" promise is only true for subscribers.
+        const subscribed = await hasActiveSubscription(match.user_id)
+        await sendTelegramMessage(chatId, subscribed ? t.linked : t.linkedFree)
         return
       }
       await sendTelegramMessage(chatId, tgTexts(null).badCode)

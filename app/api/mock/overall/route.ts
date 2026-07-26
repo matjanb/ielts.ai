@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getApiUser, err } from '@/lib/api/helpers'
 import { createAdminClient } from '@/lib/supabase/admin'
+import { sendUpsell } from '@/lib/agent/upsell.server'
 
 export const runtime = 'nodejs'
 
@@ -56,5 +57,18 @@ export async function POST(request: NextRequest) {
     console.error('[mock/overall]', error)
     return err('Failed to record overall band', 500)
   }
+
+  // Full mock just finished — the highest-intent moment a free user has.
+  // sendUpsell no-ops for subscribers/unlinked/cooldown; never blocks the result.
+  try {
+    await sendUpsell(admin, {
+      userId: user.id,
+      kind: 'mock',
+      band: (Math.round(overall * 2) / 2).toFixed(1),
+    })
+  } catch (e) {
+    console.error('[mock/overall] upsell:', e)
+  }
+
   return NextResponse.json({ persisted: true })
 }

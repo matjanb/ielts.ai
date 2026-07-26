@@ -6,6 +6,7 @@ import { getResourceForSignal } from './resources.ts'
 import { antiSpamVerdict } from './antiSpam.ts'
 import { composeDigest } from './composer.server'
 import { sendAgentMessage } from './send.server'
+import { sendUpsell } from './upsell.server'
 
 type Db = SupabaseClient<Database>
 
@@ -25,13 +26,13 @@ export async function digestForUser(db: Db, userId: string, now = new Date()): P
   const primary = pickPrimarySignal(signals)
   if (!primary) return 'silence'
 
-  // instant_reaction rows are constructor output, not digest sends — they
-  // must not count against the one-message-per-day budget.
+  // instant_reaction rows are constructor output and upsell rows are the free
+  // channel's nudges — neither counts against the digest's one-per-day budget.
   const { data: recent } = await db
     .from('agent_messages')
     .select('sent_at, signal_type')
     .eq('user_id', userId)
-    .neq('signal_type', 'instant_reaction')
+    .not('signal_type', 'in', '(instant_reaction,upsell)')
     .order('sent_at', { ascending: false })
     .limit(5)
 
@@ -104,5 +105,32 @@ export async function runDailyDigest(db: Db): Promise<Record<string, number>> {
     )
     for (const outcome of outcomes) tally[outcome] = (tally[outcome] ?? 0) + 1
   }
-  return { users: users.length, ...tally }
+  const upsells = await runInactivityUpsells(db)
+  return { users: users.length, upsells, ...tally }
+}
+
+/**
+ * Free linked users with no activity in the last 3 days get the hard-sell
+ * inactivity nudge. sendUpsell itself skips subscribers, enforces the 72h
+ * cooldown and the lifetime cap, so this loop can be dumb.
+ */
+async function runInactivityUpsells(db: Db): Promise<number> {
+  const { data: links } = await db
+    .from('telegram_links')
+    .select('user_id')
+    .not('telegram_chat_id', 'is', null)
+    .limit(500)
+  if (!links?.length) return 0
+
+  const active = new Set(await activeUserIds(db, 3))
+  let sent = 0
+  for (const { user_id } of links) {
+    if (active.has(user_id)) continue
+    try {
+      if (await sendUpsell(db, { userId: user_id, kind: 'inactive' })) sent++
+    } catch (e) {
+      console.error(`[agent/upsell] user ${user_id}:`, e)
+    }
+  }
+  return sent
 }
