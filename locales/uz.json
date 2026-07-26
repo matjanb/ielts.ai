@@ -251,6 +251,16 @@
     "vocabulary": "Lug‘at"
   },
   "onboarding": {
+    "tgTitle": "Oxirgi qadam — botni ulab ol",
+    "tgSubtitle": "Eslatmalar, natijalar va tayyorgarlik rejasi — to'g'ridan-to'g'ri Telegramda.",
+    "tgBonus": "Ulaganing uchun +2 bepul esse tekshiruvi",
+    "tgB1": "Strik uzilmasligi uchun eslatmalar",
+    "tgB2": "Ballar tayyor bo'lishi bilan keladi",
+    "tgB3": "Maqsadli balga eng qisqa yo'l",
+    "tgConnect": "Telegramni ulash",
+    "tgWaiting": "Botni kutyapmiz… Telegramda Start bos",
+    "tgConnected": "Ulandi! +2 tekshiruv qo'shildi",
+    "tgSkip": "Keyinroq",
     "ahaEyebrow": "1-qadam — darajangni bilib ol",
     "ahaTitle": "IELTS balingni hoziroq bilib ol",
     "ahaSubtitle": "Quyidagi mavzuda inglizcha 3–4 ta gap yoz — AI imtihonchi Writing balingni taxminan 30 soniyada baholaydi.",
