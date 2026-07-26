@@ -2,7 +2,6 @@
 
 import { useEffect, useState } from 'react'
 import { Unlink } from 'lucide-react'
-import { redirectToPaywallOn403 } from '@/lib/paywall'
 
 // Official Telegram logo: brand-blue circle + white paper plane.
 function TelegramIcon({ size = 16 }: { size?: number }) {
@@ -20,8 +19,8 @@ function TelegramIcon({ size = 16 }: { size?: number }) {
 type LinkStatus = { linked: boolean; bot: string }
 type LinkCode = { code: string; deepLink: string; expiresInMin: number }
 
-// Settings card: connect Telegram to receive the coach's evening reviews.
-// Subscriber-only — a 403 from the code endpoint routes to the paywall.
+// Settings card: connect Telegram to receive the coach's messages. Open to
+// every account — per-message gating lives server-side in send.server.ts.
 export function TelegramConnect({ t }: { t: (k: string) => string }) {
   const [status, setStatus] = useState<LinkStatus | null>(null)
   const [code, setCode] = useState<LinkCode | null>(null)
@@ -38,7 +37,6 @@ export function TelegramConnect({ t }: { t: (k: string) => string }) {
     setBusy(true)
     try {
       const res = await fetch('/api/telegram/link', { method: 'POST' })
-      if (redirectToPaywallOn403(res)) return
       if (res.ok) setCode(await res.json())
     } finally {
       setBusy(false)

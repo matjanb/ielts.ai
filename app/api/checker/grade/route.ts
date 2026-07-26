@@ -11,6 +11,8 @@ const DAILY_LIMIT = 2
 // Signed-in users (onboarding aha flow) get a small lifetime pool of lean checks
 // instead — cheap model, and it must never die on shared mobile-carrier IPs.
 const USER_LIFETIME_LIMIT = 5
+// Extra checks granted while the Telegram bot is linked (onboarding bonus).
+const TELEGRAM_BONUS_CHECKS = 2
 const MAX_WORDS = 500
 const MAX_CHARS = 6000
 const MIN_WORDS_ESSAY = 50
@@ -71,15 +73,24 @@ export async function POST(request: NextRequest) {
 
   if (user) {
     // Signed-in (onboarding aha / repeat checks): no captcha, no IP limit —
-    // mobile carrier NAT shares IPs across whole cohorts. Small lifetime pool.
-    const { count, error: countError } = await admin
-      .from('ai_usage')
-      .select('id', { count: 'exact', head: true })
-      .eq('user_id', user.id)
-      .eq('feature', 'checker')
+    // mobile carrier NAT shares IPs across whole cohorts. Small lifetime pool;
+    // linking the Telegram bot earns +2 (the onboarding connect bonus).
+    const [{ count, error: countError }, { data: tgLink }] = await Promise.all([
+      admin
+        .from('ai_usage')
+        .select('id', { count: 'exact', head: true })
+        .eq('user_id', user.id)
+        .eq('feature', 'checker'),
+      admin
+        .from('telegram_links')
+        .select('telegram_chat_id')
+        .eq('user_id', user.id)
+        .maybeSingle(),
+    ])
+    const limit = USER_LIFETIME_LIMIT + (tgLink?.telegram_chat_id ? TELEGRAM_BONUS_CHECKS : 0)
     // Fail-closed like the other AI limits: a count error must not mean free unlimited.
     const used = countError ? Number.MAX_SAFE_INTEGER : (count ?? 0)
-    if (used >= USER_LIFETIME_LIMIT) {
+    if (used >= limit) {
       return NextResponse.json(
         { error: 'limit', message: 'Quick checks are used up — submit a full essay in Writing for complete feedback.' },
         { status: 429 },

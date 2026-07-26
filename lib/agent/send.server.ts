@@ -45,7 +45,17 @@ export async function sendAgentMessage(
   const t = tgTexts(opts.language)
 
   if (!(await hasActiveSubscription(opts.userId))) {
-    if (!link.paused_at) {
+    // Linking is open to free accounts now, so "no subscription" splits in two:
+    // a LAPSED subscriber gets exactly one farewell then silence; an account
+    // that never paid just doesn't receive coach content here (upsell.server.ts
+    // owns what free linked users get).
+    const { data: profile } = await db
+      .from('profiles')
+      .select('subscription_expires_at, has_paid')
+      .eq('id', opts.userId)
+      .maybeSingle()
+    const everSubscribed = !!(profile?.subscription_expires_at || profile?.has_paid)
+    if (everSubscribed && !link.paused_at) {
       await sendTelegramMessage(link.telegram_chat_id, t.farewell, [
         [{ text: t.btnRenew, url: `${SITE}/subscription` }],
       ])
