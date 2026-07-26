@@ -19,6 +19,10 @@ export const FUNNEL_EVENTS = [
   'onboarding_aha_result_viewed',
   'onboarding_aha_skipped',
   'onboarding_survey_completed',
+  // Telegram connect step at the end of onboarding
+  'onboarding_tg_viewed',
+  'onboarding_tg_connected',
+  'onboarding_tg_skipped',
 ] as const
 
 export type FunnelEvent = (typeof FUNNEL_EVENTS)[number]

@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { useLanguage, LanguageProvider } from '@/lib/i18n/LanguageContext'
@@ -25,7 +25,7 @@ const MINI_PROMPTS = [
   'Some people believe technology makes our lives easier. Do you agree or disagree? Why?',
 ]
 
-type Phase = 'aha' | 'result' | 'survey'
+type Phase = 'aha' | 'result' | 'survey' | 'telegram'
 
 interface CheckResult {
   band: number
@@ -130,13 +130,52 @@ function OnboardingContent() {
     })
     await completeOnboarding(user.id)
     track('onboarding_survey_completed', { aha: result != null })
+    setSaving(false)
+    setPhase('telegram')
+    track('onboarding_tg_viewed')
+  }
+
+  // ── Telegram connect step ──────────────────────────────────────────────
+  const [tgState, setTgState] = useState<'idle' | 'waiting' | 'connected'>('idle')
+  const tgPoll = useRef<ReturnType<typeof setInterval> | null>(null)
+  useEffect(() => () => { if (tgPoll.current) clearInterval(tgPoll.current) }, [])
+
+  async function connectTelegram() {
+    try {
+      const res = await fetch('/api/telegram/link', { method: 'POST' })
+      if (!res.ok) { goToDashboard(); return }
+      const { deepLink } = await res.json() as { deepLink: string }
+      setTgState('waiting')
+      window.open(deepLink, '_blank', 'noopener,noreferrer')
+      // Poll until the webhook links the chat (bot /start on another app).
+      let tries = 0
+      tgPoll.current = setInterval(async () => {
+        if (++tries > 60) { if (tgPoll.current) clearInterval(tgPoll.current); return }
+        try {
+          const st = await fetch('/api/telegram/link').then(r => r.json()) as { linked: boolean }
+          if (st.linked) {
+            if (tgPoll.current) clearInterval(tgPoll.current)
+            setTgState('connected')
+            track('onboarding_tg_connected')
+            setTimeout(() => router.push('/dashboard'), 1600)
+          }
+        } catch { /* transient — keep polling */ }
+      }, 3000)
+    } catch {
+      goToDashboard()
+    }
+  }
+
+  function goToDashboard() {
+    if (tgState !== 'connected') track('onboarding_tg_skipped')
     router.push('/dashboard')
   }
 
   const progress =
     phase === 'aha' ? 10 :
     phase === 'result' ? 30 :
-    30 + (step / TOTAL_STEPS) * 70
+    phase === 'survey' ? 30 + (step / TOTAL_STEPS) * 60 :
+    tgState === 'connected' ? 100 : 95
 
   return (
     <div style={{ minHeight: 'var(--full-h)', background: 'var(--bg)', display: 'flex', flexDirection: 'column' }}>
@@ -164,7 +203,7 @@ function OnboardingContent() {
       </div>
 
       {/* Content */}
-      <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: phase === 'survey' ? 'center' : 'flex-start', padding: 'clamp(16px, 4vw, 40px) 16px 32px' }}>
+      <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: phase === 'survey' || phase === 'telegram' ? 'center' : 'flex-start', padding: 'clamp(16px, 4vw, 40px) 16px 32px' }}>
         <div style={{ width: '100%', maxWidth: 540 }}>
 
           {/* ── Phase 1: the aha check ─────────────────────────────────────── */}
@@ -430,9 +469,80 @@ function OnboardingContent() {
               </div>
             </>
           )}
+
+          {/* ── Phase 4: connect the Telegram bot ──────────────────────────── */}
+          {phase === 'telegram' && (
+            <div className="animate-fade-up">
+              <div className="card" style={{ padding: 'clamp(24px, 5vw, 36px)', textAlign: 'center' }}>
+                <TelegramLogo size={52} />
+                <h1 style={{ fontSize: 'clamp(22px, 5vw, 28px)', fontWeight: 700, letterSpacing: '-0.025em', color: 'var(--text)', margin: '16px 0 8px', lineHeight: 1.15 }}>
+                  {t('onboarding.tgTitle')}
+                </h1>
+                <p style={{ fontSize: 14.5, color: 'var(--text-2)', lineHeight: 1.55, margin: '0 0 14px' }}>
+                  {t('onboarding.tgSubtitle')}
+                </p>
+
+                <div style={{ display: 'inline-block', padding: '6px 14px', borderRadius: 999, background: 'var(--accent-soft)', color: 'var(--accent)', fontSize: 13, fontWeight: 700, marginBottom: 18 }}>
+                  🎁 {t('onboarding.tgBonus')}
+                </div>
+
+                <div style={{ display: 'grid', gap: 8, textAlign: 'left', margin: '0 auto 20px', maxWidth: 360 }}>
+                  {[t('onboarding.tgB1'), t('onboarding.tgB2'), t('onboarding.tgB3')].map(b => (
+                    <div key={b} style={{ display: 'flex', gap: 10, alignItems: 'flex-start', fontSize: 13.5, color: 'var(--text-2)', lineHeight: 1.45 }}>
+                      <span style={{ color: 'var(--accent)', fontWeight: 700, flexShrink: 0 }}>✓</span>
+                      {b}
+                    </div>
+                  ))}
+                </div>
+
+                {tgState === 'connected' ? (
+                  <div style={{ padding: '14px 16px', borderRadius: 12, background: 'var(--accent-soft)', color: 'var(--accent)', fontSize: 15, fontWeight: 700 }}>
+                    ✓ {t('onboarding.tgConnected')}
+                  </div>
+                ) : (
+                  <>
+                    <button onClick={connectTelegram} style={{
+                      width: '100%', minHeight: 50, padding: '14px 16px', borderRadius: 12, fontSize: 15.5, fontWeight: 700, border: 'none',
+                      background: '#29A9EB', color: '#fff', cursor: 'pointer',
+                      display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: 9,
+                    }}>
+                      <TelegramLogo size={19} />
+                      {t('onboarding.tgConnect')}
+                    </button>
+                    {tgState === 'waiting' && (
+                      <div style={{ fontSize: 12.5, color: 'var(--text-3)', marginTop: 10 }}>
+                        {t('onboarding.tgWaiting')}
+                      </div>
+                    )}
+                  </>
+                )}
+              </div>
+
+              {tgState !== 'connected' && (
+                <div style={{ textAlign: 'center', marginTop: 16 }}>
+                  <button onClick={goToDashboard} style={{ background: 'none', border: 'none', color: 'var(--text-3)', fontSize: 13.5, fontWeight: 600, cursor: 'pointer', padding: '10px 16px' }}>
+                    {t('onboarding.tgSkip')} →
+                  </button>
+                </div>
+              )}
+            </div>
+          )}
         </div>
       </div>
     </div>
+  )
+}
+
+// Official Telegram logo: brand-blue circle + white paper plane.
+function TelegramLogo({ size = 20 }: { size?: number }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 240 240" aria-hidden style={{ display: 'inline-block', verticalAlign: 'middle' }}>
+      <circle cx="120" cy="120" r="120" fill="#29A9EB" />
+      <path
+        fill="#fff"
+        d="M54 118.5l114.7-44.2c5.3-1.9 10 1.3 8.3 9.4l-19.5 92c-1.5 6.5-5.6 8.1-11.3 5l-29.8-22-14.4 13.9c-1.6 1.6-2.9 2.9-6 2.9l2.1-30.3 55.3-50c2.4-2.1-.5-3.3-3.7-1.2l-68.4 43.1-29.5-9.2c-6.4-2-6.5-6.4 2.2-9.4z"
+      />
+    </svg>
   )
 }
 

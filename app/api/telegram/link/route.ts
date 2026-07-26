@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server'
-import { getApiUser, hasActiveSubscription, err } from '@/lib/api/helpers'
+import { getApiUser, err } from '@/lib/api/helpers'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { TELEGRAM_BOT_USERNAME } from '@/lib/telegram/api'
 
@@ -33,14 +33,13 @@ export async function GET() {
 }
 
 /**
- * Issue a fresh link code. Paywall check #1: the Telegram coach is a
- * subscriber feature — no active subscription, no code (403 → the client
- * redirects to /subscription like every other gated action).
+ * Issue a fresh link code. Linking is open to every account — the bot is the
+ * retention channel (reminders, results, upsells for free users). What gets
+ * DELIVERED is gated per message in send.server.ts, not at link time.
  */
 export async function POST() {
   const user = await getApiUser()
   if (!user) return err('Unauthorized', 401)
-  if (!(await hasActiveSubscription(user.id))) return err('Subscription required.', 403)
 
   const code = generateCode()
   const { error } = await createAdminClient().from('telegram_links').upsert({
