@@ -12,6 +12,9 @@ export type TgTexts = {
   linkPrompt: string
   badCode: string
   freeText: string
+  // Ack for a free-text reply after a recent broadcast (their answer is
+  // relayed to the admins, so "reviews only" would be wrong here).
+  replyAck: string
   snoozeAck: string
   farewell: string
   progressTitle: string
@@ -31,6 +34,7 @@ export const TG_TEXTS: Record<TgLocale, TgTexts> = {
     linkPrompt: `To link your account, open ${SITE}/dashboard/settings and press "Connect Telegram" — then send me the code.`,
     badCode: 'That code doesn\'t match or has expired. Grab a fresh one in the site settings.',
     freeText: `I only send reviews for now 🙂 For a real conversation the site is better — the full AI coach lives there: ${SITE}/dashboard`,
+    replyAck: 'Got it — I\'ve passed your answer to the team. Thank you! 🙌',
     snoozeAck: 'Okay, resting today 👌 Back tomorrow.',
     farewell: `Your subscription ended, so I\'m pausing the evening reviews 😔 Renew and I\'m back the same evening — no re-linking needed: ${SITE}/subscription`,
     progressTitle: '📊 Your current bands:',
@@ -46,6 +50,7 @@ export const TG_TEXTS: Record<TgLocale, TgTexts> = {
     linkPrompt: `Чтобы привязать аккаунт, открой ${SITE}/dashboard/settings, нажми «Подключить Telegram» и пришли мне код.`,
     badCode: 'Код не подошёл или истёк. Возьми свежий в настройках на сайте.',
     freeText: `Я пока только присылаю разборы 🙂 Поговорить лучше на сайте — там полный AI-тренер: ${SITE}/dashboard`,
+    replyAck: 'Принял и передал команде — спасибо! 🙌',
     snoozeAck: 'Ок, сегодня отдыхаем 👌 Вернусь завтра.',
     farewell: `Подписка закончилась, ставлю вечерние разборы на паузу 😔 Продлишь — вернусь тем же вечером, заново подключать не нужно: ${SITE}/subscription`,
     progressTitle: '📊 Твои текущие band’ы:',
@@ -61,6 +66,7 @@ export const TG_TEXTS: Record<TgLocale, TgTexts> = {
     linkPrompt: `Аккаунтты байлау үшін ${SITE}/dashboard/settings ашып, «Telegram қосу» батырмасын бас та, маған кодты жібер.`,
     badCode: 'Код сәйкес келмеді немесе мерзімі өтті. Сайттағы баптаулардан жаңасын ал.',
     freeText: `Мен әзірге тек талдау жіберемін 🙂 Сөйлесу үшін сайт ыңғайлы — толық AI-жаттықтырушы сонда: ${SITE}/dashboard`,
+    replyAck: 'Қабылдадым, командаға жеткіздім — рақмет! 🙌',
     snoozeAck: 'Жарайды, бүгін демаламыз 👌 Ертең ораламын.',
     farewell: `Жазылым аяқталды, кешкі талдауларды тоқтата тұрамын 😔 Ұзартсаң — сол кеште ораламын, қайта қосудың қажеті жоқ: ${SITE}/subscription`,
     progressTitle: '📊 Қазіргі band көрсеткіштерің:',
@@ -76,6 +82,7 @@ export const TG_TEXTS: Record<TgLocale, TgTexts> = {
     linkPrompt: `Аккаунтту байлоо үчүн ${SITE}/dashboard/settings ачып, «Telegram кошуу» баскычын басып, мага кодду жөнөт.`,
     badCode: 'Код туура келген жок же мөөнөтү өттү. Сайттагы жөндөөлөрдөн жаңысын ал.',
     freeText: `Мен азырынча талдоо гана жөнөтөм 🙂 Сүйлөшүү үчүн сайт ыңгайлуу — толук AI-машыктыруучу ошол жерде: ${SITE}/dashboard`,
+    replyAck: 'Кабыл алдым, командага жеткирдим — рахмат! 🙌',
     snoozeAck: 'Макул, бүгүн эс алабыз 👌 Эртең кайтам.',
     farewell: `Жазылуу бүттү, кечки талдоолорду токтотуп турам 😔 Узартсаң — ошол эле кечте кайтам, кайра кошуунун кереги жок: ${SITE}/subscription`,
     progressTitle: '📊 Азыркы band көрсөткүчтөрүң:',
@@ -91,6 +98,7 @@ export const TG_TEXTS: Record<TgLocale, TgTexts> = {
     linkPrompt: `Hisobni bog'lash uchun ${SITE}/dashboard/settings sahifasini ochib, «Telegram ulash» tugmasini bos va menga kodni yubor.`,
     badCode: 'Kod mos kelmadi yoki muddati o\'tgan. Saytdagi sozlamalardan yangisini ol.',
     freeText: `Men hozircha faqat tahlil yuboraman 🙂 Suhbat uchun sayt qulayroq — to'liq AI-murabbiy o'sha yerda: ${SITE}/dashboard`,
+    replyAck: 'Qabul qildim, jamoaga yetkazdim — rahmat! 🙌',
     snoozeAck: 'Xo\'p, bugun dam olamiz 👌 Ertaga qaytaman.',
     farewell: `Obuna tugadi, kechki tahlillarni pauza qilaman 😔 Uzaytirsang — o'sha kechqurun qaytaman, qayta ulash shart emas: ${SITE}/subscription`,
     progressTitle: '📊 Hozirgi band ko\'rsatkichlaring:',
@@ -153,4 +161,25 @@ export const TG_UPSELLS: Record<TgLocale, TgUpsells> = {
 
 export function tgUpsells(locale: string | null | undefined): TgUpsells {
   return TG_UPSELLS[(locale ?? 'en') as TgLocale] ?? TG_UPSELLS.en
+}
+
+// ── Admin-only strings (broadcast console inside the bot) ────────────────────
+// Not localized: only profiles with is_admin see these, and the team works in
+// Russian.
+
+export const TG_ADMIN = {
+  help: 'Админ-команды:\n/broadcast <текст> — создать рассылку по подключённым пользователям (дальше выберешь аудиторию кнопками).\n\nОтветы пользователей боту пересылаются сюда автоматически.',
+  usage: 'Формат: /broadcast <текст рассылки>\nМожно многострочно — всё после команды уйдёт как есть.',
+  preview: (content: string) => `📣 Предпросмотр рассылки:\n\n${content}\n\nКому отправить?`,
+  btnAll: (n: number) => `📤 Всем (${n})`,
+  btnFree: (n: number) => `🆓 Только free (${n})`,
+  btnPro: (n: number) => `💎 Только pro (${n})`,
+  btnCancel: '✖️ Отмена',
+  sending: 'Отправляю…',
+  cancelled: 'Рассылка отменена.',
+  alreadyHandled: 'Эта рассылка уже обработана.',
+  noRecipients: 'В выбранной аудитории нет подключённых пользователей.',
+  done: (sent: number, failed: number) =>
+    `✅ Рассылка отправлена: ${sent} доставлено${failed ? `, ${failed} не дошло` : ''}.`,
+  reply: (name: string, plan: string, text: string) => `💬 Ответ от ${name} (${plan}):\n\n${text}`,
 }

@@ -4,9 +4,16 @@ import type { Database, SkillType } from '@/lib/types/database'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { hasActiveSubscription } from '@/lib/api/helpers'
 import { sendTelegramMessage, answerCallbackQuery } from '@/lib/telegram/api'
-import { tgTexts, type TgTexts } from '@/lib/telegram/texts'
+import { tgTexts, TG_ADMIN, type TgTexts } from '@/lib/telegram/texts'
+import {
+  linkedRecipients, filterAudience, runBroadcast, hasRecentBroadcast, adminChatIds,
+  type BroadcastAudience,
+} from '@/lib/telegram/broadcast.server'
 
 export const runtime = 'nodejs'
+// A confirmed broadcast is sent inline from the callback handler; give the
+// function room for a few hundred sequential sendMessage calls.
+export const maxDuration = 300
 
 type Db = SupabaseClient<Database>
 
@@ -101,9 +108,132 @@ async function handleMessage(db: Db, message: any): Promise<void> {
     return
   }
 
-  // Linked user free-texting the bot: polite template + redirect to the site.
-  const t = await textsFor(db, existing.user_id)
+  const { data: profile } = await db
+    .from('profiles')
+    .select('is_admin, preferred_language, full_name, lifetime_access, subscription_expires_at')
+    .eq('id', existing.user_id)
+    .maybeSingle()
+
+  // Admins get a broadcast console instead of the canned replies.
+  if (profile?.is_admin && raw.startsWith('/')) {
+    await handleAdminCommand(db, chatId, existing.user_id, raw)
+    return
+  }
+
+  const t = tgTexts(profile?.preferred_language)
+
+  // Linked user free-texting the bot. Relay it to the admins' chats (that's
+  // how broadcast answers come home), then ack: a "thanks, passed along" if
+  // they were recently asked something, the usual redirect otherwise.
+  if (raw && !raw.startsWith('/')) {
+    const admins = await adminChatIds(db)
+    const plan = hasActiveSub(profile) ? 'pro' : 'free'
+    const relay = TG_ADMIN.reply(profile?.full_name || '—', plan, raw)
+    for (const adminChat of admins) {
+      if (adminChat !== chatId) await sendTelegramMessage(adminChat, relay)
+    }
+    if (await hasRecentBroadcast(db, existing.user_id)) {
+      await sendTelegramMessage(chatId, t.replyAck)
+      return
+    }
+  }
   await sendTelegramMessage(chatId, t.freeText)
+}
+
+function hasActiveSub(p: { lifetime_access: boolean | null; subscription_expires_at: string | null } | null | undefined): boolean {
+  return !!(p?.lifetime_access || (p?.subscription_expires_at && p.subscription_expires_at > new Date().toISOString()))
+}
+
+async function handleAdminCommand(db: Db, chatId: number, userId: string, raw: string): Promise<void> {
+  if (!raw.startsWith('/broadcast')) {
+    await sendTelegramMessage(chatId, TG_ADMIN.help)
+    return
+  }
+
+  const content = raw.slice('/broadcast'.length).trim()
+  if (!content) {
+    await sendTelegramMessage(chatId, TG_ADMIN.usage)
+    return
+  }
+
+  const { data: draft, error } = await db
+    .from('telegram_broadcasts')
+    .insert({ created_by: userId, content })
+    .select('id')
+    .single()
+  if (error || !draft) {
+    console.error('[telegram/broadcast] draft insert failed:', error?.message)
+    return
+  }
+
+  const recipients = await linkedRecipients(db)
+  const free = recipients.filter(r => !r.pro).length
+  await sendTelegramMessage(chatId, TG_ADMIN.preview(content), [
+    [{ text: TG_ADMIN.btnAll(recipients.length), callback_data: `bc:all:${draft.id}` }],
+    [
+      { text: TG_ADMIN.btnFree(free), callback_data: `bc:free:${draft.id}` },
+      { text: TG_ADMIN.btnPro(recipients.length - free), callback_data: `bc:pro:${draft.id}` },
+    ],
+    [{ text: TG_ADMIN.btnCancel, callback_data: `bc:cancel:${draft.id}` }],
+  ])
+}
+
+async function handleBroadcastCallback(db: Db, cb: any, chatId: number, userId: string): Promise<void> {
+  const [, action, broadcastId] = (cb.data as string).split(':')
+
+  const { data: profile } = await db.from('profiles').select('is_admin').eq('id', userId).maybeSingle()
+  if (!profile?.is_admin || !broadcastId) {
+    await answerCallbackQuery(cb.id)
+    return
+  }
+
+  if (action === 'cancel') {
+    await db.from('telegram_broadcasts')
+      .update({ status: 'cancelled' })
+      .eq('id', broadcastId)
+      .eq('status', 'draft')
+    await answerCallbackQuery(cb.id, TG_ADMIN.cancelled)
+    return
+  }
+
+  if (action !== 'all' && action !== 'free' && action !== 'pro') {
+    await answerCallbackQuery(cb.id)
+    return
+  }
+
+  // Claim draft → sending atomically: Telegram re-delivers unanswered
+  // callbacks, and a double-tap must not send the broadcast twice.
+  const { data: claimed } = await db
+    .from('telegram_broadcasts')
+    .update({ status: 'sending', audience: action })
+    .eq('id', broadcastId)
+    .eq('status', 'draft')
+    .select('id, content')
+    .maybeSingle()
+  if (!claimed) {
+    await answerCallbackQuery(cb.id, TG_ADMIN.alreadyHandled)
+    return
+  }
+
+  // Answer before the long send loop so Telegram stops retrying the callback.
+  await answerCallbackQuery(cb.id, TG_ADMIN.sending)
+
+  const recipients = filterAudience(await linkedRecipients(db), action as BroadcastAudience)
+  if (!recipients.length) {
+    await db.from('telegram_broadcasts')
+      .update({ status: 'sent', sent_at: new Date().toISOString(), sent_count: 0, failed_count: 0 })
+      .eq('id', broadcastId)
+    await sendTelegramMessage(chatId, TG_ADMIN.noRecipients)
+    return
+  }
+
+  const { sent, failed } = await runBroadcast(db, {
+    broadcastId,
+    content: claimed.content,
+    recipients,
+    excludeChatId: chatId,
+  })
+  await sendTelegramMessage(chatId, TG_ADMIN.done(sent, failed))
 }
 
 async function handleCallback(db: Db, cb: any): Promise<void> {
@@ -113,6 +243,12 @@ async function handleCallback(db: Db, cb: any): Promise<void> {
 
   const link = await linkByChat(db, chatId)
   if (!link) { await answerCallbackQuery(cb.id); return }
+
+  if (data.startsWith('bc:')) {
+    await handleBroadcastCallback(db, cb, chatId, link.user_id)
+    return
+  }
+
   const t = await textsFor(db, link.user_id)
 
   if (data === 'snooze') {

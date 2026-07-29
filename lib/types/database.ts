@@ -81,6 +81,50 @@ export type Database = {
           },
         ]
       }
+      telegram_broadcasts: {
+        Row: {
+          id: string
+          created_by: string
+          content: string
+          audience: string | null
+          status: string
+          created_at: string
+          sent_at: string | null
+          sent_count: number | null
+          failed_count: number | null
+        }
+        Insert: {
+          id?: string
+          created_by: string
+          content: string
+          audience?: string | null
+          status?: string
+          created_at?: string
+          sent_at?: string | null
+          sent_count?: number | null
+          failed_count?: number | null
+        }
+        Update: {
+          id?: string
+          created_by?: string
+          content?: string
+          audience?: string | null
+          status?: string
+          created_at?: string
+          sent_at?: string | null
+          sent_count?: number | null
+          failed_count?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "telegram_broadcasts_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       agent_messages: {
         Row: {
           id: string
